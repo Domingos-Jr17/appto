@@ -2,17 +2,11 @@ import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import ZAI from "z-ai-web-dev-sdk";
-
-// Initialize ZAI instance
-let zaiInstance: Awaited<ReturnType<typeof ZAI.create>> | null = null;
-
-async function getZAI() {
-  if (!zaiInstance) {
-    zaiInstance = await ZAI.create();
-  }
-  return zaiInstance;
-}
+import {
+  createZAIChatCompletion,
+  getFriendlyZAIErrorMessage,
+  getFriendlyZAIErrorStatus,
+} from "@/lib/zai";
 
 const ACADEMIC_SYSTEM_PROMPT = `Você é um assistente académico especializado em ajudar estudantes moçambicanos.
 Responda sempre em Português de Moçambique (pt-MZ).
@@ -55,14 +49,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const zai = await getZAI();
-
     // For now, we'll use non-streaming and return the full response
     // as streaming with the current SDK setup requires specific handling
-    const completion = await zai.chat.completions.create({
+    const completion = await createZAIChatCompletion({
       model: "glm-4.7-flash",
       messages: [
-        { role: "assistant", content: ACADEMIC_SYSTEM_PROMPT },
+        { role: "system", content: ACADEMIC_SYSTEM_PROMPT },
         {
           role: "user",
           content: context
@@ -132,8 +124,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("AI stream error:", error);
-    return new Response(JSON.stringify({ error: "Erro ao processar pedido" }), {
-      status: 500,
+    return new Response(JSON.stringify({ error: getFriendlyZAIErrorMessage(error) }), {
+      status: getFriendlyZAIErrorStatus(error),
       headers: { "Content-Type": "application/json" },
     });
   }

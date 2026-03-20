@@ -2,17 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import ZAI from "z-ai-web-dev-sdk";
-
-// Initialize ZAI instance
-let zaiInstance: Awaited<ReturnType<typeof ZAI.create>> | null = null;
-
-async function getZAI() {
-  if (!zaiInstance) {
-    zaiInstance = await ZAI.create();
-  }
-  return zaiInstance;
-}
+import { createZAIChatCompletion, getFriendlyZAIErrorMessage } from "@/lib/zai";
 
 const SYSTEM_PROMPT = `Você é um especialista em escrita académica para estudantes universitários moçambicanos.
 Gere conteúdo académico de alta qualidade em Português de Moçambique.
@@ -59,9 +49,75 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let shouldGenerateContent = Boolean(generateContent);
+    let fallbackWarning: string | null = null;
+    const sectionContents = new Map<string, string>();
+    let abstractContent = "";
+
+    if (shouldGenerateContent) {
+      try {
+        for (const section of DEFAULT_SECTIONS) {
+          const prompt = `Gere a ${section.prompt} para um trabalho académico sobre: "${title}"
+
+Tipo de trabalho: ${formatProjectType(type)}
+Autor: ${session.user.name || "Estudante"}
+
+Requisitos:
+- Texto em Português académico de Moçambique
+- Entre 400-600 palavras
+- Inclua pelo menos 2-3 referências ABNT relevantes
+- Use linguagem formal e objectiva
+- Estruture com subtitulos quando apropriado`;
+
+          const completion = await createZAIChatCompletion({
+            model: "glm-4.7-flash",
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "user", content: prompt },
+            ],
+            thinking: { type: "disabled" },
+            max_tokens: 900,
+          });
+
+          sectionContents.set(
+            section.title,
+            completion.choices[0]?.message?.content || ""
+          );
+        }
+
+        const abstractPrompt = `Gere um resumo académico para o trabalho sobre: "${title}"
+
+O resumo deve:
+- Ter 150-250 palavras
+- Incluir: objetivo, metodologia, resultados e conclusão
+- Ser em Português de Moçambique
+- Seguir normas ABNT`;
+
+        const abstractCompletion = await createZAIChatCompletion({
+          model: "glm-4.7-flash",
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: abstractPrompt },
+          ],
+          thinking: { type: "disabled" },
+          max_tokens: 400,
+        });
+
+        abstractContent = abstractCompletion.choices[0]?.message?.content || "";
+      } catch (error) {
+        console.warn(
+          "ZAI unavailable for project generation, falling back to structure-only mode:",
+          error
+        );
+        shouldGenerateContent = false;
+        fallbackWarning =
+          `Estrutura do trabalho criada com sucesso. ${getFriendlyZAIErrorMessage(error)}`;
+      }
+    }
+
     // Calculate credits needed
     const baseCost = 20;
-    const contentCost = generateContent ? DEFAULT_SECTIONS.length * 15 : 0;
+    const contentCost = shouldGenerateContent ? DEFAULT_SECTIONS.length * 15 : 0;
     const totalCost = baseCost + contentCost;
 
     // Check user credits
@@ -75,8 +131,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    const zai = await getZAI();
 
     // Create project with transaction
     const result = await db.$transaction(async (tx) => {
@@ -117,29 +171,8 @@ export async function POST(request: NextRequest) {
       for (const section of DEFAULT_SECTIONS) {
         let content = "";
 
-        if (generateContent) {
-          const prompt = `Gere a ${section.prompt} para um trabalho académico sobre: "${title}"
-
-Tipo de trabalho: ${formatProjectType(type)}
-Autor: ${session.user.name || "Estudante"}
-
-Requisitos:
-- Texto em Português académico de Moçambique
-- Entre 400-600 palavras
-- Inclua pelo menos 2-3 referências ABNT relevantes
-- Use linguagem formal e objectiva
-- Estruture com subtitulos quando apropriado`;
-
-          const completion = await zai.chat.completions.create({
-            model: "glm-4.7-flash",
-            messages: [
-              { role: "assistant", content: SYSTEM_PROMPT },
-              { role: "user", content: prompt },
-            ],
-            thinking: { type: "disabled" },
-          });
-
-          content = completion.choices[0]?.message?.content || "";
+        if (shouldGenerateContent) {
+          content = sectionContents.get(section.title) || "";
         }
 
         await tx.documentSection.create({
@@ -153,26 +186,7 @@ Requisitos:
       }
 
       // Generate abstract
-      if (generateContent) {
-        const abstractPrompt = `Gere um resumo académico para o trabalho sobre: "${title}"
-
-O resumo deve:
-- Ter 150-250 palavras
-- Incluir: objetivo, metodologia, resultados e conclusão
-- Ser em Português de Moçambique
-- Seguir normas ABNT`;
-
-        const abstractCompletion = await zai.chat.completions.create({
-          model: "glm-4.7-flash",
-          messages: [
-            { role: "assistant", content: SYSTEM_PROMPT },
-            { role: "user", content: abstractPrompt },
-          ],
-          thinking: { type: "disabled" },
-        });
-
-        const abstractContent = abstractCompletion.choices[0]?.message?.content || "";
-
+      if (shouldGenerateContent && abstractContent) {
         await tx.documentSection.updateMany({
           where: { projectId: project.id, title: "Resumo" },
           data: { content: abstractContent },
@@ -194,7 +208,10 @@ O resumo deve:
           amount: -totalCost,
           type: "USAGE",
           description: `Geração de trabalho: ${title}`,
-          metadata: JSON.stringify({ projectId: project.id, type: generateContent ? "complete" : "structure" }),
+          metadata: JSON.stringify({
+            projectId: project.id,
+            type: shouldGenerateContent ? "complete" : "structure",
+          }),
         },
       });
 
@@ -215,14 +232,21 @@ O resumo deve:
       success: true,
       project: completeProject,
       creditsUsed: totalCost,
-      message: generateContent 
-        ? "Trabalho completo gerado com sucesso!" 
-        : "Estrutura do trabalho criada com sucesso!",
+      message: shouldGenerateContent
+        ? "Trabalho completo gerado com sucesso!"
+        : fallbackWarning || "Estrutura do trabalho criada com sucesso!",
+      contentGenerated: shouldGenerateContent,
     });
   } catch (error) {
     console.error("Generate work error:", error);
+    const message =
+      process.env.NODE_ENV === "production"
+        ? "Erro ao gerar trabalho"
+        : error instanceof Error
+          ? error.message
+          : "Erro ao gerar trabalho";
     return NextResponse.json(
-      { error: "Erro ao gerar trabalho" },
+      { error: message },
       { status: 500 }
     );
   }

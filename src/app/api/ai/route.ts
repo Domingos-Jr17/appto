@@ -2,22 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import ZAI from "z-ai-web-dev-sdk";
+import {
+  createZAIChatCompletion,
+  getFriendlyZAIErrorMessage,
+  getFriendlyZAIErrorStatus,
+} from "@/lib/zai";
 import {
   generateCacheKey,
   getCachedResponse,
   setCachedResponse,
 } from "@/lib/ai-cache";
-
-// Initialize ZAI instance
-let zaiInstance: Awaited<ReturnType<typeof ZAI.create>> | null = null;
-
-async function getZAI() {
-  if (!zaiInstance) {
-    zaiInstance = await ZAI.create();
-  }
-  return zaiInstance;
-}
 
 // Credit costs for each action
 const CREDIT_COSTS: Record<string, number> = {
@@ -180,7 +174,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const zai = await getZAI();
     const systemPrompt = getSystemPrompt(userPlan, educationLevel);
 
     let response: string;
@@ -245,10 +238,10 @@ export async function POST(request: NextRequest) {
         break;
     }
 
-    const completion = await zai.chat.completions.create({
+    const completion = await createZAIChatCompletion({
       model: "glm-4.7-flash",
       messages: [
-        { role: "assistant", content: systemPrompt },
+        { role: "system", content: systemPrompt },
         { role: "user", content: prompt },
       ],
       thinking: { type: "disabled" },
@@ -296,8 +289,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("AI generation error:", error);
     return NextResponse.json(
-      { error: "Erro ao processar pedido de IA" },
-      { status: 500 }
+      { error: getFriendlyZAIErrorMessage(error) },
+      { status: getFriendlyZAIErrorStatus(error) }
     );
   }
 }

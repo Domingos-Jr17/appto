@@ -1,0 +1,55 @@
+import type { Metadata } from "next";
+import { Inter, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "next-themes";
+
+const inter = Inter({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "aptto - Copiloto Académico com IA",
+  description: "Plataforma inteligente de apoio à escrita académica para estudantes moçambicanos. Estruture trabalhos, escreva em português académico, normalize referências ABNT.",
+  keywords: ["aptto", "escrita académica", "IA", "Moçambique", "ABNT", "monografia", "trabalho académico"],
+  authors: [{ name: "aptto" }],
+  icons: {
+    icon: "/favicon.ico",
+  },
+  openGraph: {
+    title: "aptto - Copiloto Académico com IA",
+    description: "O seu assistente inteligente para trabalhos académicos em Moçambique",
+    siteName: "aptto",
+    type: "website",
+  },
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="pt" suppressHydrationWarning>
+      <body
+        className={`${inter.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground`}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster position="top-right" />
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}

@@ -3,15 +3,19 @@
 import { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,18 +24,56 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
     if (password !== confirmPassword) {
-      alert("As senhas não coincidem");
+      setError("As senhas não coincidem");
       return;
     }
     if (!acceptTerms) {
-      alert("Você precisa aceitar os termos de uso");
+      setError("Você precisa aceitar os termos de uso");
       return;
     }
+    if (password.length < 6) {
+      setError("A senha deve ter pelo menos 6 caracteres");
+      return;
+    }
+
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
+
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Erro ao criar conta");
+        setIsLoading(false);
+        return;
+      }
+
+      // Auto login after registration
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        // Registration succeeded but login failed - redirect to login
+        router.push("/login");
+      } else {
+        router.push("/app");
+        router.refresh();
+      }
+    } catch (err) {
+      setError("Ocorreu um erro. Tente novamente.");
+      setIsLoading(false);
+    }
   };
 
   const passwordStrength = () => {
@@ -70,6 +112,13 @@ export default function RegisterPage() {
           Preencha os dados abaixo para começar
         </p>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -120,6 +169,7 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 pr-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 transition-all duration-300"
               required
+              minLength={6}
             />
             <button
               type="button"

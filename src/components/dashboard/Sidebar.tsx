@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -40,27 +41,27 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     title: "Dashboard",
-    href: "/",
+    href: "/app",
     icon: LayoutDashboard,
   },
   {
     title: "Projectos",
-    href: "/projects",
+    href: "/app/projects",
     icon: FolderKanban,
   },
   {
     title: "Editor",
-    href: "/editor",
+    href: "/app/editor",
     icon: FileEdit,
   },
   {
     title: "Créditos",
-    href: "/credits",
+    href: "/app/credits",
     icon: Coins,
   },
   {
     title: "Configurações",
-    href: "/settings",
+    href: "/app/settings",
     icon: Settings,
   },
 ];
@@ -72,6 +73,21 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const user = session?.user;
+  const initials = user?.name
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "U";
+
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/login" });
+  };
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -90,7 +106,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           )}
         >
           {!collapsed && (
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/app" className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
                 <span className="text-sm font-bold text-primary-foreground">A</span>
               </div>
@@ -98,9 +114,11 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             </Link>
           )}
           {collapsed && (
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
-              <span className="text-sm font-bold text-primary-foreground">A</span>
-            </div>
+            <Link href="/app">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
+                <span className="text-sm font-bold text-primary-foreground">A</span>
+              </div>
+            </Link>
           )}
           <Button
             variant="ghost"
@@ -122,7 +140,8 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3 scrollbar-thin">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || 
+              (item.href !== "/app" && pathname.startsWith(item.href));
             const NavIcon = item.icon;
 
             const NavContent = (
@@ -176,16 +195,16 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                     )}
                   >
                     <Avatar className="h-9 w-9 ring-2 ring-primary/20">
-                      <AvatarImage src="/avatar.png" alt="João Silva" />
+                      <AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
                       <AvatarFallback className="gradient-primary text-primary-foreground text-sm font-medium">
-                        JS
+                        {initials}
                       </AvatarFallback>
                     </Avatar>
                     {!collapsed && (
                       <div className="flex-1 overflow-hidden">
-                        <p className="truncate text-sm font-medium">João Silva</p>
+                        <p className="truncate text-sm font-medium">{user?.name || "Usuário"}</p>
                         <p className="truncate text-xs text-muted-foreground">
-                          joao@universidade.ac.mz
+                          {user?.email || ""}
                         </p>
                       </div>
                     )}
@@ -194,9 +213,9 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
               </TooltipTrigger>
               {collapsed && (
                 <TooltipContent side="right">
-                  <p className="font-medium">João Silva</p>
+                  <p className="font-medium">{user?.name || "Usuário"}</p>
                   <p className="text-xs text-muted-foreground">
-                    joao@universidade.ac.mz
+                    {user?.email || ""}
                   </p>
                 </TooltipContent>
               )}
@@ -208,12 +227,14 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             >
               <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Configurações</span>
+              <DropdownMenuItem asChild>
+                <Link href="/app/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Configurações</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive focus:text-destructive">
+              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Sair</span>
               </DropdownMenuItem>

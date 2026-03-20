@@ -31,12 +31,17 @@ export function ProductMockup() {
   return (
     <div className="relative">
       {/* Glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/10 rounded-3xl blur-3xl scale-95" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1.2, delay: 0.2 }}
+        className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/10 rounded-3xl blur-3xl scale-95"
+      />
       
       {/* Main mockup window */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.3, ease: [0.25, 0.4, 0.25, 1] }}
         className="relative bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl shadow-primary/10 overflow-hidden"
       >
@@ -44,19 +49,39 @@ export function ProductMockup() {
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-muted/30">
           <div className="flex items-center gap-2">
             <div className="flex gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-red-500/80" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-              <div className="w-3 h-3 rounded-full bg-green-500/80" />
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.5, duration: 0.3, type: "spring" }}
+                className="w-3 h-3 rounded-full bg-red-500/80"
+              />
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.55, duration: 0.3, type: "spring" }}
+                className="w-3 h-3 rounded-full bg-yellow-500/80"
+              />
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.6, duration: 0.3, type: "spring" }}
+                className="w-3 h-3 rounded-full bg-green-500/80"
+              />
             </div>
           </div>
           <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-muted/50 text-xs font-medium text-muted-foreground">
             <span>Monografia - Direito Económico</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium flex items-center gap-1">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.7 }}
+              className="px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium flex items-center gap-1"
+            >
               <Zap className="w-3 h-3" />
               <span>247 créditos</span>
-            </div>
+            </motion.div>
           </div>
         </div>
 
@@ -72,8 +97,9 @@ export function ProductMockup() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 + index * 0.05 }}
+                  whileHover={{ x: 4, transition: { duration: 0.2 } }}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm cursor-pointer transition-colors",
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm cursor-pointer transition-all duration-200",
                     item.active
                       ? "bg-primary/10 text-primary font-medium"
                       : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -118,9 +144,20 @@ export function ProductMockup() {
                   </p>
                 </div>
 
-                <div className="p-3 rounded-xl border border-dashed border-primary/30 bg-primary/5">
+                {/* AI Suggestion with pulse effect */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="p-3 rounded-xl border border-dashed border-primary/30 bg-primary/5 relative"
+                >
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    </motion.div>
                     <span>Sugestão da IA</span>
                   </div>
                   <p className="text-sm text-foreground/80">
@@ -128,25 +165,43 @@ export function ProductMockup() {
                     considerando as especificidades do contexto moçambicano.&quot;
                   </p>
                   <div className="flex gap-2 mt-3">
-                    <button className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors">
-                      Aceitar
-                    </button>
-                    <button className="px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:bg-muted/80 transition-colors">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors relative"
+                    >
+                      <motion.span
+                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="absolute inset-0 rounded-lg bg-primary-foreground/20"
+                      />
+                      <span className="relative">Aceitar</span>
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
+                    >
                       Regenerar
-                    </button>
+                    </motion.button>
                   </div>
-                </div>
+                </motion.div>
               </motion.div>
 
-              {/* Progress indicator */}
+              {/* Progress indicator with animation */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
+                transition={{ delay: 0.9 }}
                 className="flex items-center gap-3 pt-2"
               >
                 <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full w-3/5 bg-gradient-to-r from-primary to-primary/70 rounded-full" />
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: "60%" }}
+                    transition={{ delay: 1.2, duration: 1, ease: "easeOut" }}
+                    className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full"
+                  />
                 </div>
                 <span className="text-xs text-muted-foreground">60% completo</span>
               </motion.div>
@@ -155,68 +210,105 @@ export function ProductMockup() {
         </div>
 
         {/* Action bar */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-border/50 bg-muted/20">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          className="flex items-center justify-between px-4 py-3 border-t border-border/50 bg-muted/20"
+        >
           <div className="flex items-center gap-2">
-            <button className="px-3 py-1.5 rounded-lg bg-muted/50 text-muted-foreground text-xs font-medium hover:bg-muted transition-colors flex items-center gap-1.5">
+            <motion.button
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
+              className="px-3 py-1.5 rounded-lg bg-muted/50 text-muted-foreground text-xs font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
+            >
               <PenTool className="w-3.5 h-3.5" />
               Melhorar texto
-            </button>
-            <button className="px-3 py-1.5 rounded-lg bg-muted/50 text-muted-foreground text-xs font-medium hover:bg-muted transition-colors flex items-center gap-1.5">
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
+              className="px-3 py-1.5 rounded-lg bg-muted/50 text-muted-foreground text-xs font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
+            >
               <BookMarked className="w-3.5 h-3.5" />
               Adicionar referência
-            </button>
+            </motion.button>
           </div>
-          <button className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors flex items-center gap-1.5">
+          <motion.button
+            whileHover={{ scale: 1.02, y: -1 }}
+            whileTap={{ scale: 0.98 }}
+            className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors flex items-center gap-1.5 shadow-lg shadow-primary/20"
+          >
             <Download className="w-3.5 h-3.5" />
             Exportar DOCX
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       </motion.div>
 
-      {/* Floating badges */}
-      <div className="absolute -top-4 -right-4 md:-right-8">
+      {/* Floating badges with premium animations */}
+      <motion.div
+        className="absolute -top-4 -right-4 md:-right-8"
+        initial={{ opacity: 0, scale: 0, rotate: -20 }}
+        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+        transition={{ delay: 1.2, duration: 0.6, type: "spring", stiffness: 200 }}
+      >
         <motion.div
-          initial={{ opacity: 0, scale: 0.8, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.5 }}
-          className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-blue-500/10 text-blue-600"
+          whileHover={{ scale: 1.05, y: -2 }}
+          animate={{ y: [0, -8, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-blue-500/10 text-blue-600 cursor-pointer"
         >
           <FloatingBadge icon={Languages} label="PT-MZ Académico" colorClass="text-blue-600" />
         </motion.div>
-      </div>
+      </motion.div>
 
-      <div className="absolute top-1/3 -left-4 md:-left-6">
+      <motion.div
+        className="absolute top-1/3 -left-4 md:-left-6"
+        initial={{ opacity: 0, scale: 0, x: -30, rotate: 20 }}
+        animate={{ opacity: 1, scale: 1, x: 0, rotate: 0 }}
+        transition={{ delay: 1.4, duration: 0.6, type: "spring", stiffness: 200 }}
+      >
         <motion.div
-          initial={{ opacity: 0, scale: 0.8, x: -20 }}
-          animate={{ opacity: 1, scale: 1, x: 0 }}
-          transition={{ delay: 1.1, duration: 0.5 }}
-          className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-emerald-500/10 text-emerald-600"
+          whileHover={{ scale: 1.05, y: -2 }}
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-emerald-500/10 text-emerald-600 cursor-pointer"
         >
           <FloatingBadge icon={BookMarked} label="ABNT Ready" colorClass="text-emerald-600" />
         </motion.div>
-      </div>
+      </motion.div>
 
-      <div className="absolute bottom-8 -right-2 md:-right-6">
+      <motion.div
+        className="absolute bottom-8 -right-2 md:-right-6"
+        initial={{ opacity: 0, scale: 0, y: 30, rotate: -15 }}
+        animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
+        transition={{ delay: 1.6, duration: 0.6, type: "spring", stiffness: 200 }}
+      >
         <motion.div
-          initial={{ opacity: 0, scale: 0.8, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ delay: 1.2, duration: 0.5 }}
-          className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-purple-500/10 text-purple-600"
+          whileHover={{ scale: 1.05, y: -2 }}
+          animate={{ y: [0, -5, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-purple-500/10 text-purple-600 cursor-pointer"
         >
           <FloatingBadge icon={FileDown} label="DOCX Export" colorClass="text-purple-600" />
         </motion.div>
-      </div>
+      </motion.div>
 
-      <div className="absolute bottom-1/4 -left-2 md:-left-8">
+      <motion.div
+        className="absolute bottom-1/4 -left-2 md:-left-8"
+        initial={{ opacity: 0, scale: 0, x: -30, rotate: 15 }}
+        animate={{ opacity: 1, scale: 1, x: 0, rotate: 0 }}
+        transition={{ delay: 1.8, duration: 0.6, type: "spring", stiffness: 200 }}
+      >
         <motion.div
-          initial={{ opacity: 0, scale: 0.8, x: -20 }}
-          animate={{ opacity: 1, scale: 1, x: 0 }}
-          transition={{ delay: 1.3, duration: 0.5 }}
-          className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-rose-500/10 text-rose-600"
+          whileHover={{ scale: 1.05, y: -2 }}
+          animate={{ y: [0, -7, 0] }}
+          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+          className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-rose-500/10 text-rose-600 cursor-pointer"
         >
           <FloatingBadge icon={Zap} label="Streaming AI" colorClass="text-rose-600" />
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }

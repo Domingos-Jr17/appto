@@ -57,7 +57,7 @@ export function Header() {
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
             >
-              <div className="relative w-8 h-8 rounded-xl bg-linear-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20">
+              <div className="relative w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20">
                 <Sparkles className="w-4 h-4 text-primary-foreground" />
               </div>
               <span className="text-xl font-bold tracking-tight">
@@ -71,9 +71,11 @@ export function Header() {
                 <button
                   key={link.href}
                   onClick={() => scrollToSection(link.href)}
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted/50"
+                  className="relative px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all duration-300 rounded-xl group overflow-hidden"
                 >
-                  {link.label}
+                  <span className="relative z-10">{link.label}</span>
+                  <div className="absolute inset-0 bg-white/50 dark:bg-white/5 backdrop-blur-xl rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 border border-white/20 group-hover:border-primary/20 shadow-lg group-hover:shadow-primary/5" />
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/50 rounded-full group-hover:w-3/4 transition-all duration-300" />
                 </button>
               ))}
             </nav>
@@ -89,7 +91,7 @@ export function Header() {
                 Entrar
               </Button>
               <Button
-                className="rounded-xl font-medium bg-linear-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20"
+                className="rounded-xl font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20"
                 onClick={() => scrollToSection("#demo")}
               >
                 Começar Grátis
@@ -168,7 +170,7 @@ export function Header() {
                     Entrar
                   </Button>
                   <Button
-                    className="w-full rounded-xl font-medium py-6 bg-linear-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                    className="w-full rounded-xl font-medium py-6 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                     onClick={() => scrollToSection("#demo")}
                   >
                     Começar Grátis

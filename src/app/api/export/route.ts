@@ -13,7 +13,7 @@ import {
   TableOfContents,
   Footer,
   PageNumber,
-  NumberFormat,
+  LevelFormat,
 } from "docx";
 
 // GET /api/export?projectId=xxx - Export project as DOCX
@@ -67,8 +67,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Create document sections
-    const children: Paragraph[] = [];
+    // Create document sections - use any[] since TableOfContents is not a Paragraph
+    const children: any[] = [];
 
     // Cover Page
     children.push(
@@ -265,8 +265,8 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    // Return file
-    return new NextResponse(buffer, {
+    // Return file - convert Buffer to Uint8Array for NextResponse
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type":
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -296,6 +296,3 @@ function formatProjectType(type: string): string {
   };
   return types[type] || type;
 }
-
-// Need to import LevelFormat
-import { LevelFormat } from "docx";

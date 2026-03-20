@@ -1,8 +1,33 @@
 "use client";
 
 import * as React from "react";
-import { Plus, FolderKanban } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, FolderKanban, Loader2, Sparkles, FileText, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { ProjectGrid, type Project } from "@/components/projects/ProjectGrid";
 import {
   ProjectFilters,
@@ -11,125 +36,152 @@ import {
   type SortOption,
 } from "@/components/projects/ProjectFilters";
 
-// Mock data - will be replaced with API calls
-const mockProjects: Project[] = [
-  {
-    id: "1",
-    title: "Impacto das Tecnologias Digitais no Ensino Superior Moçambicano",
-    type: "monografia",
-    course: "Educação",
-    institution: "UEM",
-    progress: 75,
-    status: "in_progress",
-    lastUpdated: "há 2 horas",
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "2",
-    title: "Análise de Políticas Públicas de Saúde em Moçambique",
-    type: "artigo",
-    course: "Saúde Pública",
-    institution: "ISCISA",
-    progress: 45,
-    status: "in_progress",
-    lastUpdated: "ontem",
-    createdAt: "2024-01-10",
-  },
-  {
-    id: "3",
-    title: "Desenvolvimento Sustentável e Agricultura Familiar",
-    type: "tese",
-    course: "Desenvolvimento Rural",
-    institution: "UEM",
-    progress: 30,
-    status: "in_progress",
-    lastUpdated: "há 3 dias",
-    createdAt: "2024-01-05",
-  },
-  {
-    id: "4",
-    title: "Relatório de Estágio - Banco de Moçambique",
-    type: "seminário",
-    course: "Economia",
-    institution: "UEM",
-    progress: 100,
-    status: "completed",
-    lastUpdated: "há 1 semana",
-    createdAt: "2023-12-20",
-  },
-  {
-    id: "5",
-    title: "Avaliação do Sistema Educativo Primário em Moçambique",
-    type: "monografia",
-    course: "Educação",
-    institution: "UP",
-    progress: 100,
-    status: "completed",
-    lastUpdated: "há 2 semanas",
-    createdAt: "2023-12-01",
-  },
-  {
-    id: "6",
-    title: "Seminário sobre Mudanças Climáticas",
-    type: "seminário",
-    course: "Ciências Ambientais",
-    institution: "UEM",
-    progress: 100,
-    status: "archived",
-    lastUpdated: "há 1 mês",
-    createdAt: "2023-11-15",
-  },
-  {
-    id: "7",
-    title: "Estudo sobre Empreendedorismo Feminino em Maputo",
-    type: "artigo",
-    course: "Gestão",
-    institution: "ISCTEM",
-    progress: 60,
-    status: "in_progress",
-    lastUpdated: "há 4 horas",
-    createdAt: "2024-01-18",
-  },
-  {
-    id: "8",
-    title: "Análise da Pobreza Urbana em Moçambique",
-    type: "tese",
-    course: "Sociologia",
-    institution: "UEM",
-    progress: 15,
-    status: "in_progress",
-    lastUpdated: "há 5 dias",
-    createdAt: "2024-01-12",
-  },
+const PROJECT_TYPES = [
+  { value: "MONOGRAPHY", label: "Monografia" },
+  { value: "DISSERTATION", label: "Dissertação" },
+  { value: "THESIS", label: "Tese" },
+  { value: "ARTICLE", label: "Artigo Científico" },
+  { value: "ESSAY", label: "Ensaio" },
+  { value: "REPORT", label: "Relatório" },
 ];
 
+const projectTypeLabels: Record<string, string> = {
+  MONOGRAPHY: "monografia",
+  DISSERTATION: "dissertação",
+  THESIS: "tese",
+  ARTICLE: "artigo",
+  ESSAY: "ensaio",
+  REPORT: "relatório",
+};
+
 export default function ProjectsPage() {
-  const [status, setStatus] = React.useState<ProjectStatus>("all");
-  const [search, setSearch] = React.useState("");
-  const [viewMode, setViewMode] = React.useState<ViewMode>("grid");
-  const [sortBy, setSortBy] = React.useState<SortOption>("updated");
+  const router = useRouter();
+  const { toast } = useToast();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [credits, setCredits] = useState(0);
+  const [status, setStatus] = useState<ProjectStatus>("all");
+  const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [sortBy, setSortBy] = useState<SortOption>("updated");
+
+  // New project dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newType, setNewType] = useState("MONOGRAPHY");
+  const [newDescription, setNewDescription] = useState("");
+  const [generateContent, setGenerateContent] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Fetch projects and credits
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [projectsRes, creditsRes] = await Promise.all([
+        fetch("/api/projects"),
+        fetch("/api/credits"),
+      ]);
+
+      const projectsData = await projectsRes.json();
+      const creditsData = await creditsRes.json();
+
+      setProjects(
+        projectsData.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          type: projectTypeLabels[p.type] || "monografia",
+          course: p.description || "Sem descrição",
+          institution: "aptto",
+          progress: calculateProgress(p),
+          status: mapStatus(p.status),
+          lastUpdated: formatRelativeTime(new Date(p.updatedAt)),
+          createdAt: p.createdAt,
+        }))
+      );
+      setCredits(creditsData.balance || 0);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateProject = async () => {
+    if (!newTitle.trim()) {
+      toast({
+        title: "Título obrigatório",
+        description: "Por favor, insira um título para o projecto.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreating(true);
+
+    try {
+      const response = await fetch("/api/generate/work", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newTitle,
+          type: newType,
+          description: newDescription,
+          generateContent,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao criar projecto");
+      }
+
+      toast({
+        title: "Sucesso!",
+        description: data.message,
+      });
+
+      setDialogOpen(false);
+      setNewTitle("");
+      setNewDescription("");
+      
+      // Navigate to editor with new project
+      router.push(`/app/editor?project=${data.project.id}`);
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const calculateCost = () => {
+    const baseCost = 20;
+    const contentCost = generateContent ? 6 * 15 : 0; // 6 sections
+    return baseCost + contentCost;
+  };
 
   // Filter and sort projects
   const filteredProjects = React.useMemo(() => {
-    let filtered = [...mockProjects];
+    let filtered = [...projects];
 
-    // Filter by status
     if (status !== "all") {
       filtered = filtered.filter((p) => p.status === status);
     }
 
-    // Filter by search
     if (search) {
       const searchLower = search.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.title.toLowerCase().includes(searchLower) ||
-          p.course.toLowerCase().includes(searchLower) ||
-          p.institution.toLowerCase().includes(searchLower)
+      filtered = filtered.filter((p) =>
+        p.title.toLowerCase().includes(searchLower)
       );
     }
 
-    // Sort
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "title":
@@ -138,24 +190,30 @@ export default function ProjectsPage() {
           return b.progress - a.progress;
         case "created":
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case "updated":
         default:
-          // For demo purposes, we'll sort by id since lastUpdated is a string
           return 0;
       }
     });
 
     return filtered;
-  }, [status, search, sortBy]);
+  }, [projects, status, search, sortBy]);
 
   const projectCounts = React.useMemo(() => {
     return {
-      all: mockProjects.length,
-      in_progress: mockProjects.filter((p) => p.status === "in_progress").length,
-      completed: mockProjects.filter((p) => p.status === "completed").length,
-      archived: mockProjects.filter((p) => p.status === "archived").length,
+      all: projects.length,
+      in_progress: projects.filter((p) => p.status === "in_progress").length,
+      completed: projects.filter((p) => p.status === "completed").length,
+      archived: projects.filter((p) => p.status === "archived").length,
     };
-  }, []);
+  }, [projects]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -172,10 +230,128 @@ export default function ProjectsPage() {
             </p>
           </div>
         </div>
-        <Button className="w-fit gap-2 gradient-primary text-primary-foreground hover:opacity-90">
-          <Plus className="h-4 w-4" />
-          Novo Projecto
-        </Button>
+
+        {/* New Project Dialog */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="w-fit gap-2 gradient-primary text-primary-foreground hover:opacity-90">
+              <Plus className="h-4 w-4" />
+              Novo Projecto
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Criar Novo Projecto
+              </DialogTitle>
+              <DialogDescription>
+                Gere um trabalho académico completo com IA ou apenas a estrutura.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {/* Title */}
+              <div className="space-y-2">
+                <Label htmlFor="title">Título do Trabalho *</Label>
+                <Input
+                  id="title"
+                  placeholder="Ex: Impacto das Tecnologias no Ensino Superior"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                />
+              </div>
+
+              {/* Type */}
+              <div className="space-y-2">
+                <Label htmlFor="type">Tipo de Trabalho</Label>
+                <Select value={newType} onValueChange={setNewType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PROJECT_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description">Descrição (opcional)</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Breve descrição do tema ou área de estudo..."
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {/* Generate Content Toggle */}
+              <div className="flex items-center justify-between rounded-lg border border-border/50 p-4 bg-muted/30">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <Label className="text-base font-medium">
+                      Gerar conteúdo com IA
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Gera todo o conteúdo automaticamente: introdução, revisão de literatura, metodologia, etc.
+                  </p>
+                </div>
+                <Switch
+                  checked={generateContent}
+                  onCheckedChange={setGenerateContent}
+                />
+              </div>
+
+              {/* Cost Display */}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Custo:</span>
+                <div className="flex items-center gap-2">
+                  <Badge variant={credits >= calculateCost() ? "default" : "destructive"}>
+                    {calculateCost()} créditos
+                  </Badge>
+                  <span className="text-muted-foreground">
+                    (Você tem {credits.toLocaleString()})
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setDialogOpen(false)}
+                disabled={isCreating}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCreateProject}
+                disabled={isCreating || credits < calculateCost()}
+                className="gap-2"
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    A gerar...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    {generateContent ? "Gerar Trabalho Completo" : "Criar Estrutura"}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filters */}
@@ -191,7 +367,57 @@ export default function ProjectsPage() {
       />
 
       {/* Projects Grid */}
-      <ProjectGrid projects={filteredProjects} viewMode={viewMode} />
+      {filteredProjects.length > 0 ? (
+        <ProjectGrid projects={filteredProjects} viewMode={viewMode} />
+      ) : (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <FileText className="h-16 w-16 text-muted-foreground/30 mb-4" />
+          <h3 className="text-lg font-medium mb-2">Nenhum projecto encontrado</h3>
+          <p className="text-sm text-muted-foreground mb-4 max-w-md">
+            {search
+              ? "Tente ajustar os filtros de busca"
+              : "Crie o seu primeiro projecto académico com IA"}
+          </p>
+          {!search && (
+            <Button onClick={() => setDialogOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Criar Projecto
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
+}
+
+function calculateProgress(project: any): number {
+  if (project.status === "COMPLETED") return 100;
+  if (project.wordCount === 0) return 0;
+  const expectedWords = 50 * 250;
+  return Math.min(100, Math.round((project.wordCount / expectedWords) * 100));
+}
+
+function mapStatus(status: string): ProjectStatus {
+  const map: Record<string, ProjectStatus> = {
+    DRAFT: "in_progress",
+    IN_PROGRESS: "in_progress",
+    REVIEW: "in_progress",
+    COMPLETED: "completed",
+    ARCHIVED: "archived",
+  };
+  return map[status] || "in_progress";
+}
+
+function formatRelativeTime(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "agora";
+  if (diffMins < 60) return `há ${diffMins} min`;
+  if (diffHours < 24) return `há ${diffHours}h`;
+  if (diffDays < 7) return `há ${diffDays} dias`;
+  return date.toLocaleDateString("pt-MZ");
 }

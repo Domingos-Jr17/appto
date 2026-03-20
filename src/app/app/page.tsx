@@ -82,7 +82,9 @@ const recommendations = [
   },
 ];
 
-const projectTypeLabels: Record<string, string> = {
+type ProjectType = "monografia" | "tese" | "artigo" | "relatório" | "dissertação" | "ensaio";
+
+const projectTypeLabels: Record<string, ProjectType> = {
   MONOGRAPHY: "monografia",
   DISSERTATION: "dissertação",
   THESIS: "tese",
@@ -170,7 +172,7 @@ export default function DashboardPage() {
   const recentProjects = projects.slice(0, 4).map((project) => ({
     id: project.id,
     title: project.title,
-    type: projectTypeLabels[project.type] || "monografia" as const,
+    type: (projectTypeLabels[project.type] || "monografia") as ProjectType,
     course: project.description || "Sem descrição",
     lastUpdated: formatRelativeTime(new Date(project.updatedAt)),
     progress: calculateProgress(project),

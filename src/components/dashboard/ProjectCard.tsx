@@ -18,7 +18,7 @@ import {
 interface ProjectCardProps {
   id: string;
   title: string;
-  type: "monografia" | "tese" | "artigo" | "relatório";
+  type: "monografia" | "tese" | "artigo" | "relatório" | "dissertação" | "ensaio";
   course: string;
   lastUpdated: string;
   progress: number;
@@ -41,6 +41,14 @@ const typeStyles: Record<ProjectCardProps["type"], { label: string; className: s
   relatório: {
     label: "Relatório",
     className: "bg-sky-500/10 backdrop-blur-xl text-sky-400 border border-sky-500/20",
+  },
+  dissertação: {
+    label: "Dissertação",
+    className: "bg-pink-500/10 backdrop-blur-xl text-pink-400 border border-pink-500/20",
+  },
+  ensaio: {
+    label: "Ensaio",
+    className: "bg-orange-500/10 backdrop-blur-xl text-orange-400 border border-orange-500/20",
   },
 };
 

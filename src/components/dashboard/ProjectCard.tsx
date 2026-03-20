@@ -28,19 +28,19 @@ interface ProjectCardProps {
 const typeStyles: Record<ProjectCardProps["type"], { label: string; className: string }> = {
   monografia: {
     label: "Monografia",
-    className: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+    className: "bg-violet-500/10 backdrop-blur-xl text-violet-400 border border-violet-500/20",
   },
   tese: {
     label: "Tese",
-    className: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    className: "bg-amber-500/10 backdrop-blur-xl text-amber-400 border border-amber-500/20",
   },
   artigo: {
     label: "Artigo",
-    className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    className: "bg-emerald-500/10 backdrop-blur-xl text-emerald-400 border border-emerald-500/20",
   },
   relatório: {
     label: "Relatório",
-    className: "bg-sky-500/10 text-sky-400 border-sky-500/20",
+    className: "bg-sky-500/10 backdrop-blur-xl text-sky-400 border border-sky-500/20",
   },
 };
 

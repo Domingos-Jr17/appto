@@ -78,7 +78,7 @@ export function FAQSection() {
         <div className="max-w-3xl mx-auto">
           <Reveal>
             <div className="text-center mb-12">
-              <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+              <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary/10 backdrop-blur-xl border border-primary/10 text-primary text-sm font-medium mb-4 shadow-lg shadow-primary/5">
                 <HelpCircle className="w-3.5 h-3.5" />
                 Perguntas Frequentes
               </span>

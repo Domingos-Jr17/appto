@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { pricingPlans } from "./data";
 import { Button } from "@/components/ui/button";
 import { Reveal, StaggerContainer, StaggerItem } from "./animations";
@@ -17,7 +18,7 @@ export function PricingCards() {
       <div className="container mx-auto px-4 relative z-10">
         <Reveal>
           <div className="text-center mb-12 md:mb-16">
-            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 backdrop-blur-xl border border-primary/10 text-primary text-sm font-medium mb-4 shadow-lg shadow-primary/5">
               Preços Transparentes
             </span>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
@@ -37,7 +38,7 @@ export function PricingCards() {
                 whileHover={{ y: -4, scale: 1.01 }}
                 transition={{ duration: 0.2 }}
                 className={cn(
-                  "relative p-6 md:p-8 rounded-2xl border transition-all duration-300 overflow-hidden",
+                  "relative p-6 md:p-8 pt-8 md:pt-10 rounded-2xl border transition-all duration-300",
                   "bg-card/80 backdrop-blur-xl shadow-lg",
                   plan.highlighted
                     ? "border-primary/50 shadow-xl shadow-primary/10 ring-1 ring-primary/20"
@@ -45,13 +46,13 @@ export function PricingCards() {
                 )}
               >
                 {/* Background overlay */}
-                <div className="absolute inset-0 bg-primary/5 opacity-0 hover:opacity-100 transition-opacity pointer-events-none" />
+                <div className="absolute inset-0 bg-primary/5 opacity-0 hover:opacity-100 transition-opacity pointer-events-none rounded-2xl" />
 
                 {/* Popular badge */}
                 {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                    <span className="inline-flex items-center gap-1 px-4 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold shadow-lg">
-                      <Sparkles className="w-3 h-3" />
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                    <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold shadow-lg shadow-primary/30 backdrop-blur-xl">
+                      <Sparkles className="w-3.5 h-3.5" />
                       {plan.badge}
                     </span>
                   </div>
@@ -99,18 +100,18 @@ export function PricingCards() {
 
                   {/* CTA */}
                   <Button
+                    asChild
                     className={cn(
-                      "w-full rounded-xl font-semibold",
+                      "w-full rounded-xl font-semibold group",
                       plan.highlighted
                         ? "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
                         : "bg-muted hover:bg-muted/80 text-foreground"
                     )}
-                    onClick={() => {
-                      const element = document.querySelector("#demo");
-                      if (element) element.scrollIntoView({ behavior: "smooth" });
-                    }}
                   >
-                    {plan.cta}
+                    <Link href="/register" className="inline-flex items-center justify-center gap-2">
+                      {plan.cta}
+                      <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                    </Link>
                   </Button>
                 </div>
               </motion.div>

@@ -53,7 +53,7 @@ export function TestimonialsCarousel() {
       <div className="container mx-auto px-4 relative z-10">
         <Reveal>
           <div className="text-center mb-12">
-            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 backdrop-blur-xl border border-primary/10 text-primary text-sm font-medium mb-4 shadow-lg shadow-primary/5">
               Testemunhos
             </span>
             <h2 className="text-3xl md:text-4xl font-bold mb-4">

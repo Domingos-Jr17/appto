@@ -49,7 +49,7 @@ export function BalanceCard({ balance, usageThisMonth, className }: BalanceCardP
         {/* Stats Row */}
         <div className="flex flex-wrap gap-4 pt-2 border-t border-border/50">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 backdrop-blur-xl border border-emerald-500/10">
               <TrendingUp className="h-4 w-4 text-emerald-500" />
             </div>
             <div>
@@ -58,7 +58,7 @@ export function BalanceCard({ balance, usageThisMonth, className }: BalanceCardP
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/10">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/10 backdrop-blur-xl border border-sky-500/10">
               <Zap className="h-4 w-4 text-sky-500" />
             </div>
             <div>

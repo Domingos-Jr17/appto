@@ -59,7 +59,7 @@ export function StatsCard({
             )}
           </div>
           {Icon && (
-            <div className="rounded-lg bg-primary/10 p-2.5">
+            <div className="rounded-xl bg-primary/10 backdrop-blur-xl p-2.5 border border-primary/10">
               <Icon className="h-5 w-5 text-primary" />
             </div>
           )}

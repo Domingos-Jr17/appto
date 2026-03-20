@@ -49,19 +49,19 @@ interface ProjectGridProps {
 const typeStyles: Record<Project["type"], { label: string; className: string }> = {
   monografia: {
     label: "Monografia",
-    className: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+    className: "bg-violet-500/10 backdrop-blur-xl text-violet-400 border border-violet-500/20",
   },
   tese: {
     label: "Tese",
-    className: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    className: "bg-amber-500/10 backdrop-blur-xl text-amber-400 border border-amber-500/20",
   },
   artigo: {
     label: "Artigo",
-    className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    className: "bg-emerald-500/10 backdrop-blur-xl text-emerald-400 border border-emerald-500/20",
   },
   seminário: {
     label: "Seminário",
-    className: "bg-sky-500/10 text-sky-400 border-sky-500/20",
+    className: "bg-sky-500/10 backdrop-blur-xl text-sky-400 border border-sky-500/20",
   },
 };
 
@@ -231,7 +231,7 @@ function ProjectListItem({ project }: { project: Project }) {
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground min-w-30">
+        <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground min-w-[120px]">
           <Clock className="h-3 w-3" />
           <span>{project.lastUpdated}</span>
         </div>

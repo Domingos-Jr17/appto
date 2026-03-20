@@ -28,7 +28,7 @@ export function HeroSection() {
             <Reveal>
               <Badge
                 variant="outline"
-                className="px-4 py-1.5 text-sm font-medium border-primary/30 bg-primary/5 text-primary rounded-full"
+                className="px-4 py-1.5 text-sm font-medium border-primary/20 bg-primary/5 backdrop-blur-xl text-primary rounded-full shadow-lg shadow-primary/5"
               >
                 <Sparkles className="w-3.5 h-3.5 mr-2" />
                 Feito para estudantes universitários

@@ -31,7 +31,7 @@ export function DemoLeadMagnet() {
         <div className="max-w-4xl mx-auto">
           <Reveal>
             <div className="text-center mb-10">
-              <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+              <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 backdrop-blur-xl border border-primary/10 text-primary text-sm font-medium mb-4 shadow-lg shadow-primary/5">
                 <Wand2 className="w-3.5 h-3.5 inline-block mr-1.5" />
                 Experimente Grátis
               </span>

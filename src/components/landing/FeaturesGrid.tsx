@@ -32,7 +32,7 @@ export function FeaturesGrid() {
       <div className="container mx-auto px-4 relative z-10">
         <Reveal>
           <div className="text-center mb-12 md:mb-16">
-            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 backdrop-blur-xl border border-primary/10 text-primary text-sm font-medium mb-4 shadow-lg shadow-primary/5">
               Recursos Completos
             </span>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
@@ -67,10 +67,10 @@ export function FeaturesGrid() {
                   <div className="relative z-10">
                     {/* Icon */}
                     <div className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors",
+                      "w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all duration-300",
                       feature.highlight
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted group-hover:bg-primary/10"
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                        : "bg-muted/50 backdrop-blur-xl border border-border/30 group-hover:bg-primary/10 group-hover:border-primary/20"
                     )}>
                       <Icon className="w-5 h-5" />
                     </div>
@@ -86,7 +86,7 @@ export function FeaturesGrid() {
                     {/* Highlight badge */}
                     {feature.highlight && (
                       <div className="absolute top-4 right-4">
-                        <span className="px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
+                        <span className="px-2.5 py-1 rounded-lg bg-primary/10 backdrop-blur-xl border border-primary/10 text-primary text-xs font-medium shadow-lg shadow-primary/5">
                           Popular
                         </span>
                       </div>

@@ -1,6 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 
@@ -31,6 +32,8 @@ declare module "next-auth/jwt" {
 }
 
 export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(db),
+  secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
   providers: [
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? [
@@ -51,8 +54,10 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        const normalizedEmail = credentials.email.trim().toLowerCase();
+
         const user = await db.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: normalizedEmail },
           include: {
             credits: true,
           },
@@ -111,6 +116,71 @@ export const authOptions: NextAuthOptions = {
         session.user.credits = token.credits;
       }
       return session;
+    },
+    async signIn({ user, account }) {
+      // For OAuth providers, create credits and subscription
+      if (account?.provider !== "credentials" && user.email) {
+        const existingUser = await db.user.findUnique({
+          where: { email: user.email },
+          include: { credits: true, subscription: true },
+        });
+
+        if (existingUser) {
+          // User exists, just return
+          user.id = existingUser.id;
+          user.role = existingUser.role;
+          user.credits = existingUser.credits?.balance || 0;
+          return true;
+        }
+
+        // New OAuth user - will be created by PrismaAdapter
+        // We need to handle this in events.signIn
+      }
+      return true;
+    },
+  },
+  events: {
+    async signIn({ user, account }) {
+      // Create credits and subscription for new OAuth users
+      if (account?.provider !== "credentials") {
+        const existingCredits = await db.credit.findUnique({
+          where: { userId: user.id },
+        });
+
+        if (!existingCredits) {
+          // New user - give them free credits
+          await db.credit.create({
+            data: {
+              userId: user.id,
+              balance: 150, // Free plan credits
+            },
+          });
+
+          await db.creditTransaction.create({
+            data: {
+              userId: user.id,
+              amount: 150,
+              type: "BONUS",
+              description: "Créditos iniciais de boas-vindas",
+            },
+          });
+
+          await db.subscription.create({
+            data: {
+              userId: user.id,
+              plan: "FREE",
+              status: "ACTIVE",
+              creditsPerMonth: 150,
+            },
+          });
+
+          await db.userSettings.create({
+            data: {
+              userId: user.id,
+            },
+          });
+        }
+      }
     },
   },
 };

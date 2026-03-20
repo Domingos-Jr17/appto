@@ -13,24 +13,25 @@ datasource db {
 // ==================== USER & AUTH ====================
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  password      String?   // Hashed password for credentials auth
-  image         String?
-  emailVerified DateTime?
-  role          Role      @default(STUDENT)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String          @id @default(cuid())
+  email           String          @unique
+  name            String?
+  password        String?   // Hashed password for credentials auth
+  image           String?
+  emailVerified   DateTime?
+  role            Role            @default(STUDENT)
+  educationLevel  EducationLevel? @default(SECONDARY)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   // Relations
-  accounts      Account[]
-  sessions      Session[]
-  projects      Project[]
-  credits       Credit?
-  transactions  CreditTransaction[]
-  subscription  Subscription?
-  settings      UserSettings?
+  accounts        Account[]
+  sessions        Session[]
+  projects        Project[]
+  credits         Credit?
+  transactions    CreditTransaction[]
+  subscription    Subscription?
+  settings        UserSettings?
 
   @@map("users")
 }
@@ -80,22 +81,29 @@ enum Role {
   ADMIN
 }
 
+enum EducationLevel {
+  SECONDARY        // Ensino Secundário
+  TECHNICAL        // Ensino Técnico Profissional
+  HIGHER_EDUCATION // Ensino Superior
+}
+
 // ==================== PROJECTS & DOCUMENTS ====================
 
 model Project {
-  id          String       @id @default(cuid())
-  title       String
-  description String?
-  type        ProjectType  @default(MONOGRAPHY)
-  status      ProjectStatus @default(DRAFT)
-  wordCount   Int          @default(0)
-  userId      String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id              String         @id @default(cuid())
+  title           String
+  description     String?
+  type            ProjectType    @default(MONOGRAPHY)
+  educationLevel  EducationLevel @default(SECONDARY)
+  status          ProjectStatus  @default(DRAFT)
+  wordCount       Int            @default(0)
+  userId          String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   // Relations
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sections    DocumentSection[]
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sections        DocumentSection[]
 
   @@map("projects")
 }
@@ -120,12 +128,20 @@ model DocumentSection {
 }
 
 enum ProjectType {
+  // Ensino Superior
   MONOGRAPHY
   DISSERTATION
   THESIS
   ARTICLE
   ESSAY
   REPORT
+  
+  // Ensino Secundário e Técnico Profissional
+  SCHOOL_WORK       // Trabalho Escolar (Secundário)
+  RESEARCH_PROJECT  // Projecto de Investigação (Secundário)
+  INTERNSHIP_REPORT // Relatório de Estágio (Técnico Profissional)
+  PRACTICAL_WORK    // Trabalho Prático (Técnico Profissional)
+  TCC               // Trabalho de Conclusão de Curso (Técnico/Secundário)
 }
 
 enum ProjectStatus {

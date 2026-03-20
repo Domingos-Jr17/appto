@@ -37,15 +37,30 @@ import {
 } from "@/components/projects/ProjectFilters";
 
 const PROJECT_TYPES = [
-  { value: "MONOGRAPHY", label: "Monografia" },
-  { value: "DISSERTATION", label: "Dissertação" },
-  { value: "THESIS", label: "Tese" },
-  { value: "ARTICLE", label: "Artigo Científico" },
-  { value: "ESSAY", label: "Ensaio" },
-  { value: "REPORT", label: "Relatório" },
+  // Ensino Secundário
+  { value: "SCHOOL_WORK", label: "Trabalho Escolar", group: "Secundário" },
+  { value: "RESEARCH_PROJECT", label: "Projecto de Investigação", group: "Secundário" },
+  { value: "TCC", label: "Trabalho de Conclusão de Curso", group: "Secundário/Técnico" },
+  
+  // Técnico Profissional
+  { value: "INTERNSHIP_REPORT", label: "Relatório de Estágio", group: "Técnico Profissional" },
+  { value: "PRACTICAL_WORK", label: "Trabalho Prático", group: "Técnico Profissional" },
+  
+  // Ensino Superior
+  { value: "MONOGRAPHY", label: "Monografia", group: "Ensino Superior" },
+  { value: "DISSERTATION", label: "Dissertação", group: "Ensino Superior" },
+  { value: "THESIS", label: "Tese", group: "Ensino Superior" },
+  { value: "ARTICLE", label: "Artigo Científico", group: "Ensino Superior" },
+  { value: "ESSAY", label: "Ensaio", group: "Ensino Superior" },
+  { value: "REPORT", label: "Relatório", group: "Geral" },
 ];
 
 const projectTypeLabels: Record<string, string> = {
+  SCHOOL_WORK: "trabalho escolar",
+  RESEARCH_PROJECT: "projecto de investigação",
+  INTERNSHIP_REPORT: "relatório de estágio",
+  PRACTICAL_WORK: "trabalho prático",
+  TCC: "trabalho de conclusão de curso",
   MONOGRAPHY: "monografia",
   DISSERTATION: "dissertação",
   THESIS: "tese",

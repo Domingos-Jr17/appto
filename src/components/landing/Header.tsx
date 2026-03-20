@@ -43,8 +43,8 @@ export function Header() {
           className={cn(
             "relative rounded-2xl md:rounded-3xl transition-all duration-500",
             isScrolled
-              ? "bg-white/20 dark:bg-white/10 backdrop-blur-2xl shadow-2xl shadow-primary/10 border border-white/20"
-              : "bg-white/20 dark:bg-white/10 backdrop-blur-xl shadow-xl shadow-primary/5 border border-white/20"
+              ? "bg-white/80 dark:bg-white/10 backdrop-blur-2xl shadow-2xl shadow-primary/10 border border-white/20"
+              : "bg-white/80 dark:bg-white/10 backdrop-blur-xl shadow-xl shadow-primary/5 border border-white/20"
           )}
         >
           <div className="flex items-center justify-between px-4 py-3 md:px-6">

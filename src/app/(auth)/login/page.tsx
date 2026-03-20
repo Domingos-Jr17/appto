@@ -54,10 +54,13 @@ export default function LoginPage() {
     setError("");
 
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+
       const result = await signIn("credentials", {
-        email,
+        email: normalizedEmail,
         password,
         redirect: false,
+        callbackUrl: "/app",
       });
 
       if (result?.error) {

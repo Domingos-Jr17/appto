@@ -146,44 +146,78 @@ async function main() {
   // ============================================
   console.log("📁 Criando projectos de exemplo...");
 
+  // Actualizar o nível de educação do utilizador
+  await prisma.user.update({
+    where: { id: testUser.id },
+    data: { educationLevel: "TECHNICAL" },
+  });
+
   const projects = [
+    // Projectos para Ensino Secundário
+    {
+      title: "Impacto das Redes Sociais na Aprendizagem dos Estudantes",
+      description: "Trabalho escolar sobre o uso de redes sociais na educação",
+      type: "SCHOOL_WORK" as const,
+      educationLevel: "SECONDARY" as const,
+      status: "IN_PROGRESS" as const,
+      wordCount: 850,
+      userId: testUser.id,
+    },
+    {
+      title: "A Importância da Preservação Ambiental em Moçambique",
+      description: "Projecto de investigação sobre meio ambiente",
+      type: "RESEARCH_PROJECT" as const,
+      educationLevel: "SECONDARY" as const,
+      status: "COMPLETED" as const,
+      wordCount: 1500,
+      userId: testUser.id,
+    },
+    
+    // Projectos para Técnico Profissional
+    {
+      title: "Relatório de Estágio no Instituto Nacional de Meteorologia",
+      description: "Relatório de estágio profissional em meteorologia",
+      type: "INTERNSHIP_REPORT" as const,
+      educationLevel: "TECHNICAL" as const,
+      status: "IN_PROGRESS" as const,
+      wordCount: 2100,
+      userId: testUser.id,
+    },
+    {
+      title: "Implementação de Sistema de Gestão de Inventário",
+      description: "Trabalho prático de desenvolvimento de software",
+      type: "PRACTICAL_WORK" as const,
+      educationLevel: "TECHNICAL" as const,
+      status: "DRAFT" as const,
+      wordCount: 600,
+      userId: testUser.id,
+    },
+    {
+      title: "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas",
+      description: "TCC sobre desenvolvimento web",
+      type: "TCC" as const,
+      educationLevel: "TECHNICAL" as const,
+      status: "IN_PROGRESS" as const,
+      wordCount: 3200,
+      userId: testUser.id,
+    },
+    
+    // Projectos para Ensino Superior
     {
       title: "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique",
       description: "Monografia sobre a transformação digital nas universidades moçambicanas",
       type: "MONOGRAPHY" as const,
+      educationLevel: "HIGHER_EDUCATION" as const,
       status: "IN_PROGRESS" as const,
-      wordCount: 3250,
-      userId: testUser.id,
-    },
-    {
-      title: "Análise da Sustentabilidade Ambiental em Empresas de Maputo",
-      description: "Estudo de caso sobre práticas sustentáveis",
-      type: "DISSERTATION" as const,
-      status: "DRAFT" as const,
-      wordCount: 1200,
-      userId: testUser.id,
-    },
-    {
-      title: "O Papel da Mulher na Política Moçambicana Pós-Independência",
-      description: "Artigo científico sobre participação política feminina",
-      type: "ARTICLE" as const,
-      status: "COMPLETED" as const,
       wordCount: 4500,
       userId: testUser.id,
     },
     {
-      title: "Efeitos da Mudança Climática na Agricultura Subsistente",
-      description: "Tese sobre impactos climáticos em comunidades rurais",
-      type: "THESIS" as const,
-      status: "IN_PROGRESS" as const,
-      wordCount: 8900,
-      userId: testUser.id,
-    },
-    {
-      title: "Ensino à Distância: Desafios e Oportunidades em Moçambique",
-      description: "Ensaio sobre educação remota",
-      type: "ESSAY" as const,
-      status: "ARCHIVED" as const,
+      title: "Análise da Sustentabilidade Ambiental em Empresas de Maputo",
+      description: "Dissertação de mestrado sobre práticas sustentáveis",
+      type: "DISSERTATION" as const,
+      educationLevel: "HIGHER_EDUCATION" as const,
+      status: "DRAFT" as const,
       wordCount: 2100,
       userId: testUser.id,
     },

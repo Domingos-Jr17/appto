@@ -195,7 +195,7 @@ export default function CreditsPage() {
 
         {/* Right Column - Payment */}
         <div className="lg:col-span-2">
-          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+          <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base font-medium">
                 <Sparkles className="h-5 w-5 text-primary" />
@@ -210,7 +210,7 @@ export default function CreditsPage() {
       </div>
 
       {/* Transaction History */}
-      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+      <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base font-medium">
@@ -281,7 +281,7 @@ export default function CreditsPage() {
       </Card>
 
       {/* Plans Comparison */}
-      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+      <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-medium">
             <CreditCard className="h-5 w-5 text-primary" />
@@ -341,7 +341,7 @@ export default function CreditsPage() {
       </Card>
 
       {/* FAQ Section */}
-      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+      <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-medium">
             <HelpCircle className="h-5 w-5 text-primary" />

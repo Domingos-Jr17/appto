@@ -252,7 +252,7 @@ export function EditorLayout({ projectId }: EditorLayoutProps) {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
       {/* Top Navigation Bar */}
-      <header className="flex items-center justify-between px-4 h-12 border-b border-border/30 bg-background/95 backdrop-blur-sm">
+      <header className="flex items-center justify-between px-4 h-12 border-b border-border/30 bg-background/80 backdrop-blur-xl">
         {/* Left - Logo & Mobile Menu */}
         <div className="flex items-center gap-2">
           <Button

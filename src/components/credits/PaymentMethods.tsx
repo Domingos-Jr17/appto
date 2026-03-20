@@ -33,7 +33,7 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
   return (
     <div className={cn("space-y-6", className)}>
       {/* Payment Method Selection */}
-      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+      <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-medium">Método de Pagamento</CardTitle>
         </CardHeader>
@@ -87,7 +87,7 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
       </Card>
 
       {/* Package Selection */}
-      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+      <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-medium">Escolha um Pacote</CardTitle>
         </CardHeader>

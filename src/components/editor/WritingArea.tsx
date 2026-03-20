@@ -120,7 +120,7 @@ export function WritingArea({
       {/* Toolbar */}
       <div
         className={cn(
-          "flex items-center gap-1 px-4 py-2 border-b border-border/30 bg-background/95 backdrop-blur-sm transition-all duration-300",
+          "flex items-center gap-1 px-4 py-2 border-b border-border/30 bg-background/80 backdrop-blur-xl transition-all duration-300",
           isFocusMode && "max-w-4xl mx-auto w-full border-x"
         )}
       >

@@ -163,7 +163,7 @@ export default function DashboardPage() {
       {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Recent Projects */}
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm lg:col-span-2">
+        <Card className="border-border/50 bg-card/80 backdrop-blur-xl lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between pb-4">
             <CardTitle className="text-lg font-semibold">
               Projectos Recentes
@@ -187,7 +187,7 @@ export default function DashboardPage() {
         {/* Right Column */}
         <div className="space-y-6">
           {/* Quick Actions */}
-          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+          <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg font-semibold">
                 Acções Rápidas
@@ -216,7 +216,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Recommendations */}
-          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+          <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <Sparkles className="h-5 w-5 text-primary" />

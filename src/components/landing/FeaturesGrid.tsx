@@ -25,7 +25,7 @@ export function FeaturesGrid() {
   return (
     <section id="recursos" className="py-20 md:py-28 relative overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 grid-pattern opacity-50 pointer-events-none" />
+      <div className="absolute inset-0 grid-pattern pointer-events-none" />
       <div className="absolute top-1/2 left-0 w-72 h-72 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 

@@ -28,7 +28,7 @@ export function StatsCard({
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm card-hover",
+        "group relative overflow-hidden border-border/50 bg-card/80 backdrop-blur-xl card-hover",
         className
       )}
     >

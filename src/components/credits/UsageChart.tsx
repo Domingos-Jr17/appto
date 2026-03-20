@@ -34,7 +34,7 @@ export function UsageChart({ data, className }: UsageChartProps) {
   const avgCredits = Math.round(totalCredits / data.length);
 
   return (
-    <Card className={cn("border-border/50 bg-card/50 backdrop-blur-sm", className)}>
+    <Card className={cn("border-border/50 bg-card/80 backdrop-blur-xl", className)}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base font-medium">

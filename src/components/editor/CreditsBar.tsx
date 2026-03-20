@@ -91,7 +91,7 @@ export function CreditsBar({
   };
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 border-t border-border/30 bg-background/95 backdrop-blur-sm">
+    <div className="flex items-center justify-between px-4 py-2 border-t border-border/30 bg-background/80 backdrop-blur-xl">
       {/* Left section - Credits */}
       <div
         className="flex items-center gap-4"

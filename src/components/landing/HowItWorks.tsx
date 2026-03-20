@@ -17,7 +17,7 @@ export function HowItWorks() {
   return (
     <section id="como-funciona" className="py-20 md:py-28 relative overflow-hidden bg-muted/30">
       {/* Background elements */}
-      <div className="absolute inset-0 grid-pattern opacity-30 pointer-events-none" />
+      <div className="absolute inset-0 grid-pattern pointer-events-none" />
       
       <div className="container mx-auto px-4 relative z-10">
         <Reveal>

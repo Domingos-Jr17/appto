@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
+import { useToast } from "@/hooks/use-toast";
 import {
   Loader2,
   Globe,
@@ -28,6 +29,7 @@ import {
 } from "lucide-react";
 
 const languages = [
+  { value: "pt-MZ", label: "Português (Moçambique)", flag: "🇲🇿" },
   { value: "pt-BR", label: "Português (Brasil)", flag: "🇧🇷" },
   { value: "en", label: "English", flag: "🇺🇸" },
   { value: "es", label: "Español", flag: "🇪🇸" },
@@ -40,12 +42,12 @@ const themes = [
 ];
 
 const citationStyles = [
-  { value: "abnt", label: "ABNT" },
-  { value: "apa", label: "APA" },
-  { value: "vancouver", label: "Vancouver" },
-  { value: "chicago", label: "Chicago" },
-  { value: "mla", label: "MLA" },
-  { value: "harvard", label: "Harvard" },
+  { value: "ABNT", label: "ABNT" },
+  { value: "APA", label: "APA" },
+  { value: "VANCOUVER", label: "Vancouver" },
+  { value: "CHICAGO", label: "Chicago" },
+  { value: "MLA", label: "MLA" },
+  { value: "HARVARD", label: "Harvard" },
 ];
 
 const exportFormats = [
@@ -56,34 +58,106 @@ const exportFormats = [
   { value: "html", label: "HTML" },
 ];
 
+interface SettingsData {
+  language: string;
+  citationStyle: string;
+  fontSize: number;
+  autoSave: boolean;
+  aiSuggestionsEnabled: boolean;
+  emailNotifications: boolean;
+  marketingEmails: boolean;
+}
+
 export function PreferencesSection() {
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [preferences, setPreferences] = useState({
-    language: "pt-BR",
-    theme: "dark",
-    fontSize: [16],
+  const [isFetching, setIsFetching] = useState(true);
+  const [theme, setTheme] = useState("dark");
+  const [exportFormat, setExportFormat] = useState("docx");
+  const [preferences, setPreferences] = useState<SettingsData>({
+    language: "pt-MZ",
+    citationStyle: "ABNT",
+    fontSize: 14,
     autoSave: true,
-    citationStyle: "abnt",
-    exportFormat: "pdf",
+    aiSuggestionsEnabled: true,
+    emailNotifications: true,
+    marketingEmails: false,
   });
 
-  const handleSelectChange = (field: string, value: string) => {
+  // Fetch settings on mount
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch("/api/settings");
+      if (response.ok) {
+        const data = await response.json();
+        setPreferences({
+          language: data.language || "pt-MZ",
+          citationStyle: data.citationStyle || "ABNT",
+          fontSize: data.fontSize || 14,
+          autoSave: data.autoSave ?? true,
+          aiSuggestionsEnabled: data.aiSuggestionsEnabled ?? true,
+          emailNotifications: data.emailNotifications ?? true,
+          marketingEmails: data.marketingEmails ?? false,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  const handleSelectChange = (field: keyof SettingsData, value: string) => {
     setPreferences((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSwitchChange = (field: string, checked: boolean) => {
+  const handleSwitchChange = (field: keyof SettingsData, checked: boolean) => {
     setPreferences((prev) => ({ ...prev, [field]: checked }));
   };
 
   const handleFontSizeChange = (value: number[]) => {
-    setPreferences((prev) => ({ ...prev, fontSize: value }));
+    setPreferences((prev) => ({ ...prev, fontSize: value[0] }));
   };
 
   const handleSave = async () => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
+    try {
+      const response = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(preferences),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao salvar");
+      }
+
+      toast({
+        title: "Preferências salvas",
+        description: "As suas preferências foram actualizadas com sucesso",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar as preferências",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (isFetching) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -132,18 +206,18 @@ export function PreferencesSection() {
           </p>
         </div>
         <div className="flex gap-3">
-          {themes.map((theme) => (
+          {themes.map((t) => (
             <button
-              key={theme.value}
-              onClick={() => handleSelectChange("theme", theme.value)}
+              key={t.value}
+              onClick={() => setTheme(t.value)}
               className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
-                preferences.theme === theme.value
+                theme === t.value
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border hover:border-primary/30 hover:bg-accent/50"
               }`}
             >
-              <theme.icon className="h-5 w-5" />
-              <span className="text-sm font-medium">{theme.label}</span>
+              <t.icon className="h-5 w-5" />
+              <span className="text-sm font-medium">{t.label}</span>
             </button>
           ))}
         </div>
@@ -165,7 +239,7 @@ export function PreferencesSection() {
         <div className="flex items-center gap-4 max-w-md">
           <span className="text-sm text-muted-foreground">A</span>
           <Slider
-            value={preferences.fontSize}
+            value={[preferences.fontSize]}
             onValueChange={handleFontSizeChange}
             min={12}
             max={24}
@@ -174,7 +248,7 @@ export function PreferencesSection() {
           />
           <span className="text-lg text-muted-foreground font-medium">A</span>
           <span className="text-sm font-medium w-12 text-center">
-            {preferences.fontSize[0]}px
+            {preferences.fontSize}px
           </span>
         </div>
       </div>
@@ -195,6 +269,25 @@ export function PreferencesSection() {
         <Switch
           checked={preferences.autoSave}
           onCheckedChange={(checked) => handleSwitchChange("autoSave", checked)}
+        />
+      </div>
+
+      <Separator />
+
+      {/* AI Suggestions */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <Label className="flex items-center gap-2 text-base">
+            <Palette className="h-4 w-4 text-muted-foreground" />
+            Sugestões de IA
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            Mostrar sugestões de IA enquanto escreve
+          </p>
+        </div>
+        <Switch
+          checked={preferences.aiSuggestionsEnabled}
+          onCheckedChange={(checked) => handleSwitchChange("aiSuggestionsEnabled", checked)}
         />
       </div>
 
@@ -242,8 +335,8 @@ export function PreferencesSection() {
           </p>
         </div>
         <Select
-          value={preferences.exportFormat}
-          onValueChange={(value) => handleSelectChange("exportFormat", value)}
+          value={exportFormat}
+          onValueChange={setExportFormat}
         >
           <SelectTrigger className="w-40">
             <SelectValue />

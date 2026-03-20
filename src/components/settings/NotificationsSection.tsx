@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import {
   Loader2,
   Mail,
@@ -24,6 +25,7 @@ import {
   CheckCircle,
   MessageSquare,
   Calendar,
+  Shield,
 } from "lucide-react";
 
 interface NotificationSetting {
@@ -35,61 +37,94 @@ interface NotificationSetting {
   push: boolean;
 }
 
-export function NotificationsSection() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [settings, setSettings] = useState<NotificationSetting[]>([
-    {
-      id: "projects",
-      title: "Atualizações de Projetos",
-      description: "Notificações sobre mudanças em seus projetos",
-      icon: FileText,
-      email: true,
-      push: true,
-    },
-    {
-      id: "citations",
-      title: "Citações e Referências",
-      description: "Quando novas citações são adicionadas ou atualizadas",
-      icon: MessageSquare,
-      email: true,
-      push: false,
-    },
-    {
-      id: "collaboration",
-      title: "Colaboração",
-      description: "Convites para colaborar e atualizações de equipe",
-      icon: Users,
-      email: true,
-      push: true,
-    },
-    {
-      id: "deadlines",
-      title: "Prazos e Lembretes",
-      description: "Alertas sobre prazos de entrega e revisões",
-      icon: Calendar,
-      email: true,
-      push: true,
-    },
-    {
-      id: "security",
-      title: "Alertas de Segurança",
-      description: "Atividades suspeitas e alterações na conta",
-      icon: AlertCircle,
-      email: true,
-      push: true,
-    },
-    {
-      id: "product",
-      title: "Novidades do Produto",
-      description: "Novos recursos e melhorias na plataforma",
-      icon: Gift,
-      email: false,
-      push: false,
-    },
-  ]);
+const defaultSettings: NotificationSetting[] = [
+  {
+    id: "projects",
+    title: "Actualizações de Projectos",
+    description: "Notificações sobre mudanças em seus projectos",
+    icon: FileText,
+    email: true,
+    push: true,
+  },
+  {
+    id: "citations",
+    title: "Citações e Referências",
+    description: "Quando novas citações são adicionadas ou actualizadas",
+    icon: MessageSquare,
+    email: true,
+    push: false,
+  },
+  {
+    id: "collaboration",
+    title: "Colaboração",
+    description: "Convites para colaborar e actualizações de equipa",
+    icon: Users,
+    email: true,
+    push: true,
+  },
+  {
+    id: "deadlines",
+    title: "Prazos e Lembretes",
+    description: "Alertas sobre prazos de entrega e revisões",
+    icon: Calendar,
+    email: true,
+    push: true,
+  },
+  {
+    id: "security",
+    title: "Alertas de Segurança",
+    description: "Atividades suspeitas e alterações na conta",
+    icon: Shield,
+    email: true,
+    push: true,
+  },
+  {
+    id: "product",
+    title: "Novidades do Produto",
+    description: "Novos recursos e melhorias na plataforma",
+    icon: Gift,
+    email: false,
+    push: false,
+  },
+];
 
-  const [marketingEmails, setMarketingEmails] = useState(false);
+interface SettingsData {
+  emailNotifications: boolean;
+  marketingEmails: boolean;
+}
+
+export function NotificationsSection() {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [settings, setSettings] = useState<NotificationSetting[]>(defaultSettings);
   const [emailDigest, setEmailDigest] = useState("daily");
+  const [preferences, setPreferences] = useState<SettingsData>({
+    emailNotifications: true,
+    marketingEmails: false,
+  });
+
+  // Fetch settings on mount
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch("/api/settings");
+      if (response.ok) {
+        const data = await response.json();
+        setPreferences({
+          emailNotifications: data.emailNotifications ?? true,
+          marketingEmails: data.marketingEmails ?? false,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+    } finally {
+      setIsFetching(false);
+    }
+  };
 
   const handleToggle = (id: string, type: "email" | "push") => {
     setSettings((prev) =>
@@ -103,9 +138,42 @@ export function NotificationsSection() {
 
   const handleSave = async () => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
+    try {
+      const response = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          emailNotifications: preferences.emailNotifications,
+          marketingEmails: preferences.marketingEmails,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao salvar");
+      }
+
+      toast({
+        title: "Preferências salvas",
+        description: "As suas preferências de notificação foram actualizadas",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar as preferências",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (isFetching) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -197,7 +265,7 @@ export function NotificationsSection() {
             Frequência do Resumo por Email
           </Label>
           <p className="text-sm text-muted-foreground">
-            Com que frequência deseja receber um resumo das atividades
+            Com que frequência deseja receber um resumo das actividades
           </p>
         </div>
         <Select value={emailDigest} onValueChange={setEmailDigest}>
@@ -227,8 +295,10 @@ export function NotificationsSection() {
           </p>
         </div>
         <Switch
-          checked={marketingEmails}
-          onCheckedChange={setMarketingEmails}
+          checked={preferences.marketingEmails}
+          onCheckedChange={(checked) => 
+            setPreferences((prev) => ({ ...prev, marketingEmails: checked }))
+          }
         />
       </div>
 

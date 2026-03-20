@@ -1,19 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import {
   Camera,
   CheckCircle,
@@ -21,75 +16,132 @@ import {
   Upload,
   User,
   Mail,
-  Phone,
-  Building2,
-  GraduationCap,
-  BookOpen,
 } from "lucide-react";
 
-const institutions = [
-  { value: "usp", label: "Universidade de São Paulo (USP)" },
-  { value: "unicamp", label: "Universidade Estadual de Campinas (UNICAMP)" },
-  { value: "ufrj", label: "Universidade Federal do Rio de Janeiro (UFRJ)" },
-  { value: "ufmg", label: "Universidade Federal de Minas Gerais (UFMG)" },
-  { value: "ufba", label: "Universidade Federal da Bahia (UFBA)" },
-  { value: "ufrgs", label: "Universidade Federal do Rio Grande do Sul (UFRGS)" },
-  { value: "ufpr", label: "Universidade Federal do Paraná (UFPR)" },
-  { value: "ufsc", label: "Universidade Federal de Santa Catarina (UFSC)" },
-  { value: "outros", label: "Outra instituição" },
-];
-
-const courses = [
-  { value: "direito", label: "Direito" },
-  { value: "medicina", label: "Medicina" },
-  { value: "engenharia", label: "Engenharia" },
-  { value: "administracao", label: "Administração" },
-  { value: "psicologia", label: "Psicologia" },
-  { value: "ciencias-computacao", label: "Ciências da Computação" },
-  { value: "arquitetura", label: "Arquitetura" },
-  { value: "contabilidade", label: "Ciências Contábeis" },
-  { value: "economia", label: "Economia" },
-  { value: "outros", label: "Outro curso" },
-];
-
-const academicLevels = [
-  { value: "graduacao", label: "Graduação" },
-  { value: "especializacao", label: "Especialização" },
-  { value: "mestrado", label: "Mestrado" },
-  { value: "doutorado", label: "Doutorado" },
-  { value: "pos-doutorado", label: "Pós-Doutorado" },
-];
+interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  role: string;
+  credits: number;
+}
 
 export function ProfileSection() {
+  const { data: session, update } = useSession();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [formData, setFormData] = useState({
-    name: "João Silva",
-    email: "joao.silva@email.com",
-    phone: "(11) 99999-9999",
-    institution: "usp",
-    course: "direito",
-    academicLevel: "graduacao",
+    name: "",
+    email: "",
   });
-  const [emailVerified] = useState(true);
+  const [isEmailVerified, setIsEmailVerified] = useState(true);
+
+  // Load user data
+  useEffect(() => {
+    if (session?.user) {
+      setFormData({
+        name: session.user.name || "",
+        email: session.user.email || "",
+      });
+    }
+  }, [session]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleAvatarChange = async () => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "Ficheiro muito grande",
+        description: "O tamanho máximo é 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setAvatarUploading(true);
-    // Simulate upload
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setAvatarUploading(false);
+    try {
+      // Convert to base64 for demo (in production, use proper file upload)
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+
+        const response = await fetch("/api/user", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: base64 }),
+        });
+
+        if (response.ok) {
+          toast({
+            title: "Foto actualizada",
+            description: "A sua foto de perfil foi actualizada",
+          });
+          // Update session
+          await update();
+        } else {
+          throw new Error("Erro ao actualizar foto");
+        }
+        setAvatarUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível actualizar a foto",
+        variant: "destructive",
+      });
+      setAvatarUploading(false);
+    }
   };
 
   const handleSave = async () => {
     setIsLoading(true);
-    // Simulate save
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
+    try {
+      const response = await fetch("/api/user", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: formData.name }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao salvar");
+      }
+
+      toast({
+        title: "Perfil actualizado",
+        description: "As suas informações foram salvas com sucesso",
+      });
+
+      // Update session
+      await update();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar as alterações",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const user = session?.user;
+  const initials = user?.name
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "U";
 
   return (
     <div className="space-y-8">
@@ -97,14 +149,13 @@ export function ProfileSection() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
         <div className="relative group">
           <Avatar className="h-24 w-24 border-2 border-border">
-            <AvatarImage src="/avatar.png" alt="João Silva" />
+            <AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
             <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-              JS
+              {initials}
             </AvatarFallback>
           </Avatar>
-          <button
-            onClick={handleAvatarChange}
-            disabled={avatarUploading}
+          <label
+            htmlFor="avatar-upload"
             className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
           >
             {avatarUploading ? (
@@ -112,7 +163,15 @@ export function ProfileSection() {
             ) : (
               <Camera className="h-6 w-6 text-white" />
             )}
-          </button>
+            <input
+              id="avatar-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+              disabled={avatarUploading}
+            />
+          </label>
         </div>
         <div className="space-y-2">
           <h3 className="text-lg font-semibold">Foto de Perfil</h3>
@@ -120,22 +179,31 @@ export function ProfileSection() {
             JPG, GIF ou PNG. Máximo de 2MB.
           </p>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAvatarChange}
-              disabled={avatarUploading}
-            >
-              {avatarUploading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Upload className="h-4 w-4 mr-2" />
-              )}
-              {avatarUploading ? "Enviando..." : "Carregar foto"}
-            </Button>
-            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-              Remover
-            </Button>
+            <label htmlFor="avatar-upload-btn">
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                disabled={avatarUploading}
+              >
+                <span>
+                  {avatarUploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  {avatarUploading ? "Enviando..." : "Carregar foto"}
+                </span>
+              </Button>
+              <input
+                id="avatar-upload-btn"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+                disabled={avatarUploading}
+              />
+            </label>
           </div>
         </div>
       </div>
@@ -164,7 +232,7 @@ export function ProfileSection() {
           <Label htmlFor="email" className="flex items-center gap-2">
             <Mail className="h-4 w-4 text-muted-foreground" />
             Email
-            {emailVerified && (
+            {isEmailVerified && (
               <span className="flex items-center gap-1 text-xs text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">
                 <CheckCircle className="h-3 w-3" />
                 Verificado
@@ -176,112 +244,29 @@ export function ProfileSection() {
               id="email"
               type="email"
               value={formData.email}
-              onChange={(e) => handleInputChange("email", e.target.value)}
-              placeholder="seu@email.com"
-              className="flex-1"
+              disabled
+              className="flex-1 bg-muted/50"
             />
-            {!emailVerified && (
-              <Button variant="outline" size="sm">
-                Verificar
-              </Button>
-            )}
           </div>
-        </div>
-
-        {/* Phone */}
-        <div className="space-y-2">
-          <Label htmlFor="phone" className="flex items-center gap-2">
-            <Phone className="h-4 w-4 text-muted-foreground" />
-            Telefone
-          </Label>
-          <Input
-            id="phone"
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => handleInputChange("phone", e.target.value)}
-            placeholder="(00) 00000-0000"
-            className="max-w-md"
-          />
+          <p className="text-xs text-muted-foreground">
+            O email não pode ser alterado. Contacte o suporte se precisar de ajuda.
+          </p>
         </div>
       </div>
 
       <Separator />
 
-      {/* Academic Information */}
+      {/* Account Info */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <GraduationCap className="h-5 w-5 text-primary" />
-          Informações Acadêmicas
-        </h3>
-
-        <div className="grid gap-6 sm:grid-cols-2">
-          {/* Institution */}
-          <div className="space-y-2">
-            <Label htmlFor="institution" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-              Instituição
-            </Label>
-            <Select
-              value={formData.institution}
-              onValueChange={(value) => handleInputChange("institution", value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione sua instituição" />
-              </SelectTrigger>
-              <SelectContent>
-                {institutions.map((inst) => (
-                  <SelectItem key={inst.value} value={inst.value}>
-                    {inst.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <h3 className="text-lg font-semibold">Informações da Conta</h3>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+            <p className="text-sm text-muted-foreground">Tipo de Conta</p>
+            <p className="font-medium capitalize">{user?.role || "Estudante"}</p>
           </div>
-
-          {/* Course */}
-          <div className="space-y-2">
-            <Label htmlFor="course" className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
-              Curso
-            </Label>
-            <Select
-              value={formData.course}
-              onValueChange={(value) => handleInputChange("course", value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione seu curso" />
-              </SelectTrigger>
-              <SelectContent>
-                {courses.map((course) => (
-                  <SelectItem key={course.value} value={course.value}>
-                    {course.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Academic Level */}
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="academicLevel" className="flex items-center gap-2">
-              <GraduationCap className="h-4 w-4 text-muted-foreground" />
-              Nível Acadêmico
-            </Label>
-            <Select
-              value={formData.academicLevel}
-              onValueChange={(value) => handleInputChange("academicLevel", value)}
-            >
-              <SelectTrigger className="w-full sm:w-64">
-                <SelectValue placeholder="Selecione seu nível" />
-              </SelectTrigger>
-              <SelectContent>
-                {academicLevels.map((level) => (
-                  <SelectItem key={level.value} value={level.value}>
-                    {level.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+            <p className="text-sm text-muted-foreground">Créditos Disponíveis</p>
+            <p className="font-medium">{user?.credits?.toLocaleString() || 0} créditos</p>
           </div>
         </div>
       </div>

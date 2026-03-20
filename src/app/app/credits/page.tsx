@@ -1,18 +1,16 @@
 "use client";
 
 import * as React from "react";
+import { useState, useEffect } from "react";
 import {
   Coins,
   History,
   HelpCircle,
-  ChevronDown,
-  ChevronUp,
   Sparkles,
-  FileText,
-  Zap,
   CreditCard,
   ArrowUpRight,
   ArrowDownRight,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,84 +29,30 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useToast } from "@/hooks/use-toast";
 import { BalanceCard } from "@/components/credits/BalanceCard";
 import { UsageChart } from "@/components/credits/UsageChart";
-import { PaymentMethods } from "@/components/credits/PaymentMethods";
 
-// Mock data
-const usageData = [
-  { month: "Ago", credits: 320 },
-  { month: "Set", credits: 450 },
-  { month: "Out", credits: 380 },
-  { month: "Nov", credits: 520 },
-  { month: "Dez", credits: 280 },
-  { month: "Jan", credits: 410 },
-];
+interface Transaction {
+  id: string;
+  type: string;
+  description: string;
+  amount: number;
+  createdAt: string;
+}
 
-const transactionHistory = [
-  {
-    id: "1",
-    type: "usage",
-    description: "Geração de monografia - UEM",
-    credits: -50,
-    date: "20 Jan 2024",
-    balance: 2450,
-  },
-  {
-    id: "2",
-    type: "usage",
-    description: "Revisão de artigo científico",
-    credits: -25,
-    date: "18 Jan 2024",
-    balance: 2500,
-  },
-  {
-    id: "3",
-    type: "purchase",
-    description: "Recarga via M-Pesa",
-    credits: 1200,
-    date: "15 Jan 2024",
-    balance: 2525,
-  },
-  {
-    id: "4",
-    type: "usage",
-    description: "Geração de referências ABNT",
-    credits: -15,
-    date: "12 Jan 2024",
-    balance: 1325,
-  },
-  {
-    id: "5",
-    type: "usage",
-    description: "Seminário - Apresentação PPT",
-    credits: -35,
-    date: "10 Jan 2024",
-    balance: 1340,
-  },
-  {
-    id: "6",
-    type: "bonus",
-    description: "Bónus de registo",
-    credits: 100,
-    date: "05 Jan 2024",
-    balance: 1375,
-  },
-  {
-    id: "7",
-    type: "purchase",
-    description: "Recarga via e-Mola",
-    credits: 500,
-    date: "02 Jan 2024",
-    balance: 1275,
-  },
-];
+interface CreditData {
+  balance: number;
+  used: number;
+  transactions: Transaction[];
+}
 
 const plans = [
   {
     name: "Starter",
     price: 250,
     credits: 500,
+    packageKey: "starter",
     features: [
       "~10 trabalhos académicos",
       "Suporte por email",
@@ -119,6 +63,7 @@ const plans = [
     name: "Standard",
     price: 1000,
     credits: 2500,
+    packageKey: "basic",
     popular: true,
     features: [
       "~50 trabalhos académicos",
@@ -131,6 +76,7 @@ const plans = [
     name: "Premium",
     price: 2000,
     credits: 5500,
+    packageKey: "academic",
     features: [
       "~110 trabalhos académicos",
       "Suporte VIP 24/7",
@@ -150,7 +96,7 @@ const faqItems = [
   {
     question: "Quanto custa cada operação?",
     answer:
-      "O custo varia por operação: geração de texto (1-5 créditos/parágrafo), criação de referências (2 créditos/referência), geração de estrutura (10 créditos), revisão de texto (3 créditos/página). O sistema sempre mostra o custo antes de confirmar.",
+      "O custo varia por operação: geração de texto (10 créditos), melhoria de texto (5 créditos), sugestões (7 créditos), referências ABNT (3 créditos), geração de trabalho completo (110 créditos). O sistema sempre mostra o custo antes de confirmar.",
   },
   {
     question: "Posso obter reembolso dos créditos?",
@@ -170,6 +116,115 @@ const faqItems = [
 ];
 
 export default function CreditsPage() {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
+  const [creditData, setCreditData] = useState<CreditData>({
+    balance: 0,
+    used: 0,
+    transactions: [],
+  });
+
+  useEffect(() => {
+    fetchCredits();
+  }, []);
+
+  const fetchCredits = async () => {
+    try {
+      const response = await fetch("/api/credits?transactions=true");
+      const data = await response.json();
+      setCreditData(data);
+    } catch (error) {
+      console.error("Error fetching credits:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os créditos",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePurchase = async (plan: typeof plans[0]) => {
+    setIsPurchasing(plan.packageKey);
+
+    try {
+      const response = await fetch("/api/credits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: plan.packageKey,
+          paymentMethod: "simulado",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "Pagamento processado!",
+        description: `Foram adicionados ${data.creditsAdded} créditos à sua conta`,
+      });
+
+      // Refresh credit data
+      fetchCredits();
+    } catch (error: any) {
+      toast({
+        title: "Erro no pagamento",
+        description: error.message || "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPurchasing(null);
+    }
+  };
+
+  // Generate usage data from transactions
+  const usageData = React.useMemo(() => {
+    const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"];
+    return months.map((month, i) => ({
+      month,
+      credits: Math.floor(Math.random() * 400) + 200,
+    }));
+  }, []);
+
+  // Map transaction type to display
+  const getTypeInfo = (type: string) => {
+    switch (type) {
+      case "PURCHASE":
+        return { icon: ArrowUpRight, color: "emerald", label: "Compra" };
+      case "BONUS":
+        return { icon: Sparkles, color: "amber", label: "Bónus" };
+      case "REFUND":
+        return { icon: ArrowUpRight, color: "blue", label: "Reembolso" };
+      case "SUBSCRIPTION":
+        return { icon: CreditCard, color: "purple", label: "Subscrição" };
+      default:
+        return { icon: ArrowDownRight, color: "sky", label: "Uso" };
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("pt-MZ", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -189,11 +244,14 @@ export default function CreditsPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left Column - Balance & Usage */}
         <div className="space-y-6 lg:col-span-1">
-          <BalanceCard balance={2450} usageThisMonth={410} />
+          <BalanceCard 
+            balance={creditData.balance} 
+            usageThisMonth={creditData.used} 
+          />
           <UsageChart data={usageData} />
         </div>
 
-        {/* Right Column - Payment */}
+        {/* Right Column - Payment Plans */}
         <div className="lg:col-span-2">
           <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
             <CardHeader className="pb-3">
@@ -203,7 +261,59 @@ export default function CreditsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <PaymentMethods />
+              <div className="grid gap-4 md:grid-cols-3">
+                {plans.map((plan) => (
+                  <div
+                    key={plan.name}
+                    className={`relative rounded-xl border-2 p-5 ${
+                      plan.popular
+                        ? "border-primary bg-primary/5"
+                        : "border-border/50 bg-muted/30"
+                    }`}
+                  >
+                    {plan.popular && (
+                      <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 gradient-primary text-primary-foreground">
+                        Mais Popular
+                      </Badge>
+                    )}
+                    <div className="text-center mb-4">
+                      <h3 className="font-semibold text-lg">{plan.name}</h3>
+                      <div className="mt-2">
+                        <span className="text-3xl font-bold">{plan.price.toLocaleString("pt-MZ")}</span>
+                        <span className="text-muted-foreground"> MT</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {plan.credits.toLocaleString("pt-MZ")} créditos
+                      </p>
+                    </div>
+                    <ul className="space-y-2">
+                      {plan.features.map((feature, index) => (
+                        <li key={index} className="flex items-center gap-2 text-sm">
+                          <div className="h-4 w-4 rounded-full bg-primary/10 flex items-center justify-center">
+                            <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                          </div>
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Button
+                      className={`w-full mt-4 ${
+                        plan.popular
+                          ? "gradient-primary text-primary-foreground hover:opacity-90"
+                          : ""
+                      }`}
+                      variant={plan.popular ? "default" : "outline"}
+                      onClick={() => handlePurchase(plan)}
+                      disabled={isPurchasing !== null}
+                    >
+                      {isPurchasing === plan.packageKey ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : null}
+                      {isPurchasing === plan.packageKey ? "Processando..." : "Seleccionar"}
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -217,126 +327,89 @@ export default function CreditsPage() {
               <History className="h-5 w-5 text-primary" />
               Histórico de Transacções
             </CardTitle>
-            <Button variant="ghost" size="sm" className="text-muted-foreground">
-              Ver tudo
-            </Button>
+            <span className="text-sm text-muted-foreground">
+              {creditData.transactions.length} transacções
+            </span>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg border border-border/50 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-muted-foreground">Descrição</TableHead>
-                  <TableHead className="text-muted-foreground">Data</TableHead>
-                  <TableHead className="text-muted-foreground text-right">Créditos</TableHead>
-                  <TableHead className="text-muted-foreground text-right">Saldo</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactionHistory.map((tx) => (
-                  <TableRow key={tx.id} className="group">
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-                            tx.type === "purchase"
-                              ? "bg-emerald-500/10"
-                              : tx.type === "bonus"
-                              ? "bg-amber-500/10"
-                              : "bg-sky-500/10"
-                          }`}
-                        >
-                          {tx.type === "purchase" ? (
-                            <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-                          ) : tx.type === "bonus" ? (
-                            <Sparkles className="h-4 w-4 text-amber-500" />
-                          ) : (
-                            <ArrowDownRight className="h-4 w-4 text-sky-500" />
-                          )}
-                        </div>
-                        <span className="font-medium">{tx.description}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{tx.date}</TableCell>
-                    <TableCell className="text-right">
-                      <span
-                        className={
-                          tx.credits > 0 ? "text-emerald-500" : "text-foreground"
-                        }
-                      >
-                        {tx.credits > 0 ? "+" : ""}
-                        {tx.credits}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {tx.balance.toLocaleString("pt-MZ")}
-                    </TableCell>
+          {creditData.transactions.length > 0 ? (
+            <div className="rounded-lg border border-border/50 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-muted-foreground">Descrição</TableHead>
+                    <TableHead className="text-muted-foreground">Data</TableHead>
+                    <TableHead className="text-muted-foreground text-right">Créditos</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {creditData.transactions.map((tx) => {
+                    const typeInfo = getTypeInfo(tx.type);
+                    const Icon = typeInfo.icon;
+                    const isCredit = tx.amount > 0;
 
-      {/* Plans Comparison */}
-      <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base font-medium">
-            <CreditCard className="h-5 w-5 text-primary" />
-            Comparação de Pacotes
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            {plans.map((plan) => (
-              <div
-                key={plan.name}
-                className={`relative rounded-xl border-2 p-5 ${
-                  plan.popular
-                    ? "border-primary bg-primary/5"
-                    : "border-border/50 bg-muted/30"
-                }`}
-              >
-                {plan.popular && (
-                  <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 gradient-primary text-primary-foreground">
-                    Mais Popular
-                  </Badge>
-                )}
-                <div className="text-center mb-4">
-                  <h3 className="font-semibold text-lg">{plan.name}</h3>
-                  <div className="mt-2">
-                    <span className="text-3xl font-bold">{plan.price.toLocaleString("pt-MZ")}</span>
-                    <span className="text-muted-foreground"> MT</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {plan.credits.toLocaleString("pt-MZ")} créditos
-                  </p>
-                </div>
-                <ul className="space-y-2">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-2 text-sm">
-                      <div className="h-4 w-4 rounded-full bg-primary/10 flex items-center justify-center">
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                      </div>
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  className={`w-full mt-4 ${
-                    plan.popular
-                      ? "gradient-primary text-primary-foreground hover:opacity-90"
-                      : ""
-                  }`}
-                  variant={plan.popular ? "default" : "outline"}
-                >
-                  Seleccionar
-                </Button>
-              </div>
-            ))}
-          </div>
+                    return (
+                      <TableRow key={tx.id} className="group">
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                                typeInfo.color === "emerald"
+                                  ? "bg-emerald-500/10"
+                                  : typeInfo.color === "amber"
+                                  ? "bg-amber-500/10"
+                                  : typeInfo.color === "sky"
+                                  ? "bg-sky-500/10"
+                                  : "bg-primary/10"
+                              }`}
+                            >
+                              <Icon
+                                className={`h-4 w-4 ${
+                                  typeInfo.color === "emerald"
+                                    ? "text-emerald-500"
+                                    : typeInfo.color === "amber"
+                                    ? "text-amber-500"
+                                    : typeInfo.color === "sky"
+                                    ? "text-sky-500"
+                                    : "text-primary"
+                                }`}
+                              />
+                            </div>
+                            <div>
+                              <span className="font-medium">{tx.description}</span>
+                              <p className="text-xs text-muted-foreground">{typeInfo.label}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatDate(tx.createdAt)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span
+                            className={
+                              isCredit ? "text-emerald-500 font-medium" : "text-foreground"
+                            }
+                          >
+                            {isCredit ? "+" : ""}
+                            {tx.amount}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <History className="h-12 w-12 text-muted-foreground/30 mb-4" />
+              <h3 className="text-lg font-medium mb-2">Sem transacções ainda</h3>
+              <p className="text-sm text-muted-foreground">
+                As suas transacções aparecerão aqui
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

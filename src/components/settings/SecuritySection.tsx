@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,20 +44,12 @@ interface Session {
   current: boolean;
 }
 
-interface LoginHistory {
-  id: string;
-  date: string;
-  device: string;
-  location: string;
-  status: "success" | "failed";
-}
-
 const sessions: Session[] = [
   {
     id: "1",
     device: "Chrome - Windows",
     deviceIcon: Monitor,
-    location: "São Paulo, Brasil",
+    location: "Maputo, Moçambique",
     lastActive: "Agora",
     current: true,
   },
@@ -64,59 +57,14 @@ const sessions: Session[] = [
     id: "2",
     device: "Safari - iPhone",
     deviceIcon: Smartphone,
-    location: "São Paulo, Brasil",
+    location: "Maputo, Moçambique",
     lastActive: "2 horas atrás",
     current: false,
-  },
-  {
-    id: "3",
-    device: "Firefox - MacBook",
-    deviceIcon: Tablet,
-    location: "Rio de Janeiro, Brasil",
-    lastActive: "3 dias atrás",
-    current: false,
-  },
-];
-
-const loginHistory: LoginHistory[] = [
-  {
-    id: "1",
-    date: "Hoje, 14:32",
-    device: "Chrome - Windows",
-    location: "São Paulo, Brasil",
-    status: "success",
-  },
-  {
-    id: "2",
-    date: "Hoje, 09:15",
-    device: "Safari - iPhone",
-    location: "São Paulo, Brasil",
-    status: "success",
-  },
-  {
-    id: "3",
-    date: "Ontem, 18:45",
-    device: "Chrome - Windows",
-    location: "São Paulo, Brasil",
-    status: "success",
-  },
-  {
-    id: "4",
-    date: "15/01/2025, 22:10",
-    device: "Desconhecido",
-    location: "Londres, Reino Unido",
-    status: "failed",
-  },
-  {
-    id: "5",
-    date: "14/01/2025, 16:20",
-    device: "Firefox - MacBook",
-    location: "Rio de Janeiro, Brasil",
-    status: "success",
   },
 ];
 
 export function SecuritySection() {
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -127,16 +75,70 @@ export function SecuritySection() {
     newPassword: "",
     confirmPassword: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!passwordForm.currentPassword) {
+      newErrors.currentPassword = "Senha actual é obrigatória";
+    }
+    if (!passwordForm.newPassword) {
+      newErrors.newPassword = "Nova senha é obrigatória";
+    } else if (passwordForm.newPassword.length < 6) {
+      newErrors.newPassword = "A senha deve ter pelo menos 6 caracteres";
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      newErrors.confirmPassword = "As senhas não coincidem";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handlePasswordChange = async () => {
+    if (!validateForm()) return;
+    
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    try {
+      const response = await fetch("/api/user/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao alterar senha");
+      }
+
+      toast({
+        title: "Senha alterada",
+        description: "A sua senha foi alterada com sucesso",
+      });
+      
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setErrors({});
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível alterar a senha",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleRevokeSession = async (sessionId: string) => {
-    console.log("Revoking session:", sessionId);
+    toast({
+      title: "Sessão revogada",
+      description: "A sessão foi terminada com sucesso",
+    });
   };
 
   return (
@@ -168,6 +170,7 @@ export function SecuritySection() {
                   }))
                 }
                 placeholder="Digite sua senha atual"
+                className={errors.currentPassword ? "border-destructive" : ""}
               />
               <button
                 type="button"
@@ -181,6 +184,9 @@ export function SecuritySection() {
                 )}
               </button>
             </div>
+            {errors.currentPassword && (
+              <p className="text-xs text-destructive">{errors.currentPassword}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -197,6 +203,7 @@ export function SecuritySection() {
                   }))
                 }
                 placeholder="Digite a nova senha"
+                className={errors.newPassword ? "border-destructive" : ""}
               />
               <button
                 type="button"
@@ -210,6 +217,9 @@ export function SecuritySection() {
                 )}
               </button>
             </div>
+            {errors.newPassword && (
+              <p className="text-xs text-destructive">{errors.newPassword}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -226,6 +236,7 @@ export function SecuritySection() {
                   }))
                 }
                 placeholder="Confirme a nova senha"
+                className={errors.confirmPassword ? "border-destructive" : ""}
               />
               <button
                 type="button"
@@ -239,6 +250,9 @@ export function SecuritySection() {
                 )}
               </button>
             </div>
+            {errors.confirmPassword && (
+              <p className="text-xs text-destructive">{errors.confirmPassword}</p>
+            )}
           </div>
 
           <Button onClick={handlePasswordChange} disabled={isLoading}>
@@ -344,7 +358,7 @@ export function SecuritySection() {
                       <AlertDialogTitle>Revogar sessão?</AlertDialogTitle>
                       <AlertDialogDescription>
                         Esta ação fará logout do dispositivo selecionado.
-                        O usuário precisará fazer login novamente.
+                        O utilizador precisará fazer login novamente.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -373,50 +387,21 @@ export function SecuritySection() {
 
       <Separator />
 
-      {/* Login History */}
-      <div className="space-y-4">
-        <div className="space-y-0.5">
-          <Label className="flex items-center gap-2 text-base">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            Histórico de Login
-          </Label>
-          <p className="text-sm text-muted-foreground">
-            Atividades recentes de login na sua conta
-          </p>
-        </div>
-
-        <div className="space-y-2 max-w-xl">
-          {loginHistory.map((login) => (
-            <div
-              key={login.id}
-              className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-card/30 backdrop-blur-sm"
-            >
-              <div className="flex items-center gap-3">
-                {login.status === "success" ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                ) : (
-                  <AlertTriangle className="h-4 w-4 text-destructive" />
-                )}
-                <div>
-                  <div className="text-sm">
-                    <span className="font-medium">{login.device}</span>
-                    <span className="text-muted-foreground mx-2">•</span>
-                    <span className="text-muted-foreground">{login.location}</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{login.date}</span>
-                </div>
-              </div>
-              <span
-                className={`text-xs px-2 py-1 rounded-full ${
-                  login.status === "success"
-                    ? "bg-green-500/10 text-green-500"
-                    : "bg-destructive/10 text-destructive"
-                }`}
-              >
-                {login.status === "success" ? "Sucesso" : "Falhou"}
-              </span>
-            </div>
-          ))}
+      {/* Security Tips */}
+      <div className="bg-accent/50 backdrop-blur-xl border border-border/50 rounded-xl p-4 shadow-lg">
+        <div className="flex gap-3">
+          <AlertTriangle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-foreground mb-1">
+              Dicas de Segurança
+            </p>
+            <ul className="text-muted-foreground space-y-1 list-disc list-inside">
+              <li>Use uma senha forte e única para a sua conta</li>
+              <li>Active a autenticação de dois fatores para maior segurança</li>
+              <li>Revogue sessões que não reconhece</li>
+              <li>Nunca partilhe a sua senha com terceiros</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

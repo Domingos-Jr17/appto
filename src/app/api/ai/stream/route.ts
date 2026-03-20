@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     // For now, we'll use non-streaming and return the full response
     // as streaming with the current SDK setup requires specific handling
     const completion = await zai.chat.completions.create({
+      model: "glm-4.7-flash",
       messages: [
         { role: "assistant", content: ACADEMIC_SYSTEM_PROMPT },
         {

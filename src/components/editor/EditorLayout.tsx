@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -25,7 +27,10 @@ import {
   HelpCircle,
   LogOut,
   Menu,
+  Loader2,
+  Download,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { DocumentTree } from "./DocumentTree";
 import { WritingArea } from "./WritingArea";
 import { AIAssistantPanel } from "./AIAssistantPanel";
@@ -38,82 +43,157 @@ interface Section {
   type: "chapter" | "section";
   children?: Section[];
   wordCount?: number;
+  content?: string;
+}
+
+interface Project {
+  id: string;
+  title: string;
+  type: string;
+  status: string;
+  wordCount: number;
+  sections: {
+    id: string;
+    title: string;
+    content: string | null;
+    order: number;
+    wordCount: number;
+    parentId: string | null;
+  }[];
+}
+
+// Transform flat sections from API into tree structure
+function buildSectionTree(sections: Project["sections"]): Section[] {
+  const sectionMap = new Map<string, Section>();
+  const rootSections: Section[] = [];
+
+  // First pass: create all sections
+  sections.forEach((s) => {
+    sectionMap.set(s.id, {
+      id: s.id,
+      title: s.title,
+      type: /^\d+\./.test(s.title) ? "chapter" : "section",
+      wordCount: s.wordCount,
+      content: s.content || "",
+      children: [],
+    });
+  });
+
+  // Second pass: build tree
+  sections.forEach((s) => {
+    const section = sectionMap.get(s.id)!;
+    if (s.parentId) {
+      const parent = sectionMap.get(s.parentId);
+      if (parent) {
+        parent.children = parent.children || [];
+        parent.children.push(section);
+      }
+    } else {
+      rootSections.push(section);
+    }
+  });
+
+  return rootSections;
+}
+
+// Determine section type based on title pattern
+function getSectionType(title: string): "chapter" | "section" {
+  if (/^\d+\./.test(title)) return "chapter";
+  return "section";
 }
 
 interface EditorLayoutProps {
-  projectId: string;
+  projectId?: string;
 }
 
-// Default data
-const defaultSections: Section[] = [
-  {
-    id: "ch1",
-    title: "Introdução",
-    type: "chapter",
-    wordCount: 1250,
-    children: [
-      { id: "s1-1", title: "Contextualização", type: "section", wordCount: 450 },
-      { id: "s1-2", title: "Problema de Pesquisa", type: "section", wordCount: 350 },
-      { id: "s1-3", title: "Objetivos", type: "section", wordCount: 250 },
-      { id: "s1-4", title: "Justificativa", type: "section", wordCount: 200 },
-    ],
-  },
-  {
-    id: "ch2",
-    title: "Revisão de Literatura",
-    type: "chapter",
-    wordCount: 3200,
-    children: [
-      { id: "s2-1", title: "Referencial Teórico", type: "section", wordCount: 1800 },
-      { id: "s2-2", title: "Estado da Arte", type: "section", wordCount: 1400 },
-    ],
-  },
-  {
-    id: "ch3",
-    title: "Metodologia",
-    type: "chapter",
-    wordCount: 1800,
-    children: [
-      { id: "s3-1", title: "Tipo de Pesquisa", type: "section", wordCount: 400 },
-      { id: "s3-2", title: "Coleta de Dados", type: "section", wordCount: 700 },
-      { id: "s3-3", title: "Análise de Dados", type: "section", wordCount: 700 },
-    ],
-  },
-  {
-    id: "ch4",
-    title: "Resultados e Discussão",
-    type: "chapter",
-    wordCount: 2500,
-  },
-  {
-    id: "ch5",
-    title: "Conclusão",
-    type: "chapter",
-    wordCount: 800,
-  },
-];
+export function EditorLayout({ projectId: propProjectId }: EditorLayoutProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { toast } = useToast();
 
-export function EditorLayout({ projectId }: EditorLayoutProps) {
+  // Get project ID from URL or prop
+  const projectId = propProjectId || searchParams.get("project");
+
+  // Loading states
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Project data
+  const [project, setProject] = useState<Project | null>(null);
+  const [sections, setSections] = useState<Section[]>([]);
+  const [credits, setCredits] = useState(0);
+
   // Panel states
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Editor states
-  const [sections, setSections] = useState<Section[]>(defaultSections);
-  const [activeSectionId, setActiveSectionId] = useState<string | null>("s1-1");
-  const [sectionTitle, setSectionTitle] = useState("Contextualização");
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const [sectionTitle, setSectionTitle] = useState("");
   const [content, setContent] = useState("");
-  const [wordCount, setWordCount] = useState(1250);
+  const [wordCount, setWordCount] = useState(0);
   const [autoSaveStatus, setAutoSaveStatus] = useState<"saving" | "saved" | "error" | "idle">("saved");
   const [lastSaved, setLastSaved] = useState<Date>(new Date());
 
-  // Credits state
-  const [credits, setCredits] = useState(85);
-  const maxCredits = 100;
+  // Fetch project data
+  useEffect(() => {
+    if (!projectId) {
+      setIsLoading(false);
+      return;
+    }
 
-  // Find active section - regular function for recursive use
-  const findSection = (id: string, secs: Section[]): Section | null => {
+    const fetchData = async () => {
+      try {
+        const [projectRes, creditsRes] = await Promise.all([
+          fetch(`/api/projects/${projectId}`),
+          fetch("/api/credits"),
+        ]);
+
+        if (!projectRes.ok) {
+          throw new Error("Projeto não encontrado");
+        }
+
+        const projectData = await projectRes.json();
+        const creditsData = await creditsRes.json();
+
+        setProject(projectData);
+        setCredits(creditsData.balance || 0);
+
+        // Build section tree
+        const tree = buildSectionTree(projectData.sections);
+        setSections(tree);
+
+        // Select first section
+        if (tree.length > 0 && tree[0].children && tree[0].children.length > 0) {
+          const firstSection = tree[0].children[0];
+          setActiveSectionId(firstSection.id);
+          setSectionTitle(firstSection.title);
+          setContent(firstSection.content || "");
+          setWordCount(firstSection.wordCount || 0);
+        } else if (tree.length > 0) {
+          setActiveSectionId(tree[0].id);
+          setSectionTitle(tree[0].title);
+          setContent(tree[0].content || "");
+          setWordCount(tree[0].wordCount || 0);
+        }
+      } catch (error) {
+        console.error("Error fetching project:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar o projeto",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [projectId, toast]);
+
+  // Find section by ID
+  const findSection = useCallback((id: string, secs: Section[]): Section | null => {
     for (const sec of secs) {
       if (sec.id === id) return sec;
       if (sec.children) {
@@ -122,132 +202,396 @@ export function EditorLayout({ projectId }: EditorLayoutProps) {
       }
     }
     return null;
-  };
+  }, []);
 
-  // Handlers
+  // Handle section selection
   const handleSectionSelect = useCallback((sectionId: string) => {
+    // Save current section first
+    if (activeSectionId && content) {
+      saveSection(activeSectionId, content);
+    }
+
     setActiveSectionId(sectionId);
     const section = findSection(sectionId, sections);
     if (section) {
       setSectionTitle(section.title);
+      setContent(section.content || "");
       setWordCount(section.wordCount || 0);
     }
     setMobileMenuOpen(false);
-  }, [sections]);
+  }, [activeSectionId, content, sections, findSection]);
 
-  const handleSectionAdd = useCallback((parentId?: string) => {
-    const newSection: Section = {
-      id: `s-${Date.now()}`,
-      title: "Nova Seção",
-      type: parentId ? "section" : "chapter",
-      wordCount: 0,
-    };
+  // Save section to API
+  const saveSection = useCallback(async (sectionId: string, newContent: string) => {
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/documents/${sectionId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: newContent }),
+      });
 
-    if (parentId) {
+      if (!response.ok) throw new Error("Erro ao salvar");
+
+      setLastSaved(new Date());
+      setAutoSaveStatus("saved");
+
+      // Update local state
       setSections((prev) => {
-        const updated = [...prev];
-        const addToParent = (secs: Section[]) => {
+        const update = (secs: Section[]): Section[] => {
           return secs.map((sec) => {
-            if (sec.id === parentId) {
-              return {
-                ...sec,
-                children: [...(sec.children || []), newSection],
-              };
+            if (sec.id === sectionId) {
+              return { ...sec, content: newContent, wordCount };
             }
             if (sec.children) {
-              return { ...sec, children: addToParent(sec.children) };
+              return { ...sec, children: update(sec.children) };
             }
             return sec;
           });
         };
-        return addToParent(updated);
+        return update(prev);
       });
-    } else {
-      setSections((prev) => [...prev, newSection]);
+    } catch (error) {
+      console.error("Save error:", error);
+      setAutoSaveStatus("error");
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar o conteúdo",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
-  }, []);
+  }, [wordCount, toast]);
 
-  const handleSectionRename = useCallback((sectionId: string, newTitle: string) => {
-    setSections((prev) => {
-      const rename = (secs: Section[]): Section[] => {
-        return secs.map((sec) => {
-          if (sec.id === sectionId) {
-            return { ...sec, title: newTitle };
-          }
-          if (sec.children) {
-            return { ...sec, children: rename(sec.children) };
-          }
-          return sec;
-        });
-      };
-      return rename(prev);
-    });
-
-    if (activeSectionId === sectionId) {
-      setSectionTitle(newTitle);
-    }
-  }, [activeSectionId]);
-
-  const handleSectionDelete = useCallback((sectionId: string) => {
-    setSections((prev) => {
-      const remove = (secs: Section[]): Section[] => {
-        return secs
-          .filter((sec) => sec.id !== sectionId)
-          .map((sec) => ({
-            ...sec,
-            children: sec.children ? remove(sec.children) : undefined,
-          }));
-      };
-      return remove(prev);
-    });
-
-    if (activeSectionId === sectionId) {
-      setActiveSectionId(null);
-    }
-  }, [activeSectionId]);
-
+  // Handle content change with debounce
   const handleContentChange = useCallback((newContent: string) => {
     setContent(newContent);
-    // Calculate word count
     const text = newContent.replace(/<[^>]*>/g, "");
     const words = text.trim().split(/\s+/).filter(Boolean).length;
     setWordCount(words);
 
-    // Simulate auto-save
+    // Mark as saving
     setAutoSaveStatus("saving");
-    setTimeout(() => {
-      setAutoSaveStatus("saved");
-      setLastSaved(new Date());
-    }, 1000);
-  }, []);
 
-  const handleGenerate = useCallback(async (prompt: string) => {
-    // Deduct credits
-    if (credits >= 5) {
-      setCredits((prev) => prev - 5);
+    // Debounced save
+    const timeoutId = setTimeout(() => {
+      if (activeSectionId) {
+        saveSection(activeSectionId, newContent);
+      }
+    }, 2000);
+
+    return () => clearTimeout(timeoutId);
+  }, [activeSectionId, saveSection]);
+
+  // Handle section add
+  const handleSectionAdd = useCallback(async (parentId?: string) => {
+    if (!projectId) return;
+
+    try {
+      const response = await fetch("/api/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId,
+          parentId,
+          title: "Nova Seção",
+          order: Date.now(),
+        }),
+      });
+
+      const newSection = await response.json();
+
+      const section: Section = {
+        id: newSection.id,
+        title: newSection.title,
+        type: parentId ? "section" : "chapter",
+        wordCount: 0,
+        content: "",
+        children: [],
+      };
+
+      if (parentId) {
+        setSections((prev) => {
+          const addToParent = (secs: Section[]): Section[] => {
+            return secs.map((sec) => {
+              if (sec.id === parentId) {
+                return { ...sec, children: [...(sec.children || []), section] };
+              }
+              if (sec.children) {
+                return { ...sec, children: addToParent(sec.children) };
+              }
+              return sec;
+            });
+          };
+          return addToParent(prev);
+        });
+      } else {
+        setSections((prev) => [...prev, section]);
+      }
+
+      toast({
+        title: "Secção criada",
+        description: "Nova secção adicionada ao documento",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar a secção",
+        variant: "destructive",
+      });
     }
-    // Return simulated response
-    return `Este é um conteúdo gerado com base no seu prompt: "${prompt}". O texto acadêmico seria gerado aqui com base no contexto do seu documento e nas melhores práticas de escrita acadêmica.`;
-  }, [credits]);
+  }, [projectId, toast]);
+
+  // Handle section rename
+  const handleSectionRename = useCallback(async (sectionId: string, newTitle: string) => {
+    try {
+      await fetch(`/api/documents/${sectionId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newTitle }),
+      });
+
+      setSections((prev) => {
+        const rename = (secs: Section[]): Section[] => {
+          return secs.map((sec) => {
+            if (sec.id === sectionId) {
+              return { ...sec, title: newTitle };
+            }
+            if (sec.children) {
+              return { ...sec, children: rename(sec.children) };
+            }
+            return sec;
+          });
+        };
+        return rename(prev);
+      });
+
+      if (activeSectionId === sectionId) {
+        setSectionTitle(newTitle);
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível renomear",
+        variant: "destructive",
+      });
+    }
+  }, [activeSectionId, toast]);
+
+  // Handle section delete
+  const handleSectionDelete = useCallback(async (sectionId: string) => {
+    try {
+      await fetch(`/api/documents/${sectionId}`, {
+        method: "DELETE",
+      });
+
+      setSections((prev) => {
+        const remove = (secs: Section[]): Section[] => {
+          return secs
+            .filter((sec) => sec.id !== sectionId)
+            .map((sec) => ({
+              ...sec,
+              children: sec.children ? remove(sec.children) : undefined,
+            }));
+        };
+        return remove(prev);
+      });
+
+      if (activeSectionId === sectionId) {
+        setActiveSectionId(null);
+        setContent("");
+        setSectionTitle("");
+      }
+
+      toast({
+        title: "Secção eliminada",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível eliminar",
+        variant: "destructive",
+      });
+    }
+  }, [activeSectionId, toast]);
+
+  // AI handlers - real API calls
+  const handleGenerate = useCallback(async (prompt: string) => {
+    if (credits < 10) {
+      toast({
+        title: "Créditos insuficientes",
+        description: "Adquira mais créditos para usar esta funcionalidade",
+        variant: "destructive",
+      });
+      return "";
+    }
+
+    try {
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "generate",
+          text: prompt,
+          context: sectionTitle,
+          projectId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setCredits(data.remainingCredits);
+        return data.response;
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao gerar conteúdo",
+        variant: "destructive",
+      });
+      return "";
+    }
+  }, [credits, sectionTitle, projectId, toast]);
 
   const handleImprove = useCallback(async (text: string, type: string) => {
-    if (credits >= 3) {
-      setCredits((prev) => prev - 3);
+    if (credits < 5) {
+      toast({
+        title: "Créditos insuficientes",
+        variant: "destructive",
+      });
+      return text;
     }
-    return `Texto melhorado (${type}): ${text}`;
-  }, [credits]);
+
+    try {
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "improve",
+          text,
+          context: type,
+          projectId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setCredits(data.remainingCredits);
+        return data.response;
+      }
+      return text;
+    } catch {
+      return text;
+    }
+  }, [credits, projectId, toast]);
 
   const handleGenerateReference = useCallback(async () => {
-    if (credits >= 1) {
-      setCredits((prev) => prev - 1);
+    if (credits < 3) {
+      toast({
+        title: "Créditos insuficientes",
+        variant: "destructive",
+      });
+      return "";
     }
-    return "SOBRENOME, Nome. Título da Obra. Cidade: Editora, 2024.";
-  }, [credits]);
 
+    try {
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "references",
+          text: sectionTitle,
+          projectId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setCredits(data.remainingCredits);
+        return data.response;
+      }
+      return "";
+    } catch {
+      return "";
+    }
+  }, [credits, sectionTitle, projectId, toast]);
+
+  // Export document
+  const handleExport = useCallback(async () => {
+    if (!projectId) return;
+
+    try {
+      const response = await fetch(`/api/export?projectId=${projectId}`);
+      
+      if (!response.ok) {
+        throw new Error("Erro ao exportar");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${project?.title || "documento"}.docx`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      // Refresh credits
+      const creditsRes = await fetch("/api/credits");
+      const creditsData = await creditsRes.json();
+      setCredits(creditsData.balance);
+
+      toast({
+        title: "Documento exportado",
+        description: "O ficheiro DOCX foi descarregado",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao exportar",
+        description: "Verifique se tem créditos suficientes",
+        variant: "destructive",
+      });
+    }
+  }, [projectId, project?.title, toast]);
+
+  // Handle buy credits
   const handleBuyCredits = useCallback(() => {
-    // Would navigate to credits purchase page
-    console.log("Buy credits clicked");
-  }, []);
+    router.push("/app/credits");
+  }, [router]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">A carregar projeto...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // No project selected
+  if (!projectId || !project) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-bold">Nenhum projeto selecionado</h2>
+          <p className="text-muted-foreground">
+            Selecione um projeto para começar a editar
+          </p>
+          <Button asChild>
+            <Link href="/app/projects">Ver Projetos</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
@@ -264,21 +608,21 @@ export function EditorLayout({ projectId }: EditorLayoutProps) {
             <Menu className="h-5 w-5" />
           </Button>
 
-          <div className="flex items-center gap-2">
+          <Link href="/app" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center glow-primary">
               <span className="text-white font-bold text-sm">A</span>
             </div>
             <span className="font-semibold hidden sm:inline gradient-text">
               aptto
             </span>
-          </div>
+          </Link>
         </div>
 
         {/* Center - Project Name */}
         <div className="hidden md:flex items-center gap-2">
           <Separator orientation="vertical" className="h-6" />
-          <span className="text-sm text-muted-foreground">
-            Dissertação de Mestrado
+          <span className="text-sm font-medium truncate max-w-[200px]">
+            {project.title}
           </span>
         </div>
 
@@ -287,8 +631,19 @@ export function EditorLayout({ projectId }: EditorLayoutProps) {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <Home className="h-4 w-4" />
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={handleExport}>
+                  <Download className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Exportar DOCX</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
+                  <Link href="/app">
+                    <Home className="h-4 w-4" />
+                  </Link>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Início</TooltipContent>
@@ -296,31 +651,13 @@ export function EditorLayout({ projectId }: EditorLayoutProps) {
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <HelpCircle className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Ajuda</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <Settings className="h-4 w-4" />
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
+                  <Link href="/app/settings">
+                    <Settings className="h-4 w-4" />
+                  </Link>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Configurações</TooltipContent>
-            </Tooltip>
-
-            <Separator orientation="vertical" className="h-6 mx-2" />
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Sair</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
@@ -351,7 +688,7 @@ export function EditorLayout({ projectId }: EditorLayoutProps) {
           >
             <div className="h-full bg-background border-r border-border/30">
               <DocumentTree
-                projectTitle="Dissertação de Mestrado"
+                projectTitle={project.title}
                 sections={sections}
                 activeSectionId={activeSectionId}
                 onSectionSelect={handleSectionSelect}
@@ -439,9 +776,9 @@ export function EditorLayout({ projectId }: EditorLayoutProps) {
       {/* Bottom Bar - Credits & Status */}
       <CreditsBar
         currentCredits={credits}
-        maxCredits={maxCredits}
+        maxCredits={100}
         wordCount={wordCount}
-        autoSaveStatus={autoSaveStatus}
+        autoSaveStatus={isSaving ? "saving" : autoSaveStatus}
         lastSaved={lastSaved}
         onBuyCredits={handleBuyCredits}
       />

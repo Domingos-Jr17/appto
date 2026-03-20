@@ -161,6 +161,66 @@ export default function ProjectsPage() {
     }
   };
 
+  const handleDeleteProject = async (projectId: string) => {
+    if (!confirm("Tem certeza que deseja eliminar este projecto? Esta acção não pode ser desfeita.")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao eliminar projecto");
+      }
+
+      toast({
+        title: "Projecto eliminado",
+        description: "O projecto foi eliminado com sucesso",
+      });
+
+      // Refresh projects list
+      fetchData();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível eliminar o projecto",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleArchiveProject = async (projectId: string) => {
+    try {
+      const project = projects.find(p => p.id === projectId);
+      const newStatus = project?.status === "archived" ? "IN_PROGRESS" : "ARCHIVED";
+
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao arquivar projecto");
+      }
+
+      toast({
+        title: newStatus === "ARCHIVED" ? "Projecto arquivado" : "Projecto restaurado",
+      });
+
+      // Refresh projects list
+      fetchData();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível actualizar o projecto",
+        variant: "destructive",
+      });
+    }
+  };
+
   const calculateCost = () => {
     const baseCost = 20;
     const contentCost = generateContent ? 6 * 15 : 0; // 6 sections
@@ -368,7 +428,12 @@ export default function ProjectsPage() {
 
       {/* Projects Grid */}
       {filteredProjects.length > 0 ? (
-        <ProjectGrid projects={filteredProjects} viewMode={viewMode} />
+        <ProjectGrid 
+          projects={filteredProjects} 
+          viewMode={viewMode}
+          onDelete={handleDeleteProject}
+          onArchive={handleArchiveProject}
+        />
       ) : (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <FileText className="h-16 w-16 text-muted-foreground/30 mb-4" />

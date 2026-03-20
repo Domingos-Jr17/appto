@@ -13,6 +13,7 @@ import {
   PlayCircle,
   Building2,
   GraduationCap,
+  Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,7 +32,7 @@ import type { ViewMode } from "./ProjectFilters";
 export interface Project {
   id: string;
   title: string;
-  type: "monografia" | "tese" | "artigo" | "seminário";
+  type: "monografia" | "tese" | "artigo" | "relatório" | "dissertação" | "ensaio";
   course: string;
   institution: string;
   progress: number;
@@ -44,6 +45,9 @@ interface ProjectGridProps {
   projects: Project[];
   viewMode: ViewMode;
   className?: string;
+  onDelete?: (id: string) => void;
+  onArchive?: (id: string) => void;
+  onEdit?: (id: string) => void;
 }
 
 const typeStyles: Record<Project["type"], { label: string; className: string }> = {
@@ -59,9 +63,17 @@ const typeStyles: Record<Project["type"], { label: string; className: string }> 
     label: "Artigo",
     className: "bg-emerald-500/10 backdrop-blur-xl text-emerald-400 border border-emerald-500/20",
   },
-  seminário: {
-    label: "Seminário",
+  relatório: {
+    label: "Relatório",
     className: "bg-sky-500/10 backdrop-blur-xl text-sky-400 border border-sky-500/20",
+  },
+  dissertação: {
+    label: "Dissertação",
+    className: "bg-pink-500/10 backdrop-blur-xl text-pink-400 border border-pink-500/20",
+  },
+  ensaio: {
+    label: "Ensaio",
+    className: "bg-orange-500/10 backdrop-blur-xl text-orange-400 border border-orange-500/20",
   },
 };
 
@@ -83,8 +95,18 @@ const statusStyles: Record<Project["status"], { label: string; icon: React.Compo
   },
 };
 
-function ProjectCard({ project }: { project: Project }) {
-  const typeStyle = typeStyles[project.type];
+function ProjectCard({ 
+  project, 
+  onDelete, 
+  onArchive, 
+  onEdit 
+}: { 
+  project: Project;
+  onDelete?: (id: string) => void;
+  onArchive?: (id: string) => void;
+  onEdit?: (id: string) => void;
+}) {
+  const typeStyle = typeStyles[project.type] || typeStyles.monografia;
   const statusStyle = statusStyles[project.status];
   const StatusIcon = statusStyle.icon;
 
@@ -110,7 +132,7 @@ function ProjectCard({ project }: { project: Project }) {
                 <span>{statusStyle.label}</span>
               </div>
             </div>
-            <Link href={`/editor/${project.id}`}>
+            <Link href={`/app/editor?project=${project.id}`}>
               <h4 className="line-clamp-2 text-base font-semibold leading-tight hover:text-primary transition-colors">
                 {project.title}
               </h4>
@@ -127,23 +149,34 @@ function ProjectCard({ project }: { project: Project }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem>
-                <FileText className="mr-2 h-4 w-4" />
-                Abrir
+              <DropdownMenuItem asChild>
+                <Link href={`/app/editor?project=${project.id}`}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Abrir
+                </Link>
               </DropdownMenuItem>
+              {onEdit && (
+                <DropdownMenuItem onClick={() => onEdit(project.id)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Editar
+                </DropdownMenuItem>
+              )}
               {project.status === "archived" ? (
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
                   <ArchiveRestore className="mr-2 h-4 w-4" />
                   Restaurar
                 </DropdownMenuItem>
               ) : (
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
                   <Archive className="mr-2 h-4 w-4" />
                   Arquivar
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive focus:text-destructive">
+              <DropdownMenuItem 
+                className="text-destructive focus:text-destructive"
+                onClick={() => onDelete?.(project.id)}
+              >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Eliminar
               </DropdownMenuItem>
@@ -181,8 +214,18 @@ function ProjectCard({ project }: { project: Project }) {
   );
 }
 
-function ProjectListItem({ project }: { project: Project }) {
-  const typeStyle = typeStyles[project.type];
+function ProjectListItem({ 
+  project, 
+  onDelete, 
+  onArchive, 
+  onEdit 
+}: { 
+  project: Project;
+  onDelete?: (id: string) => void;
+  onArchive?: (id: string) => void;
+  onEdit?: (id: string) => void;
+}) {
+  const typeStyle = typeStyles[project.type] || typeStyles.monografia;
   const statusStyle = statusStyles[project.status];
   const StatusIcon = statusStyle.icon;
 
@@ -207,7 +250,7 @@ function ProjectListItem({ project }: { project: Project }) {
               <span>{statusStyle.label}</span>
             </div>
           </div>
-          <Link href={`/editor/${project.id}`}>
+          <Link href={`/app/editor?project=${project.id}`}>
             <h4 className="font-semibold truncate hover:text-primary transition-colors">
               {project.title}
             </h4>
@@ -247,23 +290,34 @@ function ProjectListItem({ project }: { project: Project }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem>
-              <FileText className="mr-2 h-4 w-4" />
-              Abrir
+            <DropdownMenuItem asChild>
+              <Link href={`/app/editor?project=${project.id}`}>
+                <FileText className="mr-2 h-4 w-4" />
+                Abrir
+              </Link>
             </DropdownMenuItem>
+            {onEdit && (
+              <DropdownMenuItem onClick={() => onEdit(project.id)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Editar
+              </DropdownMenuItem>
+            )}
             {project.status === "archived" ? (
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
                 <ArchiveRestore className="mr-2 h-4 w-4" />
                 Restaurar
               </DropdownMenuItem>
             ) : (
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
                 <Archive className="mr-2 h-4 w-4" />
                 Arquivar
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
+            <DropdownMenuItem 
+              className="text-destructive focus:text-destructive"
+              onClick={() => onDelete?.(project.id)}
+            >
               <Trash2 className="mr-2 h-4 w-4" />
               Eliminar
             </DropdownMenuItem>
@@ -274,7 +328,14 @@ function ProjectListItem({ project }: { project: Project }) {
   );
 }
 
-export function ProjectGrid({ projects, viewMode, className }: ProjectGridProps) {
+export function ProjectGrid({ 
+  projects, 
+  viewMode, 
+  className,
+  onDelete,
+  onArchive,
+  onEdit,
+}: ProjectGridProps) {
   if (projects.length === 0) {
     return (
       <div className={cn("flex flex-col items-center justify-center py-16 text-center", className)}>
@@ -293,7 +354,13 @@ export function ProjectGrid({ projects, viewMode, className }: ProjectGridProps)
     return (
       <div className={cn("space-y-2", className)}>
         {projects.map((project) => (
-          <ProjectListItem key={project.id} project={project} />
+          <ProjectListItem 
+            key={project.id} 
+            project={project}
+            onDelete={onDelete}
+            onArchive={onArchive}
+            onEdit={onEdit}
+          />
         ))}
       </div>
     );
@@ -302,7 +369,13 @@ export function ProjectGrid({ projects, viewMode, className }: ProjectGridProps)
   return (
     <div className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-3", className)}>
       {projects.map((project) => (
-        <ProjectCard key={project.id} project={project} />
+        <ProjectCard 
+          key={project.id} 
+          project={project}
+          onDelete={onDelete}
+          onArchive={onArchive}
+          onEdit={onEdit}
+        />
       ))}
     </div>
   );

@@ -200,6 +200,7 @@ export async function POST(request: NextRequest) {
     }
 
     const completion = await zai.chat.completions.create({
+      model: "glm-4.7-flash",
       messages: [
         { role: "assistant", content: systemPrompt },
         { role: "user", content: prompt },

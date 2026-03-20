@@ -131,6 +131,7 @@ Requisitos:
 - Estruture com subtitulos quando apropriado`;
 
           const completion = await zai.chat.completions.create({
+            model: "glm-4.7-flash",
             messages: [
               { role: "assistant", content: SYSTEM_PROMPT },
               { role: "user", content: prompt },
@@ -162,6 +163,7 @@ O resumo deve:
 - Seguir normas ABNT`;
 
         const abstractCompletion = await zai.chat.completions.create({
+          model: "glm-4.7-flash",
           messages: [
             { role: "assistant", content: SYSTEM_PROMPT },
             { role: "user", content: abstractPrompt },

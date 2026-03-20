@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -16,6 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 import {
   Loader2,
   Download,
@@ -28,22 +31,149 @@ import {
   Package,
 } from "lucide-react";
 
+interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  credits: number;
+  subscription: {
+    plan: string;
+    status: string;
+  } | null;
+  createdAt: string;
+}
+
 export function AccountSection() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [user, setUser] = useState<UserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const response = await fetch("/api/user");
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data);
+      }
+    } catch (error) {
+      console.error("Error fetching user:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleExportData = async () => {
     setIsExporting(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsExporting(false);
+    try {
+      const response = await fetch("/api/user/export");
+      
+      if (!response.ok) {
+        throw new Error("Erro ao exportar dados");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `aptto-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Dados exportados",
+        description: "O ficheiro foi descarregado com sucesso",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível exportar os dados",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsDeleting(false);
+    try {
+      const response = await fetch("/api/user/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation: deleteConfirmation }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao eliminar conta");
+      }
+
+      toast({
+        title: "Conta eliminada",
+        description: "A sua conta foi eliminada com sucesso",
+      });
+
+      // Sign out and redirect
+      await signOut({ redirect: false });
+      router.push("/");
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível eliminar a conta",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmation("");
+    }
   };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("pt-MZ", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const getPlanLabel = (plan: string) => {
+    const labels: Record<string, string> = {
+      FREE: "Gratuito",
+      STUDENT: "Estudante",
+      ACADEMIC: "Académico",
+    };
+    return labels[plan] || plan;
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, { label: string; color: string }> = {
+      ACTIVE: { label: "Activa", color: "text-green-500" },
+      CANCELLED: { label: "Cancelada", color: "text-destructive" },
+      EXPIRED: { label: "Expirada", color: "text-orange-500" },
+      PENDING: { label: "Pendente", color: "text-yellow-500" },
+    };
+    return labels[status] || { label: status, color: "text-muted-foreground" };
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -67,7 +197,7 @@ export function AccountSection() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
-                <p className="font-semibold text-green-500">Ativa</p>
+                <p className="font-semibold text-green-500">Activa</p>
               </div>
             </div>
           </div>
@@ -79,7 +209,9 @@ export function AccountSection() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Plano</p>
-                <p className="font-semibold">Premium</p>
+                <p className="font-semibold">
+                  {user?.subscription ? getPlanLabel(user.subscription.plan) : "Gratuito"}
+                </p>
               </div>
             </div>
           </div>
@@ -91,7 +223,9 @@ export function AccountSection() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Membro desde</p>
-                <p className="font-semibold">15 de Janeiro, 2025</p>
+                <p className="font-semibold">
+                  {user?.createdAt ? formatDate(user.createdAt) : "-"}
+                </p>
               </div>
             </div>
           </div>
@@ -102,12 +236,11 @@ export function AccountSection() {
                 <HardDrive className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Armazenamento</p>
-                <p className="font-semibold">2.4 GB de 10 GB</p>
+                <p className="text-sm text-muted-foreground">Créditos</p>
+                <p className="font-semibold">
+                  {user?.credits?.toLocaleString() || 0} créditos
+                </p>
               </div>
-            </div>
-            <div className="mt-2 h-2 bg-secondary rounded-full overflow-hidden">
-              <div className="h-full w-[24%] bg-primary rounded-full" />
             </div>
           </div>
         </div>
@@ -129,8 +262,8 @@ export function AccountSection() {
 
         <div className="bg-accent/50 backdrop-blur-xl border border-border/50 rounded-xl p-4 shadow-lg">
           <p className="text-sm text-muted-foreground mb-4">
-            Você receberá um arquivo contendo todos os seus projetos, citações,
-            referências e configurações. O processo pode levar alguns minutos.
+            Você receberá um arquivo JSON contendo todos os seus projectos, secções,
+            créditos e configurações. O processo pode levar alguns segundos.
           </p>
           <Button variant="outline" onClick={handleExportData} disabled={isExporting}>
             {isExporting ? (
@@ -141,7 +274,7 @@ export function AccountSection() {
             ) : (
               <>
                 <Download className="h-4 w-4 mr-2" />
-                Solicitar exportação
+                Exportar dados
               </>
             )}
           </Button>
@@ -158,7 +291,7 @@ export function AccountSection() {
             Zona de Perigo
           </Label>
           <p className="text-sm text-muted-foreground">
-            Ações irreversíveis relacionadas à sua conta
+            Acções irreversíveis relacionadas à sua conta
           </p>
         </div>
 
@@ -166,11 +299,11 @@ export function AccountSection() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h4 className="font-semibold text-destructive mb-1">
-                Excluir conta
+                Eliminar conta
               </h4>
               <p className="text-sm text-muted-foreground">
-                Uma vez excluída, sua conta e todos os seus dados serão
-                permanentemente removidos. Esta ação não pode ser desfeita.
+                Uma vez eliminada, a sua conta e todos os seus dados serão
+                permanentemente removidos. Esta acção não pode ser desfeita.
               </p>
             </div>
 
@@ -178,19 +311,19 @@ export function AccountSection() {
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" className="shrink-0">
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Excluir conta
+                  Eliminar conta
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent className="max-w-md">
                 <AlertDialogHeader>
                   <AlertDialogTitle className="flex items-center gap-2 text-destructive">
                     <AlertTriangle className="h-5 w-5" />
-                    Excluir conta permanentemente?
+                    Eliminar conta permanentemente?
                   </AlertDialogTitle>
                   <AlertDialogDescription className="text-left">
-                    Esta ação é irreversível. Todos os seus dados, incluindo
-                    projetos, citações e referências serão permanentemente
-                    excluídos.
+                    Esta acção é irreversível. Todos os seus dados, incluindo
+                    projectos, secções e créditos serão permanentemente
+                    eliminados.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
 
@@ -219,10 +352,10 @@ export function AccountSection() {
                     {isDeleting ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Excluindo...
+                        Eliminando...
                       </>
                     ) : (
-                      "Excluir permanentemente"
+                      "Eliminar permanentemente"
                     )}
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -244,11 +377,11 @@ export function AccountSection() {
             </p>
             <p className="text-muted-foreground">
               Se você está tendo problemas com sua conta ou gostaria de
-              cancelar sua assinatura, entre em contato com nosso{" "}
-              <a href="#" className="text-primary hover:underline">
+              cancelar sua assinatura, entre em contacto com nosso{" "}
+              <a href="mailto:suporte@aptto.mz" className="text-primary hover:underline">
                 suporte
               </a>{" "}
-              antes de excluir sua conta.
+              antes de eliminar sua conta.
             </p>
           </div>
         </div>

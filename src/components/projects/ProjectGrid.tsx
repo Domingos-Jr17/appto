@@ -231,7 +231,7 @@ function ProjectListItem({ project }: { project: Project }) {
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground min-w-[120px]">
+        <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground min-w-30">
           <Clock className="h-3 w-3" />
           <span>{project.lastUpdated}</span>
         </div>

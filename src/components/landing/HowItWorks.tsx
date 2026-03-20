@@ -70,7 +70,7 @@ export function HowItWorks() {
                       <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                       <div className="relative z-10">
                         <div className="flex items-start gap-4 lg:flex-col lg:items-center lg:text-center">
-                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 lg:hidden">
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 lg:hidden">
                             <Icon className="w-5 h-5 text-primary" />
                           </div>
                           <div>

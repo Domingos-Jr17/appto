@@ -207,16 +207,16 @@ export const differentiators = [
     description: "Não é um gerador genérico. É um copiloto pensado para estruturar e apoiar trabalhos académicos de verdade.",
     icon: "GraduationCap",
   },
-  {
-    title: "Créditos Transparentes",
-    description: "Sem surpresas. Saiba exactamente quanto custa cada acção e gerencie os seus créditos com clareza.",
-    icon: "Eye",
-  },
-  {
-    title: "Produto Feito para Moçambique",
-    description: "Desenvolvido com compreensão real das necessidades dos estudantes e instituições moçambicanas.",
-    icon: "MapPin",
-  },
+  // {
+  //   title: "Créditos Transparentes",
+  //   description: "Sem surpresas. Saiba exactamente quanto custa cada acção e gerencie os seus créditos com clareza.",
+  //   icon: "Eye",
+  // },
+  // {
+  //   title: "Produto Feito para Moçambique",
+  //   description: "Desenvolvido com compreensão real das necessidades dos estudantes e instituições moçambicanas.",
+  //   icon: "MapPin",
+  // },
 ];
 
 export const genericComparison = [

@@ -26,10 +26,9 @@ import {
   AlertCircle,
   Zap,
   Copy,
-  RefreshCw,
   Quote,
-  ExternalLink,
 } from "lucide-react";
+import { AI_ACTION_CREDIT_COSTS } from "@/lib/credits";
 
 interface Message {
   id: string;
@@ -68,7 +67,6 @@ export function AIAssistantPanel({
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [streamingContent, setStreamingContent] = useState("");
   const [selectedText, setSelectedText] = useState("");
   const [improveType, setImproveType] = useState("coherence");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -86,11 +84,10 @@ export function AIAssistantPanel({
   const [refAccessDate, setRefAccessDate] = useState("");
   const [generatedReference, setGeneratedReference] = useState("");
 
-  // Credit costs
   const creditCosts = {
-    generate: 5,
-    improve: 3,
-    reference: 1,
+    generate: AI_ACTION_CREDIT_COSTS.generate,
+    improve: AI_ACTION_CREDIT_COSTS.improve,
+    reference: AI_ACTION_CREDIT_COSTS.references,
   };
 
   const scrollToBottom = () => {
@@ -99,7 +96,7 @@ export function AIAssistantPanel({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, streamingContent]);
+  }, [messages]);
 
   const handleGenerate = async () => {
     if (!prompt.trim() || isGenerating) return;
@@ -108,7 +105,6 @@ export function AIAssistantPanel({
     }
 
     setIsGenerating(true);
-    setStreamingContent("");
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -119,16 +115,8 @@ export function AIAssistantPanel({
     setMessages((prev) => [...prev, userMessage]);
 
     try {
-      // Simulated streaming response
       const response = await onGenerate?.(prompt);
       if (response) {
-        // Simulate streaming
-        const words = response.split(" ");
-        for (let i = 0; i < words.length; i++) {
-          await new Promise((r) => setTimeout(r, 50));
-          setStreamingContent((prev) => prev + (prev ? " " : "") + words[i]);
-        }
-
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
@@ -136,7 +124,6 @@ export function AIAssistantPanel({
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, assistantMessage]);
-        setStreamingContent("");
       }
     } catch (error) {
       console.error("Generation error:", error);
@@ -235,7 +222,7 @@ export function AIAssistantPanel({
         <TabsContent value="generate" className="flex-1 flex flex-col mt-0">
           {/* Messages */}
           <ScrollArea className="flex-1 p-4 scrollbar-thin">
-            {messages.length === 0 && !streamingContent ? (
+            {messages.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
                 <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-50" />
                 <p className="text-sm">
@@ -260,12 +247,6 @@ export function AIAssistantPanel({
                     {message.content}
                   </div>
                 ))}
-                {streamingContent && (
-                  <div className="p-3 rounded-lg text-sm bg-muted/50 mr-4">
-                    {streamingContent}
-                    <span className="animate-pulse">▌</span>
-                  </div>
-                )}
                 <div ref={messagesEndRef} />
               </div>
             )}

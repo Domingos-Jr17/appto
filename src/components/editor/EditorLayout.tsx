@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -107,12 +107,10 @@ interface EditorLayoutProps {
 }
 
 export function EditorLayout({ projectId: propProjectId }: EditorLayoutProps) {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
-
-  // Get project ID from URL or prop
-  const projectId = propProjectId || searchParams.get("project");
+  const projectId = propProjectId ?? null;
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
@@ -265,24 +263,34 @@ export function EditorLayout({ projectId: propProjectId }: EditorLayoutProps) {
   }, [wordCount, toast]);
 
   // Handle content change with debounce
-  const handleContentChange = useCallback((newContent: string) => {
-    setContent(newContent);
-    const text = newContent.replace(/<[^>]*>/g, "");
-    const words = text.trim().split(/\s+/).filter(Boolean).length;
-    setWordCount(words);
+  const handleContentChange = useCallback(
+    (newContent: string) => {
+      setContent(newContent);
+      const text = newContent.replace(/<[^>]*>/g, "");
+      const words = text.trim().split(/\s+/).filter(Boolean).length;
+      setWordCount(words);
+      setAutoSaveStatus("saving");
 
-    // Mark as saving
-    setAutoSaveStatus("saving");
-
-    // Debounced save
-    const timeoutId = setTimeout(() => {
-      if (activeSectionId) {
-        saveSection(activeSectionId, newContent);
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
-    }, 2000);
 
-    return () => clearTimeout(timeoutId);
-  }, [activeSectionId, saveSection]);
+      saveTimeoutRef.current = setTimeout(() => {
+        if (activeSectionId) {
+          void saveSection(activeSectionId, newContent);
+        }
+      }, 1200);
+    },
+    [activeSectionId, saveSection]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Handle section add
   const handleSectionAdd = useCallback(async (parentId?: string) => {

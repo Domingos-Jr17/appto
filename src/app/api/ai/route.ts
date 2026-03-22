@@ -12,22 +12,7 @@ import {
   getCachedResponse,
   setCachedResponse,
 } from "@/lib/ai-cache";
-
-// Credit costs for each action
-const CREDIT_COSTS: Record<string, number> = {
-  generate: 10,
-  improve: 5,
-  suggest: 7,
-  references: 3,
-  outline: 5,
-  chat: 3,
-  summarize: 3,
-  translate: 5,
-  citations: 2,
-  "plagiarism-check": 15,
-  "generate-section": 8,
-  "generate-complete": 50, // Generate entire work
-};
+import { AI_ACTION_CREDIT_COSTS, DEFAULT_AI_ACTION_COST } from "@/lib/credits";
 
 // System prompts for different education levels
 const EDUCATION_PROMPTS = {
@@ -133,7 +118,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, text, context, projectId, useCache = true } = body;
 
-    const creditsNeeded = CREDIT_COSTS[action] || 5;
+    const creditsNeeded =
+      AI_ACTION_CREDIT_COSTS[action as keyof typeof AI_ACTION_CREDIT_COSTS] ??
+      DEFAULT_AI_ACTION_COST;
 
     // Check user credits
     const userCredits = await db.credit.findUnique({

@@ -47,5 +47,11 @@ test
 prompt
 
 server.log
+.tmp-*.txt
+.tmp-*.json
+db/*.db
+db/*.db-*
+playwright-report
+test-results
 # Skills directory
 /skills/

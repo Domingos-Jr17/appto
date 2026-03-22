@@ -32,7 +32,7 @@ const plans = [
     description: "Ideal para trabalhos académicos regulares",
     features: [
       { text: "12.000 créditos", included: true },
-      { text: "Exportação ilimitada", included: true },
+      { text: "Exportação DOCX", included: true },
       { text: "Sem marca de água", included: true },
       { text: "RAG local", included: false },
       { text: "Modelos avançados", included: false },
@@ -46,12 +46,13 @@ const plans = [
     price: "900",
     currency: "MZN",
     period: "/mês",
-    description: "Para pesquisadores e académicos sérios",
+    description: "Para equipas e utilizadores intensivos em fase piloto",
     features: [
       { text: "60.000 créditos", included: true },
-      { text: "RAG local incluído", included: true },
+      { text: "Fluxo de projeto avançado", included: true },
       { text: "Modelos avançados", included: true },
       { text: "Sem limites diários", included: true },
+      { text: "RAG local", included: false },
       { text: "Suporte prioritário", included: true },
     ],
     cta: "Escolher Académico",
@@ -309,7 +310,7 @@ export function PricingCards() {
           className="mt-12 text-center"
         >
           <p className="text-sm text-muted-foreground">
-            Cancele quando quiser • Sem taxas escondidas • Pagamento seguro
+            Cobrança ainda em validação operacional • sem promessas públicas de pagamento móvel até integração real
           </p>
         </motion.div>
       </div>

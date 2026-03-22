@@ -1,7 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { ArrowRight, Check, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { trustIndicators } from "./data";
@@ -64,13 +64,12 @@ export function HeroSection() {
                 <Button
                   size="lg"
                   className="rounded-xl font-semibold px-8 py-6 text-base bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 group"
-                  onClick={() => {
-                    const element = document.querySelector("#demo");
-                    if (element) element.scrollIntoView({ behavior: "smooth" });
-                  }}
+                  asChild
                 >
-                  Começar Grátis
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  <Link href="/register">
+                    Começar Grátis
+                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </Link>
                 </Button>
                 <Button
                   variant="outline"

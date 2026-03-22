@@ -138,3 +138,7 @@ export const disableTotpSchema = z.object({
   currentPassword: z.string().min(1).optional(),
   otpCode: z.string().trim().min(6).max(12).optional(),
 });
+
+export const demoOutlineSchema = z.object({
+  topic: z.string().trim().min(8).max(160),
+});

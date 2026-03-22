@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui-aptto/ThemeToggle";
 import { navigationLinks } from "./data";
@@ -83,18 +84,14 @@ export function Header() {
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center gap-3">
               <ThemeToggle />
-              <Button
-                variant="ghost"
-                className="rounded-xl font-medium"
-                onClick={() => {}}
-              >
-                Entrar
+              <Button variant="ghost" className="rounded-xl font-medium" asChild>
+                <Link href="/login">Entrar</Link>
               </Button>
               <Button
                 className="rounded-xl font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20"
-                onClick={() => scrollToSection("#demo")}
+                asChild
               >
-                Começar Grátis
+                <Link href="/register">Começar Grátis</Link>
               </Button>
             </div>
 
@@ -162,18 +159,18 @@ export function Header() {
                 </nav>
 
                 <div className="mt-auto flex flex-col gap-3">
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-xl font-medium py-6"
-                    onClick={() => {}}
-                  >
-                    Entrar
+                  <Button variant="outline" className="w-full rounded-xl font-medium py-6" asChild>
+                    <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                      Entrar
+                    </Link>
                   </Button>
                   <Button
                     className="w-full rounded-xl font-medium py-6 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                    onClick={() => scrollToSection("#demo")}
+                    asChild
                   >
-                    Começar Grátis
+                    <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                      Começar Grátis
+                    </Link>
                   </Button>
                 </div>
               </div>

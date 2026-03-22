@@ -10,20 +10,137 @@ Siga rigorosamente as normas ABNT.
 Seja preciso, formal e académico.
 Inclua referências bibliográficas relevantes quando apropriado.`;
 
-interface SectionToGenerate {
+interface SectionTemplate {
   title: string;
   order: number;
-  prompt: string;
 }
 
-const DEFAULT_SECTIONS: SectionToGenerate[] = [
-  { title: "1. Introdução", order: 6, prompt: "introdução completa com contextualização, problema, objetivos, justificativa e estrutura do trabalho" },
-  { title: "2. Revisão da Literatura", order: 7, prompt: "revisão bibliográfica completa com autores clássicos e contemporâneos sobre o tema, organizada por temas" },
-  { title: "3. Metodologia", order: 8, prompt: "metodologia detalhada com tipo de pesquisa, métodos de coleta, análise de dados e limitações" },
-  { title: "4. Resultados", order: 9, prompt: "apresentação dos resultados obtidos, organizados de forma clara com análise preliminar" },
-  { title: "5. Discussão", order: 10, prompt: "discussão aprofundada dos resultados à luz da literatura, implicações e conexões teóricas" },
-  { title: "6. Conclusão", order: 11, prompt: "conclusão com síntese dos principais achados, contribuições, limitações e sugestões para pesquisas futuras" },
+interface GeneratedSection {
+  title: string;
+  content: string;
+}
+
+interface GeneratedWorkContent {
+  abstract: string;
+  sections: GeneratedSection[];
+}
+
+const DEFAULT_SECTIONS: SectionTemplate[] = [
+  { title: "1. Introdução", order: 6 },
+  { title: "2. Revisão da Literatura", order: 7 },
+  { title: "3. Metodologia", order: 8 },
+  { title: "4. Resultados", order: 9 },
+  { title: "5. Discussão", order: 10 },
+  { title: "6. Conclusão", order: 11 },
 ];
+
+function extractJSONObject(rawContent: string) {
+  const trimmed = rawContent.trim();
+  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fencedMatch?.[1]?.trim() || trimmed;
+  const firstBrace = candidate.indexOf("{");
+  const lastBrace = candidate.lastIndexOf("}");
+
+  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+    throw new Error("A IA não devolveu JSON válido para o trabalho completo.");
+  }
+
+  return candidate.slice(firstBrace, lastBrace + 1);
+}
+
+function parseGeneratedWorkContent(rawContent: string) {
+  const parsed = JSON.parse(extractJSONObject(rawContent)) as Partial<GeneratedWorkContent>;
+
+  if (!parsed.abstract || typeof parsed.abstract !== "string") {
+    throw new Error("A IA não devolveu um resumo válido.");
+  }
+
+  if (!Array.isArray(parsed.sections)) {
+    throw new Error("A IA não devolveu as secções esperadas.");
+  }
+
+  const sectionsByTitle = new Map(
+    parsed.sections
+      .filter(
+        (section): section is GeneratedSection =>
+          Boolean(
+            section &&
+              typeof section.title === "string" &&
+              typeof section.content === "string"
+          )
+      )
+      .map((section) => [section.title.trim(), section.content.trim()])
+  );
+
+  const sections = DEFAULT_SECTIONS.map((section) => {
+    const content = sectionsByTitle.get(section.title);
+
+    if (!content) {
+      throw new Error(`A IA não devolveu conteúdo para a secção "${section.title}".`);
+    }
+
+    return {
+      title: section.title,
+      content,
+    };
+  });
+
+  return {
+    abstract: parsed.abstract.trim(),
+    sections,
+  };
+}
+
+async function generateCompleteWorkContent(title: string, type: string, author: string) {
+  const orderedTitles = DEFAULT_SECTIONS.map((section) => section.title).join(", ");
+  const prompt = `Gere um trabalho académico completo sobre "${title}".
+
+Tipo de trabalho: ${formatProjectType(type)}
+Autor: ${author}
+
+Responda exclusivamente com JSON válido, sem markdown, sem comentários, sem texto antes ou depois.
+
+Use exactamente este formato:
+{
+  "abstract": "resumo académico",
+  "sections": [
+    { "title": "1. Introdução", "content": "..." },
+    { "title": "2. Revisão da Literatura", "content": "..." },
+    { "title": "3. Metodologia", "content": "..." },
+    { "title": "4. Resultados", "content": "..." },
+    { "title": "5. Discussão", "content": "..." },
+    { "title": "6. Conclusão", "content": "..." }
+  ]
+}
+
+Requisitos obrigatórios:
+- Mantenha exactamente estes títulos e esta ordem: ${orderedTitles}
+- "abstract" deve ter entre 150 e 220 palavras
+- Cada secção deve ter entre 220 e 320 palavras
+- Use Português académico de Moçambique
+- Siga normas ABNT
+- Use linguagem formal, precisa e académica
+- Não deixe nenhuma secção vazia
+- Produza JSON estritamente válido`;
+
+  const completion = await createZAIChatCompletion({
+    model: "glm-4.7-flash",
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: prompt },
+    ],
+    thinking: { type: "disabled" },
+    max_tokens: 7000,
+  });
+
+  const rawContent = completion.choices[0]?.message?.content || "";
+
+  if (!rawContent) {
+    throw new Error("A IA não devolveu conteúdo para o trabalho completo.");
+  }
+
+  return parseGeneratedWorkContent(rawContent);
+}
 
 // POST /api/generate/work - Generate complete academic work
 export async function POST(request: NextRequest) {
@@ -35,9 +152,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { 
-      title, 
-      type = "MONOGRAPHY", 
+    const {
+      title,
+      type = "MONOGRAPHY",
       description,
       generateContent = true,
     } = body;
@@ -56,54 +173,17 @@ export async function POST(request: NextRequest) {
 
     if (shouldGenerateContent) {
       try {
-        for (const section of DEFAULT_SECTIONS) {
-          const prompt = `Gere a ${section.prompt} para um trabalho académico sobre: "${title}"
+        const generatedContent = await generateCompleteWorkContent(
+          title,
+          type,
+          session.user.name || "Estudante"
+        );
 
-Tipo de trabalho: ${formatProjectType(type)}
-Autor: ${session.user.name || "Estudante"}
-
-Requisitos:
-- Texto em Português académico de Moçambique
-- Entre 400-600 palavras
-- Inclua pelo menos 2-3 referências ABNT relevantes
-- Use linguagem formal e objectiva
-- Estruture com subtitulos quando apropriado`;
-
-          const completion = await createZAIChatCompletion({
-            model: "glm-4.7-flash",
-            messages: [
-              { role: "system", content: SYSTEM_PROMPT },
-              { role: "user", content: prompt },
-            ],
-            thinking: { type: "disabled" },
-            max_tokens: 900,
-          });
-
-          sectionContents.set(
-            section.title,
-            completion.choices[0]?.message?.content || ""
-          );
+        for (const section of generatedContent.sections) {
+          sectionContents.set(section.title, section.content);
         }
 
-        const abstractPrompt = `Gere um resumo académico para o trabalho sobre: "${title}"
-
-O resumo deve:
-- Ter 150-250 palavras
-- Incluir: objetivo, metodologia, resultados e conclusão
-- Ser em Português de Moçambique
-- Seguir normas ABNT`;
-
-        const abstractCompletion = await createZAIChatCompletion({
-          model: "glm-4.7-flash",
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: abstractPrompt },
-          ],
-          thinking: { type: "disabled" },
-          max_tokens: 400,
-        });
-
-        abstractContent = abstractCompletion.choices[0]?.message?.content || "";
+        abstractContent = generatedContent.abstract;
       } catch (error) {
         console.warn(
           "ZAI unavailable for project generation, falling back to structure-only mode:",
@@ -115,12 +195,10 @@ O resumo deve:
       }
     }
 
-    // Calculate credits needed
     const baseCost = 20;
     const contentCost = shouldGenerateContent ? DEFAULT_SECTIONS.length * 15 : 0;
     const totalCost = baseCost + contentCost;
 
-    // Check user credits
     const userCredits = await db.credit.findUnique({
       where: { userId: session.user.id },
     });
@@ -132,9 +210,7 @@ O resumo deve:
       );
     }
 
-    // Create project with transaction
     const result = await db.$transaction(async (tx) => {
-      // Create project
       const project = await tx.project.create({
         data: {
           title,
@@ -145,7 +221,6 @@ O resumo deve:
         },
       });
 
-      // Create static sections
       const staticSections = [
         { title: "Capa", order: 1, content: generateCover(title, session.user.name || "Autor", type) },
         { title: "Resumo", order: 2 },
@@ -167,25 +242,19 @@ O resumo deve:
         });
       }
 
-      // Create main content sections
       for (const section of DEFAULT_SECTIONS) {
-        let content = "";
-
-        if (shouldGenerateContent) {
-          content = sectionContents.get(section.title) || "";
-        }
-
         await tx.documentSection.create({
           data: {
             projectId: project.id,
             title: section.title,
             order: section.order,
-            content,
+            content: shouldGenerateContent
+              ? sectionContents.get(section.title) || ""
+              : "",
           },
         });
       }
 
-      // Generate abstract
       if (shouldGenerateContent && abstractContent) {
         await tx.documentSection.updateMany({
           where: { projectId: project.id, title: "Resumo" },
@@ -193,7 +262,6 @@ O resumo deve:
         });
       }
 
-      // Deduct credits
       await tx.credit.update({
         where: { userId: session.user.id },
         data: {
@@ -218,7 +286,6 @@ O resumo deve:
       return project;
     });
 
-    // Fetch the complete project
     const completeProject = await db.project.findUnique({
       where: { id: result.id },
       include: {

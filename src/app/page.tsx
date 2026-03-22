@@ -15,6 +15,7 @@ import {
   FinalCTA,
   Footer,
 } from "@/components/landing";
+import { isFeatureVisible } from "@/lib/features";
 
 export default function Home() {
   const { scrollYProgress } = useScroll();
@@ -39,7 +40,7 @@ export default function Home() {
       <HeroSection />
 
       {/* Social Proof Stats */}
-      <SocialProof />
+      {isFeatureVisible("landingSocialProof") && <SocialProof />}
 
       {/* Features Grid */}
       <FeaturesGrid />
@@ -48,7 +49,7 @@ export default function Home() {
       <HowItWorks />
 
       {/* Testimonials */}
-      <TestimonialsCarousel />
+      {isFeatureVisible("landingTestimonials") && <TestimonialsCarousel />}
 
       {/* Differentiators */}
       <DifferentiatorsSection />

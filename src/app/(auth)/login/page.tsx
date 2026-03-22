@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getProviders, signIn } from "next-auth/react";
@@ -14,6 +14,10 @@ function getLoginErrorMessage(error?: string) {
   switch (error) {
     case "CredentialsSignin":
       return "Email ou senha incorretos";
+    case "TwoFactorRequired":
+      return "Introduza o código do autenticador para concluir o login.";
+    case "InvalidTwoFactorCode":
+      return "O código 2FA introduzido é inválido.";
     case "Configuration":
       return "A autenticação não está configurada corretamente no servidor.";
     default:
@@ -28,6 +32,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpRequired, setOtpRequired] = useState(false);
   const [hasGoogleProvider, setHasGoogleProvider] = useState(false);
 
   useEffect(() => {
@@ -59,11 +65,15 @@ export default function LoginPage() {
       const result = await signIn("credentials", {
         email: normalizedEmail,
         password,
+        otpCode: otpCode.trim() || undefined,
         redirect: false,
         callbackUrl: "/app",
       });
 
       if (result?.error) {
+        if (result.error === "TwoFactorRequired") {
+          setOtpRequired(true);
+        }
         setError(getLoginErrorMessage(result.error));
         setIsLoading(false);
         return;
@@ -158,6 +168,30 @@ export default function LoginPage() {
             </button>
           </div>
         </div>
+
+        {otpRequired && (
+          <div className="space-y-2">
+            <Label htmlFor="otp-code">Código 2FA</Label>
+            <div className="relative">
+              <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                id="otp-code"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="123456"
+                value={otpCode}
+                onChange={(e) =>
+                  setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                }
+                className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 transition-all duration-300"
+                required={otpRequired}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Use o código de 6 dígitos do autenticador associado à sua conta.
+            </p>
+          </div>
+        )}
 
         {/* Login Button */}
         <Button

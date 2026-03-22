@@ -1,5 +1,4 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
+import { env } from "@/lib/env";
 
 const RETRY_DELAYS_MS = [800, 1600, 3200];
 const DEFAULT_BASE_URL = "https://api.z.ai/api/paas/v4";
@@ -76,28 +75,11 @@ function parseStatusFromMessage(message: string) {
   return match ? Number(match[1]) : null;
 }
 
-async function loadConfigFromFile() {
-  const configPath = path.join(process.cwd(), ".z-ai-config");
-  const rawConfig = await readFile(configPath, "utf8");
-  const parsedConfig = JSON.parse(rawConfig) as Partial<ZAIConfig>;
-
-  if (!parsedConfig.apiKey || !parsedConfig.baseUrl) {
-    throw new ZAIRequestError(
-      "Configuration file not found or invalid. Please create .z-ai-config in your project, home directory, or /etc."
-    );
-  }
-
-  return {
-    apiKey: parsedConfig.apiKey,
-    baseUrl: parsedConfig.baseUrl,
-  };
-}
-
 async function loadZAIConfig() {
   if (!zaiConfigPromise) {
     zaiConfigPromise = (async () => {
-      const apiKey = process.env.ZAI_API_KEY?.trim();
-      const baseUrl = process.env.ZAI_BASE_URL?.trim();
+      const apiKey = env.ZAI_API_KEY?.trim();
+      const baseUrl = env.ZAI_BASE_URL?.trim();
 
       if (apiKey) {
         return {
@@ -106,7 +88,9 @@ async function loadZAIConfig() {
         };
       }
 
-      return loadConfigFromFile();
+      throw new ZAIRequestError(
+        "Configuration missing. Define ZAI_API_KEY in the environment before using AI routes."
+      );
     })().catch((error) => {
       zaiConfigPromise = null;
       throw error;
@@ -189,7 +173,7 @@ export function getZAIErrorStatus(error: unknown) {
 
 export function isZAIConfigError(error: unknown) {
   return error instanceof Error
-    ? error.message.includes("Configuration file not found or invalid")
+    ? error.message.includes("Configuration missing")
     : false;
 }
 

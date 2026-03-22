@@ -7,7 +7,6 @@ import {
   History,
   HelpCircle,
   Sparkles,
-  CreditCard,
   ArrowUpRight,
   ArrowDownRight,
   Loader2,
@@ -41,77 +40,44 @@ interface Transaction {
   createdAt: string;
 }
 
+interface CreditPackage {
+  credits: number;
+  price: number;
+  currency: string;
+}
+
 interface CreditData {
   balance: number;
   used: number;
   transactions: Transaction[];
+  packages: Record<string, CreditPackage>;
 }
-
-const plans = [
-  {
-    name: "Starter",
-    price: 250,
-    credits: 500,
-    packageKey: "starter",
-    features: [
-      "~10 trabalhos académicos",
-      "Suporte por email",
-      "Acesso a todos os tipos",
-    ],
-  },
-  {
-    name: "Standard",
-    price: 1000,
-    credits: 2500,
-    packageKey: "basic",
-    popular: true,
-    features: [
-      "~50 trabalhos académicos",
-      "Suporte prioritário",
-      "Acesso a todos os tipos",
-      "Bónus de 300 créditos",
-    ],
-  },
-  {
-    name: "Premium",
-    price: 2000,
-    credits: 5500,
-    packageKey: "academic",
-    features: [
-      "~110 trabalhos académicos",
-      "Suporte VIP 24/7",
-      "Acesso a todos os tipos",
-      "Bónus de 1000 créditos",
-      "Funcionalidades beta",
-    ],
-  },
-];
 
 const faqItems = [
   {
     question: "O que são créditos e como funcionam?",
     answer:
-      "Créditos são a moeda do aptto. Cada operação (gerar texto, criar referências, etc.) consome créditos. Em média, um trabalho académico completo consome cerca de 50 créditos. Os créditos nunca expiram e podem ser usados a qualquer momento.",
+      "Créditos são a unidade de consumo da plataforma. Cada geração, melhoria ou exportação desconta o custo correspondente e fica registada no histórico da conta.",
   },
   {
     question: "Quanto custa cada operação?",
     answer:
-      "O custo varia por operação: geração de texto (10 créditos), melhoria de texto (5 créditos), sugestões (7 créditos), referências ABNT (3 créditos), geração de trabalho completo (110 créditos). O sistema sempre mostra o custo antes de confirmar.",
+      "Os custos são centralizados no servidor. Hoje, gerar conteúdo custa 10 créditos, melhorar texto custa 5, referências custam 3 e exportação DOCX/PDF usa uma tarifa dedicada.",
   },
   {
     question: "Posso obter reembolso dos créditos?",
     answer:
-      "Não oferecemos reembolso de créditos já adquiridos. No entanto, se houver problemas técnicos com a nossa plataforma que resultem em perda de créditos, entraremos em contacto para os repor automaticamente.",
+      "Reembolsos não são automáticos. O histórico de transacções serve como trilho de auditoria para corrigir falhas operacionais quando necessário.",
   },
   {
     question: "Os créditos expiram?",
     answer:
-      "Não! Os seus créditos não expiram. Ficam disponíveis na sua conta até serem utilizados, independentemente do tempo que passe.",
+      "Não. O saldo permanece disponível até ser consumido por operações reais da plataforma.",
   },
   {
     question: "Como funciona o pagamento por M-Pesa/e-Mola?",
     answer:
-      "Após seleccionar o pacote, será redireccionado para uma página segura de pagamento. Insira o seu número de telemóvel e confirme a transacção com o seu PIN. Os créditos são creditados instantaneamente após confirmação.",
+      "Nesta fase, a app usa checkout sandbox para validar o fluxo de compra e crédito. Os adaptadores reais de M-Pesa/e-Mola permanecem em homologação e só serão activados quando estiverem operacionais.",
   },
 ];
 
@@ -123,59 +89,90 @@ export default function CreditsPage() {
     balance: 0,
     used: 0,
     transactions: [],
+    packages: {},
   });
 
-  useEffect(() => {
-    fetchCredits();
-  }, []);
-
-  const fetchCredits = async () => {
+  const fetchCredits = React.useCallback(async () => {
     try {
       const response = await fetch("/api/credits?transactions=true");
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Não foi possível carregar os créditos.");
+      }
+
       setCreditData(data);
     } catch (error) {
-      console.error("Error fetching credits:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar os créditos",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar os créditos",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
-  const handlePurchase = async (plan: typeof plans[0]) => {
-    setIsPurchasing(plan.packageKey);
+  useEffect(() => {
+    void fetchCredits();
+  }, [fetchCredits]);
+
+  const plans = React.useMemo(() => {
+    return Object.entries(creditData.packages).map(([packageKey, value]) => ({
+      name:
+        packageKey === "starter"
+          ? "Starter"
+          : packageKey === "basic"
+            ? "Standard"
+            : packageKey === "academic"
+              ? "Academic"
+              : "Pro",
+      price: value.price,
+      credits: value.credits,
+      packageKey,
+      popular: packageKey === "basic",
+      currency: value.currency,
+      features: [
+        `${value.credits.toLocaleString("pt-MZ")} créditos no saldo`,
+        "Checkout sandbox com confirmação automática em ambiente de teste",
+        "Histórico de compra persistido na conta",
+      ],
+    }));
+  }, [creditData.packages]);
+
+  const handlePurchase = async (packageKey: string) => {
+    setIsPurchasing(packageKey);
 
     try {
       const response = await fetch("/api/credits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: plan.packageKey,
-          paymentMethod: "simulado",
+          packageKey,
+          provider: "SIMULATED",
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error);
+        throw new Error(data.error || "Falha ao processar pagamento.");
       }
 
       toast({
-        title: "Pagamento processado!",
-        description: `Foram adicionados ${data.creditsAdded} créditos à sua conta`,
+        title: "Checkout concluído",
+        description: `Pagamento sandbox confirmado. Saldo atualizado para ${data.balance} créditos.`,
       });
 
-      // Refresh credit data
-      fetchCredits();
-    } catch (error: any) {
+      await fetchCredits();
+    } catch (error) {
       toast({
         title: "Erro no pagamento",
-        description: error.message || "Tente novamente",
+        description:
+          error instanceof Error ? error.message : "Tente novamente",
         variant: "destructive",
       });
     } finally {
@@ -183,16 +180,27 @@ export default function CreditsPage() {
     }
   };
 
-  // Generate usage data from transactions
   const usageData = React.useMemo(() => {
-    const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"];
-    return months.map((month, i) => ({
-      month,
-      credits: Math.floor(Math.random() * 400) + 200,
-    }));
-  }, []);
+    const grouped = new Map<string, number>();
 
-  // Map transaction type to display
+    for (const transaction of creditData.transactions) {
+      if (transaction.amount >= 0) continue;
+      const date = new Date(transaction.createdAt);
+      const monthLabel = date.toLocaleDateString("pt-MZ", { month: "short" });
+      grouped.set(monthLabel, (grouped.get(monthLabel) || 0) + Math.abs(transaction.amount));
+    }
+
+    const now = new Date();
+    return Array.from({ length: 6 }, (_, index) => {
+      const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+      const monthLabel = date.toLocaleDateString("pt-MZ", { month: "short" });
+      return {
+        month: monthLabel,
+        credits: grouped.get(monthLabel) || 0,
+      };
+    });
+  }, [creditData.transactions]);
+
   const getTypeInfo = (type: string) => {
     switch (type) {
       case "PURCHASE":
@@ -201,8 +209,6 @@ export default function CreditsPage() {
         return { icon: Sparkles, color: "amber", label: "Bónus" };
       case "REFUND":
         return { icon: ArrowUpRight, color: "blue", label: "Reembolso" };
-      case "SUBSCRIPTION":
-        return { icon: CreditCard, color: "purple", label: "Subscrição" };
       default:
         return { icon: ArrowDownRight, color: "sky", label: "Uso" };
     }
@@ -219,7 +225,7 @@ export default function CreditsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -227,7 +233,6 @@ export default function CreditsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
           <Coins className="h-5 w-5 text-primary" />
@@ -235,23 +240,17 @@ export default function CreditsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Créditos</h1>
           <p className="text-sm text-muted-foreground">
-            Gerencie os seus créditos e pagamentos
+            Gerencie o saldo, o histórico e o checkout sandbox.
           </p>
         </div>
       </div>
 
-      {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left Column - Balance & Usage */}
         <div className="space-y-6 lg:col-span-1">
-          <BalanceCard 
-            balance={creditData.balance} 
-            usageThisMonth={creditData.used} 
-          />
+          <BalanceCard balance={creditData.balance} usageThisMonth={creditData.used} />
           <UsageChart data={usageData} />
         </div>
 
-        {/* Right Column - Payment Plans */}
         <div className="lg:col-span-2">
           <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
             <CardHeader className="pb-3">
@@ -264,32 +263,34 @@ export default function CreditsPage() {
               <div className="grid gap-4 md:grid-cols-3">
                 {plans.map((plan) => (
                   <div
-                    key={plan.name}
+                    key={plan.packageKey}
                     className={`relative rounded-xl border-2 p-5 ${
                       plan.popular
                         ? "border-primary bg-primary/5"
                         : "border-border/50 bg-muted/30"
                     }`}
                   >
-                    {plan.popular && (
+                    {plan.popular ? (
                       <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 gradient-primary text-primary-foreground">
                         Mais Popular
                       </Badge>
-                    )}
-                    <div className="text-center mb-4">
-                      <h3 className="font-semibold text-lg">{plan.name}</h3>
+                    ) : null}
+                    <div className="mb-4 text-center">
+                      <h3 className="text-lg font-semibold">{plan.name}</h3>
                       <div className="mt-2">
-                        <span className="text-3xl font-bold">{plan.price.toLocaleString("pt-MZ")}</span>
-                        <span className="text-muted-foreground"> MT</span>
+                        <span className="text-3xl font-bold">
+                          {plan.price.toLocaleString("pt-MZ")}
+                        </span>
+                        <span className="text-muted-foreground"> {plan.currency}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="mt-1 text-sm text-muted-foreground">
                         {plan.credits.toLocaleString("pt-MZ")} créditos
                       </p>
                     </div>
                     <ul className="space-y-2">
-                      {plan.features.map((feature, index) => (
-                        <li key={index} className="flex items-center gap-2 text-sm">
-                          <div className="h-4 w-4 rounded-full bg-primary/10 flex items-center justify-center">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-center gap-2 text-sm">
+                          <div className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/10">
                             <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                           </div>
                           <span>{feature}</span>
@@ -297,17 +298,17 @@ export default function CreditsPage() {
                       ))}
                     </ul>
                     <Button
-                      className={`w-full mt-4 ${
+                      className={`mt-4 w-full ${
                         plan.popular
                           ? "gradient-primary text-primary-foreground hover:opacity-90"
                           : ""
                       }`}
                       variant={plan.popular ? "default" : "outline"}
-                      onClick={() => handlePurchase(plan)}
+                      onClick={() => handlePurchase(plan.packageKey)}
                       disabled={isPurchasing !== null}
                     >
                       {isPurchasing === plan.packageKey ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : null}
                       {isPurchasing === plan.packageKey ? "Processando..." : "Seleccionar"}
                     </Button>
@@ -319,7 +320,6 @@ export default function CreditsPage() {
         </div>
       </div>
 
-      {/* Transaction History */}
       <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -334,13 +334,15 @@ export default function CreditsPage() {
         </CardHeader>
         <CardContent>
           {creditData.transactions.length > 0 ? (
-            <div className="rounded-lg border border-border/50 overflow-hidden">
+            <div className="overflow-hidden rounded-lg border border-border/50">
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="text-muted-foreground">Descrição</TableHead>
                     <TableHead className="text-muted-foreground">Data</TableHead>
-                    <TableHead className="text-muted-foreground text-right">Créditos</TableHead>
+                    <TableHead className="text-right text-muted-foreground">
+                      Créditos
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -350,7 +352,7 @@ export default function CreditsPage() {
                     const isCredit = tx.amount > 0;
 
                     return (
-                      <TableRow key={tx.id} className="group">
+                      <TableRow key={tx.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <div
@@ -358,10 +360,10 @@ export default function CreditsPage() {
                                 typeInfo.color === "emerald"
                                   ? "bg-emerald-500/10"
                                   : typeInfo.color === "amber"
-                                  ? "bg-amber-500/10"
-                                  : typeInfo.color === "sky"
-                                  ? "bg-sky-500/10"
-                                  : "bg-primary/10"
+                                    ? "bg-amber-500/10"
+                                    : typeInfo.color === "sky"
+                                      ? "bg-sky-500/10"
+                                      : "bg-primary/10"
                               }`}
                             >
                               <Icon
@@ -369,10 +371,10 @@ export default function CreditsPage() {
                                   typeInfo.color === "emerald"
                                     ? "text-emerald-500"
                                     : typeInfo.color === "amber"
-                                    ? "text-amber-500"
-                                    : typeInfo.color === "sky"
-                                    ? "text-sky-500"
-                                    : "text-primary"
+                                      ? "text-amber-500"
+                                      : typeInfo.color === "sky"
+                                        ? "text-sky-500"
+                                        : "text-primary"
                                 }`}
                               />
                             </div>
@@ -388,7 +390,7 @@ export default function CreditsPage() {
                         <TableCell className="text-right">
                           <span
                             className={
-                              isCredit ? "text-emerald-500 font-medium" : "text-foreground"
+                              isCredit ? "font-medium text-emerald-500" : "text-foreground"
                             }
                           >
                             {isCredit ? "+" : ""}
@@ -403,17 +405,16 @@ export default function CreditsPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <History className="h-12 w-12 text-muted-foreground/30 mb-4" />
-              <h3 className="text-lg font-medium mb-2">Sem transacções ainda</h3>
+              <History className="mb-4 h-12 w-12 text-muted-foreground/30" />
+              <h3 className="mb-2 text-lg font-medium">Sem transacções ainda</h3>
               <p className="text-sm text-muted-foreground">
-                As suas transacções aparecerão aqui
+                As suas compras e consumos de crédito aparecerão aqui.
               </p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* FAQ Section */}
       <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-medium">
@@ -425,7 +426,7 @@ export default function CreditsPage() {
           <Accordion type="single" collapsible className="w-full">
             {faqItems.map((item, index) => (
               <AccordionItem
-                key={index}
+                key={item.question}
                 value={`item-${index}`}
                 className="border-border/50"
               >

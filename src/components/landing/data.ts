@@ -1,4 +1,12 @@
-// Mock data for aptto landing page
+import {
+  isFeaturePublic,
+  isFeatureVisible,
+  type FeatureKey,
+} from "@/lib/features";
+
+type LandingItem<T> = T & {
+  featureKey?: FeatureKey;
+};
 
 export const navigationLinks = [
   { label: "Recursos", href: "#recursos" },
@@ -9,70 +17,29 @@ export const navigationLinks = [
 ];
 
 export const stats = [
-  { value: "2.500+", label: "Estudantes activos", suffix: "" },
-  { value: "15.000", label: "Trabalhos estruturados", suffix: "+" },
-  { value: "98%", label: "Taxa de satisfação", suffix: "" },
-  { value: "45min", label: "Tempo médio poupado", suffix: "" },
+  { value: "1", label: "superfície oficial da app", suffix: "" },
+  { value: "3", label: "fluxos reais já ativos", suffix: "+" },
+  { value: "DOCX", label: "exportação disponível", suffix: "" },
+  { value: "24/7", label: "acesso web ao workspace", suffix: "" },
 ];
 
-export const testimonials = [
-  {
-    id: 1,
-    name: "Ana Cristina Macamo",
-    role: "Estudante de Direito",
-    institution: "Universidade Eduardo Mondlane",
-    initials: "AC",
-    rating: 5,
-    text: "O aptto transformou completamente a forma como estruturo os meus trabalhos. A normalização ABNT era um pesadelo, agora está sempre perfeita. Recomendo a todos os colegas.",
-  },
-  {
-    id: 2,
-    name: "Carlos Munhiça",
-    role: "Mestrando em Educação",
-    institution: "Universidade Pedagógica",
-    initials: "CM",
-    rating: 5,
-    text: "Finalmente uma ferramenta que entende o contexto moçambicano. O português académico é exactamente como os meus professores esperam. O RAG com fontes locais faz toda a diferença.",
-  },
-  {
-    id: 3,
-    name: "Fátima Chaúque",
-    role: "Finalista de Economia",
-    institution: "ISCTEM",
-    initials: "FC",
-    rating: 5,
-    text: "Passei noites em branco com a minha monografia. Com o aptto, consegui organizar tudo em dias. O melhor: o texto parece mesmo meu, com a minha voz académica.",
-  },
-  {
-    id: 4,
-    name: "João Paulo Manjate",
-    role: "Estudante de Engenharia",
-    institution: "Universidade Save",
-    initials: "JM",
-    rating: 5,
-    text: "A funcionalidade de exportar em DOCX formatado poupa-me horas. Os créditos são transparentes e o preço é justo para nós estudantes. Excelente investimento.",
-  },
-  {
-    id: 5,
-    name: "Lúcia Mondlane",
-    role: "Doutoranda em Saúde Pública",
-    institution: "Universidade Lúrio",
-    initials: "LM",
-    rating: 5,
-    text: "Como doutoranda, preciso de rigor. O aptto não gera texto genérico - ajuda-me a pensar, estruturar e melhorar. É um copiloto académico de verdade.",
-  },
-  {
-    id: 6,
-    name: "Ricardo Nhantumbo",
-    role: "Estudante de Gestão",
-    institution: "ISPU",
-    initials: "RN",
-    rating: 5,
-    text: "O que mais me impressiona é a qualidade do português académico moçambicano. Nada de traduções estranhas. É português nosso, académico e bem escrito.",
-  },
-];
+export const testimonials: Array<{
+  id: number;
+  name: string;
+  role: string;
+  institution: string;
+  initials: string;
+  rating: number;
+  text: string;
+}> = [];
 
-export const features = [
+const landingFeatures: LandingItem<{
+  id: number;
+  icon: string;
+  title: string;
+  description: string;
+  highlight: boolean;
+}>[] = [
   {
     id: 1,
     icon: "PenTool",
@@ -91,7 +58,7 @@ export const features = [
     id: 3,
     icon: "Languages",
     title: "Português Académico MZ",
-    description: "Texto em português académico moçambicano, com vocabulário e expressões adequadas ao nosso contexto.",
+    description: "Texto orientado para um tom académico em português usado por estudantes moçambicanos, com revisão humana ainda recomendada.",
     highlight: false,
   },
   {
@@ -104,9 +71,10 @@ export const features = [
   {
     id: 5,
     icon: "Database",
-    title: "RAG com Fontes Locais",
-    description: "Acesso a base de conhecimento com fontes moçambicanas para enriquecer o seu trabalho com referências relevantes.",
+    title: "Base de conhecimento local",
+    description: "Infraestrutura preparada para fontes locais e institucionais. Ainda não está disponível publicamente na app.",
     highlight: false,
+    featureKey: "localRag",
   },
   {
     id: 6,
@@ -118,8 +86,8 @@ export const features = [
   {
     id: 7,
     icon: "FileDown",
-    title: "Exportação DOCX/PDF",
-    description: "Exporte trabalhos formatados em Word ou PDF, prontos para submissão institucional.",
+    title: "Exportação DOCX",
+    description: "Exporte trabalhos formatados em Word (DOCX). A exportação PDF permanece fora da experiência pública até ser implementada.",
     highlight: false,
   },
   {
@@ -139,16 +107,18 @@ export const features = [
   {
     id: 10,
     icon: "Zap",
-    title: "Streaming em Tempo Real",
-    description: "Veja o texto ser gerado em tempo real, com possibilidade de ajustar a meio da geração.",
+    title: "Entrega completa da resposta",
+    description: "A experiência pública mostra respostas completas. Streaming token-a-token continua desativado até existir suporte real de backend.",
     highlight: false,
+    featureKey: "realTimeStreaming",
   },
   {
     id: 11,
     icon: "RotateCcw",
-    title: "Recuperação de Sessão",
-    description: "Continue de onde parou. O seu trabalho é guardado automaticamente a cada momento.",
+    title: "Auto-save do editor",
+    description: "O conteúdo do editor é guardado automaticamente. Recuperação de sessão, 2FA e gestão de sessões continuam fora do produto público.",
     highlight: false,
+    featureKey: "sessionRecovery",
   },
   {
     id: 12,
@@ -158,6 +128,10 @@ export const features = [
     highlight: false,
   },
 ];
+
+export const features = landingFeatures.filter((item) =>
+  item.featureKey ? isFeatureVisible(item.featureKey) : true
+);
 
 export const howItWorksSteps = [
   {
@@ -181,15 +155,19 @@ export const howItWorksSteps = [
   {
     step: 4,
     title: "Exporte e submeta",
-    description: "Normalize referências, exporte em DOCX/PDF e submeta com confiança.",
+    description: "Normalize referências, exporte em DOCX e siga para revisão ou submissão.",
     icon: "Send",
   },
 ];
 
-export const differentiators = [
+const landingDifferentiators: LandingItem<{
+  title: string;
+  description: string;
+  icon: string;
+}>[] = [
   {
     title: "Português Académico Moçambicano",
-    description: "Não é português de Portugal, nem do Brasil. É português académico moçambicano, com a terminologia e expressões correctas para o nosso contexto.",
+    description: "A experiência foi escrita para estudantes moçambicanos, mas continua a depender de revisão humana e não substitui validação académica.",
     icon: "Globe",
   },
   {
@@ -199,8 +177,9 @@ export const differentiators = [
   },
   {
     title: "RAG com Fontes Locais",
-    description: "Acesso a base de conhecimento com literatura e fontes relevantes para o contexto de Moçambique.",
+    description: "Funcionalidade planeada. O domínio está a ser preparado, mas a retrieval real ainda não está disponível no produto público.",
     icon: "Library",
+    featureKey: "localRag",
   },
   {
     title: "Foco Académico Real",
@@ -219,10 +198,14 @@ export const differentiators = [
   },
 ];
 
+export const differentiators = landingDifferentiators.filter((item) =>
+  item.featureKey ? isFeatureVisible(item.featureKey) : true
+);
+
 export const genericComparison = [
   { feature: "Português académico moçambicano", aptto: true, generic: false },
   { feature: "Normas ABNT nativas", aptto: true, generic: false },
-  { feature: "RAG com fontes locais", aptto: true, generic: false },
+  { feature: "Fluxo de editor e projetos próprio", aptto: true, generic: false },
   { feature: "Foco em estrutura académica", aptto: true, generic: false },
   { feature: "Contexto de Moçambique", aptto: true, generic: false },
   { feature: "Créditos transparentes", aptto: true, generic: false },
@@ -303,7 +286,7 @@ export const faqs = [
   },
   {
     question: "Posso exportar em DOCX e PDF?",
-    answer: "Sim. O aptto permite exportar trabalhos formatados em Word (DOCX) e PDF, prontos para submissão institucional, com formatação académica correcta.",
+    answer: "Hoje o aptto exporta em DOCX. A exportação em PDF continua fora da experiência pública até existir um renderer dedicado e validado.",
   },
   {
     question: "O aptto serve para monografia e seminário?",
@@ -311,11 +294,11 @@ export const faqs = [
   },
   {
     question: "O que significa RAG com fontes locais?",
-    answer: "RAG (Retrieval-Augmented Generation) significa que a IA pode consultar uma base de conhecimento com fontes relevantes para Moçambique durante a geração, enriquecendo o seu trabalho com referências locais apropriadas.",
+    answer: "É uma funcionalidade planeada para uma fase posterior. O objetivo é permitir consulta a fontes locais durante a geração, mas isso ainda não está ativo na versão pública atual.",
   },
   {
     question: "O meu orientador vai aceitar?",
-    answer: "O aptto produz texto que parece seu - com a sua voz académica. Não é texto genérico de IA. Muitos orientadores elogiam a qualidade da estrutura e normalização. O que importa é o seu conteúdo e argumentação.",
+    answer: "O aptto ajuda na estrutura e na escrita, mas não substitui revisão, validação factual nem responsabilidade académica do estudante. O texto gerado deve ser revisto antes de submissão.",
   },
   {
     question: "Posso usar no telemóvel?",
@@ -326,18 +309,20 @@ export const faqs = [
 export const heroBadges = [
   { label: "PT-MZ Académico", icon: "Languages" },
   { label: "ABNT Ready", icon: "BookMarked" },
-  { label: "RAG Local", icon: "Database" },
   { label: "DOCX Export", icon: "FileDown" },
-  { label: "Streaming AI", icon: "Zap" },
 ];
 
-export const trustIndicators = [
+const trustIndicatorCandidates: LandingItem<{ label: string; icon: string }>[] = [
   { label: "Português académico MZ", icon: "Check" },
   { label: "Normalização ABNT", icon: "Check" },
-  { label: "RAG com fontes locais", icon: "Check" },
-  { label: "Exportação DOCX/PDF", icon: "Check" },
-  { label: "Créditos transparentes", icon: "Check" },
+  { label: "Exportação DOCX", icon: "Check" },
+  { label: "Créditos transparentes", icon: "Check", featureKey: "transparentCredits" },
+  { label: "RAG local em preparação", icon: "Check", featureKey: "localRag" },
 ];
+
+export const trustIndicators = trustIndicatorCandidates.filter((item) =>
+  item.featureKey ? isFeaturePublic(item.featureKey) : true
+);
 
 export const footerLinks = {
   product: [

@@ -1,88 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
+import { parseBody, handleApiError, apiSuccess, apiError } from "@/lib/api";
+import { registerSchema } from "@/lib/validators";
+import { CreditLedgerService } from "@/lib/credit-ledger";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { name, email, password } = body;
+    const { name, email, password } = await parseBody(request, registerSchema);
+    const normalizedEmail = email.trim().toLowerCase();
 
-    // Validation
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email e senha são obrigatórios" },
-        { status: 400 }
-      );
-    }
-
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: "A senha deve ter pelo menos 6 caracteres" },
-        { status: 400 }
-      );
-    }
-
-    // Check if user already exists
     const existingUser = await db.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: "Este email já está registado" },
-        { status: 400 }
-      );
+      return apiError("Este email já está registado", 400);
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
+    const ledger = new CreditLedgerService(db);
 
-    // Create user with credits and subscription
-    const user = await db.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: "STUDENT",
-      },
+    const user = await db.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          name: name?.trim() || null,
+          email: normalizedEmail,
+          password: hashedPassword,
+          role: "STUDENT",
+        },
+      });
+
+      const scopedLedger = new CreditLedgerService(tx);
+      await scopedLedger.grant(
+        createdUser.id,
+        150,
+        "BONUS",
+        "Créditos iniciais de boas-vindas"
+      );
+
+      await tx.subscription.create({
+        data: {
+          userId: createdUser.id,
+          plan: "FREE",
+          status: "ACTIVE",
+          creditsPerMonth: 150,
+        },
+      });
+
+      await tx.userSettings.create({
+        data: {
+          userId: createdUser.id,
+        },
+      });
+
+      return createdUser;
     });
 
-    // Create credits for new user (Free plan: 150 credits)
-    await db.credit.create({
-      data: {
-        userId: user.id,
-        balance: 150,
-      },
-    });
-
-    // Create initial credit transaction
-    await db.creditTransaction.create({
-      data: {
-        userId: user.id,
-        amount: 150,
-        type: "BONUS",
-        description: "Créditos iniciais de boas-vindas",
-      },
-    });
-
-    // Create free subscription
-    await db.subscription.create({
-      data: {
-        userId: user.id,
-        plan: "FREE",
-        status: "ACTIVE",
-        creditsPerMonth: 150,
-      },
-    });
-
-    // Create default settings
-    await db.userSettings.create({
-      data: {
-        userId: user.id,
-      },
-    });
-
-    return NextResponse.json(
+    return apiSuccess(
       {
         message: "Conta criada com sucesso",
         user: {
@@ -95,9 +70,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Registration error:", error);
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

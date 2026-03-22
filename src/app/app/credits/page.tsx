@@ -233,7 +233,7 @@ export default function CreditsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 rounded-[28px] border border-border/60 bg-background/75 p-5">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
           <Coins className="h-5 w-5 text-primary" />
         </div>

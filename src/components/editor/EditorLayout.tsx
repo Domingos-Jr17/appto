@@ -1,42 +1,45 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { useRouter } from "next/navigation";
 import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  PanelLeftClose,
-  PanelLeft,
-  PanelRightClose,
-  PanelRight,
-  Home,
-  Settings,
-  HelpCircle,
-  LogOut,
-  Menu,
-  Loader2,
+  ArrowUpRight,
   Download,
+  FileDown,
+  FolderTree,
+  Loader2,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightOpen,
+  Plus,
+  Send,
 } from "lucide-react";
+import { AIAssistantPanel } from "@/components/editor/AIAssistantPanel";
+import { DocumentTree } from "@/components/editor/DocumentTree";
+import { WritingArea } from "@/components/editor/WritingArea";
+import { ContextRail } from "@/components/workspace/ContextRail";
+import {
+  WorkspaceModeTabs,
+  type WorkspaceMode,
+} from "@/components/workspace/WorkspaceModeTabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { DocumentTree } from "./DocumentTree";
-import { WritingArea } from "./WritingArea";
-import { AIAssistantPanel } from "./AIAssistantPanel";
-import { CreditsBar } from "./CreditsBar";
+import { AI_ACTION_CREDIT_COSTS } from "@/lib/credits";
+import { cn } from "@/lib/utils";
 
-// Types
 interface Section {
   id: string;
   title: string;
@@ -62,380 +65,459 @@ interface Project {
   }[];
 }
 
-// Transform flat sections from API into tree structure
-function buildSectionTree(sections: Project["sections"]): Section[] {
-  const sectionMap = new Map<string, Section>();
-  const rootSections: Section[] = [];
-
-  // First pass: create all sections
-  sections.forEach((s) => {
-    sectionMap.set(s.id, {
-      id: s.id,
-      title: s.title,
-      type: /^\d+\./.test(s.title) ? "chapter" : "section",
-      wordCount: s.wordCount,
-      content: s.content || "",
-      children: [],
-    });
-  });
-
-  // Second pass: build tree
-  sections.forEach((s) => {
-    const section = sectionMap.get(s.id)!;
-    if (s.parentId) {
-      const parent = sectionMap.get(s.parentId);
-      if (parent) {
-        parent.children = parent.children || [];
-        parent.children.push(section);
-      }
-    } else {
-      rootSections.push(section);
-    }
-  });
-
-  return rootSections;
-}
-
-// Determine section type based on title pattern
-function getSectionType(title: string): "chapter" | "section" {
-  if (/^\d+\./.test(title)) return "chapter";
-  return "section";
+interface AssistantMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: Date;
 }
 
 interface EditorLayoutProps {
   projectId?: string;
+  initialMode?: WorkspaceMode;
 }
 
-export function EditorLayout({ projectId: propProjectId }: EditorLayoutProps) {
+interface CreateSectionOptions {
+  title: string;
+  content?: string;
+  parentId?: string | null;
+  selectAfterCreate?: boolean;
+}
+
+function buildSectionTree(sections: Project["sections"]): Section[] {
+  const sectionMap = new Map<string, Section>();
+  const roots: Section[] = [];
+
+  sections.forEach((section) => {
+    sectionMap.set(section.id, {
+      id: section.id,
+      title: section.title,
+      type: /^\d+\./.test(section.title) ? "chapter" : "section",
+      wordCount: section.wordCount,
+      content: section.content || "",
+      children: [],
+    });
+  });
+
+  sections.forEach((section) => {
+    const current = sectionMap.get(section.id);
+    if (!current) return;
+
+    if (section.parentId) {
+      const parent = sectionMap.get(section.parentId);
+      if (parent) {
+        parent.children = parent.children || [];
+        parent.children.push(current);
+      }
+    } else {
+      roots.push(current);
+    }
+  });
+
+  return roots;
+}
+
+function findSectionById(sectionId: string, sections: Section[]): Section | null {
+  for (const section of sections) {
+    if (section.id === sectionId) return section;
+    if (section.children?.length) {
+      const nested = findSectionById(sectionId, section.children);
+      if (nested) return nested;
+    }
+  }
+  return null;
+}
+
+function updateTree(
+  sections: Section[],
+  sectionId: string,
+  updater: (section: Section) => Section
+): Section[] {
+  return sections.map((section) => {
+    if (section.id === sectionId) return updater(section);
+    if (section.children?.length) {
+      return { ...section, children: updateTree(section.children, sectionId, updater) };
+    }
+    return section;
+  });
+}
+
+function removeTree(sections: Section[], sectionId: string): Section[] {
+  return sections
+    .filter((section) => section.id !== sectionId)
+    .map((section) => ({
+      ...section,
+      children: section.children?.length ? removeTree(section.children, sectionId) : section.children,
+    }));
+}
+
+function insertTree(sections: Section[], section: Section, parentId?: string | null): Section[] {
+  if (!parentId) return [...sections, section];
+  return sections.map((item) => {
+    if (item.id === parentId) {
+      return { ...item, children: [...(item.children || []), section] };
+    }
+    if (item.children?.length) {
+      return { ...item, children: insertTree(item.children, section, parentId) };
+    }
+    return item;
+  });
+}
+
+function countWords(content: string) {
+  return content.replace(/<[^>]*>/g, " ").trim().split(/\s+/).filter(Boolean).length;
+}
+
+function extractOutlineTitles(content: string) {
+  return content
+    .split("\n")
+    .map((line) => line.replace(/^[-*]\s*/, "").replace(/^\d+[).]?\s*/, "").trim())
+    .filter((line) => line.length > 3)
+    .slice(0, 8);
+}
+
+function inferSectionTitle(content: string) {
+  const firstLine = content.split("\n").map((line) => line.trim()).find(Boolean);
+  return firstLine ? firstLine.replace(/^#+\s*/, "").slice(0, 72) : "Nova secção";
+}
+
+function getSaveCopy(status: "saving" | "saved" | "error" | "idle", lastSaved?: Date) {
+  if (status === "saving") return "A guardar...";
+  if (status === "error") return "Falha ao guardar";
+  if (!lastSaved) return "Sem alterações";
+  return `Guardado ${lastSaved.toLocaleTimeString("pt-MZ", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+function getModeDescription(mode: WorkspaceMode) {
+  if (mode === "chat") return "Converse com a IA sem perder o contexto do projecto.";
+  if (mode === "document") return "Edite a secção activa com foco e acções rápidas ao lado.";
+  return "Planeie capítulos, subtítulos e progresso editorial.";
+}
+
+export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLayoutProps) {
   const router = useRouter();
   const { toast } = useToast();
   const projectId = propProjectId ?? null;
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Loading states
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Project data
   const [project, setProject] = useState<Project | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [credits, setCredits] = useState(0);
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(initialMode ?? "chat");
+  const [structureRailOpen, setStructureRailOpen] = useState(true);
+  const [contextRailOpen, setContextRailOpen] = useState(initialMode !== "chat");
+  const [mobileStructureOpen, setMobileStructureOpen] = useState(false);
+  const [mobileContextOpen, setMobileContextOpen] = useState(false);
 
-  // Panel states
-  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // Editor states
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [sectionTitle, setSectionTitle] = useState("");
   const [content, setContent] = useState("");
   const [wordCount, setWordCount] = useState(0);
-  const [autoSaveStatus, setAutoSaveStatus] = useState<"saving" | "saved" | "error" | "idle">("saved");
-  const [lastSaved, setLastSaved] = useState<Date>(new Date());
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"saving" | "saved" | "error" | "idle">("idle");
+  const [lastSaved, setLastSaved] = useState<Date | undefined>();
 
-  // Fetch project data
+  const [chatMessages, setChatMessages] = useState<AssistantMessage[]>([]);
+  const [chatPrompt, setChatPrompt] = useState("");
+  const [chatAction, setChatAction] = useState("brainstorm");
+  const [isChatLoading, setIsChatLoading] = useState(false);
+
+  const syncMode = useCallback(
+    (nextMode: WorkspaceMode) => {
+      setWorkspaceMode(nextMode);
+      if (projectId) {
+        router.replace(`/app/editor?project=${projectId}&mode=${nextMode}`, { scroll: false });
+      }
+      if (nextMode === "document") setContextRailOpen(true);
+    },
+    [projectId, router]
+  );
+
   useEffect(() => {
     if (!projectId) {
       setIsLoading(false);
       return;
     }
 
+    let active = true;
+
     const fetchData = async () => {
       try {
-        const [projectRes, creditsRes] = await Promise.all([
+        const [projectResponse, creditsResponse] = await Promise.all([
           fetch(`/api/projects/${projectId}`),
           fetch("/api/credits"),
         ]);
 
-        if (!projectRes.ok) {
-          throw new Error("Projeto não encontrado");
-        }
+        if (!projectResponse.ok) throw new Error("Projeto não encontrado");
 
-        const projectData = await projectRes.json();
-        const creditsData = await creditsRes.json();
+        const projectData = await projectResponse.json();
+        const creditsData = await creditsResponse.json();
+        if (!active) return;
+
+        const tree = buildSectionTree(projectData.sections);
+        const firstSection =
+          tree.find((section) => section.children?.length)?.children?.[0] ?? tree[0] ?? null;
 
         setProject(projectData);
+        setSections(tree);
         setCredits(creditsData.balance || 0);
 
-        // Build section tree
-        const tree = buildSectionTree(projectData.sections);
-        setSections(tree);
-
-        // Select first section
-        if (tree.length > 0 && tree[0].children && tree[0].children.length > 0) {
-          const firstSection = tree[0].children[0];
+        if (firstSection) {
           setActiveSectionId(firstSection.id);
           setSectionTitle(firstSection.title);
           setContent(firstSection.content || "");
           setWordCount(firstSection.wordCount || 0);
-        } else if (tree.length > 0) {
-          setActiveSectionId(tree[0].id);
-          setSectionTitle(tree[0].title);
-          setContent(tree[0].content || "");
-          setWordCount(tree[0].wordCount || 0);
+        }
+
+        if (!initialMode) {
+          const defaultMode: WorkspaceMode = projectData.wordCount > 0 ? "document" : "chat";
+          setWorkspaceMode(defaultMode);
+          setContextRailOpen(defaultMode === "document");
         }
       } catch (error) {
-        console.error("Error fetching project:", error);
+        console.error(error);
         toast({
           title: "Erro",
-          description: "Não foi possível carregar o projeto",
+          description: "Não foi possível carregar o projecto.",
           variant: "destructive",
         });
       } finally {
-        setIsLoading(false);
+        if (active) setIsLoading(false);
       }
     };
 
-    fetchData();
-  }, [projectId, toast]);
+    void fetchData();
 
-  // Find section by ID
-  const findSection = useCallback((id: string, secs: Section[]): Section | null => {
-    for (const sec of secs) {
-      if (sec.id === id) return sec;
-      if (sec.children) {
-        const found = findSection(id, sec.children);
-        if (found) return found;
-      }
-    }
-    return null;
-  }, []);
-
-  // Handle section selection
-  const handleSectionSelect = useCallback((sectionId: string) => {
-    // Save current section first
-    if (activeSectionId && content) {
-      saveSection(activeSectionId, content);
-    }
-
-    setActiveSectionId(sectionId);
-    const section = findSection(sectionId, sections);
-    if (section) {
-      setSectionTitle(section.title);
-      setContent(section.content || "");
-      setWordCount(section.wordCount || 0);
-    }
-    setMobileMenuOpen(false);
-  }, [activeSectionId, content, sections, findSection]);
-
-  // Save section to API
-  const saveSection = useCallback(async (sectionId: string, newContent: string) => {
-    setIsSaving(true);
-    try {
-      const response = await fetch(`/api/documents/${sectionId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newContent }),
-      });
-
-      if (!response.ok) throw new Error("Erro ao salvar");
-
-      setLastSaved(new Date());
-      setAutoSaveStatus("saved");
-
-      // Update local state
-      setSections((prev) => {
-        const update = (secs: Section[]): Section[] => {
-          return secs.map((sec) => {
-            if (sec.id === sectionId) {
-              return { ...sec, content: newContent, wordCount };
-            }
-            if (sec.children) {
-              return { ...sec, children: update(sec.children) };
-            }
-            return sec;
-          });
-        };
-        return update(prev);
-      });
-    } catch (error) {
-      console.error("Save error:", error);
-      setAutoSaveStatus("error");
-      toast({
-        title: "Erro ao salvar",
-        description: "Não foi possível salvar o conteúdo",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }, [wordCount, toast]);
-
-  // Handle content change with debounce
-  const handleContentChange = useCallback(
-    (newContent: string) => {
-      setContent(newContent);
-      const text = newContent.replace(/<[^>]*>/g, "");
-      const words = text.trim().split(/\s+/).filter(Boolean).length;
-      setWordCount(words);
-      setAutoSaveStatus("saving");
-
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-
-      saveTimeoutRef.current = setTimeout(() => {
-        if (activeSectionId) {
-          void saveSection(activeSectionId, newContent);
-        }
-      }, 1200);
-    },
-    [activeSectionId, saveSection]
-  );
+    return () => {
+      active = false;
+    };
+  }, [initialMode, projectId, toast]);
 
   useEffect(() => {
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
   }, []);
 
-  // Handle section add
-  const handleSectionAdd = useCallback(async (parentId?: string) => {
-    if (!projectId) return;
+  const activeSection = useMemo(
+    () => (activeSectionId ? findSectionById(activeSectionId, sections) : null),
+    [activeSectionId, sections]
+  );
 
-    try {
+  const saveImmediately = useCallback(
+    async (sectionId: string, nextTitle: string, nextContent: string) => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+
+      try {
+        await fetch(`/api/documents/${sectionId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: nextTitle, content: nextContent }),
+        });
+
+        setSections((previous) =>
+          updateTree(previous, sectionId, (section) => ({
+            ...section,
+            title: nextTitle,
+            content: nextContent,
+            wordCount: countWords(nextContent),
+          }))
+        );
+        setLastSaved(new Date());
+        setAutoSaveStatus("saved");
+      } catch {
+        setAutoSaveStatus("error");
+      }
+    },
+    []
+  );
+
+  const scheduleSave = useCallback(
+    (nextTitle: string, nextContent: string) => {
+      if (!activeSectionId) return;
+
+      setAutoSaveStatus("saving");
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+
+      saveTimeoutRef.current = setTimeout(async () => {
+        try {
+          const response = await fetch(`/api/documents/${activeSectionId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: nextTitle, content: nextContent }),
+          });
+
+          if (!response.ok) throw new Error();
+
+          setSections((previous) =>
+            updateTree(previous, activeSectionId, (section) => ({
+              ...section,
+              title: nextTitle,
+              content: nextContent,
+              wordCount: countWords(nextContent),
+            }))
+          );
+          setWordCount(countWords(nextContent));
+          setLastSaved(new Date());
+          setAutoSaveStatus("saved");
+        } catch {
+          setAutoSaveStatus("error");
+          toast({
+            title: "Erro ao guardar",
+            description: "Não foi possível guardar a secção actual.",
+            variant: "destructive",
+          });
+        }
+      }, 950);
+    },
+    [activeSectionId, toast]
+  );
+
+  const createSection = useCallback(
+    async ({ title, content: sectionContent = "", parentId, selectAfterCreate }: CreateSectionOptions) => {
+      if (!projectId) return null;
+
       const response = await fetch("/api/documents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectId,
           parentId,
-          title: "Nova Seção",
+          title,
+          content: sectionContent,
           order: Date.now(),
         }),
       });
 
-      const newSection = await response.json();
+      if (!response.ok) throw new Error();
 
-      const section: Section = {
+      const newSection = await response.json();
+      const mappedSection: Section = {
         id: newSection.id,
         title: newSection.title,
         type: parentId ? "section" : "chapter",
-        wordCount: 0,
-        content: "",
+        wordCount: newSection.wordCount,
+        content: newSection.content || "",
         children: [],
       };
 
-      if (parentId) {
-        setSections((prev) => {
-          const addToParent = (secs: Section[]): Section[] => {
-            return secs.map((sec) => {
-              if (sec.id === parentId) {
-                return { ...sec, children: [...(sec.children || []), section] };
-              }
-              if (sec.children) {
-                return { ...sec, children: addToParent(sec.children) };
-              }
-              return sec;
-            });
-          };
-          return addToParent(prev);
+      setSections((previous) => insertTree(previous, mappedSection, parentId));
+
+      if (selectAfterCreate) {
+        setActiveSectionId(mappedSection.id);
+        setSectionTitle(mappedSection.title);
+        setContent(mappedSection.content || "");
+        setWordCount(mappedSection.wordCount || 0);
+        syncMode("document");
+      }
+
+      return mappedSection;
+    },
+    [projectId, syncMode]
+  );
+
+  const handleSectionSelect = useCallback(
+    (sectionId: string) => {
+      if (activeSectionId) {
+        void saveImmediately(activeSectionId, sectionTitle, content);
+      }
+
+      const nextSection = findSectionById(sectionId, sections);
+      if (!nextSection) return;
+
+      setActiveSectionId(sectionId);
+      setSectionTitle(nextSection.title);
+      setContent(nextSection.content || "");
+      setWordCount(nextSection.wordCount || 0);
+      setMobileStructureOpen(false);
+    },
+    [activeSectionId, content, saveImmediately, sectionTitle, sections]
+  );
+
+  const handleSectionAdd = useCallback(
+    async (parentId?: string) => {
+      try {
+        await createSection({
+          title: parentId ? "Nova secção" : "Novo capítulo",
+          parentId,
+          selectAfterCreate: true,
         });
-      } else {
-        setSections((prev) => [...prev, section]);
+      } catch {
+        toast({
+          title: "Erro",
+          description: "Não foi possível criar a secção.",
+          variant: "destructive",
+        });
+      }
+    },
+    [createSection, toast]
+  );
+
+  const handleSectionRename = useCallback(
+    async (sectionId: string, newTitle: string) => {
+      try {
+        const existing = findSectionById(sectionId, sections);
+        await fetch(`/api/documents/${sectionId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: newTitle, content: existing?.content || "" }),
+        });
+
+        setSections((previous) =>
+          updateTree(previous, sectionId, (section) => ({ ...section, title: newTitle }))
+        );
+
+        if (activeSectionId === sectionId) {
+          setSectionTitle(newTitle);
+        }
+      } catch {
+        toast({
+          title: "Erro",
+          description: "Não foi possível renomear a secção.",
+          variant: "destructive",
+        });
+      }
+    },
+    [activeSectionId, sections, toast]
+  );
+
+  const handleSectionDelete = useCallback(
+    async (sectionId: string) => {
+      try {
+        const response = await fetch(`/api/documents/${sectionId}`, { method: "DELETE" });
+        if (!response.ok) throw new Error();
+
+        setSections((previous) => removeTree(previous, sectionId));
+
+        if (activeSectionId === sectionId) {
+          const fallback = sections.find((section) => section.id !== sectionId) || null;
+          setActiveSectionId(fallback?.id || null);
+          setSectionTitle(fallback?.title || "");
+          setContent(fallback?.content || "");
+          setWordCount(fallback?.wordCount || 0);
+        }
+      } catch {
+        toast({
+          title: "Erro",
+          description: "Não foi possível eliminar a secção.",
+          variant: "destructive",
+        });
+      }
+    },
+    [activeSectionId, sections, toast]
+  );
+
+  const handleGenerate = useCallback(
+    async (prompt: string) => {
+      if (credits < AI_ACTION_CREDIT_COSTS.generate) {
+        toast({
+          title: "Créditos insuficientes",
+          description: "Adquira mais créditos para continuar a gerar conteúdo.",
+          variant: "destructive",
+        });
+        return "";
       }
 
-      toast({
-        title: "Secção criada",
-        description: "Nova secção adicionada ao documento",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível criar a secção",
-        variant: "destructive",
-      });
-    }
-  }, [projectId, toast]);
-
-  // Handle section rename
-  const handleSectionRename = useCallback(async (sectionId: string, newTitle: string) => {
-    try {
-      await fetch(`/api/documents/${sectionId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newTitle }),
-      });
-
-      setSections((prev) => {
-        const rename = (secs: Section[]): Section[] => {
-          return secs.map((sec) => {
-            if (sec.id === sectionId) {
-              return { ...sec, title: newTitle };
-            }
-            if (sec.children) {
-              return { ...sec, children: rename(sec.children) };
-            }
-            return sec;
-          });
-        };
-        return rename(prev);
-      });
-
-      if (activeSectionId === sectionId) {
-        setSectionTitle(newTitle);
-      }
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível renomear",
-        variant: "destructive",
-      });
-    }
-  }, [activeSectionId, toast]);
-
-  // Handle section delete
-  const handleSectionDelete = useCallback(async (sectionId: string) => {
-    try {
-      await fetch(`/api/documents/${sectionId}`, {
-        method: "DELETE",
-      });
-
-      setSections((prev) => {
-        const remove = (secs: Section[]): Section[] => {
-          return secs
-            .filter((sec) => sec.id !== sectionId)
-            .map((sec) => ({
-              ...sec,
-              children: sec.children ? remove(sec.children) : undefined,
-            }));
-        };
-        return remove(prev);
-      });
-
-      if (activeSectionId === sectionId) {
-        setActiveSectionId(null);
-        setContent("");
-        setSectionTitle("");
-      }
-
-      toast({
-        title: "Secção eliminada",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível eliminar",
-        variant: "destructive",
-      });
-    }
-  }, [activeSectionId, toast]);
-
-  // AI handlers - real API calls
-  const handleGenerate = useCallback(async (prompt: string) => {
-    if (credits < 10) {
-      toast({
-        title: "Créditos insuficientes",
-        description: "Adquira mais créditos para usar esta funcionalidade",
-        variant: "destructive",
-      });
-      return "";
-    }
-
-    try {
       const response = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -448,33 +530,23 @@ export function EditorLayout({ projectId: propProjectId }: EditorLayoutProps) {
       });
 
       const data = await response.json();
-
-      if (data.success) {
-        setCredits(data.remainingCredits);
-        return data.response;
-      } else {
-        throw new Error(data.error);
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Erro ao gerar conteúdo.");
       }
-    } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao gerar conteúdo",
-        variant: "destructive",
-      });
-      return "";
-    }
-  }, [credits, sectionTitle, projectId, toast]);
 
-  const handleImprove = useCallback(async (text: string, type: string) => {
-    if (credits < 5) {
-      toast({
-        title: "Créditos insuficientes",
-        variant: "destructive",
-      });
-      return text;
-    }
+      setCredits(data.remainingCredits);
+      return data.response;
+    },
+    [credits, projectId, sectionTitle, toast]
+  );
 
-    try {
+  const handleImprove = useCallback(
+    async (text: string, type: string) => {
+      if (credits < AI_ACTION_CREDIT_COSTS.improve) {
+        toast({ title: "Créditos insuficientes", variant: "destructive" });
+        return text;
+      }
+
       const response = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -487,309 +559,651 @@ export function EditorLayout({ projectId: propProjectId }: EditorLayoutProps) {
       });
 
       const data = await response.json();
-
-      if (data.success) {
+      if (response.ok && data.success) {
         setCredits(data.remainingCredits);
         return data.response;
       }
-      return text;
-    } catch {
-      return text;
-    }
-  }, [credits, projectId, toast]);
 
-  const handleGenerateReference = useCallback(async () => {
-    if (credits < 3) {
-      toast({
-        title: "Créditos insuficientes",
-        variant: "destructive",
-      });
-      return "";
-    }
+      return text;
+    },
+    [credits, projectId, toast]
+  );
 
-    try {
+  const handleGenerateReference = useCallback(
+    async (payload: {
+      type: "book" | "article" | "website" | "thesis";
+      authors: string;
+      title: string;
+      year: string;
+      publisher?: string;
+      journal?: string;
+      volume?: string;
+      pages?: string;
+      url?: string;
+      accessDate?: string;
+    }) => {
+      if (credits < AI_ACTION_CREDIT_COSTS.references) {
+        toast({ title: "Créditos insuficientes", variant: "destructive" });
+        return "";
+      }
+
       const response = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "references",
-          text: sectionTitle,
+          text: JSON.stringify(payload),
+          context: sectionTitle,
           projectId,
         }),
       });
 
       const data = await response.json();
-
-      if (data.success) {
+      if (response.ok && data.success) {
         setCredits(data.remainingCredits);
         return data.response;
       }
       return "";
-    } catch {
-      return "";
-    }
-  }, [credits, sectionTitle, projectId, toast]);
+    },
+    [credits, projectId, sectionTitle, toast]
+  );
 
-  // Export document
-  const handleExport = useCallback(async () => {
-    if (!projectId) return;
+  const handleTitleChange = useCallback(
+    (nextTitle: string) => {
+      setSectionTitle(nextTitle);
+      scheduleSave(nextTitle, content);
+    },
+    [content, scheduleSave]
+  );
 
-    try {
-      const response = await fetch(`/api/export?projectId=${projectId}`);
-      
-      if (!response.ok) {
-        throw new Error("Erro ao exportar");
+  const handleContentChange = useCallback(
+    (nextContent: string) => {
+      setContent(nextContent);
+      setWordCount(countWords(nextContent));
+      scheduleSave(sectionTitle, nextContent);
+    },
+    [scheduleSave, sectionTitle]
+  );
+
+  const handleExport = useCallback(
+    async (format: "docx" | "pdf") => {
+      if (!projectId) return;
+
+      try {
+        const response = await fetch(
+          format === "docx"
+            ? `/api/export?projectId=${projectId}`
+            : `/api/export/pdf?projectId=${projectId}`
+        );
+        if (!response.ok) throw new Error();
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = `${project?.title || "documento"}.${format}`;
+        anchor.click();
+        URL.revokeObjectURL(url);
+
+        const creditsResponse = await fetch("/api/credits");
+        const creditsData = await creditsResponse.json();
+        setCredits(creditsData.balance || 0);
+      } catch {
+        toast({
+          title: "Erro ao exportar",
+          description: "Verifique o saldo de créditos e tente novamente.",
+          variant: "destructive",
+        });
+      }
+    },
+    [project?.title, projectId, toast]
+  );
+
+  const applyAssistantContent = useCallback(
+    async (message: AssistantMessage, action: "insert" | "replace" | "append" | "outline") => {
+      if (!activeSectionId) return;
+
+      if (action === "insert") {
+        const nextContent = content ? `${content}\n\n${message.content}` : message.content;
+        setContent(nextContent);
+        setWordCount(countWords(nextContent));
+        scheduleSave(sectionTitle, nextContent);
+        syncMode("document");
+        return;
       }
 
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${project?.title || "documento"}.docx`;
-      a.click();
-      URL.revokeObjectURL(url);
+      if (action === "replace") {
+        setContent(message.content);
+        setWordCount(countWords(message.content));
+        scheduleSave(sectionTitle, message.content);
+        syncMode("document");
+        return;
+      }
 
-      // Refresh credits
-      const creditsRes = await fetch("/api/credits");
-      const creditsData = await creditsRes.json();
-      setCredits(creditsData.balance);
+      if (action === "append") {
+        try {
+          await createSection({
+            title: inferSectionTitle(message.content),
+            content: message.content,
+            selectAfterCreate: true,
+          });
+        } catch {
+          toast({
+            title: "Erro",
+            description: "Não foi possível criar a nova secção.",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
 
-      toast({
-        title: "Documento exportado",
-        description: "O ficheiro DOCX foi descarregado",
-      });
+      try {
+        const outlineItems = extractOutlineTitles(message.content);
+        const items = outlineItems.length ? outlineItems : ["Introdução", "Desenvolvimento", "Conclusão"];
+
+        for (const item of items) {
+          await createSection({ title: item });
+        }
+
+        syncMode("structure");
+        toast({
+          title: "Outline aplicado",
+          description: `${items.length} secções adicionadas à estrutura do projecto.`,
+        });
+      } catch {
+        toast({
+          title: "Erro",
+          description: "Não foi possível transformar a resposta em outline.",
+          variant: "destructive",
+        });
+      }
+    },
+    [activeSectionId, content, createSection, scheduleSave, sectionTitle, syncMode, toast]
+  );
+
+  const handleChatSubmit = useCallback(async () => {
+    if (!chatPrompt.trim() || isChatLoading) return;
+
+    const label =
+      chatAction === "outline"
+        ? "Gerar outline"
+        : chatAction === "section"
+          ? "Gerar secção"
+          : chatAction === "rewrite"
+            ? "Reformular"
+            : "Explorar";
+
+    setChatMessages((previous) => [
+      ...previous,
+      {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: `[${label}] ${chatPrompt}`,
+        createdAt: new Date(),
+      },
+    ]);
+    setIsChatLoading(true);
+
+    try {
+      const composedPrompt =
+        chatAction === "outline"
+          ? `Crie um outline académico para o projecto "${project?.title}" com base no pedido: ${chatPrompt}`
+          : chatAction === "section"
+            ? `Gere conteúdo para a secção "${sectionTitle}" no projecto "${project?.title}": ${chatPrompt}`
+            : chatAction === "rewrite"
+              ? `Reescreva o conteúdo desta secção com melhor clareza académica. Contexto: ${sectionTitle}. Pedido: ${chatPrompt}`
+              : `Ajude-me a desenvolver este trabalho académico. Projeto: ${project?.title}. Pedido: ${chatPrompt}`;
+
+      const response = await handleGenerate(composedPrompt);
+      setChatMessages((previous) => [
+        ...previous,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: response,
+          createdAt: new Date(),
+        },
+      ]);
+      setChatPrompt("");
     } catch (error) {
       toast({
-        title: "Erro ao exportar",
-        description: "Verifique se tem créditos suficientes",
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Não foi possível gerar a resposta.",
         variant: "destructive",
       });
+    } finally {
+      setIsChatLoading(false);
     }
-  }, [projectId, project?.title, toast]);
+  }, [chatAction, chatPrompt, handleGenerate, isChatLoading, project?.title, sectionTitle, toast]);
 
-  // Handle buy credits
-  const handleBuyCredits = useCallback(() => {
-    router.push("/app/credits");
-  }, [router]);
+  const chatCost =
+    chatAction === "rewrite" ? AI_ACTION_CREDIT_COSTS.improve : AI_ACTION_CREDIT_COSTS.generate;
 
-  // Loading state
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
+      <div className="flex flex-1 items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">A carregar projeto...</p>
+          <p className="text-sm text-muted-foreground">A carregar o workspace do projecto...</p>
         </div>
       </div>
     );
   }
 
-  // No project selected
   if (!projectId || !project) {
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold">Nenhum projeto selecionado</h2>
-          <p className="text-muted-foreground">
-            Selecione um projeto para começar a editar
-          </p>
-          <Button asChild>
-            <Link href="/app/projects">Ver Projetos</Link>
-          </Button>
-        </div>
+      <div className="flex flex-1 items-center justify-center bg-background px-6">
+        <Card className="w-full max-w-xl border-border/60 bg-background/80 text-center shadow-sm">
+          <CardContent className="space-y-4 p-10">
+            <FolderTree className="mx-auto h-10 w-10 text-muted-foreground/40" />
+            <h2 className="text-2xl font-semibold">Nenhum projecto seleccionado</h2>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Escolha um projecto para entrar no workspace principal ou crie um novo trabalho.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Button asChild className="rounded-full">
+                <Link href="/app/projects">Ver projectos</Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-full">
+                <Link href="/app/projects?new=1">Novo trabalho</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
+  const structurePanel = (
+    <div className="flex h-full flex-col overflow-hidden rounded-[28px] border border-border/60 bg-background/80 shadow-sm">
+      <DocumentTree
+        projectTitle={project.title}
+        sections={sections}
+        activeSectionId={activeSectionId}
+        onSectionSelect={handleSectionSelect}
+        onSectionAdd={handleSectionAdd}
+        onSectionRename={handleSectionRename}
+        onSectionDelete={handleSectionDelete}
+        onSectionReorder={setSections}
+      />
+    </div>
+  );
+
+  const contextPanel = workspaceMode === "document" ? (
+    <AIAssistantPanel
+      onGenerate={handleGenerate}
+      onImprove={handleImprove}
+      onGenerateReference={handleGenerateReference}
+      creditBalance={credits}
+    />
+  ) : workspaceMode === "structure" ? (
+    <div className="space-y-4 p-4">
+      <Card className="border-border/60 bg-muted/25">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Secção activa</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <p className="font-medium text-foreground">{activeSection?.title || "Sem selecção"}</p>
+          <p>{(activeSection?.wordCount || 0).toLocaleString("pt-MZ")} palavras</p>
+          <p>{sections.length} capítulos de topo</p>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-3">
+        <Button className="w-full rounded-2xl" onClick={() => handleSectionAdd(activeSectionId || undefined)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Adicionar subtítulo
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full rounded-2xl"
+          onClick={() => syncMode("document")}
+          disabled={!activeSectionId}
+        >
+          Abrir no documento
+        </Button>
+      </div>
+    </div>
+  ) : (
+    <div className="space-y-4 p-4">
+      <Card className="border-border/60 bg-muted/25">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Contexto actual</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <div>
+            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground/80">Projecto</p>
+            <p className="mt-1 font-medium text-foreground">{project.title}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground/80">Secção activa</p>
+            <p className="mt-1 font-medium text-foreground">{sectionTitle || "Nenhuma secção activa"}</p>
+          </div>
+          <div className="rounded-2xl bg-background px-3 py-2">
+            <p className="text-xs text-muted-foreground">Custo da próxima acção</p>
+            <p className="text-base font-semibold text-foreground">{chatCost} créditos</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/60 bg-muted/25">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Aplicações rápidas</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {[
+            "Peça à IA para abrir um outline antes de escrever.",
+            "Insira respostas aprovadas directamente no documento.",
+            "Quando a resposta virar estrutura, aplique como outline e troque de modo.",
+          ].map((item) => (
+            <div key={item} className="rounded-2xl bg-background px-3 py-2 text-sm text-muted-foreground">
+              {item}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-background">
-      {/* Top Navigation Bar */}
-      <header className="flex items-center justify-between px-4 h-12 border-b border-border/30 bg-background/80 backdrop-blur-xl">
-        {/* Left - Logo & Mobile Menu */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden h-8 w-8 p-0"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-
-          <Link href="/app" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center glow-primary">
-              <span className="text-white font-bold text-sm">A</span>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="border-b border-border/50 bg-background/80 px-4 py-4 backdrop-blur lg:px-6">
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs">
+                  {project.type}
+                </Badge>
+                <Badge variant="outline" className="rounded-full">
+                  {project.status}
+                </Badge>
+                <Badge variant="outline" className="rounded-full">
+                  {credits.toLocaleString("pt-MZ")} créditos
+                </Badge>
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight">{project.title}</h1>
+                <p className="mt-1 text-sm text-muted-foreground">{getModeDescription(workspaceMode)}</p>
+              </div>
             </div>
-            <span className="font-semibold hidden sm:inline gradient-text">
-              aptto
-            </span>
-          </Link>
-        </div>
 
-        {/* Center - Project Name */}
-        <div className="hidden md:flex items-center gap-2">
-          <Separator orientation="vertical" className="h-6" />
-          <span className="text-sm font-medium truncate max-w-[200px]">
-            {project.title}
-          </span>
-        </div>
-
-        {/* Right - Actions */}
-        <div className="flex items-center gap-1">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={handleExport}>
-                  <Download className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Exportar DOCX</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
-                  <Link href="/app">
-                    <Home className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Início</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
-                  <Link href="/app/settings">
-                    <Settings className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Configurações</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      </header>
-
-      {/* Main Editor Area */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Mobile Menu Overlay */}
-        {mobileMenuOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-black/50 md:hidden"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-        )}
-
-        {/* Main Panels */}
-        <ResizablePanelGroup direction="horizontal" className="flex-1">
-          {/* Left Panel - Document Tree */}
-          <ResizablePanel
-            defaultSize={leftPanelCollapsed ? 0 : 18}
-            minSize={leftPanelCollapsed ? 0 : 15}
-            maxSize={leftPanelCollapsed ? 0 : 25}
-            className={cn(
-              "transition-all duration-300",
-              leftPanelCollapsed && "!flex-[0_0_0px]",
-              mobileMenuOpen && "fixed inset-y-0 left-0 top-12 z-50 w-64 md:static md:z-auto md:w-auto"
-            )}
-          >
-            <div className="h-full bg-background border-r border-border/30">
-              <DocumentTree
-                projectTitle={project.title}
-                sections={sections}
-                activeSectionId={activeSectionId}
-                onSectionSelect={handleSectionSelect}
-                onSectionAdd={handleSectionAdd}
-                onSectionRename={handleSectionRename}
-                onSectionDelete={handleSectionDelete}
-                onSectionReorder={setSections}
-              />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" className="rounded-full xl:hidden" onClick={() => setMobileStructureOpen(true)}>
+                <FolderTree className="mr-2 h-4 w-4" />
+                Estrutura
+              </Button>
+              <Button variant="outline" className="rounded-full xl:hidden" onClick={() => setMobileContextOpen(true)}>
+                <PanelRightOpen className="mr-2 h-4 w-4" />
+                Painel
+              </Button>
+              <Button variant="outline" className="rounded-full" onClick={() => void handleExport("docx")}>
+                <Download className="mr-2 h-4 w-4" />
+                DOCX
+              </Button>
+              <Button variant="outline" className="rounded-full" onClick={() => void handleExport("pdf")}>
+                <FileDown className="mr-2 h-4 w-4" />
+                PDF
+              </Button>
             </div>
-          </ResizablePanel>
-
-          {/* Left Collapse Toggle */}
-          <div className="hidden md:flex items-center justify-center w-px bg-border/30 relative">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
-              className="absolute left-1/2 -translate-x-1/2 h-8 w-6 p-0 bg-background border border-border/50 hover:bg-accent z-10"
-            >
-              {leftPanelCollapsed ? (
-                <PanelLeft className="h-3.5 w-3.5" />
-              ) : (
-                <PanelLeftClose className="h-3.5 w-3.5" />
-              )}
-            </Button>
           </div>
 
-          {!leftPanelCollapsed && (
-            <ResizableHandle className="w-1 hover:bg-primary/20 transition-colors" />
-          )}
-
-          {/* Center Panel - Writing Area */}
-          <ResizablePanel defaultSize={rightPanelCollapsed ? 82 : 56} minSize={40}>
-            <WritingArea
-              sectionTitle={sectionTitle}
-              content={content}
-              onTitleChange={setSectionTitle}
-              onContentChange={handleContentChange}
-              aiSuggestions={[]}
-            />
-          </ResizablePanel>
-
-          {/* Right Collapse Toggle */}
-          <div className="hidden md:flex items-center justify-center w-px bg-border/30 relative">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
-              className="absolute left-1/2 -translate-x-1/2 h-8 w-6 p-0 bg-background border border-border/50 hover:bg-accent z-10"
-            >
-              {rightPanelCollapsed ? (
-                <PanelRight className="h-3.5 w-3.5" />
-              ) : (
-                <PanelRightClose className="h-3.5 w-3.5" />
-              )}
-            </Button>
-          </div>
-
-          {!rightPanelCollapsed && (
-            <ResizableHandle className="w-1 hover:bg-primary/20 transition-colors" />
-          )}
-
-          {/* Right Panel - AI Assistant */}
-          <ResizablePanel
-            defaultSize={rightPanelCollapsed ? 0 : 26}
-            minSize={rightPanelCollapsed ? 0 : 20}
-            maxSize={rightPanelCollapsed ? 0 : 35}
-            className={cn(
-              "transition-all duration-300",
-              rightPanelCollapsed && "!flex-[0_0_0px]"
-            )}
-          >
-            <div className="h-full bg-background border-l border-border/30">
-              <AIAssistantPanel
-                onGenerate={handleGenerate}
-                onImprove={handleImprove}
-                onGenerateReference={handleGenerateReference}
-                creditBalance={credits}
-              />
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <WorkspaceModeTabs mode={workspaceMode} onModeChange={syncMode} />
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <Badge variant="outline" className="rounded-full bg-background/70">
+                Secção activa: {sectionTitle || "sem secção"}
+              </Badge>
+              <Badge variant="outline" className="rounded-full bg-background/70">
+                {wordCount.toLocaleString("pt-MZ")} palavras
+              </Badge>
+              <Badge variant="outline" className="rounded-full bg-background/70">
+                {getSaveCopy(autoSaveStatus, lastSaved)}
+              </Badge>
             </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </div>
+        </div>
       </div>
 
-      {/* Bottom Bar - Credits & Status */}
-      <CreditsBar
-        currentCredits={credits}
-        maxCredits={100}
-        wordCount={wordCount}
-        autoSaveStatus={isSaving ? "saving" : autoSaveStatus}
-        lastSaved={lastSaved}
-        onBuyCredits={handleBuyCredits}
-      />
+      <div className="flex min-h-0 flex-1">
+        {workspaceMode === "document" ? (
+          <aside
+            className={cn(
+              "hidden border-r border-border/50 bg-background/65 backdrop-blur xl:flex xl:flex-col",
+              structureRailOpen ? "w-[320px]" : "w-[72px]"
+            )}
+          >
+            <div className={cn("flex items-center gap-3 border-b border-border/50 p-4", !structureRailOpen && "justify-center")}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                onClick={() => setStructureRailOpen((value) => !value)}
+              >
+                {structureRailOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+              </Button>
+              {structureRailOpen ? (
+                <div>
+                  <p className="text-sm font-semibold">Estrutura</p>
+                  <p className="text-xs text-muted-foreground">Capítulos e secções sempre à mão</p>
+                </div>
+              ) : null}
+            </div>
+            {structureRailOpen ? <div className="min-h-0 flex-1 overflow-hidden">{structurePanel}</div> : null}
+          </aside>
+        ) : null}
+
+        <main className="min-w-0 flex-1 overflow-hidden">
+          {workspaceMode === "document" ? (
+            <div className="flex h-full flex-col overflow-hidden">
+              <div className="flex items-center justify-between border-b border-border/50 px-4 py-3 lg:px-6">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Documento</p>
+                  <h2 className="text-lg font-semibold">{sectionTitle || "Seleccione uma secção"}</h2>
+                </div>
+                <div className="text-sm text-muted-foreground">{getSaveCopy(autoSaveStatus, lastSaved)}</div>
+              </div>
+              <WritingArea
+                sectionTitle={sectionTitle}
+                content={content}
+                onTitleChange={handleTitleChange}
+                onContentChange={handleContentChange}
+                aiSuggestions={[]}
+              />
+            </div>
+          ) : null}
+
+          {workspaceMode === "structure" ? (
+            <div className="flex h-full flex-col gap-4 overflow-hidden p-4 lg:p-6">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+                <div className="min-h-0 overflow-hidden">{structurePanel}</div>
+                <Card className="hidden border-border/60 bg-background/80 shadow-sm lg:block">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Leitura editorial</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 text-sm text-muted-foreground">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground/80">Capítulos</p>
+                      <p className="mt-1 text-lg font-semibold text-foreground">{sections.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground/80">Secção activa</p>
+                      <p className="mt-1 font-medium text-foreground">{activeSection?.title || "Sem selecção"}</p>
+                    </div>
+                    <Button className="w-full rounded-2xl" onClick={() => syncMode("document")} disabled={!activeSectionId}>
+                      Abrir no documento
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          ) : null}
+
+          {workspaceMode === "chat" ? (
+            <div className="flex h-full min-h-0 flex-col">
+              <ScrollArea className="flex-1 px-4 py-5 lg:px-6">
+                <div className="mx-auto flex max-w-4xl flex-col gap-6">
+                  <Card className="border-border/60 bg-background/80 shadow-sm">
+                    <CardContent className="flex flex-col gap-3 p-5 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Contexto do projecto</p>
+                        <h2 className="mt-2 text-lg font-semibold">{project.title}</h2>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Secção activa: {sectionTitle || "nenhuma"} · {wordCount.toLocaleString("pt-MZ")} palavras
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="rounded-full">
+                        Próxima acção: {chatCost} créditos
+                      </Badge>
+                    </CardContent>
+                  </Card>
+
+                  {chatMessages.length === 0 ? (
+                    <div className="grid gap-3 lg:grid-cols-3">
+                      {[
+                        "Peça um outline académico antes de estruturar o trabalho.",
+                        "Use a conversa para gerar um argumento inicial e depois aplique ao documento.",
+                        "Quando a resposta ficar boa, transforme-a em secções reais do projecto.",
+                      ].map((item) => (
+                        <Card key={item} className="border-border/60 bg-background/75 shadow-sm">
+                          <CardContent className="p-5 text-sm leading-6 text-muted-foreground">{item}</CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {chatMessages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={cn(
+                        "rounded-[28px] border px-5 py-4 shadow-sm",
+                        message.role === "user"
+                          ? "ml-auto max-w-3xl border-primary/20 bg-primary/10"
+                          : "mr-auto max-w-4xl border-border/60 bg-background/80"
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                          {message.role === "user" ? "Pedido" : "Resposta"}
+                        </p>
+                        <span className="text-xs text-muted-foreground">
+                          {message.createdAt.toLocaleTimeString("pt-MZ", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                      <div className="mt-3 whitespace-pre-wrap text-sm leading-7 text-foreground">
+                        {message.content}
+                      </div>
+
+                      {message.role === "assistant" ? (
+                        <div className="mt-5 flex flex-wrap gap-2">
+                          <Button size="sm" variant="outline" className="rounded-full" onClick={() => void applyAssistantContent(message, "insert")}>
+                            Inserir no documento
+                          </Button>
+                          <Button size="sm" variant="outline" className="rounded-full" onClick={() => void applyAssistantContent(message, "replace")}>
+                            Substituir secção actual
+                          </Button>
+                          <Button size="sm" variant="outline" className="rounded-full" onClick={() => void applyAssistantContent(message, "append")}>
+                            Adicionar como nova secção
+                          </Button>
+                          <Button size="sm" variant="outline" className="rounded-full" onClick={() => void applyAssistantContent(message, "outline")}>
+                            Transformar em outline
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+
+              <div className="border-t border-border/50 bg-background/85 px-4 py-4 backdrop-blur lg:px-6">
+                <div className="mx-auto max-w-4xl space-y-3">
+                  <div className="flex flex-col gap-3 lg:flex-row">
+                    <Select value={chatAction} onValueChange={setChatAction}>
+                      <SelectTrigger className="h-11 rounded-2xl lg:w-[220px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="brainstorm">Explorar tema</SelectItem>
+                        <SelectItem value="outline">Gerar outline</SelectItem>
+                        <SelectItem value="section">Gerar secção</SelectItem>
+                        <SelectItem value="rewrite">Reformular</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Textarea
+                      value={chatPrompt}
+                      onChange={(event) => setChatPrompt(event.target.value)}
+                      placeholder="Descreva o que precisa da IA neste projecto..."
+                      className="min-h-[94px] rounded-[24px] border-border/60 bg-background/80 px-4 py-3"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                      <Badge variant="outline" className="rounded-full bg-background/80">
+                        {chatCost} créditos
+                      </Badge>
+                      <span>Contexto activo: {sectionTitle || "sem secção"}</span>
+                    </div>
+                    <Button className="rounded-full px-5" onClick={() => void handleChatSubmit()} disabled={!chatPrompt.trim() || isChatLoading}>
+                      {isChatLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                      Enviar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </main>
+
+        <ContextRail
+          title={workspaceMode === "document" ? "Painel de apoio" : workspaceMode === "structure" ? "Detalhes da estrutura" : "Contexto da conversa"}
+          description={workspaceMode === "document" ? "IA, referências e acções rápidas para a secção actual." : workspaceMode === "structure" ? "Informação da secção seleccionada e acções editoriais." : "Prompt helpers, custos e contexto do projecto."}
+          open={contextRailOpen}
+          onToggle={() => setContextRailOpen((value) => !value)}
+        >
+          {contextPanel}
+        </ContextRail>
+      </div>
+
+      <div className="border-t border-border/50 bg-background/80 px-4 py-3 text-sm text-muted-foreground backdrop-blur lg:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className="rounded-full bg-background/80">
+              {project.sections.length} secções no projecto
+            </Badge>
+            <Badge variant="outline" className="rounded-full bg-background/80">
+              {project.wordCount.toLocaleString("pt-MZ")} palavras no total
+            </Badge>
+          </div>
+          <Button variant="ghost" size="sm" asChild className="rounded-full">
+            <Link href="/app/projects">
+              Biblioteca de projectos
+              <ArrowUpRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      <Sheet open={mobileStructureOpen} onOpenChange={setMobileStructureOpen}>
+        <SheetContent side="left" className="w-[340px] max-w-[92vw] p-0">
+          <SheetHeader className="border-b border-border/50 px-4 py-4">
+            <SheetTitle>Estrutura do projecto</SheetTitle>
+          </SheetHeader>
+          <div className="h-[calc(100vh-72px)] overflow-hidden">{structurePanel}</div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={mobileContextOpen} onOpenChange={setMobileContextOpen}>
+        <SheetContent side="right" className="w-[360px] max-w-[92vw] p-0">
+          <SheetHeader className="border-b border-border/50 px-4 py-4">
+            <SheetTitle>
+              {workspaceMode === "document" ? "Painel de apoio" : workspaceMode === "structure" ? "Detalhes da estrutura" : "Contexto da conversa"}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="h-[calc(100vh-72px)] overflow-auto">{contextPanel}</div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

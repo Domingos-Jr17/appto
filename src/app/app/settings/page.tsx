@@ -48,7 +48,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
+      <div className="rounded-[28px] border border-border/60 bg-background/75 p-5">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Configurações
         </h1>

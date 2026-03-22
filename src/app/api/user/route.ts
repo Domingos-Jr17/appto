@@ -1,14 +1,25 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
+import { z } from "zod";
+
+const updateUserSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120).optional(),
+    image: z.string().trim().url().nullable().optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "Nenhum campo válido enviado",
+  });
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
     const user = await db.user.findUnique({
@@ -21,15 +32,17 @@ export async function GET() {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+      return apiError("Utilizador não encontrado", 404);
     }
 
-    return NextResponse.json({
+    return apiSuccess({
       id: user.id,
       name: user.name,
       email: user.email,
       image: user.image,
       role: user.role,
+      createdAt: user.createdAt,
+      twoFactorEnabled: user.twoFactorEnabled,
       credits: user.credits?.balance || 0,
       usedCredits: user.credits?.used || 0,
       subscription: user.subscription
@@ -41,44 +54,35 @@ export async function GET() {
       settings: user.settings,
     });
   } catch (error) {
-    console.error("Get user error:", error);
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
-    const body = await request.json();
-    const { name, image } = body;
+    const { name, image } = await parseBody(request, updateUserSchema);
 
     const user = await db.user.update({
       where: { id: session.user.id },
       data: {
-        ...(name && { name }),
-        ...(image && { image }),
+        ...(name !== undefined ? { name } : {}),
+        ...(image !== undefined ? { image } : {}),
       },
     });
 
-    return NextResponse.json({
+    return apiSuccess({
       id: user.id,
       name: user.name,
       email: user.email,
       image: user.image,
     });
   } catch (error) {
-    console.error("Update user error:", error);
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

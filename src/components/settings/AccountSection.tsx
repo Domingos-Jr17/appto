@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -37,6 +38,7 @@ interface UserData {
   email: string;
   role: string;
   credits: number;
+  twoFactorEnabled: boolean;
   subscription: {
     plan: string;
     status: string;
@@ -50,32 +52,43 @@ export function AccountSection() {
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteOtpCode, setDeleteOtpCode] = useState("");
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  const fetchUserData = async () => {
+  const fetchUserData = React.useCallback(async () => {
     try {
       const response = await fetch("/api/user");
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Não foi possível carregar a conta.");
       }
+
+      setUser(data);
     } catch (error) {
-      console.error("Error fetching user:", error);
+      toast({
+        title: "Erro",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar a conta.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    void fetchUserData();
+  }, [fetchUserData]);
 
   const handleExportData = async () => {
     setIsExporting(true);
     try {
       const response = await fetch("/api/user/export");
-      
+
       if (!response.ok) {
         throw new Error("Erro ao exportar dados");
       }
@@ -84,7 +97,7 @@ export function AccountSection() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `aptto-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `appto-data-${new Date().toISOString().split("T")[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -94,7 +107,7 @@ export function AccountSection() {
         title: "Dados exportados",
         description: "O ficheiro foi descarregado com sucesso",
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Erro",
         description: "Não foi possível exportar os dados",
@@ -111,7 +124,11 @@ export function AccountSection() {
       const response = await fetch("/api/user/delete", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmation: deleteConfirmation }),
+        body: JSON.stringify({
+          confirmation: deleteConfirmation,
+          currentPassword: deletePassword || undefined,
+          otpCode: deleteOtpCode || undefined,
+        }),
       });
 
       const data = await response.json();
@@ -125,18 +142,22 @@ export function AccountSection() {
         description: "A sua conta foi eliminada com sucesso",
       });
 
-      // Sign out and redirect
       await signOut({ redirect: false });
       router.push("/");
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Erro",
-        description: error.message || "Não foi possível eliminar a conta",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível eliminar a conta",
         variant: "destructive",
       });
     } finally {
       setIsDeleting(false);
       setDeleteConfirmation("");
+      setDeletePassword("");
+      setDeleteOtpCode("");
     }
   };
 
@@ -157,16 +178,6 @@ export function AccountSection() {
     return labels[plan] || plan;
   };
 
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, { label: string; color: string }> = {
-      ACTIVE: { label: "Activa", color: "text-green-500" },
-      CANCELLED: { label: "Cancelada", color: "text-destructive" },
-      EXPIRED: { label: "Expirada", color: "text-orange-500" },
-      PENDING: { label: "Pendente", color: "text-yellow-500" },
-    };
-    return labels[status] || { label: status, color: "text-muted-foreground" };
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -177,7 +188,6 @@ export function AccountSection() {
 
   return (
     <div className="space-y-8">
-      {/* Account Status */}
       <div className="space-y-4">
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
@@ -185,14 +195,14 @@ export function AccountSection() {
             Status da Conta
           </Label>
           <p className="text-sm text-muted-foreground">
-            Informações sobre sua conta e assinatura
+            Informações sobre sua conta e assinatura.
           </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="p-4 rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl shadow-lg">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-green-500/10">
+          <div className="rounded-xl border border-border/50 bg-card/50 p-4 shadow-lg backdrop-blur-xl">
+            <div className="mb-2 flex items-center gap-3">
+              <div className="rounded-lg bg-green-500/10 p-2">
                 <CheckCircle className="h-4 w-4 text-green-500" />
               </div>
               <div>
@@ -202,9 +212,9 @@ export function AccountSection() {
             </div>
           </div>
 
-          <div className="p-4 rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl shadow-lg">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-primary/10">
+          <div className="rounded-xl border border-border/50 bg-card/50 p-4 shadow-lg backdrop-blur-xl">
+            <div className="mb-2 flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2">
                 <Package className="h-4 w-4 text-primary" />
               </div>
               <div>
@@ -216,9 +226,9 @@ export function AccountSection() {
             </div>
           </div>
 
-          <div className="p-4 rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl shadow-lg">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-primary/10">
+          <div className="rounded-xl border border-border/50 bg-card/50 p-4 shadow-lg backdrop-blur-xl">
+            <div className="mb-2 flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2">
                 <Calendar className="h-4 w-4 text-primary" />
               </div>
               <div>
@@ -230,15 +240,15 @@ export function AccountSection() {
             </div>
           </div>
 
-          <div className="p-4 rounded-xl border border-border/50 bg-card/50 backdrop-blur-xl shadow-lg">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-primary/10">
+          <div className="rounded-xl border border-border/50 bg-card/50 p-4 shadow-lg backdrop-blur-xl">
+            <div className="mb-2 flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2">
                 <HardDrive className="h-4 w-4 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Créditos</p>
                 <p className="font-semibold">
-                  {user?.credits?.toLocaleString() || 0} créditos
+                  {user?.credits?.toLocaleString("pt-MZ") || 0} créditos
                 </p>
               </div>
             </div>
@@ -248,7 +258,6 @@ export function AccountSection() {
 
       <Separator />
 
-      {/* Export Data */}
       <div className="space-y-4">
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
@@ -256,24 +265,24 @@ export function AccountSection() {
             Exportar Dados
           </Label>
           <p className="text-sm text-muted-foreground">
-            Baixe uma cópia de todos os seus dados
+            Baixe uma cópia de todos os seus dados.
           </p>
         </div>
 
-        <div className="bg-accent/50 backdrop-blur-xl border border-border/50 rounded-xl p-4 shadow-lg">
-          <p className="text-sm text-muted-foreground mb-4">
-            Você receberá um arquivo JSON contendo todos os seus projectos, secções,
-            créditos e configurações. O processo pode levar alguns segundos.
+        <div className="rounded-xl border border-border/50 bg-accent/50 p-4 shadow-lg backdrop-blur-xl">
+          <p className="mb-4 text-sm text-muted-foreground">
+            Será descarregado um ficheiro JSON com projectos, secções,
+            transacções, créditos e configurações associadas à conta.
           </p>
           <Button variant="outline" onClick={handleExportData} disabled={isExporting}>
             {isExporting ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Exportando...
               </>
             ) : (
               <>
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="mr-2 h-4 w-4" />
                 Exportar dados
               </>
             )}
@@ -283,7 +292,6 @@ export function AccountSection() {
 
       <Separator />
 
-      {/* Danger Zone */}
       <div className="space-y-4">
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base text-destructive">
@@ -291,26 +299,24 @@ export function AccountSection() {
             Zona de Perigo
           </Label>
           <p className="text-sm text-muted-foreground">
-            Acções irreversíveis relacionadas à sua conta
+            Acções irreversíveis relacionadas à sua conta.
           </p>
         </div>
 
-        <div className="border border-destructive/30 rounded-xl p-4 bg-destructive/5 backdrop-blur-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 backdrop-blur-xl">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <h4 className="font-semibold text-destructive mb-1">
-                Eliminar conta
-              </h4>
+              <h4 className="mb-1 font-semibold text-destructive">Eliminar conta</h4>
               <p className="text-sm text-muted-foreground">
-                Uma vez eliminada, a sua conta e todos os seus dados serão
-                permanentemente removidos. Esta acção não pode ser desfeita.
+                Todos os seus dados serão permanentemente removidos. Esta acção
+                não pode ser desfeita.
               </p>
             </div>
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" className="shrink-0">
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="mr-2 h-4 w-4" />
                   Eliminar conta
                 </Button>
               </AlertDialogTrigger>
@@ -321,37 +327,81 @@ export function AccountSection() {
                     Eliminar conta permanentemente?
                   </AlertDialogTitle>
                   <AlertDialogDescription className="text-left">
-                    Esta acção é irreversível. Todos os seus dados, incluindo
-                    projectos, secções e créditos serão permanentemente
-                    eliminados.
+                    Esta ação é irreversível. Todos os seus dados, incluindo
+                    projectos, secções e créditos, serão permanentemente removidos.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
 
                 <div className="py-4">
-                  <p className="text-sm text-muted-foreground mb-2">
+                  <p className="mb-2 text-sm text-muted-foreground">
                     Digite <span className="font-bold text-foreground">EXCLUIR</span> para confirmar:
                   </p>
-                  <input
-                    type="text"
+                  <Input
                     value={deleteConfirmation}
                     onChange={(e) => setDeleteConfirmation(e.target.value)}
                     placeholder="EXCLUIR"
-                    className="w-full h-10 px-3 rounded-md border border-input bg-input text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-destructive/20 focus:border-destructive/50"
                   />
+
+                  <div className="mt-4 grid gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="delete-password">
+                        Senha actual
+                        <span className="ml-1 text-xs text-muted-foreground">
+                          {user?.twoFactorEnabled
+                            ? "(ou use o código 2FA)"
+                            : "(obrigatória)"}
+                        </span>
+                      </Label>
+                      <Input
+                        id="delete-password"
+                        type="password"
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        placeholder="Introduza a sua senha"
+                      />
+                    </div>
+
+                    {user?.twoFactorEnabled ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="delete-otp">Código 2FA</Label>
+                        <Input
+                          id="delete-otp"
+                          inputMode="numeric"
+                          value={deleteOtpCode}
+                          onChange={(e) =>
+                            setDeleteOtpCode(
+                              e.target.value.replace(/\D/g, "").slice(0, 6)
+                            )
+                          }
+                          placeholder="123456"
+                        />
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
 
                 <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => setDeleteConfirmation("")}>
+                  <AlertDialogCancel
+                    onClick={() => {
+                      setDeleteConfirmation("");
+                      setDeletePassword("");
+                      setDeleteOtpCode("");
+                    }}
+                  >
                     Cancelar
                   </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDeleteAccount}
-                    disabled={deleteConfirmation !== "EXCLUIR" || isDeleting}
+                    disabled={
+                      deleteConfirmation !== "EXCLUIR" ||
+                      isDeleting ||
+                      (!deletePassword && !(user?.twoFactorEnabled && deleteOtpCode))
+                    }
                     className="bg-destructive text-white hover:bg-destructive/90 disabled:opacity-50"
                   >
                     {isDeleting ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Eliminando...
                       </>
                     ) : (
@@ -367,21 +417,17 @@ export function AccountSection() {
 
       <Separator />
 
-      {/* Additional Info */}
-      <div className="bg-accent/50 backdrop-blur-xl border border-border/50 rounded-xl p-4 shadow-lg">
+      <div className="rounded-xl border border-border/50 bg-accent/50 p-4 shadow-lg">
         <div className="flex gap-3">
-          <AlertTriangle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
           <div className="text-sm">
-            <p className="font-medium text-foreground mb-1">
-              Precisa de ajuda?
-            </p>
+            <p className="mb-1 font-medium text-foreground">Precisa de ajuda?</p>
             <p className="text-muted-foreground">
-              Se você está tendo problemas com sua conta ou gostaria de
-              cancelar sua assinatura, entre em contacto com nosso{" "}
-              <a href="mailto:suporte@aptto.mz" className="text-primary hover:underline">
+              Se estiver a ter problemas com a sua conta, contacte o{" "}
+              <a href="mailto:suporte@appto.mz" className="text-primary hover:underline">
                 suporte
               </a>{" "}
-              antes de eliminar sua conta.
+              antes de eliminar a conta.
             </p>
           </div>
         </div>

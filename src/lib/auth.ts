@@ -5,6 +5,11 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { AuthSecurityService } from "@/lib/auth-security";
+import { CreditLedgerService } from "@/lib/credit-ledger";
+import { verifySync } from "otplib";
+import { decryptText } from "@/lib/crypto";
+import { AuthSessionEvent } from "@prisma/client";
 
 declare module "next-auth" {
   interface Session {
@@ -15,20 +20,14 @@ declare module "next-auth" {
       image?: string | null;
       role: string;
       credits: number;
+      twoFactorEnabled: boolean;
     };
   }
   interface User {
     id: string;
     role: string;
     credits: number;
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    id: string;
-    role: string;
-    credits: number;
+    twoFactorEnabled: boolean;
   }
 }
 
@@ -49,6 +48,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        otpCode: { label: "Código 2FA", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -61,6 +61,7 @@ export const authOptions: NextAuthOptions = {
           where: { email: normalizedEmail },
           include: {
             credits: true,
+            totpCredential: true,
           },
         });
 
@@ -77,6 +78,27 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        if (user.twoFactorEnabled) {
+          if (!credentials.otpCode || !user.totpCredential?.secretEncrypted) {
+            throw new Error("TwoFactorRequired");
+          }
+
+          const secret = decryptText(user.totpCredential.secretEncrypted);
+          const isValidOtp = verifySync({
+            token: credentials.otpCode,
+            secret,
+          }).valid;
+
+          if (!isValidOtp) {
+            throw new Error("InvalidTwoFactorCode");
+          }
+
+          await db.totpCredential.update({
+            where: { userId: user.id },
+            data: { lastUsedAt: new Date() },
+          });
+        }
+
         return {
           id: user.id,
           email: user.email,
@@ -84,38 +106,39 @@ export const authOptions: NextAuthOptions = {
           image: user.image,
           role: user.role,
           credits: user.credits?.balance || 0,
+          twoFactorEnabled: user.twoFactorEnabled,
         };
       },
     }),
   ],
   session: {
-    strategy: "jwt",
+    strategy: "database",
   },
   pages: {
     signIn: "/login",
     error: "/login",
   },
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.credits = user.credits;
+    async session({ session, user }) {
+      const fullUser = user?.id
+        ? await db.user.findUnique({
+            where: { id: user.id },
+            include: { credits: true },
+          })
+        : session.user?.email
+          ? await db.user.findUnique({
+              where: { email: session.user.email },
+              include: { credits: true },
+            })
+          : null;
+
+      if (session.user && fullUser) {
+        session.user.id = fullUser.id;
+        session.user.role = fullUser.role;
+        session.user.credits = fullUser.credits?.balance || 0;
+        session.user.twoFactorEnabled = fullUser.twoFactorEnabled;
       }
 
-      // Update credits on session update
-      if (trigger === "update" && session?.credits !== undefined) {
-        token.credits = session.credits;
-      }
-
-      return token;
-    },
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.credits = token.credits;
-      }
       return session;
     },
     async signIn({ user, account }) {
@@ -127,60 +150,55 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (existingUser) {
-          // User exists, just return
           user.id = existingUser.id;
           user.role = existingUser.role;
           user.credits = existingUser.credits?.balance || 0;
+          user.twoFactorEnabled = existingUser.twoFactorEnabled;
           return true;
         }
-
-        // New OAuth user - will be created by PrismaAdapter
-        // We need to handle this in events.signIn
       }
       return true;
     },
   },
   events: {
     async signIn({ user, account }) {
-      // Create credits and subscription for new OAuth users
-      if (account?.provider !== "credentials") {
-        const existingCredits = await db.credit.findUnique({
-          where: { userId: user.id },
+      const ledger = new CreditLedgerService(db);
+      const security = new AuthSecurityService(db);
+      const existingCredits = await db.credit.findUnique({
+        where: { userId: user.id },
+      });
+
+      if (!existingCredits) {
+        await ledger.grant(
+          user.id,
+          150,
+          "BONUS",
+          "Créditos iniciais de boas-vindas",
+          { source: account?.provider ?? "credentials" }
+        );
+
+        await db.subscription.create({
+          data: {
+            userId: user.id,
+            plan: "FREE",
+            status: "ACTIVE",
+            creditsPerMonth: 150,
+          },
         });
 
-        if (!existingCredits) {
-          // New user - give them free credits
-          await db.credit.create({
-            data: {
-              userId: user.id,
-              balance: 150, // Free plan credits
-            },
-          });
+        await db.userSettings.create({
+          data: {
+            userId: user.id,
+          },
+        });
+      }
 
-          await db.creditTransaction.create({
-            data: {
-              userId: user.id,
-              amount: 150,
-              type: "BONUS",
-              description: "Créditos iniciais de boas-vindas",
-            },
-          });
-
-          await db.subscription.create({
-            data: {
-              userId: user.id,
-              plan: "FREE",
-              status: "ACTIVE",
-              creditsPerMonth: 150,
-            },
-          });
-
-          await db.userSettings.create({
-            data: {
-              userId: user.id,
-            },
-          });
-        }
+      await security.recordSessionEvent(user.id, null, AuthSessionEvent.SIGN_IN);
+    },
+    async signOut({ session }) {
+      if (session?.user?.id) {
+        const security = new AuthSecurityService(db);
+        await security.recordSessionEvent(session.user.id, null, AuthSessionEvent.SIGN_OUT);
       }
     },
   },

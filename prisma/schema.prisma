@@ -21,6 +21,8 @@ model User {
   emailVerified   DateTime?
   role            Role            @default(STUDENT)
   educationLevel  EducationLevel? @default(SECONDARY)
+  twoFactorEnabled Boolean        @default(false)
+  passwordChangedAt DateTime?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -32,6 +34,12 @@ model User {
   transactions    CreditTransaction[]
   subscription    Subscription?
   settings        UserSettings?
+  passwordResetTokens PasswordResetToken[]
+  authSessionAudits AuthSessionAudit[]
+  totpCredential  TotpCredential?
+  recoveryCodes   RecoveryCode[]
+  paymentTransactions PaymentTransaction[]
+  knowledgeSources KnowledgeSource[]
 
   @@map("users")
 }
@@ -61,6 +69,10 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
+  createdAt    DateTime @default(now())
+  lastActiveAt DateTime @default(now())
+  ipAddress    String?
+  userAgent    String?
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
@@ -73,6 +85,62 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model AuthSessionAudit {
+  id         String           @id @default(cuid())
+  userId     String
+  sessionId  String?
+  event      AuthSessionEvent
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime         @default(now())
+
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("auth_session_audits")
+}
+
+model TotpCredential {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  secretEncrypted String
+  enabledAt       DateTime?
+  lastUsedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("totp_credentials")
+}
+
+model RecoveryCode {
+  id         String   @id @default(cuid())
+  userId     String
+  codeHash   String   @unique
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt])
+  @@map("recovery_codes")
 }
 
 enum Role {
@@ -183,6 +251,27 @@ model CreditTransaction {
   @@map("credit_transactions")
 }
 
+model PaymentTransaction {
+  id                String          @id @default(cuid())
+  userId            String
+  provider          PaymentProvider
+  providerReference String
+  status            PaymentStatus   @default(PENDING)
+  creditsAmount     Int
+  moneyAmount       Int
+  currency          String          @default("MZN")
+  payloadJson       Json?
+  confirmedAt       DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerReference])
+  @@index([userId, status, createdAt])
+  @@map("payment_transactions")
+}
+
 enum TransactionType {
   PURCHASE
   USAGE
@@ -221,6 +310,29 @@ enum SubscriptionStatus {
   PENDING
 }
 
+enum AuthSessionEvent {
+  SIGN_IN
+  SIGN_OUT
+  SESSION_REVOKED
+  PASSWORD_RESET
+  TWO_FACTOR_ENABLED
+  TWO_FACTOR_DISABLED
+  PASSWORD_CHANGED
+}
+
+enum PaymentProvider {
+  SIMULATED
+  MPESA
+  EMOLA
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  CANCELLED
+}
+
 // ==================== USER SETTINGS ====================
 
 model UserSettings {
@@ -240,4 +352,61 @@ model UserSettings {
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_settings")
+}
+
+model KnowledgeSource {
+  id          String              @id @default(cuid())
+  userId      String?
+  name        String
+  slug        String              @unique
+  type        KnowledgeSourceType
+  isActive    Boolean             @default(true)
+  metadata    Json?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  user        User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents   KnowledgeDocument[]
+
+  @@map("knowledge_sources")
+}
+
+model KnowledgeDocument {
+  id          String            @id @default(cuid())
+  sourceId    String
+  title       String
+  content     String
+  metadata    Json?
+  checksum    String?
+  isIndexed   Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  source      KnowledgeSource   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  chunks      KnowledgeChunk[]
+
+  @@index([sourceId, isIndexed])
+  @@map("knowledge_documents")
+}
+
+model KnowledgeChunk {
+  id            String            @id @default(cuid())
+  documentId    String
+  chunkIndex    Int
+  content       String
+  embeddingJson String?
+  metadata      Json?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  document      KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, chunkIndex])
+  @@map("knowledge_chunks")
+}
+
+enum KnowledgeSourceType {
+  PUBLIC
+  INSTITUTIONAL
+  PRIVATE
 }

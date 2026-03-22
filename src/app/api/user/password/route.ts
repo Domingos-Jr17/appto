@@ -3,6 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
+import { apiSuccess, handleApiError, parseBody, apiError } from "@/lib/api";
+import { changePasswordSchema } from "@/lib/validators";
+import { AuthSecurityService } from "@/lib/auth-security";
+import { AuthSessionEvent } from "@prisma/client";
 
 // POST /api/user/password - Change user password
 export async function POST(request: NextRequest) {
@@ -13,22 +17,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { currentPassword, newPassword } = body;
-
-    if (!currentPassword || !newPassword) {
-      return NextResponse.json(
-        { error: "Senha actual e nova senha são obrigatórias" },
-        { status: 400 }
-      );
-    }
-
-    if (newPassword.length < 6) {
-      return NextResponse.json(
-        { error: "A nova senha deve ter pelo menos 6 caracteres" },
-        { status: 400 }
-      );
-    }
+    const { currentPassword, newPassword } = await parseBody(
+      request,
+      changePasswordSchema
+    );
 
     // Get user with password
     const user = await db.user.findUnique({
@@ -37,27 +29,21 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "Utilizador não encontrado" },
-        { status: 404 }
-      );
+      return apiError("Utilizador não encontrado", 404);
     }
 
     // Check if user has a password (might be OAuth-only user)
     if (!user.password) {
-      return NextResponse.json(
-        { error: "Esta conta usa autenticação social. Não é possível alterar a senha." },
-        { status: 400 }
+      return apiError(
+        "Esta conta usa autenticação social. Não é possível alterar a senha.",
+        400
       );
     }
 
     // Verify current password
     const isValidPassword = await bcrypt.compare(currentPassword, user.password);
     if (!isValidPassword) {
-      return NextResponse.json(
-        { error: "Senha actual incorreta" },
-        { status: 400 }
-      );
+      return apiError("Senha actual incorreta", 400);
     }
 
     // Hash new password
@@ -66,18 +52,25 @@ export async function POST(request: NextRequest) {
     // Update password
     await db.user.update({
       where: { id: session.user.id },
-      data: { password: hashedPassword },
+      data: {
+        password: hashedPassword,
+        passwordChangedAt: new Date(),
+      },
     });
 
-    return NextResponse.json({
+    const security = new AuthSecurityService(db);
+    await security.recordSessionEvent(
+      session.user.id,
+      null,
+      AuthSessionEvent.PASSWORD_CHANGED
+    );
+
+    return apiSuccess({
       success: true,
       message: "Senha alterada com sucesso",
     });
   } catch (error) {
     console.error("Change password error:", error);
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

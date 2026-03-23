@@ -10,7 +10,6 @@ import {
   Coins,
   FilePlus2,
   FolderDot,
-  LayoutTemplate,
   LogOut,
   Search,
   Settings,
@@ -39,6 +38,19 @@ export interface SidebarProject {
   status: string;
   updatedAt: string;
   wordCount: number;
+  resumeMode?: "chat" | "document" | "structure";
+  lastEditedSection?: {
+    id: string;
+    title: string;
+    updatedAt: string;
+  } | null;
+  sectionSummary?: {
+    empty: number;
+    started: number;
+    drafting: number;
+    review: number;
+    stale: number;
+  };
 }
 
 interface SidebarUser {
@@ -60,9 +72,15 @@ interface ProjectSidebarProps {
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Rascunho",
   IN_PROGRESS: "Em curso",
-  REVIEW: "Em revisão",
-  COMPLETED: "Concluído",
+  REVIEW: "Em revisao",
+  COMPLETED: "Concluido",
   ARCHIVED: "Arquivado",
+};
+
+const RESUME_COPY: Record<NonNullable<SidebarProject["resumeMode"]>, string> = {
+  chat: "Retomar no chat",
+  document: "Abrir documento",
+  structure: "Ver estrutura",
 };
 
 function formatRelativeTime(value: string) {
@@ -72,23 +90,45 @@ function formatRelativeTime(value: string) {
   const diffDays = Math.floor(diffMs / 86400000);
 
   if (diffHours < 1) return "agora";
-  if (diffHours < 24) return `há ${diffHours}h`;
-  if (diffDays < 7) return `há ${diffDays}d`;
+  if (diffHours < 24) return `ha ${diffHours}h`;
+  if (diffDays < 7) return `ha ${diffDays}d`;
   return date.toLocaleDateString("pt-MZ", {
     day: "2-digit",
     month: "short",
   });
 }
 
-function getProjectProgress(wordCount: number, status: string) {
-  if (status === "COMPLETED") return 100;
-  if (wordCount <= 0) return 8;
-  return Math.min(100, Math.max(12, Math.round((wordCount / 12500) * 100)));
+function getProjectProgress(project: SidebarProject) {
+  if (project.status === "COMPLETED") return 100;
+
+  const summary = project.sectionSummary;
+  if (!summary) {
+    if (project.wordCount <= 0) return 8;
+    return Math.min(90, Math.max(14, Math.round((project.wordCount / 12500) * 100)));
+  }
+
+  const total = summary.empty + summary.started + summary.drafting + summary.review + summary.stale;
+  if (total === 0) return project.wordCount > 0 ? 18 : 8;
+
+  const weighted =
+    summary.empty * 10 +
+    summary.started * 38 +
+    summary.drafting * 72 +
+    summary.review * 100 +
+    summary.stale * 28;
+
+  return Math.max(8, Math.min(100, Math.round(weighted / total)));
 }
 
 function getProjectHref(project: SidebarProject) {
-  const mode = project.wordCount > 0 ? "document" : "chat";
+  const mode = project.resumeMode || (project.wordCount > 0 ? "document" : "chat");
   return `/app/editor?project=${project.id}&mode=${mode}`;
+}
+
+function getProjectMeta(project: SidebarProject) {
+  const primary = RESUME_COPY[project.resumeMode || "chat"];
+  const secondary = project.lastEditedSection?.title || STATUS_LABELS[project.status] || "Em curso";
+  return `${primary} · ${secondary}`;
 }
 
 function Section({
@@ -113,7 +153,7 @@ function Section({
         {items.map((project) => {
           const href = getProjectHref(project);
           const isActive = currentPath.startsWith("/app/editor") && href.includes(project.id);
-          const progress = getProjectProgress(project.wordCount, project.status);
+          const progress = getProjectProgress(project);
 
           return (
             <Link
@@ -129,11 +169,10 @@ function Section({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-foreground">
-                    {project.title}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {STATUS_LABELS[project.status] || "Em curso"} · {formatRelativeTime(project.updatedAt)}
+                  <p className="truncate text-sm font-medium text-foreground">{project.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{getProjectMeta(project)}</p>
+                  <p className="mt-1 text-xs text-muted-foreground/80">
+                    {formatRelativeTime(project.updatedAt)}
                   </p>
                 </div>
                 <span className="mt-0.5 text-xs text-muted-foreground">{progress}%</span>
@@ -173,17 +212,15 @@ export function ProjectSidebar({
   const filteredProjects = useMemo(() => {
     const normalized = search.trim().toLowerCase();
     if (!normalized) return projects;
-    return projects.filter((project) =>
-      project.title.toLowerCase().includes(normalized)
-    );
+    return projects.filter((project) => project.title.toLowerCase().includes(normalized));
   }, [projects, search]);
 
-  const recentProjects = filteredProjects.slice(0, 5);
-  const draftProjects = filteredProjects
-    .filter((project) =>
-      ["DRAFT", "IN_PROGRESS", "REVIEW"].includes(project.status)
-    )
-    .slice(0, 4);
+  const recentProjects = [...filteredProjects]
+    .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
+    .slice(0, 5);
+  const inProgressProjects = filteredProjects
+    .filter((project) => ["DRAFT", "IN_PROGRESS", "REVIEW"].includes(project.status))
+    .slice(0, 5);
   const completedProjects = filteredProjects
     .filter((project) => project.status === "COMPLETED")
     .slice(0, 4);
@@ -191,13 +228,13 @@ export function ProjectSidebar({
   const quickLinks = [
     {
       href: "/app/credits",
-      label: "Créditos",
+      label: "Creditos",
       icon: Coins,
       meta: `${credits.toLocaleString("pt-MZ")}`,
     },
     {
       href: "/app/settings",
-      label: "Definições",
+      label: "Definicoes",
       icon: Settings,
       meta: "Conta",
     },
@@ -219,7 +256,7 @@ export function ProjectSidebar({
             {!collapsed ? (
               <div>
                 <p className="text-sm font-semibold tracking-tight">appto</p>
-                <p className="text-xs text-muted-foreground">Workspace académico</p>
+                <p className="text-xs text-muted-foreground">Workspace academico</p>
               </div>
             ) : null}
           </Link>
@@ -264,7 +301,7 @@ export function ProjectSidebar({
         <div className="flex-1 overflow-hidden px-3 pb-3">
           {collapsed ? (
             <div className="space-y-3">
-              {recentProjects.slice(0, 4).map((project) => (
+              {recentProjects.slice(0, 5).map((project) => (
                 <Tooltip key={project.id}>
                   <TooltipTrigger asChild>
                     <Link
@@ -275,7 +312,12 @@ export function ProjectSidebar({
                       <FolderDot className="h-4 w-4 text-muted-foreground" />
                     </Link>
                   </TooltipTrigger>
-                  <TooltipContent side="right">{project.title}</TooltipContent>
+                  <TooltipContent side="right">
+                    <div className="space-y-1">
+                      <p className="font-medium">{project.title}</p>
+                      <p className="text-xs">{getProjectMeta(project)}</p>
+                    </div>
+                  </TooltipContent>
                 </Tooltip>
               ))}
             </div>
@@ -292,24 +334,21 @@ export function ProjectSidebar({
               </div>
 
               <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
-                <Section title="Recentes" items={recentProjects} currentPath={currentPath} onNavigate={onNavigate} />
-                <Section title="Rascunhos" items={draftProjects} currentPath={currentPath} onNavigate={onNavigate} />
-                <Section title="Concluídos" items={completedProjects} currentPath={currentPath} onNavigate={onNavigate} />
+                <Section title="Continuar" items={recentProjects} currentPath={currentPath} onNavigate={onNavigate} />
+                <Section title="Em curso" items={inProgressProjects} currentPath={currentPath} onNavigate={onNavigate} />
+                <Section title="Concluidos" items={completedProjects} currentPath={currentPath} onNavigate={onNavigate} />
 
                 <div className="space-y-2">
                   <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
-                    Explorar
+                    Navegacao
                   </p>
                   <Link
                     href="/app/projects"
                     onClick={onNavigate}
                     className="flex items-center justify-between rounded-2xl border border-transparent bg-muted/35 px-3 py-3 hover:border-border/70 hover:bg-muted/55"
                   >
-                    <span className="flex items-center gap-3 text-sm font-medium">
-                      <LayoutTemplate className="h-4 w-4 text-muted-foreground" />
-                      Templates
-                    </span>
-                    <span className="text-xs text-muted-foreground">Modelos</span>
+                    <span className="text-sm font-medium">Biblioteca de projectos</span>
+                    <span className="text-xs text-muted-foreground">Todos</span>
                   </Link>
                 </div>
               </div>
@@ -381,7 +420,7 @@ export function ProjectSidebar({
               <DropdownMenuItem asChild>
                 <Link href="/app/settings" onClick={onNavigate}>
                   <Settings className="mr-2 h-4 w-4" />
-                  Definições
+                  Definicoes
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -390,7 +429,7 @@ export function ProjectSidebar({
                 onClick={() => void signOut({ callbackUrl: "/login" })}
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                Terminar sessão
+                Terminar sessao
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

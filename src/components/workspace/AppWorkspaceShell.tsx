@@ -42,6 +42,9 @@ export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
                 status: project.status,
                 updatedAt: project.updatedAt,
                 wordCount: project.wordCount ?? 0,
+                resumeMode: project.resumeMode,
+                lastEditedSection: project.lastEditedSection,
+                sectionSummary: project.sectionSummary,
               }))
             : []
         );
@@ -113,7 +116,7 @@ export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
               <p className="text-sm font-semibold tracking-tight">appto workspace</p>
 
               <div className="rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs font-medium">
-                {credits.toLocaleString("pt-MZ")} créditos
+                {credits.toLocaleString("pt-MZ")} creditos
               </div>
             </div>
           </div>

@@ -1,19 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   BookOpen,
-  Clock3,
   Coins,
   FilePenLine,
   FolderKanban,
   LayoutTemplate,
   Loader2,
+  Network,
   Plus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +27,19 @@ interface Project {
   status: string;
   wordCount: number;
   updatedAt: string;
+  resumeMode: "chat" | "document" | "structure";
+  lastEditedSection: {
+    id: string;
+    title: string;
+    updatedAt: string;
+  } | null;
+  sectionSummary: {
+    empty: number;
+    started: number;
+    drafting: number;
+    review: number;
+    stale: number;
+  };
 }
 
 interface UserData {
@@ -36,49 +48,38 @@ interface UserData {
   subscription: { plan: string; status: string } | null;
 }
 
-type ProjectType =
-  | "monografia"
-  | "tese"
-  | "artigo"
-  | "relatório"
-  | "dissertação"
-  | "ensaio";
-
-const projectTypeLabels: Record<string, ProjectType> = {
-  MONOGRAPHY: "monografia",
-  DISSERTATION: "dissertação",
-  THESIS: "tese",
-  ARTICLE: "artigo",
-  ESSAY: "ensaio",
-  REPORT: "relatório",
-};
-
 const templates = [
   {
     title: "Monografia guiada",
-    description: "Comece pelo tema, peça outline e passe rapidamente para o documento principal.",
+    description: "Comece no chat, aprove um outline e passe rapidamente para o editor principal.",
     icon: BookOpen,
   },
   {
-    title: "Artigo académico",
-    description: "Estrutura mais curta, com secções pequenas e iteração rápida entre conversa e escrita.",
+    title: "Artigo academico",
+    description: "Fluxo curto para estrutura compacta, iteracao rapida e exportacao frequente.",
     icon: LayoutTemplate,
   },
   {
     title: "Estrutura livre",
-    description: "Crie a árvore manualmente e use a IA apenas como apoio cirúrgico.",
+    description: "Monte o plano manualmente e use a IA apenas como apoio tactico por secao.",
     icon: FilePenLine,
   },
 ];
 
+const RESUME_COPY: Record<Project["resumeMode"], string> = {
+  chat: "Retomar no chat",
+  document: "Abrir documento",
+  structure: "Ver estrutura",
+};
+
 export default function WorkspaceHomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [projects, setProjects] = React.useState<Project[]>([]);
+  const [userData, setUserData] = React.useState<UserData | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
       return;
@@ -90,7 +91,11 @@ export default function WorkspaceHomePage() {
         fetch("/api/user").then((response) => response.json()),
       ])
         .then(([projectsData, user]) => {
-          setProjects(Array.isArray(projectsData) ? projectsData : []);
+          const normalizedProjects = Array.isArray(projectsData) ? projectsData : [];
+          normalizedProjects.sort(
+            (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+          );
+          setProjects(normalizedProjects);
           setUserData(user);
         })
         .catch(console.error)
@@ -107,21 +112,12 @@ export default function WorkspaceHomePage() {
   }
 
   const firstName = session?.user?.name?.split(" ")[0] || "Estudante";
-  const recentProjects = projects.slice(0, 5).map((project) => ({
-    id: project.id,
-    title: project.title,
-    type: (projectTypeLabels[project.type] || "monografia") as ProjectType,
-    course: project.description || "Sem descrição",
-    lastUpdated: formatRelativeTime(new Date(project.updatedAt)),
-    progress: calculateProgress(project),
-    words: project.wordCount,
-  }));
-
-  const continueProject = recentProjects[0];
-  const inProgressCount = projects.filter((project) =>
+  const leadProject = projects[0] || null;
+  const activeProjects = projects.filter((project) =>
     ["DRAFT", "IN_PROGRESS", "REVIEW"].includes(project.status)
   ).length;
-  const totalWords = projects.reduce((acc, project) => acc + project.wordCount, 0);
+  const reviewReady = projects.reduce((total, project) => total + project.sectionSummary.review, 0);
+  const totalWords = projects.reduce((total, project) => total + project.wordCount, 0);
 
   return (
     <div className="space-y-8">
@@ -129,76 +125,125 @@ export default function WorkspaceHomePage() {
         <Card className="overflow-hidden border-border/60 bg-background/80 shadow-sm">
           <CardContent className="flex flex-col gap-8 p-6 lg:p-8">
             <div className="space-y-4">
-              <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs">
-                Workspace académico
+              <Badge variant="secondary" className="w-fit rounded-full px-3 py-1 text-xs">
+                Continuar trabalho
               </Badge>
               <div className="space-y-3">
                 <h2 className="text-3xl font-semibold tracking-tight text-foreground lg:text-4xl">
-                  Olá, {firstName}. Continue a escrever sem voltar ao modo dashboard.
+                  {firstName}, entre directamente no proximo passo.
                 </h2>
                 <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                  O centro do produto agora é o fluxo entre conversa, documento e estrutura. Retome um projecto,
-                  crie um novo trabalho ou use um template para arrancar mais rápido.
+                  A area autenticada agora privilegia continuidade: retomar o ultimo projecto,
+                  abrir a ultima secao ou iniciar um novo trabalho sem passar por um dashboard pesado.
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <Button asChild className="rounded-full px-5">
-                <Link href="/app/projects?new=1">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Novo trabalho
-                </Link>
-              </Button>
-              {continueProject ? (
-                <Button asChild variant="outline" className="rounded-full px-5">
-                  <Link
-                    href={`/app/editor?project=${continueProject.id}&mode=${
-                      continueProject.words > 0 ? "document" : "chat"
-                    }`}
-                  >
-                    <ArrowRight className="mr-2 h-4 w-4" />
-                    Continuar de onde parou
-                  </Link>
-                </Button>
-              ) : null}
-            </div>
+            {leadProject ? (
+              <div className="rounded-[32px] border border-border/60 bg-muted/25 p-5 lg:p-6">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="rounded-full">
+                        {RESUME_COPY[leadProject.resumeMode]}
+                      </Badge>
+                      <Badge variant="secondary" className="rounded-full">
+                        {formatProjectType(leadProject.type)}
+                      </Badge>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-semibold tracking-tight">{leadProject.title}</h3>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {leadProject.description || "Sem descricao."}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                      <span>{leadProject.wordCount.toLocaleString("pt-MZ")} palavras</span>
+                      <span>·</span>
+                      <span>{formatRelativeTime(new Date(leadProject.updatedAt))}</span>
+                      {leadProject.lastEditedSection ? (
+                        <>
+                          <span>·</span>
+                          <span>Ultima secao: {leadProject.lastEditedSection.title}</span>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button asChild className="rounded-full px-5">
+                      <Link href={getProjectHref(leadProject)}>
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                        {RESUME_COPY[leadProject.resumeMode]}
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="rounded-full px-5">
+                      <Link href="/app/projects?new=1">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Novo trabalho
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-[32px] border border-dashed border-border/60 bg-muted/20 p-6 lg:p-8">
+                <div className="max-w-2xl space-y-4">
+                  <h3 className="text-2xl font-semibold tracking-tight">Ainda nao ha projectos</h3>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    Crie o primeiro trabalho e o fluxo principal abre logo em conversa, estrutura ou documento conforme o estado do projecto.
+                  </p>
+                  <Button asChild className="rounded-full px-5">
+                    <Link href="/app/projects?new=1">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Criar primeiro trabalho
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
         <Card className="border-border/60 bg-background/80 shadow-sm">
           <CardHeader className="pb-4">
-            <CardTitle className="text-base font-medium">Contexto rápido</CardTitle>
+            <CardTitle className="text-base font-medium">Contexto rapido</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+          <CardContent className="space-y-3">
             <div className="rounded-2xl bg-muted/45 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Em curso</p>
-              <p className="mt-2 text-2xl font-semibold">{inProgressCount}</p>
+              <p className="mt-2 text-2xl font-semibold">{activeProjects}</p>
               <p className="mt-1 text-sm text-muted-foreground">trabalhos activos</p>
             </div>
             <div className="rounded-2xl bg-muted/45 p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Créditos</p>
+              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Creditos</p>
               <p className="mt-2 text-2xl font-semibold">
                 {(userData?.credits || 0).toLocaleString("pt-MZ")}
               </p>
-              <p className="mt-1 text-sm text-muted-foreground">saldo disponível</p>
+              <p className="mt-1 text-sm text-muted-foreground">saldo disponivel</p>
             </div>
             <div className="rounded-2xl bg-muted/45 p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Texto</p>
-              <p className="mt-2 text-2xl font-semibold">{totalWords.toLocaleString("pt-MZ")}</p>
-              <p className="mt-1 text-sm text-muted-foreground">palavras acumuladas</p>
+              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Prontas</p>
+              <p className="mt-2 text-2xl font-semibold">{reviewReady}</p>
+              <p className="mt-1 text-sm text-muted-foreground">seccoes em revisao final</p>
+            </div>
+            <div className="rounded-2xl bg-foreground px-4 py-4 text-background">
+              <p className="text-xs uppercase tracking-[0.16em] text-background/70">Proxima accao</p>
+              <p className="mt-2 text-sm font-medium">
+                {leadProject ? getNextAction(leadProject) : "Criar o primeiro projecto e gerar um outline base."}
+              </p>
             </div>
           </CardContent>
         </Card>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[1.5fr_1fr]">
+      <section className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
         <Card className="border-border/60 bg-background/80 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
-              <CardTitle className="text-lg">Continuar de onde parou</CardTitle>
+              <CardTitle className="text-lg">Projectos recentes</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                Os projectos recentes entram primeiro, com acesso directo ao modo certo.
+                A lista ja abre cada projecto no modo certo de continuidade.
               </p>
             </div>
             <Button variant="ghost" size="sm" asChild className="rounded-full">
@@ -209,33 +254,39 @@ export default function WorkspaceHomePage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-3">
-            {recentProjects.length > 0 ? (
-              recentProjects.map((project, index) => (
+            {projects.length > 0 ? (
+              projects.slice(0, 5).map((project, index) => (
                 <Link
                   key={project.id}
-                  href={`/app/editor?project=${project.id}&mode=${project.words > 0 ? "document" : "chat"}`}
+                  href={getProjectHref(project)}
                   className="flex flex-col gap-4 rounded-3xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55 lg:flex-row lg:items-center lg:justify-between"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        {index === 0 ? "Último aberto" : "Recente"}
+                        {index === 0 ? "Ultimo aberto" : RESUME_COPY[project.resumeMode]}
                       </span>
                       <Badge variant="secondary" className="rounded-full">
-                        {project.type}
+                        {formatProjectType(project.type)}
                       </Badge>
                     </div>
                     <h3 className="mt-2 truncate text-base font-semibold">{project.title}</h3>
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{project.course}</p>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                      {project.lastEditedSection
+                        ? `Ultima secao: ${project.lastEditedSection.title}`
+                        : "Sem secao iniciada ainda."}
+                    </p>
                   </div>
 
-                  <div className="flex min-w-[220px] items-center justify-between gap-4 rounded-2xl bg-background/70 px-4 py-3">
+                  <div className="flex min-w-[240px] items-center justify-between gap-4 rounded-2xl bg-background/70 px-4 py-3">
                     <div className="text-sm">
-                      <p className="font-medium">{project.progress}%</p>
-                      <p className="text-xs text-muted-foreground">{project.lastUpdated}</p>
+                      <p className="font-medium">{getProgress(project)}%</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatRelativeTime(new Date(project.updatedAt))}
+                      </p>
                     </div>
                     <div className="h-2 w-24 rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-primary" style={{ width: `${project.progress}%` }} />
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${getProgress(project)}%` }} />
                     </div>
                   </div>
                 </Link>
@@ -243,9 +294,9 @@ export default function WorkspaceHomePage() {
             ) : (
               <div className="rounded-3xl border border-dashed border-border/60 bg-muted/25 p-8 text-center">
                 <FolderKanban className="mx-auto h-10 w-10 text-muted-foreground/40" />
-                <h3 className="mt-4 text-lg font-medium">Ainda não há projectos</h3>
+                <h3 className="mt-4 text-lg font-medium">Sem projectos ainda</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Crie o primeiro trabalho e o aptto abre directamente no workspace principal.
+                  O workspace fica mais util quando ha um projecto para continuar. Pode criar um agora ou usar um template de arranque.
                 </p>
                 <Button asChild className="mt-5 rounded-full">
                   <Link href="/app/projects?new=1">Criar primeiro trabalho</Link>
@@ -255,114 +306,122 @@ export default function WorkspaceHomePage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 bg-background/80 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Templates e atalhos</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Entradas rápidas para começar com menos configuração manual.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {templates.map((template) => (
-              <Link
-                key={template.title}
-                href="/app/projects?new=1"
-                className="block rounded-3xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55"
-              >
-                <div className="flex items-start gap-3">
+        <div className="space-y-5">
+          <Card className="border-border/60 bg-background/80 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Fluxo principal</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              {[
+                {
+                  icon: LayoutTemplate,
+                  title: "Conversar",
+                  description: "Use o chat como ponto de partida para outline, ideias e decisoes.",
+                },
+                {
+                  icon: Network,
+                  title: "Estruturar",
+                  description: "Reordene capitulos, subtitulos e acompanhe o estado editorial.",
+                },
+                {
+                  icon: FilePenLine,
+                  title: "Escrever",
+                  description: "Passe ao documento quando houver uma secao clara para desenvolver.",
+                },
+              ].map((item) => (
+                <div key={item.title} className="rounded-3xl bg-muted/35 p-4">
                   <div className="w-fit rounded-2xl bg-primary/10 p-2.5">
-                    <template.icon className="h-4 w-4 text-primary" />
+                    <item.icon className="h-4 w-4 text-primary" />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-semibold">{template.title}</h3>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{template.description}</p>
-                  </div>
+                  <h3 className="mt-4 text-sm font-semibold">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
                 </div>
-              </Link>
-            ))}
+              ))}
+            </CardContent>
+          </Card>
 
-            <div className="rounded-3xl border border-border/50 bg-foreground px-5 py-4 text-background">
-              <p className="text-sm font-semibold">Créditos disponíveis</p>
-              <p className="mt-2 text-2xl font-semibold">
-                {(userData?.credits || 0).toLocaleString("pt-MZ")}
-              </p>
-              <p className="mt-1 text-sm text-background/75">
-                O saldo acompanha o workspace e continua visível no editor e na shell.
-              </p>
-              <Button asChild variant="secondary" className="mt-4 rounded-full">
-                <Link href="/app/credits">
-                  <Coins className="mr-2 h-4 w-4" />
-                  Gerir créditos
+          <Card className="border-border/60 bg-background/80 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Templates e atalhos</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {templates.map((template) => (
+                <Link
+                  key={template.title}
+                  href="/app/projects?new=1"
+                  className="block rounded-3xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-fit rounded-2xl bg-primary/10 p-2.5">
+                      <template.icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold">{template.title}</h3>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">{template.description}</p>
+                    </div>
+                  </div>
                 </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
+              ))}
 
-      <section className="grid gap-5 lg:grid-cols-3">
-        <Card className="border-border/60 bg-background/80 shadow-sm lg:col-span-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-medium">Como o fluxo funciona agora</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-3">
-            {[
-              {
-                icon: Clock3,
-                title: "Comece pela conversa",
-                description: "Use o modo de conversa para brainstorming, outline e pedidos pontuais à IA.",
-              },
-              {
-                icon: FilePenLine,
-                title: "Escreva no documento",
-                description: "Passe para o modo documento quando a secção estiver pronta para edição contínua.",
-              },
-              {
-                icon: FolderKanban,
-                title: "Organize a estrutura",
-                description: "Abra a estrutura para reordenar capítulos, acompanhar progresso e lançar novas secções.",
-              },
-            ].map((item) => (
-              <div key={item.title} className="rounded-3xl bg-muted/35 p-5">
-                <div className="w-fit rounded-2xl bg-primary/10 p-2.5">
-                  <item.icon className="h-4 w-4 text-primary" />
-                </div>
-                <h3 className="mt-4 text-sm font-semibold">{item.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+              <div className="rounded-3xl border border-border/50 bg-foreground px-5 py-4 text-background">
+                <p className="text-sm font-semibold">Palavras acumuladas</p>
+                <p className="mt-2 text-2xl font-semibold">{totalWords.toLocaleString("pt-MZ")}</p>
+                <p className="mt-1 text-sm text-background/75">
+                  O progresso total do workspace continua visivel sem dominar a pagina inicial.
+                </p>
+                <Button asChild variant="secondary" className="mt-4 rounded-full">
+                  <Link href="/app/credits">
+                    <Coins className="mr-2 h-4 w-4" />
+                    Gerir creditos
+                  </Link>
+                </Button>
               </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/60 bg-background/80 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-medium">Acesso rápido</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {[
-              { href: "/app/projects", label: "Abrir biblioteca de projectos" },
-              { href: "/app/credits", label: "Ver histórico de créditos" },
-              { href: "/app/settings", label: "Rever conta e segurança" },
-            ].map((item) => (
-              <Button key={item.href} asChild variant="outline" className="h-12 w-full justify-between rounded-2xl">
-                <Link href={item.href}>
-                  {item.label}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            ))}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </section>
     </div>
   );
 }
 
-function calculateProgress(project: Project): number {
+function getProjectHref(project: Project) {
+  return `/app/editor?project=${project.id}&mode=${project.resumeMode}`;
+}
+
+function getProgress(project: Project): number {
   if (project.status === "COMPLETED") return 100;
-  if (project.wordCount === 0) return 0;
-  const expectedWords = 50 * 250;
-  return Math.min(100, Math.round((project.wordCount / expectedWords) * 100));
+
+  const total =
+    project.sectionSummary.empty +
+    project.sectionSummary.started +
+    project.sectionSummary.drafting +
+    project.sectionSummary.review +
+    project.sectionSummary.stale;
+
+  if (total === 0) return project.wordCount > 0 ? 16 : 8;
+
+  const weighted =
+    project.sectionSummary.empty * 10 +
+    project.sectionSummary.started * 38 +
+    project.sectionSummary.drafting * 72 +
+    project.sectionSummary.review * 100 +
+    project.sectionSummary.stale * 28;
+
+  return Math.max(8, Math.min(100, Math.round(weighted / total)));
+}
+
+function getNextAction(project: Project) {
+  if (project.wordCount === 0) return "Gerar outline e aprovar a estrutura inicial.";
+  if (project.lastEditedSection) return `Retomar a secao "${project.lastEditedSection.title}".`;
+  if (project.sectionSummary.review > 0) return "Rever secoes prontas e preparar exportacao.";
+  return "Abrir o projecto e continuar a escrita.";
+}
+
+function formatProjectType(type: string) {
+  return type
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function formatRelativeTime(date: Date): string {
@@ -373,8 +432,8 @@ function formatRelativeTime(date: Date): string {
   const diffDays = Math.floor(diffMs / 86400000);
 
   if (diffMins < 1) return "agora";
-  if (diffMins < 60) return `há ${diffMins} min`;
-  if (diffHours < 24) return `há ${diffHours}h`;
-  if (diffDays < 7) return `há ${diffDays} dias`;
+  if (diffMins < 60) return `ha ${diffMins} min`;
+  if (diffHours < 24) return `ha ${diffHours}h`;
+  if (diffDays < 7) return `ha ${diffDays} dias`;
   return date.toLocaleDateString("pt-MZ");
 }

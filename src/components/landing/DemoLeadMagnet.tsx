@@ -1,134 +1,156 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, FileText, ChevronRight, Clock, BookOpen } from "lucide-react";
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { BookOpen, ChevronRight, Clock, FileText, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import type { DemoOutline } from "@/lib/demo-outline";
 
-const mockOutline = {
-  title: "Impacto das Mudanças Climáticas na Agricultura de Subsistência em Moçambique",
-  sections: [
-    {
-      number: "1",
-      title: "Introdução",
-      subsections: ["1.1 Contextualização do problema", "1.2 Objectivos do estudo", "1.3 Metodologia utilizada"],
-    },
-    {
-      number: "2",
-      title: "Revisão da Literatura",
-      subsections: ["2.1 Mudanças climáticas: conceitos e teorias", "2.2 Agricultura de subsistência em Moçambique", "2.3 Estudos anteriores"],
-    },
-    {
-      number: "3",
-      title: "Metodologia",
-      subsections: ["3.1 Tipo de pesquisa", "3.2 Colecta de dados", "3.3 Análise e interpretação"],
-    },
-    {
-      number: "4",
-      title: "Resultados e Discussão",
-      subsections: ["4.1 Efeitos observados nas culturas", "4.2 Adaptação dos agricultores", "4.3 Análise comparativa"],
-    },
-    {
-      number: "5",
-      title: "Conclusões e Recomendações",
-      subsections: ["5.1 Principais conclusões", "5.2 Recomendações para políticas públicas", "5.3 Sugestões para pesquisas futuras"],
-    },
-  ],
+type DemoState = "idle" | "generating" | "success" | "error";
+type DemoSource = "real" | "fallback" | null;
+
+const initialOutline: DemoOutline = {
+  title: "",
+  sections: [],
   stats: {
-    pages: "15-20",
-    references: "12-15 fontes locais",
-    time: "Poupe 3 horas de pesquisa",
+    pages: "",
+    references: "",
+    time: "",
   },
 };
 
 export function DemoLeadMagnet() {
   const [topic, setTopic] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [showResult, setShowResult] = useState(false);
+  const [status, setStatus] = useState<DemoState>("idle");
+  const [outline, setOutline] = useState<DemoOutline>(initialOutline);
+  const [source, setSource] = useState<DemoSource>(null);
+  const [error, setError] = useState("");
 
-  const handleGenerate = () => {
-    if (!topic.trim()) return;
-    setIsGenerating(true);
-    // Simulate generation
-    setTimeout(() => {
-      setIsGenerating(false);
-      setShowResult(true);
-    }, 1500);
+  const canSubmit = topic.trim().length >= 8 && topic.trim().length <= 160;
+  const showResult = status === "success";
+
+  const resultBadge = useMemo(() => {
+    if (source === "real") {
+      return {
+        label: "Gerado pela IA",
+        className: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+      };
+    }
+
+    if (source === "fallback") {
+      return {
+        label: "Demo de fallback",
+        className: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+      };
+    }
+
+    return null;
+  }, [source]);
+
+  const handleGenerate = async () => {
+    if (!canSubmit) return;
+
+    setStatus("generating");
+    setError("");
+
+    try {
+      const response = await fetch("/api/demo/outline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: topic.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Não foi possível gerar o sumário.");
+      }
+
+      setOutline(data.outline);
+      setSource(data.source);
+      setStatus("success");
+    } catch (requestError) {
+      setStatus("error");
+      setSource(null);
+      setOutline(initialOutline);
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Não foi possível gerar o sumário neste momento."
+      );
+    }
   };
 
   return (
-    <section id="demo" className="py-24 px-4 relative overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-primary/10 pointer-events-none" />
-      <div className="absolute inset-0 grid-pattern pointer-events-none" />
+    <section id="demo" className="relative overflow-hidden px-4 py-24">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-primary/10" />
+      <div className="pointer-events-none absolute inset-0 grid-pattern" />
 
-      <div className="max-w-4xl mx-auto relative z-10">
-        {/* Section Header */}
+      <div className="relative z-10 mx-auto max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-12"
+          className="mb-12 text-center"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 backdrop-blur-xl border border-primary/10 text-primary text-sm font-medium mb-4 shadow-lg shadow-primary/5">
-            <Clock className="w-4 h-4" />
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/10 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary shadow-lg shadow-primary/5 backdrop-blur-xl">
+            <Clock className="h-4 w-4" />
             Experimente em 30 segundos
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 className="mb-4 text-3xl font-bold md:text-4xl">
             Veja o <span className="text-primary">aptto em acção</span>
           </h2>
-          <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+          <p className="mx-auto max-w-xl text-lg text-muted-foreground">
             Digite o tema do seu trabalho e receba um sumário estruturado instantaneamente
           </p>
         </motion.div>
 
-        {/* Demo Card */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <Card className="border-border/50 backdrop-blur-xl shadow-xl overflow-hidden bg-card/80">
+          <Card className="overflow-hidden border-border/50 bg-card/80 shadow-xl backdrop-blur-xl">
             <CardContent className="p-0">
-              {/* Input Section */}
-              <div className="p-6 md:p-8 bg-gradient-to-b from-primary/5 to-transparent">
-                <div className="flex flex-col md:flex-row gap-4">
+              <div className="bg-gradient-to-b from-primary/5 to-transparent p-6 md:p-8">
+                <div className="flex flex-col gap-4 md:flex-row">
                   <div className="flex-1">
-                    <label className="block text-sm font-medium mb-2">
-                      Tema do trabalho
-                    </label>
+                    <label className="mb-2 block text-sm font-medium">Tema do trabalho</label>
                     <Input
                       placeholder="Ex: Impacto das mudanças climáticas na agricultura..."
                       value={topic}
-                      onChange={(e) => setTopic(e.target.value)}
-                      className="h-12 text-base border-border/50 bg-background/50 backdrop-blur-xl focus:border-primary/50"
+                      onChange={(event) => setTopic(event.target.value)}
+                      className="h-12 border-border/50 bg-background/50 text-base backdrop-blur-xl focus:border-primary/50"
                     />
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Entre 8 e 160 caracteres. Esta demo não cria conta nem projecto.
+                    </p>
                   </div>
                   <div className="flex items-end">
                     <Button
-                      onClick={handleGenerate}
-                      disabled={!topic.trim() || isGenerating}
-                      className="h-12 px-8 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg shadow-primary/25"
+                      onClick={() => void handleGenerate()}
+                      disabled={!canSubmit || status === "generating"}
+                      className="h-12 px-8 text-primary-foreground shadow-lg shadow-primary/25"
                     >
-                      {isGenerating ? (
+                      {status === "generating" ? (
                         <>
                           <motion.div
                             animate={{ rotate: 360 }}
                             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                           >
-                            <Sparkles className="w-4 h-4 mr-2" />
+                            <Sparkles className="mr-2 h-4 w-4" />
                           </motion.div>
                           A gerar...
                         </>
                       ) : (
                         <>
-                          <Sparkles className="w-4 h-4 mr-2" />
+                          <Sparkles className="mr-2 h-4 w-4" />
                           Gerar sumário grátis
                         </>
                       )}
@@ -137,53 +159,54 @@ export function DemoLeadMagnet() {
                 </div>
               </div>
 
-              {/* Result Preview */}
-              <AnimatePresence>
-                {showResult && (
+              <AnimatePresence mode="wait">
+                {showResult ? (
                   <motion.div
+                    key="result"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.4 }}
                     className="overflow-hidden"
                   >
-                    <div className="p-6 md:p-8 border-t border-border/50">
-                      {/* Result Header */}
-                      <div className="flex items-center justify-between mb-6">
+                    <div className="border-t border-border/50 p-6 md:p-8">
+                      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-emerald-500/10 backdrop-blur-xl border border-emerald-500/10 flex items-center justify-center">
-                            <FileText className="w-4 h-4 text-emerald-600" />
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-500/10 bg-emerald-500/10 backdrop-blur-xl">
+                            <FileText className="h-4 w-4 text-emerald-600" />
                           </div>
                           <span className="font-medium">Sumário gerado</span>
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          Baseado em {mockOutline.stats.references}
-                        </span>
+
+                        {resultBadge ? (
+                          <Badge variant="outline" className={resultBadge.className}>
+                            {resultBadge.label}
+                          </Badge>
+                        ) : null}
                       </div>
 
-                      {/* Outline Content */}
                       <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-center md:text-left">
-                          {mockOutline.title}
+                        <h3 className="text-center text-lg font-semibold md:text-left">
+                          {outline.title}
                         </h3>
 
                         <div className="space-y-3">
-                          {mockOutline.sections.map((section) => (
-                            <div key={section.number} className="group">
-                              <div className="flex items-center gap-2 font-medium text-sm">
-                                <span className="w-6 h-6 rounded-full bg-primary/10 backdrop-blur-xl border border-primary/10 flex items-center justify-center text-primary text-xs">
+                          {outline.sections.map((section) => (
+                            <div key={`${section.number}-${section.title}`} className="group">
+                              <div className="flex items-center gap-2 text-sm font-medium">
+                                <span className="flex h-6 w-6 items-center justify-center rounded-full border border-primary/10 bg-primary/10 text-xs text-primary backdrop-blur-xl">
                                   {section.number}
                                 </span>
                                 {section.title}
                               </div>
                               <ul className="ml-8 mt-1.5 space-y-1">
-                                {section.subsections.map((sub) => (
+                                {section.subsections.map((subsection) => (
                                   <li
-                                    key={sub}
+                                    key={subsection}
                                     className="flex items-center gap-2 text-sm text-muted-foreground"
                                   >
-                                    <ChevronRight className="w-3 h-3 text-primary" />
-                                    {sub}
+                                    <ChevronRight className="h-3 w-3 text-primary" />
+                                    {subsection}
                                   </li>
                                 ))}
                               </ul>
@@ -191,51 +214,57 @@ export function DemoLeadMagnet() {
                           ))}
                         </div>
 
-                        {/* Stats */}
-                        <div className="flex flex-wrap gap-4 pt-4 border-t border-border/50">
+                        <div className="flex flex-wrap gap-4 border-t border-border/50 pt-4">
                           <div className="flex items-center gap-2 text-sm">
-                            <BookOpen className="w-4 h-4 text-primary" />
-                            <span>{mockOutline.stats.pages} páginas</span>
+                            <BookOpen className="h-4 w-4 text-primary" />
+                            <span>{outline.stats.pages} páginas</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-emerald-600">
-                            <Clock className="w-4 h-4" />
-                            <span>{mockOutline.stats.time}</span>
-                          </div>
+                          {outline.stats.references ? (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <FileText className="h-4 w-4 text-primary" />
+                              <span>{outline.stats.references}</span>
+                            </div>
+                          ) : null}
+                          {outline.stats.time ? (
+                            <div className="flex items-center gap-2 text-sm text-emerald-600">
+                              <Clock className="h-4 w-4" />
+                              <span>{outline.stats.time}</span>
+                            </div>
+                          ) : null}
                         </div>
                       </div>
 
-                      {/* CTA */}
-                      <div className="mt-6 p-4 rounded-xl bg-primary/5 backdrop-blur-xl border border-primary/10 text-center">
-                        <p className="text-sm text-muted-foreground mb-3">
-                          Gostou? Crie sua conta gratuita para continuar
+                      <div className="mt-6 rounded-xl border border-primary/10 bg-primary/5 p-4 text-center backdrop-blur-xl">
+                        <p className="mb-3 text-sm text-muted-foreground">
+                          Gostou? Crie sua conta gratuita para continuar no editor completo.
                         </p>
-                        <Button asChild className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg shadow-primary/25">
-                          <Link href="/register">
-                            Criar conta grátis
-                          </Link>
+                        <Button asChild className="text-primary-foreground shadow-lg shadow-primary/25">
+                          <Link href="/register">Criar conta grátis</Link>
                         </Button>
                       </div>
                     </div>
                   </motion.div>
+                ) : (
+                  <motion.div
+                    key="placeholder"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="border-t border-border/50 p-8"
+                  >
+                    <div className="text-center text-muted-foreground">
+                      <FileText className="mx-auto mb-3 h-12 w-12 opacity-30" />
+                      <p className="text-sm">
+                        {status === "error" ? error : "O sumário aparecerá aqui após a geração"}
+                      </p>
+                    </div>
+                  </motion.div>
                 )}
               </AnimatePresence>
-
-              {/* Placeholder when no result */}
-              {!showResult && (
-                <div className="p-8 border-t border-border/50">
-                  <div className="text-center text-muted-foreground">
-                    <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">
-                      O sumário aparecerá aqui após a geração
-                    </p>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Trust Note */}
         <motion.p
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}

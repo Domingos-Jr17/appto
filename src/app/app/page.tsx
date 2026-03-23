@@ -1,27 +1,23 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
-  FolderKanban,
-  Coins,
-  FileText,
-  CheckCircle2,
-  Plus,
-  Play,
-  BookOpen,
-  Lightbulb,
   ArrowRight,
-  Sparkles,
+  BookOpen,
+  Coins,
+  FilePenLine,
+  FolderKanban,
+  LayoutTemplate,
   Loader2,
+  Network,
+  Plus,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatsCard } from "@/components/dashboard/StatsCard";
-import { ProjectCard } from "@/components/dashboard/ProjectCard";
 
 interface Project {
   id: string;
@@ -31,7 +27,19 @@ interface Project {
   status: string;
   wordCount: number;
   updatedAt: string;
-  sections?: { id: string }[];
+  resumeMode: "chat" | "document" | "structure";
+  lastEditedSection: {
+    id: string;
+    title: string;
+    updatedAt: string;
+  } | null;
+  sectionSummary: {
+    empty: number;
+    started: number;
+    drafting: number;
+    review: number;
+    stale: number;
+  };
 }
 
 interface UserData {
@@ -40,67 +48,38 @@ interface UserData {
   subscription: { plan: string; status: string } | null;
 }
 
-const quickActions = [
+const templates = [
   {
-    title: "Novo Projecto",
-    description: "Começar um novo trabalho académico",
-    icon: Plus,
-    href: "/app/projects",
-    color: "bg-primary/10 text-primary",
-  },
-  {
-    title: "Continuar Trabalho",
-    description: "Retomar o último projecto",
-    icon: Play,
-    href: "/app/editor",
-    color: "bg-emerald-500/10 text-emerald-500",
-  },
-  {
-    title: "Ver Tutoriais",
-    description: "Aprender a usar o aptto",
+    title: "Monografia guiada",
+    description: "Comece no chat, aprove um outline e passe rapidamente para o editor principal.",
     icon: BookOpen,
-    href: "#",
-    color: "bg-sky-500/10 text-sky-500",
+  },
+  {
+    title: "Artigo academico",
+    description: "Fluxo curto para estrutura compacta, iteracao rapida e exportacao frequente.",
+    icon: LayoutTemplate,
+  },
+  {
+    title: "Estrutura livre",
+    description: "Monte o plano manualmente e use a IA apenas como apoio tactico por secao.",
+    icon: FilePenLine,
   },
 ];
 
-const recommendations = [
-  {
-    title: "Estruture a sua monografia",
-    description: "Use o assistente de estrutura para organizar os capítulos do seu trabalho.",
-    action: "Começar",
-  },
-  {
-    title: "Reveja as normas ABNT",
-    description: "Temos um guia completo das normas ABNT para referências e formatação.",
-    action: "Ver guia",
-  },
-  {
-    title: "Melhore o seu português académico",
-    description: "Sugestões de estilo e vocabulário para textos académicos.",
-    action: "Explorar",
-  },
-];
-
-type ProjectType = "monografia" | "tese" | "artigo" | "relatório" | "dissertação" | "ensaio";
-
-const projectTypeLabels: Record<string, ProjectType> = {
-  MONOGRAPHY: "monografia",
-  DISSERTATION: "dissertação",
-  THESIS: "tese",
-  ARTICLE: "artigo",
-  ESSAY: "ensaio",
-  REPORT: "relatório",
+const RESUME_COPY: Record<Project["resumeMode"], string> = {
+  chat: "Retomar no chat",
+  document: "Abrir documento",
+  structure: "Ver estrutura",
 };
 
-export default function DashboardPage() {
+export default function WorkspaceHomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [projects, setProjects] = React.useState<Project[]>([]);
+  const [userData, setUserData] = React.useState<UserData | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
       return;
@@ -108,218 +87,341 @@ export default function DashboardPage() {
 
     if (status === "authenticated") {
       Promise.all([
-        fetch("/api/projects").then((r) => r.json()),
-        fetch("/api/user").then((r) => r.json()),
+        fetch("/api/projects").then((response) => response.json()),
+        fetch("/api/user").then((response) => response.json()),
       ])
         .then(([projectsData, user]) => {
-          setProjects(projectsData || []);
+          const normalizedProjects = Array.isArray(projectsData) ? projectsData : [];
+          normalizedProjects.sort(
+            (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+          );
+          setProjects(normalizedProjects);
           setUserData(user);
         })
         .catch(console.error)
         .finally(() => setIsLoading(false));
     }
-  }, [status, router]);
+  }, [router, status]);
 
   if (isLoading || status === "loading") {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  const user = session?.user;
-  const firstName = user?.name?.split(" ")[0] || "Estudante";
-
-  // Calculate stats
-  const activeProjects = projects.filter((p) => 
-    p.status === "IN_PROGRESS" || p.status === "DRAFT"
+  const firstName = session?.user?.name?.split(" ")[0] || "Estudante";
+  const leadProject = projects[0] || null;
+  const activeProjects = projects.filter((project) =>
+    ["DRAFT", "IN_PROGRESS", "REVIEW"].includes(project.status)
   ).length;
-  const completedProjects = projects.filter((p) => p.status === "COMPLETED").length;
-  const completionRate = projects.length > 0 
-    ? Math.round((completedProjects / projects.length) * 100) 
-    : 0;
-  const totalWords = projects.reduce((acc, p) => acc + p.wordCount, 0);
-
-  const stats = [
-    {
-      title: "Projectos Activos",
-      value: activeProjects,
-      icon: FolderKanban,
-      description: projects.length > 0 ? `${projects.length} total` : "Nenhum projeto",
-    },
-    {
-      title: "Créditos Disponíveis",
-      value: (userData?.credits || 0).toLocaleString(),
-      icon: Coins,
-      description: `~${Math.floor((userData?.credits || 0) / 50)} trabalhos`,
-    },
-    {
-      title: "Palavras Escritas",
-      value: totalWords.toLocaleString(),
-      icon: FileText,
-      description: `${Math.floor(totalWords / 250)} páginas`,
-    },
-    {
-      title: "Taxa de Conclusão",
-      value: `${completionRate}%`,
-      icon: CheckCircle2,
-      description: completedProjects > 0 ? `${completedProjects} concluídos` : "Sem projetos concluídos",
-    },
-  ];
-
-  // Get recent projects (last 4)
-  const recentProjects = projects.slice(0, 4).map((project) => ({
-    id: project.id,
-    title: project.title,
-    type: (projectTypeLabels[project.type] || "monografia") as ProjectType,
-    course: project.description || "Sem descrição",
-    lastUpdated: formatRelativeTime(new Date(project.updatedAt)),
-    progress: calculateProgress(project),
-  }));
+  const reviewReady = projects.reduce((total, project) => total + project.sectionSummary.review, 0);
+  const totalWords = projects.reduce((total, project) => total + project.wordCount, 0);
 
   return (
     <div className="space-y-8">
-      {/* Welcome Section */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-            Olá, {firstName}! 👋
-          </h1>
-          <p className="text-muted-foreground">
-            Aqui está um resumo dos seus projectos académicos.
-          </p>
-        </div>
-        <Button className="w-fit gap-2 gradient-primary text-primary-foreground hover:opacity-90" asChild>
-          <Link href="/app/projects">
-            <Plus className="h-4 w-4" />
-            Novo Projecto
-          </Link>
-        </Button>
-      </div>
+      <section className="grid gap-5 xl:grid-cols-[1.6fr_1fr]">
+        <Card className="overflow-hidden border-border/60 bg-background/80 shadow-sm">
+          <CardContent className="flex flex-col gap-8 p-6 lg:p-8">
+            <div className="space-y-4">
+              <Badge variant="secondary" className="w-fit rounded-full px-3 py-1 text-xs">
+                Continuar trabalho
+              </Badge>
+              <div className="space-y-3">
+                <h2 className="text-3xl font-semibold tracking-tight text-foreground lg:text-4xl">
+                  {firstName}, entre directamente no proximo passo.
+                </h2>
+                <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                  A area autenticada agora privilegia continuidade: retomar o ultimo projecto,
+                  abrir a ultima secao ou iniciar um novo trabalho sem passar por um dashboard pesado.
+                </p>
+              </div>
+            </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <StatsCard
-            key={stat.title}
-            title={stat.title}
-            value={stat.value}
-            icon={stat.icon}
-            description={stat.description}
-          />
-        ))}
-      </div>
+            {leadProject ? (
+              <div className="rounded-[32px] border border-border/60 bg-muted/25 p-5 lg:p-6">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="rounded-full">
+                        {RESUME_COPY[leadProject.resumeMode]}
+                      </Badge>
+                      <Badge variant="secondary" className="rounded-full">
+                        {formatProjectType(leadProject.type)}
+                      </Badge>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-semibold tracking-tight">{leadProject.title}</h3>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {leadProject.description || "Sem descricao."}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                      <span>{leadProject.wordCount.toLocaleString("pt-MZ")} palavras</span>
+                      <span>·</span>
+                      <span>{formatRelativeTime(new Date(leadProject.updatedAt))}</span>
+                      {leadProject.lastEditedSection ? (
+                        <>
+                          <span>·</span>
+                          <span>Ultima secao: {leadProject.lastEditedSection.title}</span>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
 
-      {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Recent Projects */}
-        <Card className="border-border/50 bg-card/80 backdrop-blur-xl lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
-            <CardTitle className="text-lg font-semibold">
-              Projectos Recentes
-            </CardTitle>
-            <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-foreground" asChild>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button asChild className="rounded-full px-5">
+                      <Link href={getProjectHref(leadProject)}>
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                        {RESUME_COPY[leadProject.resumeMode]}
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="rounded-full px-5">
+                      <Link href="/app/projects?new=1">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Novo trabalho
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-[32px] border border-dashed border-border/60 bg-muted/20 p-6 lg:p-8">
+                <div className="max-w-2xl space-y-4">
+                  <h3 className="text-2xl font-semibold tracking-tight">Ainda nao ha projectos</h3>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    Crie o primeiro trabalho e o fluxo principal abre logo em conversa, estrutura ou documento conforme o estado do projecto.
+                  </p>
+                  <Button asChild className="rounded-full px-5">
+                    <Link href="/app/projects?new=1">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Criar primeiro trabalho
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 bg-background/80 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-medium">Contexto rapido</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-2xl bg-muted/45 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Em curso</p>
+              <p className="mt-2 text-2xl font-semibold">{activeProjects}</p>
+              <p className="mt-1 text-sm text-muted-foreground">trabalhos activos</p>
+            </div>
+            <div className="rounded-2xl bg-muted/45 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Creditos</p>
+              <p className="mt-2 text-2xl font-semibold">
+                {(userData?.credits || 0).toLocaleString("pt-MZ")}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">saldo disponivel</p>
+            </div>
+            <div className="rounded-2xl bg-muted/45 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Prontas</p>
+              <p className="mt-2 text-2xl font-semibold">{reviewReady}</p>
+              <p className="mt-1 text-sm text-muted-foreground">seccoes em revisao final</p>
+            </div>
+            <div className="rounded-2xl bg-foreground px-4 py-4 text-background">
+              <p className="text-xs uppercase tracking-[0.16em] text-background/70">Proxima accao</p>
+              <p className="mt-2 text-sm font-medium">
+                {leadProject ? getNextAction(leadProject) : "Criar o primeiro projecto e gerar um outline base."}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
+        <Card className="border-border/60 bg-background/80 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div>
+              <CardTitle className="text-lg">Projectos recentes</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                A lista ja abre cada projecto no modo certo de continuidade.
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" asChild className="rounded-full">
               <Link href="/app/projects">
                 Ver todos
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </CardHeader>
-          <CardContent>
-            {recentProjects.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {recentProjects.map((project) => (
-                  <ProjectCard key={project.id} {...project} />
-                ))}
-              </div>
+          <CardContent className="space-y-3">
+            {projects.length > 0 ? (
+              projects.slice(0, 5).map((project, index) => (
+                <Link
+                  key={project.id}
+                  href={getProjectHref(project)}
+                  className="flex flex-col gap-4 rounded-3xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55 lg:flex-row lg:items-center lg:justify-between"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        {index === 0 ? "Ultimo aberto" : RESUME_COPY[project.resumeMode]}
+                      </span>
+                      <Badge variant="secondary" className="rounded-full">
+                        {formatProjectType(project.type)}
+                      </Badge>
+                    </div>
+                    <h3 className="mt-2 truncate text-base font-semibold">{project.title}</h3>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                      {project.lastEditedSection
+                        ? `Ultima secao: ${project.lastEditedSection.title}`
+                        : "Sem secao iniciada ainda."}
+                    </p>
+                  </div>
+
+                  <div className="flex min-w-[240px] items-center justify-between gap-4 rounded-2xl bg-background/70 px-4 py-3">
+                    <div className="text-sm">
+                      <p className="font-medium">{getProgress(project)}%</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatRelativeTime(new Date(project.updatedAt))}
+                      </p>
+                    </div>
+                    <div className="h-2 w-24 rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${getProgress(project)}%` }} />
+                    </div>
+                  </div>
+                </Link>
+              ))
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <FolderKanban className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                <h3 className="text-lg font-medium mb-2">Nenhum projeto ainda</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Comece criando o seu primeiro projecto académico
+              <div className="rounded-3xl border border-dashed border-border/60 bg-muted/25 p-8 text-center">
+                <FolderKanban className="mx-auto h-10 w-10 text-muted-foreground/40" />
+                <h3 className="mt-4 text-lg font-medium">Sem projectos ainda</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  O workspace fica mais util quando ha um projecto para continuar. Pode criar um agora ou usar um template de arranque.
                 </p>
-                <Button asChild>
-                  <Link href="/app/projects">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Criar Projecto
-                  </Link>
+                <Button asChild className="mt-5 rounded-full">
+                  <Link href="/app/projects?new=1">Criar primeiro trabalho</Link>
                 </Button>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Right Column */}
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold">
-                Acções Rápidas
-              </CardTitle>
+        <div className="space-y-5">
+          <Card className="border-border/60 bg-background/80 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Fluxo principal</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {quickActions.map((action) => (
-                <Link
-                  key={action.title}
-                  href={action.href}
-                  className="group flex items-center gap-3 rounded-lg p-3 transition-all hover:bg-accent/50"
-                >
-                  <div className={`rounded-lg p-2 ${action.color}`}>
-                    <action.icon className="h-5 w-5" />
+            <CardContent className="grid gap-3">
+              {[
+                {
+                  icon: LayoutTemplate,
+                  title: "Conversar",
+                  description: "Use o chat como ponto de partida para outline, ideias e decisoes.",
+                },
+                {
+                  icon: Network,
+                  title: "Estruturar",
+                  description: "Reordene capitulos, subtitulos e acompanhe o estado editorial.",
+                },
+                {
+                  icon: FilePenLine,
+                  title: "Escrever",
+                  description: "Passe ao documento quando houver uma secao clara para desenvolver.",
+                },
+              ].map((item) => (
+                <div key={item.title} className="rounded-3xl bg-muted/35 p-4">
+                  <div className="w-fit rounded-2xl bg-primary/10 p-2.5">
+                    <item.icon className="h-4 w-4 text-primary" />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium">{action.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {action.description}
-                    </p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                </Link>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Recommendations */}
-          <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                <Sparkles className="h-5 w-5 text-primary" />
-                Recomendações
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {recommendations.map((rec, index) => (
-                <div
-                  key={index}
-                  className="group flex items-start gap-3 rounded-lg p-3 transition-all hover:bg-accent/50"
-                >
-                  <div className="rounded-full bg-primary/10 p-1.5">
-                    <Lightbulb className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium">{rec.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {rec.description}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 shrink-0 px-2 text-xs"
-                  >
-                    {rec.action}
-                  </Button>
+                  <h3 className="mt-4 text-sm font-semibold">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
                 </div>
               ))}
             </CardContent>
           </Card>
+
+          <Card className="border-border/60 bg-background/80 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Templates e atalhos</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {templates.map((template) => (
+                <Link
+                  key={template.title}
+                  href="/app/projects?new=1"
+                  className="block rounded-3xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-fit rounded-2xl bg-primary/10 p-2.5">
+                      <template.icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold">{template.title}</h3>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">{template.description}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+
+              <div className="rounded-3xl border border-border/50 bg-foreground px-5 py-4 text-background">
+                <p className="text-sm font-semibold">Palavras acumuladas</p>
+                <p className="mt-2 text-2xl font-semibold">{totalWords.toLocaleString("pt-MZ")}</p>
+                <p className="mt-1 text-sm text-background/75">
+                  O progresso total do workspace continua visivel sem dominar a pagina inicial.
+                </p>
+                <Button asChild variant="secondary" className="mt-4 rounded-full">
+                  <Link href="/app/credits">
+                    <Coins className="mr-2 h-4 w-4" />
+                    Gerir creditos
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      </section>
     </div>
   );
+}
+
+function getProjectHref(project: Project) {
+  return `/app/editor?project=${project.id}&mode=${project.resumeMode}`;
+}
+
+function getProgress(project: Project): number {
+  if (project.status === "COMPLETED") return 100;
+
+  const total =
+    project.sectionSummary.empty +
+    project.sectionSummary.started +
+    project.sectionSummary.drafting +
+    project.sectionSummary.review +
+    project.sectionSummary.stale;
+
+  if (total === 0) return project.wordCount > 0 ? 16 : 8;
+
+  const weighted =
+    project.sectionSummary.empty * 10 +
+    project.sectionSummary.started * 38 +
+    project.sectionSummary.drafting * 72 +
+    project.sectionSummary.review * 100 +
+    project.sectionSummary.stale * 28;
+
+  return Math.max(8, Math.min(100, Math.round(weighted / total)));
+}
+
+function getNextAction(project: Project) {
+  if (project.wordCount === 0) return "Gerar outline e aprovar a estrutura inicial.";
+  if (project.lastEditedSection) return `Retomar a secao "${project.lastEditedSection.title}".`;
+  if (project.sectionSummary.review > 0) return "Rever secoes prontas e preparar exportacao.";
+  return "Abrir o projecto e continuar a escrita.";
+}
+
+function formatProjectType(type: string) {
+  return type
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function formatRelativeTime(date: Date): string {
@@ -330,17 +432,8 @@ function formatRelativeTime(date: Date): string {
   const diffDays = Math.floor(diffMs / 86400000);
 
   if (diffMins < 1) return "agora";
-  if (diffMins < 60) return `há ${diffMins} min`;
-  if (diffHours < 24) return `há ${diffHours} hora${diffHours > 1 ? "s" : ""}`;
-  if (diffDays < 7) return `há ${diffDays} dia${diffDays > 1 ? "s" : ""}`;
+  if (diffMins < 60) return `ha ${diffMins} min`;
+  if (diffHours < 24) return `ha ${diffHours}h`;
+  if (diffDays < 7) return `ha ${diffDays} dias`;
   return date.toLocaleDateString("pt-MZ");
-}
-
-function calculateProgress(project: Project): number {
-  if (project.status === "COMPLETED") return 100;
-  if (!project.sections || project.sections.length === 0) return 0;
-  
-  // Calculate based on word count (assume 250 words per page, 50 pages average thesis)
-  const expectedWords = 50 * 250;
-  return Math.min(100, Math.round((project.wordCount / expectedWords) * 100));
 }

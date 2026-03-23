@@ -6,6 +6,7 @@ const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+    DATABASE_URL_DIRECT: z.string().min(1).optional(),
     NEXTAUTH_SECRET: z.string().min(1).optional(),
     AUTH_SECRET: z.string().min(1).optional(),
     NEXTAUTH_URL: z.string().url().optional(),
@@ -18,6 +19,13 @@ const envSchema = z
     RESEND_FROM_EMAIL: z.string().email().optional(),
     SENTRY_DSN: z.string().url().optional(),
     PAYMENT_DEFAULT_PROVIDER: z.enum(["SIMULATED", "MPESA", "EMOLA"]).optional(),
+    STORAGE_PROVIDER: z.enum(["LOCAL", "R2"]).optional(),
+    STORAGE_LOCAL_ROOT: z.string().min(1).optional(),
+    R2_ACCOUNT_ID: z.string().min(1).optional(),
+    R2_ACCESS_KEY_ID: z.string().min(1).optional(),
+    R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+    R2_BUCKET: z.string().min(1).optional(),
+    R2_PUBLIC_BASE_URL: z.string().url().optional(),
   })
   .superRefine((data, ctx) => {
     if (!data.NEXTAUTH_SECRET && !data.AUTH_SECRET) {
@@ -27,11 +35,31 @@ const envSchema = z
         message: "AUTH_SECRET or NEXTAUTH_SECRET must be defined",
       });
     }
+
+    if (data.STORAGE_PROVIDER === "R2") {
+      const requiredKeys = [
+        "R2_ACCOUNT_ID",
+        "R2_ACCESS_KEY_ID",
+        "R2_SECRET_ACCESS_KEY",
+        "R2_BUCKET",
+      ] as const;
+
+      for (const key of requiredKeys) {
+        if (!data[key]) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message: `${key} is required when STORAGE_PROVIDER=R2`,
+          });
+        }
+      }
+    }
   });
 
 const parsedEnv = envSchema.safeParse({
   NODE_ENV: process.env.NODE_ENV,
   DATABASE_URL: process.env.DATABASE_URL,
+  DATABASE_URL_DIRECT: process.env.DATABASE_URL_DIRECT,
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
   AUTH_SECRET: process.env.AUTH_SECRET,
   NEXTAUTH_URL: process.env.NEXTAUTH_URL,
@@ -44,6 +72,13 @@ const parsedEnv = envSchema.safeParse({
   RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
   SENTRY_DSN: process.env.SENTRY_DSN,
   PAYMENT_DEFAULT_PROVIDER: process.env.PAYMENT_DEFAULT_PROVIDER,
+  STORAGE_PROVIDER: process.env.STORAGE_PROVIDER,
+  STORAGE_LOCAL_ROOT: process.env.STORAGE_LOCAL_ROOT,
+  R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
+  R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
+  R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
+  R2_BUCKET: process.env.R2_BUCKET,
+  R2_PUBLIC_BASE_URL: process.env.R2_PUBLIC_BASE_URL,
 });
 
 if (!parsedEnv.success) {
@@ -62,6 +97,8 @@ export const env = {
     parsedEnv.data.NEXTAUTH_URL ??
     "http://localhost:3000",
   PAYMENT_DEFAULT_PROVIDER: parsedEnv.data.PAYMENT_DEFAULT_PROVIDER ?? "SIMULATED",
+  STORAGE_PROVIDER: parsedEnv.data.STORAGE_PROVIDER ?? "LOCAL",
+  STORAGE_LOCAL_ROOT: parsedEnv.data.STORAGE_LOCAL_ROOT ?? ".storage",
   isDevelopment: parsedEnv.data.NODE_ENV === "development",
   isProduction: parsedEnv.data.NODE_ENV === "production",
 };

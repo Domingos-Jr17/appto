@@ -8,7 +8,19 @@ import { z } from "zod";
 const updateUserSchema = z
   .object({
     name: z.string().trim().min(1).max(120).optional(),
-    image: z.string().trim().url().nullable().optional(),
+    image: z
+      .string()
+      .trim()
+      .refine(
+        (value) =>
+          value.length === 0 ||
+          value.startsWith("/") ||
+          /^https?:\/\//.test(value) ||
+          value.startsWith("data:"),
+        "URL de imagem invÃ¡lida"
+      )
+      .nullable()
+      .optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: "Nenhum campo válido enviado",

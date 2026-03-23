@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { BookOpen, Copy, Loader2, Quote, Sparkles, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -15,34 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sparkles,
-  Send,
-  Wand2,
-  FileText,
-  BookOpen,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-  Zap,
-  Copy,
-  Quote,
-} from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { AI_ACTION_CREDIT_COSTS } from "@/lib/credits";
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-}
-
-interface AIAssistantPanelProps {
-  onGenerate?: (prompt: string) => Promise<string>;
-  onImprove?: (text: string, type: string) => Promise<string>;
-  onGenerateReference?: (data: ReferenceData) => Promise<string>;
-  creditBalance: number;
-}
 
 interface ReferenceData {
   type: "book" | "article" | "website" | "thesis";
@@ -57,21 +30,56 @@ interface ReferenceData {
   accessDate?: string;
 }
 
+interface AIAssistantPanelProps {
+  projectTitle: string;
+  sectionTitle: string;
+  sectionContent: string;
+  onImprove?: (text: string, type: string) => Promise<string>;
+  onGenerateReference?: (data: ReferenceData) => Promise<string>;
+  onApplyReplace?: (content: string) => void;
+  onApplyAppend?: (content: string) => void;
+  creditBalance: number;
+}
+
+const ACTION_OPTIONS = [
+  {
+    id: "expand_argument",
+    label: "Expandir argumento",
+    helper: "Aprofunda a secção com mais desenvolvimento lógico.",
+  },
+  {
+    id: "summarize_section",
+    label: "Resumir",
+    helper: "Condensa a secção mantendo a ideia central.",
+  },
+  {
+    id: "clarify_section",
+    label: "Clarificar",
+    helper: "Torna a escrita mais clara e directa.",
+  },
+  {
+    id: "academic_tone",
+    label: "Tom académico",
+    helper: "Reforça formalidade, coesão e linguagem académica.",
+  },
+] as const;
+
 export function AIAssistantPanel({
-  onGenerate,
+  projectTitle,
+  sectionTitle,
+  sectionContent,
   onImprove,
   onGenerateReference,
+  onApplyReplace,
+  onApplyAppend,
   creditBalance,
 }: AIAssistantPanelProps) {
-  const [activeTab, setActiveTab] = useState("generate");
-  const [prompt, setPrompt] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [selectedText, setSelectedText] = useState("");
-  const [improveType, setImproveType] = useState("coherence");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState("actions");
+  const [actionId, setActionId] = useState<(typeof ACTION_OPTIONS)[number]["id"]>("expand_argument");
+  const [instruction, setInstruction] = useState("");
+  const [result, setResult] = useState("");
+  const [isRunning, setIsRunning] = useState(false);
 
-  // Reference form state
   const [refType, setRefType] = useState<ReferenceData["type"]>("book");
   const [refAuthors, setRefAuthors] = useState("");
   const [refTitle, setRefTitle] = useState("");
@@ -84,76 +92,31 @@ export function AIAssistantPanel({
   const [refAccessDate, setRefAccessDate] = useState("");
   const [generatedReference, setGeneratedReference] = useState("");
 
-  const creditCosts = {
-    generate: AI_ACTION_CREDIT_COSTS.generate,
-    improve: AI_ACTION_CREDIT_COSTS.improve,
-    reference: AI_ACTION_CREDIT_COSTS.references,
-  };
+  const activeAction = ACTION_OPTIONS.find((option) => option.id === actionId) ?? ACTION_OPTIONS[0];
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const handleRunAction = async () => {
+    if (!sectionContent.trim() || isRunning) return;
+    if (creditBalance < AI_ACTION_CREDIT_COSTS.improve) return;
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleGenerate = async () => {
-    if (!prompt.trim() || isGenerating) return;
-    if (creditBalance < creditCosts.generate) {
-      return;
-    }
-
-    setIsGenerating(true);
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: prompt,
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, userMessage]);
-
+    setIsRunning(true);
     try {
-      const response = await onGenerate?.(prompt);
-      if (response) {
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: response,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
-      }
-    } catch (error) {
-      console.error("Generation error:", error);
+      const context = `${activeAction.label} para a secção "${sectionTitle}" do projecto "${projectTitle}". ${
+        instruction ? `Instrução adicional: ${instruction}` : ""
+      }`.trim();
+      const improved = await onImprove?.(sectionContent, context);
+      setResult(improved || "");
     } finally {
-      setIsGenerating(false);
-      setPrompt("");
-    }
-  };
-
-  const handleImprove = async () => {
-    if (!selectedText.trim() || isGenerating) return;
-    if (creditBalance < creditCosts.improve) return;
-
-    setIsGenerating(true);
-    try {
-      await onImprove?.(selectedText, improveType);
-    } catch (error) {
-      console.error("Improve error:", error);
-    } finally {
-      setIsGenerating(false);
+      setIsRunning(false);
     }
   };
 
   const handleGenerateReference = async () => {
-    if (!refAuthors || !refTitle || !refYear || isGenerating) return;
-    if (creditBalance < creditCosts.reference) return;
+    if (!refAuthors || !refTitle || !refYear || isRunning) return;
+    if (creditBalance < AI_ACTION_CREDIT_COSTS.references) return;
 
-    setIsGenerating(true);
+    setIsRunning(true);
     try {
-      const refData: ReferenceData = {
+      const reference = await onGenerateReference?.({
         type: refType,
         authors: refAuthors,
         title: refTitle,
@@ -164,371 +127,224 @@ export function AIAssistantPanel({
         pages: refPages,
         url: refUrl,
         accessDate: refAccessDate,
-      };
-      const reference = await onGenerateReference?.(refData);
-      if (reference) {
-        setGeneratedReference(reference);
-      }
-    } catch (error) {
-      console.error("Reference generation error:", error);
+      });
+      setGeneratedReference(reference || "");
     } finally {
-      setIsGenerating(false);
+      setIsRunning(false);
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b border-border/50">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-primary/20 glow-primary">
+    <div className="flex h-full flex-col">
+      <div className="border-b border-border/50 p-4">
+        <div className="flex items-start gap-3">
+          <div className="rounded-2xl bg-primary/10 p-2.5">
             <Sparkles className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h3 className="font-semibold text-sm">Assistente IA</h3>
-            <p className="text-xs text-muted-foreground">
-              {creditBalance} créditos disponíveis
+            <h3 className="text-sm font-semibold">Apoio editorial</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              IA táctica para a secção activa. O modo conversa continua no centro do workspace.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="flex-1 flex flex-col"
-      >
-        <TabsList className="w-full grid grid-cols-3 m-2 mb-0 bg-muted/50">
-          <TabsTrigger value="generate" className="text-xs gap-1">
-            <Zap className="h-3 w-3" />
-            <span className="hidden sm:inline">Gerar</span>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col">
+        <TabsList className="mx-3 mt-3 grid grid-cols-2 rounded-2xl bg-muted/40">
+          <TabsTrigger value="actions" className="rounded-xl text-xs">
+            <Wand2 className="mr-2 h-3.5 w-3.5" />
+            Ações
           </TabsTrigger>
-          <TabsTrigger value="improve" className="text-xs gap-1">
-            <Wand2 className="h-3 w-3" />
-            <span className="hidden sm:inline">Melhorar</span>
-          </TabsTrigger>
-          <TabsTrigger value="references" className="text-xs gap-1">
-            <BookOpen className="h-3 w-3" />
-            <span className="hidden sm:inline">Referências</span>
+          <TabsTrigger value="references" className="rounded-xl text-xs">
+            <BookOpen className="mr-2 h-3.5 w-3.5" />
+            Referências
           </TabsTrigger>
         </TabsList>
 
-        {/* Generate Tab */}
-        <TabsContent value="generate" className="flex-1 flex flex-col mt-0">
-          {/* Messages */}
-          <ScrollArea className="flex-1 p-4 scrollbar-thin">
-            {messages.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">
-                  Digite um prompt para gerar conteúdo acadêmico
-                </p>
-                <p className="text-xs mt-1 opacity-70">
-                  Custo: {creditCosts.generate} créditos
+        <TabsContent value="actions" className="mt-0 flex min-h-0 flex-1 flex-col">
+          <ScrollArea className="flex-1 px-4 py-4">
+            <div className="space-y-4">
+              <div className="rounded-3xl border border-border/60 bg-muted/25 p-4">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Secção activa</p>
+                <p className="mt-2 text-sm font-semibold text-foreground">{sectionTitle || "Sem secção seleccionada"}</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {activeAction.helper}
                 </p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={cn(
-                      "p-3 rounded-lg text-sm",
-                      message.role === "user"
-                        ? "bg-primary/10 border border-primary/20 ml-4"
-                        : "bg-muted/50 mr-4"
-                    )}
-                  >
-                    {message.content}
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
+
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Acção contextual</Label>
+                <Select value={actionId} onValueChange={(value) => setActionId(value as typeof actionId)}>
+                  <SelectTrigger className="rounded-2xl border-border/60 bg-background/80">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ACTION_OPTIONS.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </ScrollArea>
 
-          {/* Input */}
-          <div className="p-4 border-t border-border/50 space-y-3">
-            <Textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Descreva o conteúdo que deseja gerar..."
-              className="min-h-[80px] resize-none bg-muted/30 border-border/50 focus:border-primary/50"
-              disabled={isGenerating}
-            />
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Zap className="h-3 w-3 text-yellow-500" />
-                {creditCosts.generate} créditos
-              </span>
-              <Button
-                onClick={handleGenerate}
-                disabled={!prompt.trim() || isGenerating || creditBalance < creditCosts.generate}
-                size="sm"
-                className="gap-2"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Gerando...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4" />
-                    Gerar
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* Improve Tab */}
-        <TabsContent value="improve" className="flex-1 flex flex-col mt-0 p-4 space-y-4">
-          <div className="space-y-3">
-            <Label className="text-xs text-muted-foreground">
-              Tipo de melhoria
-            </Label>
-            <Select value={improveType} onValueChange={setImproveType}>
-              <SelectTrigger className="bg-muted/30 border-border/50">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="coherence">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    Melhorar Coerência
-                  </div>
-                </SelectItem>
-                <SelectItem value="grammar">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-yellow-500" />
-                    Corrigir Gramática
-                  </div>
-                </SelectItem>
-                <SelectItem value="academic">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-blue-500" />
-                    Tom Acadêmico
-                  </div>
-                </SelectItem>
-                <SelectItem value="clarity">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-purple-500" />
-                    Melhorar Clareza
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-3">
-            <Label className="text-xs text-muted-foreground">
-              Texto selecionado
-            </Label>
-            <Textarea
-              value={selectedText}
-              onChange={(e) => setSelectedText(e.target.value)}
-              placeholder="Cole ou digite o texto que deseja melhorar..."
-              className="min-h-[120px] resize-none bg-muted/30 border-border/50"
-              disabled={isGenerating}
-            />
-          </div>
-
-          <div className="flex items-center justify-between pt-2">
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Zap className="h-3 w-3 text-yellow-500" />
-              {creditCosts.improve} créditos
-            </span>
-            <Button
-              onClick={handleImprove}
-              disabled={!selectedText.trim() || isGenerating || creditBalance < creditCosts.improve}
-              size="sm"
-              className="gap-2"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Processando...
-                </>
-              ) : (
-                <>
-                  <Wand2 className="h-4 w-4" />
-                  Melhorar
-                </>
-              )}
-            </Button>
-          </div>
-        </TabsContent>
-
-        {/* References Tab */}
-        <TabsContent value="references" className="flex-1 flex flex-col mt-0 p-4 space-y-4 overflow-y-auto scrollbar-thin">
-          <div className="space-y-3">
-            <Label className="text-xs text-muted-foreground">
-              Tipo de referência
-            </Label>
-            <Select value={refType} onValueChange={(v) => setRefType(v as ReferenceData["type"])}>
-              <SelectTrigger className="bg-muted/30 border-border/50">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="book">Livro</SelectItem>
-                <SelectItem value="article">Artigo Científico</SelectItem>
-                <SelectItem value="website">Website</SelectItem>
-                <SelectItem value="thesis">Tese/Dissertação</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Autores *</Label>
-              <Input
-                value={refAuthors}
-                onChange={(e) => setRefAuthors(e.target.value)}
-                placeholder="SOBRENOME, Nome"
-                className="bg-muted/30 border-border/50 h-9"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">Título *</Label>
-              <Input
-                value={refTitle}
-                onChange={(e) => setRefTitle(e.target.value)}
-                placeholder="Título da obra"
-                className="bg-muted/30 border-border/50 h-9"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Ano *</Label>
-                <Input
-                  value={refYear}
-                  onChange={(e) => setRefYear(e.target.value)}
-                  placeholder="2024"
-                  className="bg-muted/30 border-border/50 h-9"
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Instrução adicional</Label>
+                <Textarea
+                  value={instruction}
+                  onChange={(event) => setInstruction(event.target.value)}
+                  placeholder="Opcional: indique o ângulo, a profundidade ou o foco da melhoria."
+                  className="min-h-[92px] rounded-2xl border-border/60 bg-background/80"
                 />
               </div>
 
-              {(refType === "book" || refType === "thesis") && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Editora</Label>
-                  <Input
-                    value={refPublisher}
-                    onChange={(e) => setRefPublisher(e.target.value)}
-                    placeholder="Editora"
-                    className="bg-muted/30 border-border/50 h-9"
-                  />
-                </div>
-              )}
-            </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Base da secção</Label>
+                <Textarea
+                  value={sectionContent}
+                  readOnly
+                  className="min-h-[180px] rounded-2xl border-border/60 bg-muted/20 text-sm leading-6 text-muted-foreground"
+                />
+              </div>
 
-            {refType === "article" && (
-              <>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Periódico</Label>
-                  <Input
-                    value={refJournal}
-                    onChange={(e) => setRefJournal(e.target.value)}
-                    placeholder="Nome do periódico"
-                    className="bg-muted/30 border-border/50 h-9"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Volume</Label>
-                    <Input
-                      value={refVolume}
-                      onChange={(e) => setRefVolume(e.target.value)}
-                      placeholder="v. 1"
-                      className="bg-muted/30 border-border/50 h-9"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Páginas</Label>
-                    <Input
-                      value={refPages}
-                      onChange={(e) => setRefPages(e.target.value)}
-                      placeholder="p. 1-10"
-                      className="bg-muted/30 border-border/50 h-9"
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {refType === "website" && (
-              <>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">URL</Label>
-                  <Input
-                    value={refUrl}
-                    onChange={(e) => setRefUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="bg-muted/30 border-border/50 h-9"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Data de Acesso</Label>
-                  <Input
-                    value={refAccessDate}
-                    onChange={(e) => setRefAccessDate(e.target.value)}
-                    placeholder="DD MMA AAAA"
-                    className="bg-muted/30 border-border/50 h-9"
-                  />
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between pt-2">
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Zap className="h-3 w-3 text-yellow-500" />
-              {creditCosts.reference} crédito
-            </span>
-            <Button
-              onClick={handleGenerateReference}
-              disabled={!refAuthors || !refTitle || !refYear || isGenerating || creditBalance < creditCosts.reference}
-              size="sm"
-              className="gap-2"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Gerando...
-                </>
-              ) : (
-                <>
-                  <Quote className="h-4 w-4" />
-                  Gerar ABNT
-                </>
-              )}
-            </Button>
-          </div>
-
-          {/* Generated Reference */}
-          {generatedReference && (
-            <div className="mt-4 p-3 rounded-lg bg-muted/30 border border-border/50">
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm">{generatedReference}</p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-muted-foreground">
+                  {AI_ACTION_CREDIT_COSTS.improve} créditos por iteração
+                </p>
                 <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 flex-shrink-0"
-                  onClick={() => copyToClipboard(generatedReference)}
+                  onClick={() => void handleRunAction()}
+                  disabled={!sectionContent.trim() || isRunning || creditBalance < AI_ACTION_CREDIT_COSTS.improve}
+                  className="rounded-full"
                 >
-                  <Copy className="h-3.5 w-3.5" />
+                  {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                  Executar
                 </Button>
               </div>
+
+              {result ? (
+                <div className="space-y-3 rounded-3xl border border-border/60 bg-background/80 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold">Resultado</p>
+                    <Button variant="ghost" size="icon" className="rounded-full" onClick={() => void navigator.clipboard.writeText(result)}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm leading-7 text-foreground">{result}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" className="rounded-full" onClick={() => onApplyReplace?.(result)}>
+                      Substituir secção
+                    </Button>
+                    <Button size="sm" variant="outline" className="rounded-full" onClick={() => onApplyAppend?.(result)}>
+                      Adicionar ao final
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </div>
-          )}
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="references" className="mt-0 flex min-h-0 flex-1 flex-col">
+          <ScrollArea className="flex-1 px-4 py-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Tipo de referência</Label>
+                <Select value={refType} onValueChange={(value) => setRefType(value as ReferenceData["type"])}>
+                  <SelectTrigger className="rounded-2xl border-border/60 bg-background/80">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="book">Livro</SelectItem>
+                    <SelectItem value="article">Artigo científico</SelectItem>
+                    <SelectItem value="website">Website</SelectItem>
+                    <SelectItem value="thesis">Tese/Dissertação</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Autores *</Label>
+                  <Input value={refAuthors} onChange={(event) => setRefAuthors(event.target.value)} className="h-10 rounded-2xl border-border/60 bg-background/80" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Título *</Label>
+                  <Input value={refTitle} onChange={(event) => setRefTitle(event.target.value)} className="h-10 rounded-2xl border-border/60 bg-background/80" />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Ano *</Label>
+                    <Input value={refYear} onChange={(event) => setRefYear(event.target.value)} className="h-10 rounded-2xl border-border/60 bg-background/80" />
+                  </div>
+                  {(refType === "book" || refType === "thesis") ? (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Editora</Label>
+                      <Input value={refPublisher} onChange={(event) => setRefPublisher(event.target.value)} className="h-10 rounded-2xl border-border/60 bg-background/80" />
+                    </div>
+                  ) : null}
+                </div>
+
+                {refType === "article" ? (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Periódico</Label>
+                      <Input value={refJournal} onChange={(event) => setRefJournal(event.target.value)} className="h-10 rounded-2xl border-border/60 bg-background/80" />
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Volume</Label>
+                        <Input value={refVolume} onChange={(event) => setRefVolume(event.target.value)} className="h-10 rounded-2xl border-border/60 bg-background/80" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Páginas</Label>
+                        <Input value={refPages} onChange={(event) => setRefPages(event.target.value)} className="h-10 rounded-2xl border-border/60 bg-background/80" />
+                      </div>
+                    </div>
+                  </>
+                ) : null}
+
+                {refType === "website" ? (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">URL</Label>
+                      <Input value={refUrl} onChange={(event) => setRefUrl(event.target.value)} className="h-10 rounded-2xl border-border/60 bg-background/80" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Data de acesso</Label>
+                      <Input value={refAccessDate} onChange={(event) => setRefAccessDate(event.target.value)} className="h-10 rounded-2xl border-border/60 bg-background/80" />
+                    </div>
+                  </>
+                ) : null}
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-muted-foreground">
+                  {AI_ACTION_CREDIT_COSTS.references} crédito por referência
+                </p>
+                <Button
+                  onClick={() => void handleGenerateReference()}
+                  disabled={!refAuthors || !refTitle || !refYear || isRunning || creditBalance < AI_ACTION_CREDIT_COSTS.references}
+                  className="rounded-full"
+                >
+                  {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Quote className="mr-2 h-4 w-4" />}
+                  Gerar ABNT
+                </Button>
+              </div>
+
+              {generatedReference ? (
+                <div className="rounded-3xl border border-border/60 bg-background/80 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold">Referência gerada</p>
+                    <Button variant="ghost" size="icon" className="rounded-full" onClick={() => void navigator.clipboard.writeText(generatedReference)}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="mt-3 text-sm leading-7 text-foreground">{generatedReference}</p>
+                </div>
+              ) : null}
+            </div>
+          </ScrollArea>
         </TabsContent>
       </Tabs>
     </div>

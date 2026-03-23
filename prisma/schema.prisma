@@ -40,6 +40,8 @@ model User {
   recoveryCodes   RecoveryCode[]
   paymentTransactions PaymentTransaction[]
   knowledgeSources KnowledgeSource[]
+  storedFiles     StoredFile[]
+  createdExports  ProjectExport[]     @relation("ProjectExportCreator")
 
   @@map("users")
 }
@@ -172,6 +174,8 @@ model Project {
   // Relations
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   sections        DocumentSection[]
+  storedFiles     StoredFile[]
+  exports         ProjectExport[]
 
   @@map("projects")
 }
@@ -333,6 +337,26 @@ enum PaymentStatus {
   CANCELLED
 }
 
+enum StorageProvider {
+  LOCAL
+  R2
+}
+
+enum StoredFileKind {
+  AVATAR
+  EXPORT
+  UPLOAD
+  KNOWLEDGE_SOURCE
+  ATTACHMENT
+}
+
+enum StoredFileStatus {
+  PENDING
+  READY
+  FAILED
+  DELETED
+}
+
 // ==================== USER SETTINGS ====================
 
 model UserSettings {
@@ -409,4 +433,52 @@ enum KnowledgeSourceType {
   PUBLIC
   INSTITUTIONAL
   PRIVATE
+}
+
+model StoredFile {
+  id           String           @id @default(cuid())
+  userId       String
+  projectId    String?
+  kind         StoredFileKind
+  provider     StorageProvider
+  bucket       String
+  objectKey    String           @unique
+  mimeType     String
+  sizeBytes    Int
+  originalName String
+  checksum     String?
+  status       StoredFileStatus @default(PENDING)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project      Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  exports      ProjectExport[]
+
+  @@index([userId, kind, createdAt])
+  @@index([projectId, kind, createdAt])
+  @@map("stored_files")
+}
+
+model ProjectExport {
+  id          String       @id @default(cuid())
+  projectId   String
+  fileId      String
+  format      ExportFormat
+  createdById String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  file        StoredFile   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  createdBy   User         @relation("ProjectExportCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([projectId, format, createdAt])
+  @@index([createdById, createdAt])
+  @@map("project_exports")
+}
+
+enum ExportFormat {
+  DOCX
+  PDF
 }

@@ -47,6 +47,7 @@ test
 prompt
 
 server.log
+.storage/
 .tmp-*.txt
 .tmp-*.json
 db/*.db

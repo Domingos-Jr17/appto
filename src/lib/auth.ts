@@ -52,10 +52,12 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.log("[Auth] Missing email or password");
           return null;
         }
 
         const normalizedEmail = credentials.email.trim().toLowerCase();
+        console.log("[Auth] Attempting login for:", normalizedEmail);
 
         const user = await db.user.findUnique({
           where: { email: normalizedEmail },
@@ -65,7 +67,10 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
+        console.log("[Auth] User found:", !!user, "Has password:", !!user?.password);
+
         if (!user || !user.password) {
+          console.log("[Auth] User not found or no password set");
           return null;
         }
 
@@ -74,7 +79,10 @@ export const authOptions: NextAuthOptions = {
           user.password
         );
 
+        console.log("[Auth] Password match:", passwordMatch);
+
         if (!passwordMatch) {
+          console.log("[Auth] Password does not match");
           return null;
         }
 

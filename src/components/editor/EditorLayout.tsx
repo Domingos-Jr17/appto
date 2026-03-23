@@ -72,6 +72,18 @@ interface AssistantMessage {
   createdAt: Date;
 }
 
+interface SavedExport {
+  id: string;
+  format: "DOCX" | "PDF";
+  createdAt: string;
+  file: {
+    id: string;
+    originalName: string;
+    downloadUrl: string;
+    contentUrl: string;
+  };
+}
+
 interface EditorLayoutProps {
   projectId?: string;
   initialMode?: WorkspaceMode;
@@ -204,6 +216,8 @@ export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLa
   const [project, setProject] = useState<Project | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [credits, setCredits] = useState(0);
+  const [savedExports, setSavedExports] = useState<SavedExport[]>([]);
+  const [isSavingExport, setIsSavingExport] = useState<"docx" | "pdf" | null>(null);
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(initialMode ?? "chat");
   const [structureRailOpen, setStructureRailOpen] = useState(true);
   const [contextRailOpen, setContextRailOpen] = useState(initialMode !== "chat");
@@ -243,15 +257,17 @@ export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLa
 
     const fetchData = async () => {
       try {
-        const [projectResponse, creditsResponse] = await Promise.all([
+        const [projectResponse, creditsResponse, exportsResponse] = await Promise.all([
           fetch(`/api/projects/${projectId}`),
           fetch("/api/credits"),
+          fetch(`/api/projects/${projectId}/exports`),
         ]);
 
         if (!projectResponse.ok) throw new Error("Projeto não encontrado");
 
         const projectData = await projectResponse.json();
         const creditsData = await creditsResponse.json();
+        const exportsData = exportsResponse.ok ? await exportsResponse.json() : { exports: [] };
         if (!active) return;
 
         const tree = buildSectionTree(projectData.sections);
@@ -261,6 +277,7 @@ export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLa
         setProject(projectData);
         setSections(tree);
         setCredits(creditsData.balance || 0);
+        setSavedExports(exportsData.exports || []);
 
         if (firstSection) {
           setActiveSectionId(firstSection.id);
@@ -659,6 +676,42 @@ export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLa
     [project?.title, projectId, toast]
   );
 
+  const handleSaveExport = useCallback(
+    async (format: "docx" | "pdf") => {
+      if (!projectId) return;
+
+      setIsSavingExport(format);
+      try {
+        const exportFormat = format === "pdf" ? "PDF" : "DOCX";
+        const response = await fetch(`/api/projects/${projectId}/export/save`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ format: exportFormat }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Erro ao guardar exportaÃ§Ã£o");
+        }
+
+        setSavedExports((previous) => [data.export, ...previous].slice(0, 6));
+        toast({
+          title: "ExportaÃ§Ã£o guardada",
+          description: `${format.toUpperCase()} guardado no storage do projecto.`,
+        });
+      } catch {
+        toast({
+          title: "Erro ao guardar exportaÃ§Ã£o",
+          description: "NÃ£o foi possÃ­vel persistir o ficheiro exportado.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSavingExport(null);
+      }
+    },
+    [projectId, toast]
+  );
+
   const applyAssistantContent = useCallback(
     async (message: AssistantMessage, action: "insert" | "replace" | "append" | "outline") => {
       if (!activeSectionId) return;
@@ -830,12 +883,45 @@ export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLa
   );
 
   const contextPanel = workspaceMode === "document" ? (
-    <AIAssistantPanel
-      onGenerate={handleGenerate}
-      onImprove={handleImprove}
-      onGenerateReference={handleGenerateReference}
-      creditBalance={credits}
-    />
+    <div className="space-y-4 p-4">
+      <AIAssistantPanel
+        onGenerate={handleGenerate}
+        onImprove={handleImprove}
+        onGenerateReference={handleGenerateReference}
+        creditBalance={credits}
+      />
+
+      <Card className="border-border/60 bg-muted/25">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">ExportaÃ§Ãµes guardadas</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {savedExports.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Ainda nÃ£o guardou exportaÃ§Ãµes deste projecto.
+            </p>
+          ) : (
+            savedExports.map((item) => (
+              <a
+                key={item.id}
+                href={item.file.contentUrl}
+                className="block rounded-2xl bg-background px-3 py-3 text-sm text-foreground transition-colors hover:bg-accent"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-medium">{item.format}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(item.createdAt).toLocaleDateString("pt-MZ")}
+                  </span>
+                </div>
+                <p className="mt-1 truncate text-xs text-muted-foreground">
+                  {item.file.originalName}
+                </p>
+              </a>
+            ))
+          )}
+        </CardContent>
+      </Card>
+    </div>
   ) : workspaceMode === "structure" ? (
     <div className="space-y-4 p-4">
       <Card className="border-border/60 bg-muted/25">
@@ -944,6 +1030,32 @@ export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLa
               <Button variant="outline" className="rounded-full" onClick={() => void handleExport("pdf")}>
                 <FileDown className="mr-2 h-4 w-4" />
                 PDF
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => void handleSaveExport("docx")}
+                disabled={isSavingExport !== null}
+              >
+                {isSavingExport === "docx" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="mr-2 h-4 w-4" />
+                )}
+                Guardar DOCX
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => void handleSaveExport("pdf")}
+                disabled={isSavingExport !== null}
+              >
+                {isSavingExport === "pdf" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileDown className="mr-2 h-4 w-4" />
+                )}
+                Guardar PDF
               </Button>
             </div>
           </div>

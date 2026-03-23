@@ -1,12 +1,13 @@
 # appto-grad
 
-`appto-grad` é um assistente académico em `Next.js App Router` com autenticação, projetos, editor, geração por IA, créditos e exportação DOCX.
+`appto-grad` is an academic writing assistant built on `Next.js App Router` with authentication, projects, editor, AI generation, credits, exports, and file storage.
 
-## Estado atual
+## Current operating model
 
-- Superfície oficial da aplicação: `/app/...`
-- Funcionalidades públicas reais: autenticação, CRUD básico de projetos/secções, geração via IA, créditos, exportação DOCX
-- Funcionalidades ainda ocultas/planeadas: RAG local, PDF, streaming real, pagamentos móveis, 2FA e reset de password
+- Official app surface: `/app/...`
+- Real features: authentication, project/section CRUD, AI generation, credits, DOCX/PDF export, public outline demo, 2FA/reset password, simulated payments, and file storage
+- Recommended production stack: `Neon Postgres` + `Cloudflare R2`
+- Recommended local/dev stack: `Postgres` + `LOCAL` storage in `.storage/`
 
 ## Stack
 
@@ -15,7 +16,7 @@
 - `Prisma`
 - `NextAuth`
 - `Bun`
-- `SQLite` para desenvolvimento local
+- `Cloudflare R2` via the S3-compatible API
 
 ## Scripts
 
@@ -27,37 +28,84 @@ bun run typecheck
 bun run build
 bun run test:unit
 bun run test:e2e
+bun run db:generate
+bun run db:push
+bun run db:migrate
+bun run db:migrate:deploy
 ```
 
-## Variáveis de ambiente mínimas
+## Required environment variables
 
 ```env
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://..."
 AUTH_SECRET="replace-me"
 NEXTAUTH_URL="http://localhost:3000"
+APP_URL="http://localhost:3000"
 ZAI_API_KEY="replace-me"
+STORAGE_PROVIDER="LOCAL"
+STORAGE_LOCAL_ROOT=".storage"
+PAYMENT_DEFAULT_PROVIDER="SIMULATED"
 ```
 
-Opcionalmente:
+## Optional environment variables
 
 ```env
+DATABASE_URL_DIRECT="postgresql://..."
 GOOGLE_CLIENT_ID=""
 GOOGLE_CLIENT_SECRET=""
 ZAI_BASE_URL="https://api.z.ai/api/paas/v4"
+RESEND_API_KEY=""
+RESEND_FROM_EMAIL=""
+SENTRY_DSN=""
+
+R2_ACCOUNT_ID=""
+R2_ACCESS_KEY_ID=""
+R2_SECRET_ACCESS_KEY=""
+R2_BUCKET=""
+R2_PUBLIC_BASE_URL=""
 ```
 
-## Estrutura principal
+## Storage model
+
+- Canonical project content stays in Postgres (`Project` + `DocumentSection`).
+- Binary files are tracked through `StoredFile` and `ProjectExport`.
+- `LOCAL` storage writes uploads and persisted exports into `.storage/`.
+- `R2` storage uses signed upload/download URLs.
+- Avatars now use the file pipeline instead of base64 demo data.
+- Direct exports can still be downloaded without persistence.
+- Persisted exports are attached to the project through `ProjectExport`.
+
+### File endpoints
+
+- `POST /api/files/upload-url`
+- `PUT /api/files/upload-local/:id`
+- `POST /api/files/complete`
+- `GET /api/files/:id`
+- `GET /api/files/:id/content`
+- `DELETE /api/files/:id`
+- `GET /api/projects/:id/exports`
+- `POST /api/projects/:id/export/save`
+
+### R2 bucket configuration
+
+- Private bucket by default
+- CORS allowing the app origin plus `PUT`, `GET`, and `HEAD`
+- Signed URLs for upload and reads
+- Never use the original filename as the primary object key
+
+## Main structure
 
 - `src/app/page.tsx`: landing page
-- `src/app/app/*`: app autenticada oficial
-- `src/app/api/*`: rotas API
-- `src/components/editor/*`: editor e painel IA
-- `src/components/landing/*`: landing pública
-- `src/lib/*`: auth, env, prisma, créditos e flags de features
-- `prisma/schema.prisma`: schema atual
+- `src/app/app/*`: authenticated app
+- `src/app/api/*`: API routes
+- `src/components/editor/*`: editor and export flows
+- `src/components/settings/*`: profile, security, and account
+- `src/lib/*`: auth, env, prisma, credits, storage, features
+- `prisma/schema.prisma`: current Postgres schema
 
-## Regras operacionais
+## Operational rules
 
-- Não reintroduzir claims públicas para features ocultas sem implementação e testes.
-- Não usar `.z-ai-config`; a configuração do provider de IA deve vir de variáveis de ambiente.
-- `db/custom.db` e ficheiros temporários locais não devem voltar ao versionamento.
+- Do not reintroduce public claims for hidden features without implementation and tests.
+- Do not use `.z-ai-config`; AI provider configuration must come from environment variables.
+- `.storage/`, local DB dumps, and temp files must stay out of version control.
+- Prefer `Neon` for Postgres and `Cloudflare R2` for file storage in production.

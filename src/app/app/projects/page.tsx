@@ -2,9 +2,8 @@
 
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { Plus, FolderKanban, Loader2, Sparkles, FileText, ArrowRight } from "lucide-react";
+import { Plus, FolderKanban, Loader2, Sparkles, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -91,6 +90,14 @@ export default function ProjectsPage() {
   // Fetch projects and credits
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("new") === "1") {
+      setDialogOpen(true);
+    }
   }, []);
 
   const fetchData = async () => {
@@ -197,7 +204,7 @@ export default function ProjectsPage() {
 
       // Refresh projects list
       fetchData();
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Não foi possível eliminar o projecto",
@@ -227,7 +234,7 @@ export default function ProjectsPage() {
 
       // Refresh projects list
       fetchData();
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Não foi possível actualizar o projecto",
@@ -293,7 +300,7 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 rounded-[28px] border border-border/60 bg-background/75 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
             <FolderKanban className="h-5 w-5 text-primary" />

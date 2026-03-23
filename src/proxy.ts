@@ -11,6 +11,8 @@ const PUBLIC_PATHS = [
 
 const PUBLIC_PREFIXES = [
   "/api/auth",
+  "/api/demo",
+  "/api/health",
   "/api/payments/callback",
   "/_next",
   "/favicon.ico",

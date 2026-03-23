@@ -1,40 +1,40 @@
 "use client";
 
-import { useState } from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
+import { useMemo, useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
+  Clock3,
   FileText,
   FolderOpen,
-  Plus,
-  MoreHorizontal,
   GripVertical,
+  MoreHorizontal,
+  Plus,
   Trash2,
-  Edit3,
-  Copy,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 interface Section {
   id: string;
   title: string;
   type: "chapter" | "section";
-  children?: Section[];
-  wordCount?: number;
+  content: string;
+  parentId: string | null;
+  order: number;
+  updatedAt: string;
+  wordCount: number;
+  editorialStatus: "empty" | "started" | "drafting" | "review" | "stale";
+  children: Section[];
 }
 
 interface DocumentTreeProps {
@@ -48,6 +48,94 @@ interface DocumentTreeProps {
   onSectionReorder: (sections: Section[]) => void;
 }
 
+const STATUS_COPY: Record<NonNullable<Section["editorialStatus"]>, string> = {
+  empty: "Vazia",
+  started: "Iniciada",
+  drafting: "Em desenvolvimento",
+  review: "Pronta para revisão",
+  stale: "Parada",
+};
+
+function findNodeMeta(
+  sections: Section[],
+  sectionId: string,
+  parentId: string | null = null
+): { section: Section; parentId: string | null } | null {
+  for (const section of sections) {
+    if (section.id === sectionId) return { section, parentId };
+    if (section.children?.length) {
+      const nested = findNodeMeta(section.children, sectionId, section.id);
+      if (nested) return nested;
+    }
+  }
+  return null;
+}
+
+function reorderInArray(items: Section[], draggedId: string, targetId: string) {
+  const draggedIndex = items.findIndex((item) => item.id === draggedId);
+  const targetIndex = items.findIndex((item) => item.id === targetId);
+  if (draggedIndex === -1 || targetIndex === -1) return items;
+
+  const nextItems = [...items];
+  const [dragged] = nextItems.splice(draggedIndex, 1);
+  nextItems.splice(targetIndex, 0, dragged);
+  return nextItems.map((item, index) => ({
+    ...item,
+    order: index + 1,
+  }));
+}
+
+function reorderTree(
+  sections: Section[],
+  parentId: string | null,
+  draggedId: string,
+  targetId: string
+): Section[] {
+  if (parentId === null) {
+    return reorderInArray(sections, draggedId, targetId);
+  }
+
+  return sections.map((section) => {
+    if (section.id === parentId) {
+      return {
+        ...section,
+        children: reorderInArray(section.children || [], draggedId, targetId),
+      };
+    }
+
+    if (section.children?.length) {
+      return {
+        ...section,
+        children: reorderTree(section.children, parentId, draggedId, targetId),
+      };
+    }
+
+    return section;
+  });
+}
+
+function countAllSections(sections: Section[]): number {
+  return sections.reduce((count, section) => count + 1 + countAllSections(section.children || []), 0);
+}
+
+function formatRelativeUpdate(value?: string) {
+  if (!value) return "Sem actividade";
+
+  const date = new Date(value);
+  const diffMs = Date.now() - date.getTime();
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffHours < 1) return "actualizada agora";
+  if (diffHours < 24) return `há ${diffHours}h`;
+  if (diffDays < 7) return `há ${diffDays}d`;
+
+  return date.toLocaleDateString("pt-MZ", {
+    day: "2-digit",
+    month: "short",
+  });
+}
+
 export function DocumentTree({
   projectTitle,
   sections,
@@ -56,216 +144,204 @@ export function DocumentTree({
   onSectionAdd,
   onSectionRename,
   onSectionDelete,
+  onSectionReorder,
 }: DocumentTreeProps) {
-  const [expandedChapters, setExpandedChapters] = useState<Set<string>>(
-    new Set(sections.filter((s) => s.type === "chapter").map((s) => s.id))
+  const [expanded, setExpanded] = useState<Set<string>>(
+    () => new Set(sections.filter((section) => section.type === "chapter").map((section) => section.id))
   );
-  const [draggedItem, setDraggedItem] = useState<string | null>(null);
-  const [dragOverItem, setDragOverItem] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
-  const toggleChapter = (chapterId: string) => {
-    const newExpanded = new Set(expandedChapters);
-    if (newExpanded.has(chapterId)) {
-      newExpanded.delete(chapterId);
-    } else {
-      newExpanded.add(chapterId);
+  const totalSections = useMemo(() => countAllSections(sections), [sections]);
+
+  const handleDrop = (targetId: string) => {
+    if (!draggedId || draggedId === targetId) {
+      setDraggedId(null);
+      setDragOverId(null);
+      return;
     }
-    setExpandedChapters(newExpanded);
-  };
 
-  const handleDragStart = (e: React.DragEvent, sectionId: string) => {
-    setDraggedItem(sectionId);
-    e.dataTransfer.effectAllowed = "move";
-  };
+    const draggedMeta = findNodeMeta(sections, draggedId);
+    const targetMeta = findNodeMeta(sections, targetId);
 
-  const handleDragOver = (e: React.DragEvent, sectionId: string) => {
-    e.preventDefault();
-    if (draggedItem !== sectionId) {
-      setDragOverItem(sectionId);
+    if (!draggedMeta || !targetMeta || draggedMeta.parentId !== targetMeta.parentId) {
+      setDraggedId(null);
+      setDragOverId(null);
+      return;
     }
+
+    onSectionReorder(reorderTree(sections, draggedMeta.parentId, draggedId, targetId));
+    setDraggedId(null);
+    setDragOverId(null);
   };
 
-  const handleDragLeave = () => {
-    setDragOverItem(null);
-  };
-
-  const handleDrop = (e: React.DragEvent, targetId: string) => {
-    e.preventDefault();
-    setDraggedItem(null);
-    setDragOverItem(null);
-    // Reorder logic would be implemented here
-  };
-
-  const handleRename = (sectionId: string) => {
-    if (editingTitle.trim()) {
-      onSectionRename(sectionId, editingTitle.trim());
-    }
-    setEditingId(null);
-    setEditingTitle("");
-  };
-
-  const startEditing = (section: Section) => {
-    setEditingId(section.id);
-    setEditingTitle(section.title);
-  };
-
-  const renderSection = (section: Section, depth: number = 0) => {
-    const isExpanded = expandedChapters.has(section.id);
+  const renderSection = (section: Section, depth = 0) => {
     const isActive = activeSectionId === section.id;
+    const isExpanded = expanded.has(section.id);
     const isEditing = editingId === section.id;
-    const isDragOver = dragOverItem === section.id;
-    const hasChildren = section.children && section.children.length > 0;
+    const hasChildren = (section.children?.length || 0) > 0;
 
     return (
-      <div key={section.id}>
-        <ContextMenu>
-          <ContextMenuTrigger asChild>
-            <div
-              draggable
-              onDragStart={(e) => handleDragStart(e, section.id)}
-              onDragOver={(e) => handleDragOver(e, section.id)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, section.id)}
-              onClick={() => !isEditing && onSectionSelect(section.id)}
-              className={cn(
-                "group flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer transition-all duration-200",
-                "hover:bg-accent/50",
-                isActive && [
-                  "bg-primary/10 border border-primary/30",
-                  "shadow-[0_0_15px_rgba(var(--primary),0.15)]",
-                ],
-                isDragOver && "bg-accent/70 border border-primary/50",
-                depth > 0 && "ml-4"
-              )}
-            >
-              {/* Drag Handle */}
-              <GripVertical className="h-4 w-4 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
-
-              {/* Expand/Collapse for chapters */}
-              {section.type === "chapter" && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleChapter(section.id);
-                  }}
-                  className="flex-shrink-0 p-0.5 hover:bg-accent rounded transition-colors"
-                >
-                  {isExpanded ? (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </button>
-              )}
-
-              {/* Icon */}
+      <div key={section.id} className="space-y-1">
+        <div
+          draggable
+          onDragStart={() => setDraggedId(section.id)}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setDragOverId(section.id);
+          }}
+          onDragLeave={() => setDragOverId(null)}
+          onDrop={() => handleDrop(section.id)}
+          onClick={() => !isEditing && onSectionSelect(section.id)}
+          className={cn(
+            "group rounded-3xl border px-3 py-3 transition-colors",
+            "cursor-pointer border-transparent bg-muted/25 hover:border-border/70 hover:bg-muted/45",
+            isActive && "border-primary/30 bg-primary/10",
+            dragOverId === section.id && "border-primary/50 bg-primary/5",
+            depth > 0 && "ml-5"
+          )}
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex items-center gap-2 pt-1">
+              <GripVertical className="h-4 w-4 text-muted-foreground/45" />
               {section.type === "chapter" ? (
-                <FolderOpen
-                  className={cn(
-                    "h-4 w-4 flex-shrink-0",
-                    isExpanded ? "text-primary" : "text-muted-foreground"
-                  )}
-                />
-              ) : (
-                <FileText className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-              )}
-
-              {/* Title */}
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editingTitle}
-                  onChange={(e) => setEditingTitle(e.target.value)}
-                  onBlur={() => handleRename(section.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleRename(section.id);
-                    if (e.key === "Escape") {
-                      setEditingId(null);
-                      setEditingTitle("");
-                    }
+                <button
+                  type="button"
+                  className="rounded-full p-0.5 hover:bg-background"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setExpanded((current) => {
+                      const next = new Set(current);
+                      if (next.has(section.id)) next.delete(section.id);
+                      else next.add(section.id);
+                      return next;
+                    });
                   }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex-1 bg-background/50 border border-primary/50 rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  autoFocus
-                />
+                >
+                  {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                </button>
               ) : (
-                <span className="flex-1 text-sm truncate">{section.title}</span>
-              )}
-
-              {/* Word Count */}
-              {section.wordCount !== undefined && (
-                <span className="text-xs text-muted-foreground/70">
-                  {section.wordCount}
-                </span>
+                <span className="block h-4 w-4" />
               )}
             </div>
-          </ContextMenuTrigger>
 
-          <ContextMenuContent className="w-48">
-            <ContextMenuItem onClick={() => startEditing(section)}>
-              <Edit3 className="h-4 w-4 mr-2" />
-              Renomear
-            </ContextMenuItem>
-            <ContextMenuItem onClick={() => onSectionAdd(section.id)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Seção
-            </ContextMenuItem>
-            <ContextMenuItem>
-              <Copy className="h-4 w-4 mr-2" />
-              Duplicar
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem
-              onClick={() => onSectionDelete(section.id)}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Excluir
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    {section.type === "chapter" ? (
+                      <FolderOpen className="h-4 w-4 text-primary" />
+                    ) : (
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                    )}
 
-        {/* Children */}
-        {section.type === "chapter" && hasChildren && isExpanded && (
-          <div className="mt-1 space-y-1">
-            {section.children!.map((child) => renderSection(child, depth + 1))}
+                    {isEditing ? (
+                      <Input
+                        value={editingTitle}
+                        onChange={(event) => setEditingTitle(event.target.value)}
+                        onBlur={() => {
+                          const nextTitle = editingTitle.trim();
+                          if (nextTitle) onSectionRename(section.id, nextTitle);
+                          setEditingId(null);
+                          setEditingTitle("");
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            const nextTitle = editingTitle.trim();
+                            if (nextTitle) onSectionRename(section.id, nextTitle);
+                            setEditingId(null);
+                            setEditingTitle("");
+                          }
+                          if (event.key === "Escape") {
+                            setEditingId(null);
+                            setEditingTitle("");
+                          }
+                        }}
+                        className="h-8 rounded-xl"
+                        autoFocus
+                      />
+                    ) : (
+                      <p className="truncate text-sm font-medium text-foreground">{section.title}</p>
+                    )}
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <Badge variant="outline" className="rounded-full bg-background/70">
+                      {STATUS_COPY[section.editorialStatus || "empty"]}
+                    </Badge>
+                    <span>{(section.wordCount || 0).toLocaleString("pt-MZ")} palavras</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Clock3 className="h-3 w-3" />
+                      {formatRelativeUpdate(section.updatedAt)}
+                    </span>
+                  </div>
+                </div>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={(event) => event.stopPropagation()}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={(event) => {
+                        event.preventDefault();
+                        setEditingId(section.id);
+                        setEditingTitle(section.title);
+                      }}
+                    >
+                      Renomear
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onSectionAdd(section.id)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Adicionar subtítulo
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => onSectionDelete(section.id)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Eliminar
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
+
+        {section.type === "chapter" && hasChildren && isExpanded ? (
+          <div className="space-y-1">
+            {section.children?.map((child) => renderSection(child, depth + 1))}
+          </div>
+        ) : null}
       </div>
     );
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b border-border/50">
-        <h2 className="font-semibold text-lg truncate gradient-text">
-          {projectTitle}
-        </h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          {sections.length} capítulo{sections.length !== 1 ? "s" : ""}
+    <div className="flex h-full flex-col">
+      <div className="border-b border-border/50 p-4">
+        <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Mapa editorial</p>
+        <h2 className="mt-2 truncate text-lg font-semibold text-foreground">{projectTitle}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {sections.length} capítulos de topo · {totalSections} secções no total
         </p>
       </div>
 
-      {/* Tree */}
-      <ScrollArea className="flex-1 px-2 py-3 scrollbar-thin">
-        <div className="space-y-1">
+      <ScrollArea className="flex-1 px-3 py-3">
+        <div className="space-y-2">
           {sections.map((section) => renderSection(section))}
         </div>
       </ScrollArea>
 
-      {/* Add Section Button */}
-      <div className="p-3 border-t border-border/50">
-        <Button
-          onClick={() => onSectionAdd()}
-          variant="outline"
-          size="sm"
-          className="w-full justify-start gap-2 border-dashed border-border/50 hover:border-primary/50 hover:bg-primary/5"
-        >
-          <Plus className="h-4 w-4" />
-          Novo Capítulo
+      <div className="border-t border-border/50 p-3">
+        <Button onClick={() => onSectionAdd()} variant="outline" className="w-full rounded-2xl border-dashed">
+          <Plus className="mr-2 h-4 w-4" />
+          Novo capítulo
         </Button>
       </div>
     </div>

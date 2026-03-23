@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { countWordsInMarkdown, normalizeStoredContent } from "@/lib/content";
 
 // GET /api/documents - Get sections by project
 export async function GET(request: NextRequest) {
@@ -39,7 +40,12 @@ export async function GET(request: NextRequest) {
       orderBy: { order: "asc" },
     });
 
-    return NextResponse.json(sections);
+    return NextResponse.json(
+      sections.map((section) => ({
+        ...section,
+        content: normalizeStoredContent(section.content),
+      }))
+    );
   } catch (error) {
     console.error("Get documents error:", error);
     return NextResponse.json(
@@ -81,14 +87,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate word count
-    const wordCount = content ? content.split(/\s+/).filter(Boolean).length : 0;
+    const normalizedContent = normalizeStoredContent(content);
+    const wordCount = countWordsInMarkdown(normalizedContent);
 
     const section = await db.documentSection.create({
       data: {
         projectId,
         parentId,
         title,
-        content,
+        content: normalizedContent,
         order: order || 0,
         wordCount,
       },
@@ -105,7 +112,13 @@ export async function POST(request: NextRequest) {
       data: { wordCount: totalWords._sum.wordCount || 0 },
     });
 
-    return NextResponse.json(section, { status: 201 });
+    return NextResponse.json(
+      {
+        ...section,
+        content: normalizeStoredContent(section.content),
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Create document error:", error);
     return NextResponse.json(

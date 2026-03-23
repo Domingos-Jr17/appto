@@ -123,6 +123,30 @@ export const paymentCheckoutSchema = z.object({
   provider: z.enum(["SIMULATED", "MPESA", "EMOLA"]).optional(),
 });
 
+export const storedFileKindSchema = z.enum([
+  "AVATAR",
+  "EXPORT",
+  "UPLOAD",
+  "KNOWLEDGE_SOURCE",
+  "ATTACHMENT",
+]);
+
+export const createFileUploadSchema = z.object({
+  projectId: z.string().min(1).optional(),
+  kind: storedFileKindSchema,
+  originalName: z.string().trim().min(1).max(180),
+  mimeType: z.string().trim().min(1).max(180),
+  sizeBytes: z.number().int().positive().max(25 * 1024 * 1024),
+});
+
+export const completeFileUploadSchema = z.object({
+  fileId: z.string().min(1),
+});
+
+export const saveProjectExportSchema = z.object({
+  format: z.enum(["DOCX", "PDF"]),
+});
+
 export const paymentCallbackSchema = z.object({
   paymentId: z.string().min(1),
   providerReference: z.string().min(1),
@@ -137,4 +161,8 @@ export const totpVerifySchema = z.object({
 export const disableTotpSchema = z.object({
   currentPassword: z.string().min(1).optional(),
   otpCode: z.string().trim().min(6).max(12).optional(),
+});
+
+export const demoOutlineSchema = z.object({
+  topic: z.string().trim().min(8).max(160),
 });

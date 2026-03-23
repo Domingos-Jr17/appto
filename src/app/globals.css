@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "@mdxeditor/editor/style.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -414,4 +415,26 @@
   .theme-transition {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   }
+}
+
+.mdx-editor-shell {
+  --baseBg: transparent;
+  --basePageBg: transparent;
+  --baseTextContrast: var(--foreground);
+  --baseBgSubtle: color-mix(in oklch, var(--muted) 55%, transparent);
+  --baseBorderColor: color-mix(in oklch, var(--border) 80%, transparent);
+  --baseAccent: var(--primary);
+  --baseAccentContrast: var(--primary-foreground);
+  --baseRadius: 20px;
+  color: var(--foreground);
+}
+
+.mdx-editor-shell .mdxeditor-toolbar {
+  border-bottom: 1px solid color-mix(in oklch, var(--border) 72%, transparent);
+  background: color-mix(in oklch, var(--background) 88%, transparent);
+  padding: 0.875rem 1rem;
+}
+
+.mdx-editor-shell .mdxeditor-root-contenteditable {
+  font-family: var(--font-sans);
 }

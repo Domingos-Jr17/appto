@@ -132,7 +132,7 @@ function ProjectCard({
                 <span>{statusStyle.label}</span>
               </div>
             </div>
-            <Link href={`/app/editor?project=${project.id}`}>
+            <Link href={`/app/projects/${project.id}`}>
               <h4 className="line-clamp-2 text-base font-semibold leading-tight hover:text-primary transition-colors">
                 {project.title}
               </h4>
@@ -150,7 +150,7 @@ function ProjectCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem asChild>
-                <Link href={`/app/editor?project=${project.id}`}>
+                <Link href={`/app/projects/${project.id}`}>
                   <FileText className="mr-2 h-4 w-4" />
                   Abrir
                 </Link>
@@ -250,7 +250,7 @@ function ProjectListItem({
               <span>{statusStyle.label}</span>
             </div>
           </div>
-          <Link href={`/app/editor?project=${project.id}`}>
+          <Link href={`/app/projects/${project.id}`}>
             <h4 className="font-semibold truncate hover:text-primary transition-colors">
               {project.title}
             </h4>
@@ -291,7 +291,7 @@ function ProjectListItem({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem asChild>
-              <Link href={`/app/editor?project=${project.id}`}>
+              <Link href={`/app/projects/${project.id}`}>
                 <FileText className="mr-2 h-4 w-4" />
                 Abrir
               </Link>

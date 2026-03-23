@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, MessageSquareText, Network, PenSquare } from "lucide-react";
+import { MessageSquareText, Network, PenSquare, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,11 @@ const MODE_OPTIONS: Array<{
   icon: typeof MessageSquareText;
 }> = [
   {
+    value: "chat",
+    label: "Chat",
+    icon: Bot,
+  },
+  {
     value: "document",
     label: "Documento",
     icon: PenSquare,
@@ -25,11 +30,6 @@ const MODE_OPTIONS: Array<{
     value: "structure",
     label: "Estrutura",
     icon: Network,
-  },
-  {
-    value: "preview",
-    label: "Preview",
-    icon: Eye,
   },
 ];
 

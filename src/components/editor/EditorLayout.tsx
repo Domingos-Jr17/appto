@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { FolderTree, Loader2 } from "lucide-react";
 import { DocumentTree } from "@/components/editor/DocumentTree";
 import { EditorHeader } from "@/components/editor/EditorHeader";
+import { ChatMode } from "@/components/editor/modes/ChatMode";
 import { DocumentMode } from "@/components/editor/modes/DocumentMode";
 import { StructureMode } from "@/components/editor/modes/StructureMode";
 import { PreviewPane } from "@/components/editor/PreviewPane";
@@ -40,7 +41,7 @@ export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLa
 
   // UI state
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(
-    initialMode === "chat" ? "document" : (initialMode ?? "document")
+    initialMode ?? "document"
   );
   const [structureDrawerOpen, setStructureDrawerOpen] = useState(false);
   const modeInitialized = useRef(false);
@@ -96,11 +97,14 @@ export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLa
     if (!project || modeInitialized.current) return;
     modeInitialized.current = true;
 
-    const defaultMode = initialMode === "chat" || !initialMode
-      ? "document"
-      : initialMode;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time initialization after async load
-    setWorkspaceMode(defaultMode);
+    if (initialMode) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time initialization after async load
+      setWorkspaceMode(initialMode);
+    } else {
+      const resumeMode = project.resumeMode || (project.wordCount <= 0 ? "chat" : "document");
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time initialization after async load
+      setWorkspaceMode(resumeMode);
+    }
 
     const preferredSectionId =
       project.lastEditedSection?.id ||
@@ -132,7 +136,8 @@ export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLa
     (nextMode: WorkspaceMode) => {
       setWorkspaceMode(nextMode);
       if (projectId) {
-        router.replace(`/app/editor?project=${projectId}&mode=${nextMode}`, { scroll: false });
+        const qs = nextMode !== "document" ? `?mode=${nextMode}` : "";
+        router.replace(`/app/projects/${projectId}${qs}`, { scroll: false });
       }
     },
     [projectId, router]
@@ -410,6 +415,23 @@ export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLa
         onStructureDrawerOpen={() => setStructureDrawerOpen(true)}
       />
 
+      {workspaceMode === "chat" ? (
+        <ChatMode
+          project={project}
+          activeSection={activeSection}
+          sectionTitle={sectionTitle}
+          chatMessages={chatMessages}
+          chatPrompt={chatPrompt}
+          chatAction={chatAction as ChatAction}
+          isChatLoading={isChatLoading}
+          chatSuggestions={chatSuggestions}
+          onChatPromptChange={setChatPrompt}
+          onChatActionChange={(action) => setChatAction(action)}
+          onChatSubmit={handleChatSubmit}
+          onApplyContent={applyAssistantContent}
+        />
+      ) : null}
+
       {workspaceMode === "document" ? (
         <DocumentMode
           project={project}
@@ -439,6 +461,7 @@ export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLa
           onReplaceContent={(c) => replaceContent(c, projectId)}
           onAppendContent={(c) => appendContent(c, projectId)}
           onStructureDrawerOpen={() => setStructureDrawerOpen(true)}
+          onChatModeOpen={() => syncMode("chat")}
         />
       ) : null}
 

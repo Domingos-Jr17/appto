@@ -2,9 +2,19 @@
 
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { Plus, FolderKanban, Loader2, Sparkles, FileText } from "lucide-react";
+import { Plus, FolderKanban, Loader2, Sparkles, FileText, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -86,6 +96,7 @@ export default function ProjectsPage() {
   const [newDescription, setNewDescription] = useState("");
   const [generateContent, setGenerateContent] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   // Fetch projects and credits
   useEffect(() => {
@@ -171,7 +182,7 @@ export default function ProjectsPage() {
       setNewDescription("");
       
       // Navigate to editor with new project
-      router.push(`/app/editor?project=${data.project.id}`);
+      router.push(`/app/projects/${data.project.id}`);
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -184,12 +195,14 @@ export default function ProjectsPage() {
   };
 
   const handleDeleteProject = async (projectId: string) => {
-    if (!confirm("Tem certeza que deseja eliminar este projecto? Esta acção não pode ser desfeita.")) {
-      return;
-    }
+    setDeleteTarget(projectId);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
 
     try {
-      const response = await fetch(`/api/projects/${projectId}`, {
+      const response = await fetch(`/api/projects/${deleteTarget}`, {
         method: "DELETE",
       });
 
@@ -210,6 +223,8 @@ export default function ProjectsPage() {
         description: "Não foi possível eliminar o projecto",
         variant: "destructive",
       });
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -473,6 +488,30 @@ export default function ProjectsPage() {
           )}
         </div>
       )}
+
+      {/* Delete confirmation */}
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Eliminar projecto?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acção não pode ser desfeita. Todos os dados do projecto serão permanentemente removidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteTarget(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

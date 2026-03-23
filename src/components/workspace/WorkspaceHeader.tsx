@@ -33,14 +33,14 @@ export function WorkspaceHeader({ credits }: WorkspaceHeaderProps) {
   const pathname = usePathname();
 
   const copy = useMemo(() => {
-    if (pathname.startsWith("/app/editor")) return null;
+    if (pathname.startsWith("/app/editor") || pathname.startsWith("/app/projects/")) return null;
     return PAGE_COPY[pathname] ?? PAGE_COPY["/app"];
   }, [pathname]);
 
   if (!copy) return null;
 
   return (
-    <header className="flex flex-col gap-4 border-b border-border/50 px-6 py-5 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+    <header className="sticky top-0 z-30 flex flex-col gap-4 border-b border-border/50 bg-background/85 px-6 py-5 backdrop-blur lg:flex-row lg:items-center lg:justify-between lg:px-8">
       <div className="max-w-3xl">
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/75">
           Workspace

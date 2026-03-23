@@ -42,6 +42,7 @@ interface EditorHeaderProps {
 export function EditorHeader({
   project,
   credits,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   workspaceMode,
   sectionTitle,
   wordCount,
@@ -65,15 +66,14 @@ export function EditorHeader({
             <h1 className="text-base font-semibold tracking-tight">{project.title}</h1>
             <div className="flex flex-wrap items-center gap-1.5">
               <Badge variant="outline" className="rounded-full bg-background/70 text-[10px]">
-                {credits.toLocaleString("pt-MZ")} creditos
-              </Badge>
-              <Badge variant="outline" className="rounded-full bg-background/70 text-[10px]">
                 {wordCount.toLocaleString("pt-MZ")} palavras
               </Badge>
-              <Badge variant="outline" className="rounded-full bg-background/70 text-[10px]">
-                <CheckCircle2 className="mr-0.5 h-2.5 w-2.5" />
-                {getSaveCopy(autoSaveStatus, lastSaved)}
-              </Badge>
+              {workspaceMode !== "chat" ? (
+                <Badge variant="outline" className="rounded-full bg-background/70 text-[10px]">
+                  <CheckCircle2 className="mr-0.5 h-2.5 w-2.5" />
+                  {getSaveCopy(autoSaveStatus, lastSaved)}
+                </Badge>
+              ) : null}
             </div>
           </div>
 
@@ -128,12 +128,18 @@ export function EditorHeader({
           </div>
         </div>
 
-        {/* Row 2: mode tabs + section info */}
+        {/* Row 2: mode tabs */}
         <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
           <WorkspaceModeTabs mode={workspaceMode} onModeChange={onModeChange} />
-          <span className="text-[11px] text-muted-foreground">
-            Secao: {sectionTitle || "nenhuma"} {project.lastEditedSection ? `· ultima edicao: ${formatRelativeDate(project.lastEditedSection.updatedAt)}` : ""}
-          </span>
+          {workspaceMode !== "chat" ? (
+            <span className="text-[11px] text-muted-foreground">
+              Secao: {sectionTitle || "nenhuma"} {project.lastEditedSection ? `· ultima edicao: ${formatRelativeDate(project.lastEditedSection.updatedAt)}` : ""}
+            </span>
+          ) : (
+            <span className="text-[11px] text-muted-foreground">
+              {project.lastEditedSection ? `Ultima secao editada: ${project.lastEditedSection.title}` : "Nenhuma secao editada ainda"}
+            </span>
+          )}
         </div>
       </div>
     </div>

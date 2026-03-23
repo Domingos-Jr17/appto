@@ -271,16 +271,16 @@ export function ProfileSection() {
       <Separator />
 
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">InformaÃ§Ãµes da Conta</h3>
+        <h3 className="text-lg font-semibold">Informações da Conta</h3>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-lg border border-border/50 bg-muted/30 p-4">
             <p className="text-sm text-muted-foreground">Tipo de Conta</p>
             <p className="font-medium capitalize">{user?.role || "Estudante"}</p>
           </div>
           <div className="rounded-lg border border-border/50 bg-muted/30 p-4">
-            <p className="text-sm text-muted-foreground">CrÃ©ditos DisponÃ­veis</p>
+            <p className="text-sm text-muted-foreground">Créditos Disponíveis</p>
             <p className="font-medium">
-              {user?.credits?.toLocaleString() || 0} crÃ©ditos
+              {user?.credits?.toLocaleString() || 0} créditos
             </p>
           </div>
         </div>

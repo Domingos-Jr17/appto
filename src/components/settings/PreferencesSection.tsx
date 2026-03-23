@@ -15,6 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "next-themes";
 import {
   Loader2,
   Globe,
@@ -70,9 +71,9 @@ interface SettingsData {
 
 export function PreferencesSection() {
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
-  const [theme, setTheme] = useState("dark");
   const [exportFormat, setExportFormat] = useState("docx");
   const [preferences, setPreferences] = useState<SettingsData>({
     language: "pt-MZ",

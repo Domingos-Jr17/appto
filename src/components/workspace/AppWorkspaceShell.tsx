@@ -126,7 +126,7 @@ export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
           <div
             className={cn(
               "min-w-0 flex-1",
-              pathname.startsWith("/app/editor")
+              pathname.startsWith("/app/editor") || pathname.startsWith("/app/projects/")
                 ? "flex flex-col overflow-hidden"
                 : "px-4 py-5 lg:px-8 lg:py-8"
             )}

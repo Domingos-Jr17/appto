@@ -122,7 +122,8 @@ function getProjectProgress(project: SidebarProject) {
 
 function getProjectHref(project: SidebarProject) {
   const mode = project.resumeMode || (project.wordCount > 0 ? "document" : "chat");
-  return `/app/editor?project=${project.id}&mode=${mode}`;
+  const qs = mode !== "document" ? `?mode=${mode}` : "";
+  return `/app/projects/${project.id}${qs}`;
 }
 
 function getProjectMeta(project: SidebarProject) {
@@ -242,9 +243,9 @@ export function ProjectSidebar({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <aside
+        <aside
         className={cn(
-          "flex h-full flex-col border-r border-border/60 bg-[#faf6ef] text-foreground transition-all dark:bg-[#12110f]",
+          "sticky top-0 flex h-screen flex-col border-r border-border/60 bg-[#faf6ef] text-foreground transition-all dark:bg-[#12110f]",
           collapsed ? "w-[92px]" : "w-[320px]"
         )}
       >

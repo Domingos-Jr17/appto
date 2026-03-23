@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderTree, Plus, Sparkles } from "lucide-react";
+import { FolderTree, Plus, Sparkles, Bot } from "lucide-react";
 import { AssistantPane } from "@/components/editor/AssistantPane";
 import { WritingArea } from "@/components/editor/WritingArea";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,7 @@ interface DocumentModeProps {
   onAppendContent: (content: string) => void;
   // Structure drawer
   onStructureDrawerOpen: () => void;
+  onChatModeOpen?: () => void;
 }
 
 export function DocumentMode({
@@ -75,11 +76,13 @@ export function DocumentMode({
   onReplaceContent,
   onAppendContent,
   onStructureDrawerOpen,
+  onChatModeOpen,
 }: DocumentModeProps) {
   return (
     <div className="flex min-h-0 flex-1">
-      {/* Assistant Pane (esquerda) */}
-      <AssistantPane
+      {/* Assistant Pane (desktop only) */}
+      <div className="hidden lg:block">
+        <AssistantPane
         projectTitle={project.title}
         activeSection={activeSection}
         sectionTitle={sectionTitle}
@@ -99,6 +102,7 @@ export function DocumentMode({
         onReplaceContent={onReplaceContent}
         onAppendContent={onAppendContent}
       />
+      </div>
 
       {/* Editor (centro) */}
       <main className="min-w-0 flex-1 overflow-hidden">
@@ -165,6 +169,30 @@ export function DocumentMode({
           </div>
         )}
       </main>
+      {/* Mobile bottom action bar */}
+      {onChatModeOpen ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/50 bg-background/90 px-4 py-3 backdrop-blur lg:hidden">
+          <div className="mx-auto flex max-w-2xl items-center justify-between">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={onStructureDrawerOpen}
+            >
+              <FolderTree className="mr-1.5 h-3.5 w-3.5" />
+              Estrutura
+            </Button>
+            <Button
+              size="sm"
+              className="rounded-full"
+              onClick={onChatModeOpen}
+            >
+              <Bot className="mr-1.5 h-3.5 w-3.5" />
+              Assistente
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

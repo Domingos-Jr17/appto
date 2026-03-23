@@ -385,7 +385,9 @@ export default function WorkspaceHomePage() {
 }
 
 function getProjectHref(project: Project) {
-  return `/app/editor?project=${project.id}&mode=${project.resumeMode}`;
+  const mode = project.resumeMode;
+  const qs = mode && mode !== "document" ? `?mode=${mode}` : "";
+  return `/app/projects/${project.id}${qs}`;
 }
 
 function getProgress(project: Project): number {

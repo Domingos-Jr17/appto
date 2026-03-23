@@ -19,6 +19,7 @@ import {
   UndoRedo,
 } from "@mdxeditor/editor";
 import { Maximize2, Minimize2 } from "lucide-react";
+import { ContextualToolbar } from "@/components/editor/ContextualToolbar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,8 @@ interface WritingAreaProps {
   content: string;
   onTitleChange: (title: string) => void;
   onContentChange: (content: string) => void;
+  onImproveSelection?: (text: string) => Promise<string>;
+  onApplySelection?: (text: string) => void;
 }
 
 export function WritingArea({
@@ -40,6 +43,8 @@ export function WritingArea({
   content,
   onTitleChange,
   onContentChange,
+  onImproveSelection,
+  onApplySelection,
 }: WritingAreaProps) {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const editorRef = useRef<MDXEditorMethods | null>(null);
@@ -53,6 +58,16 @@ export function WritingArea({
     lastMarkdownRef.current = content;
   }, [content]);
 
+  const handleImprove = async (text: string): Promise<string> => {
+    if (!onImproveSelection) return text;
+    return onImproveSelection(text);
+  };
+
+  const handleApply = (text: string) => {
+    if (!onApplySelection) return;
+    onApplySelection(text);
+  };
+
   return (
     <div
       className={cn(
@@ -60,6 +75,10 @@ export function WritingArea({
         isFocusMode && "fixed inset-0 z-50 bg-background"
       )}
     >
+      {onImproveSelection && onApplySelection ? (
+        <ContextualToolbar onImprove={handleImprove} onApply={handleApply} />
+      ) : null}
+
       <div
         className={cn(
           "flex items-center justify-between border-b border-border/40 bg-background/88 px-4 py-3 backdrop-blur",
@@ -69,7 +88,7 @@ export function WritingArea({
         <div>
           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Documento</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Markdown robusto com headings, listas, citações, links e atalhos editoriais.
+            Markdown com headings, listas, citações e links.
           </p>
         </div>
         <Button
@@ -94,7 +113,7 @@ export function WritingArea({
             type="text"
             value={sectionTitle}
             onChange={(event) => onTitleChange(event.target.value)}
-            placeholder="Título da secção"
+            placeholder="Titulo da seccao"
             className="mb-6 w-full border-none bg-transparent text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/45 md:text-4xl"
           />
 

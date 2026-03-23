@@ -3,6 +3,43 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { deleteStoredObject } from "@/lib/storage";
+import { normalizeStoredContent } from "@/lib/content";
+import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
+
+function serializeProject(project: {
+  id: string;
+  title: string;
+  description: string | null;
+  type: string;
+  status: string;
+  wordCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  sections: {
+    id: string;
+    title: string;
+    content: string | null;
+    order: number;
+    wordCount: number;
+    parentId: string | null;
+    updatedAt: Date;
+  }[];
+}) {
+  const sections = project.sections.map((section) => ({
+    ...section,
+    content: normalizeStoredContent(section.content),
+  }));
+  const lastEditedSection = getLastEditedSection(sections);
+  const sectionSummary = getSectionSummary(sections);
+
+  return {
+    ...project,
+    sections,
+    resumeMode: getResumeMode(project, lastEditedSection),
+    lastEditedSection,
+    sectionSummary,
+  };
+}
 
 export async function GET(
   _request: NextRequest,
@@ -23,6 +60,15 @@ export async function GET(
       },
       include: {
         sections: {
+          select: {
+            id: true,
+            title: true,
+            content: true,
+            order: true,
+            wordCount: true,
+            parentId: true,
+            updatedAt: true,
+          },
           orderBy: { order: "asc" },
         },
       },
@@ -32,7 +78,7 @@ export async function GET(
       return NextResponse.json({ error: "Projeto nÃ£o encontrado" }, { status: 404 });
     }
 
-    return NextResponse.json(project);
+    return NextResponse.json(serializeProject(project));
   } catch (error) {
     console.error("Get project error:", error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
@@ -72,12 +118,21 @@ export async function PUT(
       },
       include: {
         sections: {
+          select: {
+            id: true,
+            title: true,
+            content: true,
+            order: true,
+            wordCount: true,
+            parentId: true,
+            updatedAt: true,
+          },
           orderBy: { order: "asc" },
         },
       },
     });
 
-    return NextResponse.json(project);
+    return NextResponse.json(serializeProject(project));
   } catch (error) {
     console.error("Update project error:", error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });

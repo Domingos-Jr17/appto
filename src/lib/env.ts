@@ -6,6 +6,7 @@ const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+    DATABASE_URL_DIRECT: z.string().min(1).optional(),
     NEXTAUTH_SECRET: z.string().min(1).optional(),
     AUTH_SECRET: z.string().min(1).optional(),
     NEXTAUTH_URL: z.string().url().optional(),
@@ -58,6 +59,7 @@ const envSchema = z
 const parsedEnv = envSchema.safeParse({
   NODE_ENV: process.env.NODE_ENV,
   DATABASE_URL: process.env.DATABASE_URL,
+  DATABASE_URL_DIRECT: process.env.DATABASE_URL_DIRECT,
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
   AUTH_SECRET: process.env.AUTH_SECRET,
   NEXTAUTH_URL: process.env.NEXTAUTH_URL,

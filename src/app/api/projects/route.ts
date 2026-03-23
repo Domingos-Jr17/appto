@@ -2,6 +2,36 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
+
+function serializeProject(project: {
+  id: string;
+  title: string;
+  description: string | null;
+  type: string;
+  status: string;
+  wordCount: number;
+  updatedAt: Date;
+  createdAt: Date;
+  sections: {
+    id: string;
+    title: string;
+    parentId: string | null;
+    order: number;
+    wordCount: number;
+    updatedAt: Date;
+  }[];
+}) {
+  const lastEditedSection = getLastEditedSection(project.sections);
+  const sectionSummary = getSectionSummary(project.sections);
+
+  return {
+    ...project,
+    resumeMode: getResumeMode(project, lastEditedSection),
+    lastEditedSection,
+    sectionSummary,
+  };
+}
 
 // GET /api/projects - List all user's projects
 export async function GET(request: NextRequest) {
@@ -42,7 +72,14 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         sections: {
-          where: { parentId: null },
+          select: {
+            id: true,
+            title: true,
+            parentId: true,
+            order: true,
+            wordCount: true,
+            updatedAt: true,
+          },
           orderBy: { order: "asc" },
         },
         _count: {
@@ -54,7 +91,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(projects);
+    return NextResponse.json(projects.map(serializeProject));
   } catch (error) {
     console.error("Get projects error:", error);
     return NextResponse.json(
@@ -159,12 +196,20 @@ export async function POST(request: NextRequest) {
       where: { id: project.id },
       include: {
         sections: {
+          select: {
+            id: true,
+            title: true,
+            parentId: true,
+            order: true,
+            wordCount: true,
+            updatedAt: true,
+          },
           orderBy: { order: "asc" },
         },
       },
     });
 
-    return NextResponse.json(completeProject, { status: 201 });
+    return NextResponse.json(completeProject ? serializeProject(completeProject) : completeProject, { status: 201 });
   } catch (error) {
     console.error("Create project error:", error);
     return NextResponse.json(

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { countWordsInMarkdown, normalizeStoredContent } from "@/lib/content";
 
 // GET /api/documents/[id] - Get a single section
 export async function GET(
@@ -39,7 +40,14 @@ export async function GET(
       return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
     }
 
-    return NextResponse.json(section);
+    return NextResponse.json({
+      ...section,
+      content: normalizeStoredContent(section.content),
+      children: section.children.map((child) => ({
+        ...child,
+        content: normalizeStoredContent(child.content),
+      })),
+    });
   } catch (error) {
     console.error("Get document error:", error);
     return NextResponse.json(
@@ -83,13 +91,15 @@ export async function PUT(
     }
 
     // Calculate word count
-    const wordCount = content ? content.split(/\s+/).filter(Boolean).length : 0;
+    const normalizedContent =
+      content !== undefined ? normalizeStoredContent(content) : undefined;
+    const wordCount = countWordsInMarkdown(normalizedContent ?? existingSection.content);
 
     const section = await db.documentSection.update({
       where: { id },
       data: {
         ...(title && { title }),
-        ...(content !== undefined && { content, wordCount }),
+        ...(content !== undefined && { content: normalizedContent, wordCount }),
         ...(order !== undefined && { order }),
       },
     });
@@ -105,7 +115,10 @@ export async function PUT(
       data: { wordCount: totalWords._sum.wordCount || 0 },
     });
 
-    return NextResponse.json(section);
+    return NextResponse.json({
+      ...section,
+      content: normalizeStoredContent(section.content),
+    });
   } catch (error) {
     console.error("Update document error:", error);
     return NextResponse.json(

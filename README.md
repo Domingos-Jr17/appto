@@ -1,13 +1,13 @@
 # appto-grad
 
-`appto-grad` é um assistente académico em `Next.js App Router` com autenticação, projetos, editor, geração por IA, créditos, exportação e storage de ficheiros.
+`appto-grad` is an academic writing assistant built on `Next.js App Router` with authentication, projects, editor, AI generation, credits, exports, and file storage.
 
-## Estado atual
+## Current operating model
 
-- Superfície oficial da aplicação: `/app/...`
-- Funcionalidades reais: autenticação, CRUD de projetos/secções, geração via IA, créditos, exportação DOCX/PDF, demo pública de outline, 2FA/reset password, pagamentos simulados e storage de ficheiros
-- Produção recomendada: `Neon Postgres` + `Cloudflare R2`
-- Desenvolvimento local: `SQLite` + storage local em `.storage/`
+- Official app surface: `/app/...`
+- Real features: authentication, project/section CRUD, AI generation, credits, DOCX/PDF export, public outline demo, 2FA/reset password, simulated payments, and file storage
+- Recommended production stack: `Neon Postgres` + `Cloudflare R2`
+- Recommended local/dev stack: `Postgres` + `LOCAL` storage in `.storage/`
 
 ## Stack
 
@@ -16,7 +16,7 @@
 - `Prisma`
 - `NextAuth`
 - `Bun`
-- `Cloudflare R2` via API S3 compatível
+- `Cloudflare R2` via the S3-compatible API
 
 ## Scripts
 
@@ -30,28 +30,33 @@ bun run test:unit
 bun run test:e2e
 bun run db:generate
 bun run db:push
+bun run db:migrate
+bun run db:migrate:deploy
 ```
 
-## Variáveis de ambiente mínimas
+## Required environment variables
 
 ```env
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://..."
 AUTH_SECRET="replace-me"
 NEXTAUTH_URL="http://localhost:3000"
+APP_URL="http://localhost:3000"
 ZAI_API_KEY="replace-me"
 STORAGE_PROVIDER="LOCAL"
 STORAGE_LOCAL_ROOT=".storage"
+PAYMENT_DEFAULT_PROVIDER="SIMULATED"
 ```
 
-## Variáveis opcionais
+## Optional environment variables
 
 ```env
+DATABASE_URL_DIRECT="postgresql://..."
 GOOGLE_CLIENT_ID=""
 GOOGLE_CLIENT_SECRET=""
 ZAI_BASE_URL="https://api.z.ai/api/paas/v4"
 RESEND_API_KEY=""
 RESEND_FROM_EMAIL=""
-PAYMENT_DEFAULT_PROVIDER="SIMULATED"
+SENTRY_DSN=""
 
 R2_ACCOUNT_ID=""
 R2_ACCESS_KEY_ID=""
@@ -60,17 +65,17 @@ R2_BUCKET=""
 R2_PUBLIC_BASE_URL=""
 ```
 
-## Storage
+## Storage model
 
-- O conteúdo canónico do trabalho continua na base de dados (`Project` + `DocumentSection`).
-- Ficheiros binários usam `StoredFile` e `ProjectExport`.
-- Em `LOCAL`, uploads e exportações persistidas vão para `.storage/`.
-- Em `R2`, a app usa URLs assinadas para upload/download.
-- Avatar deixa de usar base64 demo e passa a usar o pipeline de ficheiros.
-- Exportações diretas continuam a ser descarregadas sem persistência obrigatória.
-- Exportações guardadas ficam ligadas ao projeto via `ProjectExport`.
+- Canonical project content stays in Postgres (`Project` + `DocumentSection`).
+- Binary files are tracked through `StoredFile` and `ProjectExport`.
+- `LOCAL` storage writes uploads and persisted exports into `.storage/`.
+- `R2` storage uses signed upload/download URLs.
+- Avatars now use the file pipeline instead of base64 demo data.
+- Direct exports can still be downloaded without persistence.
+- Persisted exports are attached to the project through `ProjectExport`.
 
-### Endpoints de ficheiros
+### File endpoints
 
 - `POST /api/files/upload-url`
 - `PUT /api/files/upload-local/:id`
@@ -81,26 +86,26 @@ R2_PUBLIC_BASE_URL=""
 - `GET /api/projects/:id/exports`
 - `POST /api/projects/:id/export/save`
 
-### Configuração recomendada do bucket R2
+### R2 bucket configuration
 
-- Bucket privado por defeito
-- CORS a permitir o origin da app, `PUT`, `GET` e `HEAD`
-- Uso de URLs assinadas para upload e leitura
-- Não usar nomes originais como chave principal do objeto
+- Private bucket by default
+- CORS allowing the app origin plus `PUT`, `GET`, and `HEAD`
+- Signed URLs for upload and reads
+- Never use the original filename as the primary object key
 
-## Estrutura principal
+## Main structure
 
 - `src/app/page.tsx`: landing page
-- `src/app/app/*`: app autenticada oficial
-- `src/app/api/*`: rotas API
-- `src/components/editor/*`: editor e exportação
-- `src/components/settings/*`: perfil, segurança e conta
-- `src/lib/*`: auth, env, prisma, créditos, storage e features
-- `prisma/schema.prisma`: schema atual
+- `src/app/app/*`: authenticated app
+- `src/app/api/*`: API routes
+- `src/components/editor/*`: editor and export flows
+- `src/components/settings/*`: profile, security, and account
+- `src/lib/*`: auth, env, prisma, credits, storage, features
+- `prisma/schema.prisma`: current Postgres schema
 
-## Regras operacionais
+## Operational rules
 
-- Não reintroduzir claims públicas para features ocultas sem implementação e testes.
-- Não usar `.z-ai-config`; a configuração do provider de IA deve vir de variáveis de ambiente.
-- `.storage/`, bases locais e ficheiros temporários não devem voltar ao versionamento.
-- Em produção, preferir `Neon` para Postgres e `Cloudflare R2` para storage.
+- Do not reintroduce public claims for hidden features without implementation and tests.
+- Do not use `.z-ai-config`; AI provider configuration must come from environment variables.
+- `.storage/`, local DB dumps, and temp files must stay out of version control.
+- Prefer `Neon` for Postgres and `Cloudflare R2` for file storage in production.

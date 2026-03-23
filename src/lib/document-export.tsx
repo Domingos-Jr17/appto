@@ -11,6 +11,7 @@ import {
   TableOfContents,
   TextRun,
 } from "docx";
+import { normalizeStoredContent, parseMarkdownBlocks } from "@/lib/content";
 
 export interface ExportSection {
   id: string;
@@ -63,7 +64,7 @@ export class DocumentExportService {
       sections: project.sections.map((section) => ({
         id: section.id,
         title: section.title,
-        content: section.content ?? "",
+        content: normalizeStoredContent(section.content ?? ""),
         order: section.order,
         level: /^\d+\./.test(section.title) ? 1 : 2,
       })),
@@ -125,14 +126,48 @@ export class DocumentExportService {
         })
       );
 
-      for (const paragraph of section.content.split(/\n{2,}/).filter(Boolean)) {
-        children.push(
-          new Paragraph({
-            children: [new TextRun({ text: paragraph.trim(), size: 24 })],
-            spacing: { after: 200, line: 360 },
-            alignment: AlignmentType.JUSTIFIED,
-          })
-        );
+      for (const block of parseMarkdownBlocks(section.content)) {
+        if (block.type === "heading" && block.text) {
+          children.push(
+            new Paragraph({
+              children: [new TextRun({ text: block.text, bold: true, size: 24 })],
+              heading: block.level && block.level <= 2 ? HeadingLevel.HEADING_2 : HeadingLevel.HEADING_3,
+              spacing: { before: 220, after: 120 },
+            })
+          );
+        }
+
+        if (block.type === "paragraph" && block.text) {
+          children.push(
+            new Paragraph({
+              children: [new TextRun({ text: block.text, size: 24 })],
+              spacing: { after: 200, line: 360 },
+              alignment: AlignmentType.JUSTIFIED,
+            })
+          );
+        }
+
+        if (block.type === "quote" && block.text) {
+          children.push(
+            new Paragraph({
+              children: [new TextRun({ text: block.text, italics: true, size: 24 })],
+              spacing: { after: 180, line: 340 },
+              indent: { left: 520 },
+            })
+          );
+        }
+
+        if (block.type === "list" && block.items) {
+          for (const item of block.items) {
+            children.push(
+              new Paragraph({
+                children: [new TextRun({ text: item, size: 24 })],
+                bullet: { level: 0 },
+                spacing: { after: 120, line: 320 },
+              })
+            );
+          }
+        }
       }
     }
 
@@ -166,11 +201,45 @@ export class DocumentExportService {
           {model.sections.map((section) => (
             <View key={section.id}>
               <Text style={pdfStyles.sectionTitle}>{section.title}</Text>
-              {section.content.split(/\n{2,}/).filter(Boolean).map((paragraph, index) => (
-                <Text key={`${section.id}-${index}`} style={pdfStyles.paragraph}>
-                  {paragraph.trim()}
-                </Text>
-              ))}
+              {parseMarkdownBlocks(section.content).map((block, index) => {
+                if (block.type === "heading" && block.text) {
+                  return (
+                    <Text key={`${section.id}-${index}`} style={[pdfStyles.paragraph, { fontSize: 12, fontWeight: 700 }]}>
+                      {block.text}
+                    </Text>
+                  );
+                }
+
+                if (block.type === "quote" && block.text) {
+                  return (
+                    <Text key={`${section.id}-${index}`} style={[pdfStyles.paragraph, { fontStyle: "italic", marginLeft: 12 }]}>
+                      {block.text}
+                    </Text>
+                  );
+                }
+
+                if (block.type === "list" && block.items) {
+                  return (
+                    <View key={`${section.id}-${index}`}>
+                      {block.items.map((item, itemIndex) => (
+                        <Text key={`${section.id}-${index}-${itemIndex}`} style={pdfStyles.paragraph}>
+                          {"• "}{item}
+                        </Text>
+                      ))}
+                    </View>
+                  );
+                }
+
+                if (block.text) {
+                  return (
+                    <Text key={`${section.id}-${index}`} style={pdfStyles.paragraph}>
+                      {block.text}
+                    </Text>
+                  );
+                }
+
+                return null;
+              })}
             </View>
           ))}
         </Page>

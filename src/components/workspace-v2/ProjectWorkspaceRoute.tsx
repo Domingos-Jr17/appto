@@ -32,6 +32,7 @@ import {
   getPreferredSectionId,
 } from "./workspace-mappers";
 import { useWorkspaceConversations } from "./use-workspace-conversations";
+import { WorkspaceErrorBoundary } from "./WorkspaceErrorBoundary";
 
 interface ProjectWorkspaceRouteProps {
   projectId: string;
@@ -62,6 +63,9 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
   const reorderSections = useProjectStore((state) => state.reorderSections);
   const updateSectionTree = useProjectStore((state) => state.updateSectionTree);
   const setCredits = useProjectStore((state) => state.setCredits);
+  const exportDocument = useProjectStore((state) => state.exportDocument);
+  const saveExport = useProjectStore((state) => state.saveExport);
+  const isSavingExport = useProjectStore((state) => state.isSavingExport);
 
   const activeSectionId = useEditorStore((state) => state.activeSectionId);
   const sectionTitle = useEditorStore((state) => state.sectionTitle);
@@ -379,6 +383,22 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
     }
   }, [artifact?.content, documentContent, documentTab, documentTitle, toast]);
 
+  const handleExport = useCallback((format: "docx" | "pdf") => {
+    try {
+      exportDocument(projectId, format);
+    } catch {
+      toast({ title: "Erro", description: "Não foi possível exportar o documento.", variant: "destructive" });
+    }
+  }, [exportDocument, projectId, toast]);
+
+  const handleSaveExport = useCallback((format: "docx" | "pdf") => {
+    try {
+      saveExport(projectId, format);
+    } catch {
+      toast({ title: "Erro", description: "Não foi possível guardar o documento.", variant: "destructive" });
+    }
+  }, [saveExport, projectId, toast]);
+
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center bg-background">
@@ -410,81 +430,90 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
   }
 
   const sidebar = (
-    <ConversationSidebar
-      projectId={project.id}
-      projectTitle={project.title}
-      user={session?.user || {}}
-      recentProjects={recentProjects}
-      conversations={conversations}
-      activeConversationId={activeConversationId}
-      collapsed={sidebarCollapsed}
-      search={conversationSearch}
-      onSearchChange={setConversationSearch}
-      onSelectConversation={handleConversationSelect}
-      onRenameConversation={renameConversation}
-      onTogglePinConversation={togglePinConversation}
-      onDeleteConversation={hideConversation}
-      onToggleCollapsed={() => setSidebarCollapsed((value) => !value)}
-    />
+    <WorkspaceErrorBoundary label="sidebar">
+      <ConversationSidebar
+        projectId={project.id}
+        projectTitle={project.title}
+        user={session?.user || {}}
+        recentProjects={recentProjects}
+        conversations={conversations}
+        activeConversationId={activeConversationId}
+        collapsed={sidebarCollapsed}
+        search={conversationSearch}
+        onSearchChange={setConversationSearch}
+        onSelectConversation={handleConversationSelect}
+        onRenameConversation={renameConversation}
+        onTogglePinConversation={togglePinConversation}
+        onDeleteConversation={hideConversation}
+        onToggleCollapsed={() => setSidebarCollapsed((value) => !value)}
+      />
+    </WorkspaceErrorBoundary>
   );
 
   const chat = (
-    <WorkspaceChatPane
-      project={project}
-      activeSection={activeSection}
-      activeConversation={activeConversation}
-      chatMessages={chatMessages}
-      chatPrompt={chatPrompt}
-      chatAction={chatAction}
-      isChatLoading={isChatLoading}
-      suggestions={chatSuggestions}
-      credits={credits}
-      sidebarCollapsed={sidebarCollapsed}
-      artifactCollapsed={artifactCollapsed}
-      onOpenSidebar={() => {
-        setSidebarCollapsed(false);
-        setMobileSidebarOpen(true);
-      }}
-      onOpenArtifact={() => {
-        setArtifactCollapsed(false);
-        setMobileArtifactOpen(true);
-      }}
-      onChatPromptChange={setChatPrompt}
-      onChatActionChange={(action) => setChatAction(action)}
-      onChatSubmit={handleChatSubmit}
-      onApplyContent={applyAssistantContent}
-    />
+    <WorkspaceErrorBoundary label="chat">
+      <WorkspaceChatPane
+        project={project}
+        activeSection={activeSection}
+        activeConversation={activeConversation}
+        chatMessages={chatMessages}
+        chatPrompt={chatPrompt}
+        chatAction={chatAction}
+        isChatLoading={isChatLoading}
+        suggestions={chatSuggestions}
+        credits={credits}
+        sidebarCollapsed={sidebarCollapsed}
+        artifactCollapsed={artifactCollapsed}
+        isSavingExport={isSavingExport}
+        onOpenSidebar={() => {
+          setSidebarCollapsed(false);
+          setMobileSidebarOpen(true);
+        }}
+        onOpenArtifact={() => {
+          setArtifactCollapsed(false);
+          setMobileArtifactOpen(true);
+        }}
+        onChatPromptChange={setChatPrompt}
+        onChatActionChange={(action) => setChatAction(action)}
+        onChatSubmit={handleChatSubmit}
+        onApplyContent={applyAssistantContent}
+        onExport={handleExport}
+        onSaveExport={handleSaveExport}
+      />
+    </WorkspaceErrorBoundary>
   );
 
   const artifactPanel = (
-    <WorkspaceDocumentPanel
-      project={project}
-      sections={sections}
-      activeSection={activeSection}
-      documentTitle={documentTitle}
-      documentContent={documentContent}
-      documentWordCount={documentWordCount}
-      artifact={artifact}
-      tab={documentTab}
-      copied={copied}
-      collapsed={artifactCollapsed}
-      onTabChange={setDocumentTab}
-      onCopy={handleCopy}
-      onDocumentTitleChange={handleDocumentTitleChange}
-      onDocumentContentChange={handleDocumentContentChange}
-      onSectionSelect={(sectionId) => {
-        const targetSection = findSectionById(sectionId, sections);
-        if (targetSection) {
-          selectSection(targetSection);
-          setDocumentTab("document");
-        }
-      }}
-      onSectionAdd={handleSectionAdd}
-      onSectionRename={handleSectionRename}
-      onSectionDelete={handleSectionDelete}
-      onSectionReorder={handleSectionReorder}
-      onToggleCollapsed={() => setArtifactCollapsed((value) => !value)}
-    />
+    <WorkspaceErrorBoundary label="document">
+      <WorkspaceDocumentPanel
+        project={project}
+        sections={sections}
+        activeSection={activeSection}
+        documentTitle={documentTitle}
+        documentContent={documentContent}
+        documentWordCount={documentWordCount}
+        artifact={artifact}
+        tab={documentTab}
+        copied={copied}
+        collapsed={artifactCollapsed}
+        onTabChange={setDocumentTab}
+        onCopy={handleCopy}
+        onDocumentTitleChange={handleDocumentTitleChange}
+        onDocumentContentChange={handleDocumentContentChange}
+        onSectionSelect={(sectionId) => {
+          const targetSection = findSectionById(sectionId, sections);
+          if (targetSection) {
+            selectSection(targetSection);
+            setDocumentTab("document");
+          }
+        }}
+        onSectionAdd={handleSectionAdd}
+        onSectionRename={handleSectionRename}
+        onSectionDelete={handleSectionDelete}
+        onSectionReorder={handleSectionReorder}
+        onToggleCollapsed={() => setArtifactCollapsed((value) => !value)}
+      />
+    </WorkspaceErrorBoundary>
   );
 
   return (

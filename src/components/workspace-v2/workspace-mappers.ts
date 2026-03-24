@@ -4,10 +4,10 @@ import type {
   WorkspaceArtifactSource,
   WorkspaceConversationItem,
 } from "./workspace-types";
+import { flattenSections } from "@/lib/editor-helpers";
 
-function flattenSectionTree(sections: Section[]): Section[] {
-  return sections.flatMap((section) => [section, ...flattenSectionTree(section.children)]);
-}
+const MAX_CONVERSATION_SECTIONS = 6;
+const MAX_RECENT_ASSISTANT_MESSAGES = 2;
 
 function truncate(value: string, max = 44): string {
   if (value.length <= max) return value;
@@ -47,10 +47,10 @@ export function buildWorkspaceConversations(
   sections: Section[],
   chatMessages: AssistantMessage[]
 ): WorkspaceConversationItem[] {
-  const flatSections = flattenSectionTree(sections).slice(0, 6);
+  const flatSections = flattenSections(sections).slice(0, MAX_CONVERSATION_SECTIONS);
   const assistantMessages = [...chatMessages]
     .filter((message) => message.role === "assistant" && message.content.trim())
-    .slice(-2)
+    .slice(-MAX_RECENT_ASSISTANT_MESSAGES)
     .reverse();
 
   const items: WorkspaceConversationItem[] = [

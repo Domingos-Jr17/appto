@@ -181,8 +181,8 @@ export default function ProjectsPage() {
       setNewTitle("");
       setNewDescription("");
       
-      // Navigate to editor with new project
-      router.push(`/app/projects/${data.project.id}`);
+      // Navigate to workspace with new project
+      router.push(`/app/projects/${data.project.id}/workspace`);
     } catch (error: any) {
       toast({
         title: "Erro",

@@ -71,9 +71,7 @@ interface ProjectSidebarProps {
 }
 
 function getProjectHref(project: SidebarProject) {
-  const mode = project.resumeMode || (project.wordCount > 0 ? "document" : "chat");
-  const qs = mode !== "document" ? `?mode=${mode}` : "";
-  return `/app/projects/${project.id}${qs}`;
+  return `/app/projects/${project.id}/workspace`;
 }
 
 function ProjectList({

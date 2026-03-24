@@ -1,11 +1,10 @@
-import { ProjectWorkspaceRoute } from "@/components/workspace-v2/ProjectWorkspaceRoute";
+import { redirect } from "next/navigation";
 
-interface ProjectWorkspacePageProps {
+interface ProjectWorkspaceRedirectPageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function ProjectWorkspacePage({ params }: ProjectWorkspacePageProps) {
-  const resolvedParams = await params;
-
-  return <ProjectWorkspaceRoute projectId={resolvedParams.id} />;
+export default async function ProjectWorkspaceRedirectPage({ params }: ProjectWorkspaceRedirectPageProps) {
+  const { id } = await params;
+  redirect(`/app/projects/${id}`);
 }

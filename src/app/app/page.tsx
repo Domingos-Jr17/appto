@@ -26,7 +26,6 @@ interface Project {
   status: string;
   wordCount: number;
   updatedAt: string;
-  resumeMode: "chat" | "document" | "structure";
   lastEditedSection: {
     id: string;
     title: string;
@@ -59,11 +58,7 @@ const templates = [
   },
 ];
 
-const RESUME_COPY: Record<Project["resumeMode"], string> = {
-  chat: "Retomar no chat",
-  document: "Abrir documento",
-  structure: "Ver estrutura",
-};
+const RESUME_COPY = "Abrir workspace";
 
 export default function WorkspaceHomePage() {
   const { data: session, status } = useSession();
@@ -135,7 +130,7 @@ export default function WorkspaceHomePage() {
                   <div className="min-w-0 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline" className="rounded-full">
-                        {RESUME_COPY[leadProject.resumeMode]}
+                        {RESUME_COPY}
                       </Badge>
                       <Badge variant="secondary" className="rounded-full">
                         {formatProjectType(leadProject.type)}
@@ -164,13 +159,7 @@ export default function WorkspaceHomePage() {
                     <Button asChild className="rounded-full px-5">
                       <Link href={getProjectHref(leadProject)}>
                         <ArrowRight className="mr-2 h-4 w-4" />
-                        {RESUME_COPY[leadProject.resumeMode]}
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline" className="rounded-full px-5">
-                      <Link href={getProjectWorkspaceHref(leadProject)}>
-                        <Network className="mr-2 h-4 w-4" />
-                        Novo workspace
+                        {RESUME_COPY}
                       </Link>
                     </Button>
                     <Button asChild variant="outline" className="rounded-full px-5">
@@ -261,7 +250,7 @@ export default function WorkspaceHomePage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          {index === 0 ? "Ultimo aberto" : RESUME_COPY[project.resumeMode]}
+                          {index === 0 ? "Ultimo aberto" : RESUME_COPY}
                         </span>
                         <Badge variant="secondary" className="rounded-full">
                           {formatProjectType(project.type)}
@@ -288,12 +277,6 @@ export default function WorkspaceHomePage() {
                           className="rounded-full bg-foreground px-3 py-1.5 text-xs font-medium text-background transition-colors hover:bg-foreground/90"
                         >
                           Abrir
-                        </Link>
-                        <Link
-                          href={getProjectWorkspaceHref(project)}
-                          className="rounded-full border border-border/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-                        >
-                          Workspace
                         </Link>
                         <div className="h-2 w-24 rounded-full bg-muted">
                           <div className="h-full rounded-full bg-primary" style={{ width: `${getProgress(project)}%` }} />
@@ -385,14 +368,10 @@ export default function WorkspaceHomePage() {
 }
 
 function getProjectHref(project: Project) {
-  const mode = project.resumeMode;
-  const qs = mode && mode !== "document" ? `?mode=${mode}` : "";
-  return `/app/projects/${project.id}${qs}`;
-}
-
-function getProjectWorkspaceHref(project: Project) {
   return `/app/projects/${project.id}/workspace`;
 }
+
+
 
 function getProgress(project: Project): number {
   if (project.status === "COMPLETED") return 100;

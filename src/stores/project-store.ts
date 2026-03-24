@@ -16,6 +16,7 @@ import {
   syncProjectWithTree,
   updateTree,
 } from "@/lib/editor-helpers";
+import { logger } from "@/lib/logger";
 
 interface ProjectStoreState {
   project: Project | null;
@@ -116,7 +117,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         isLoading: false,
       });
     } catch (error) {
-      console.error(error);
+      logger.error("Fetch project failed", { projectId, error: String(error) });
       set({ isLoading: false });
     }
   },
@@ -216,6 +217,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   reorderSections: async (projectId, tree) => {
     const normalizedTree = normalizeSectionTree(tree);
     const project = get().project;
+    const previousSections = get().sections;
+    const previousProject = project;
     const syncedProject = project
       ? syncProjectWithTree(project, normalizedTree)
       : project;
@@ -243,7 +246,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         : project;
       set({ sections: nextTree, project: syncedProject2 });
     } catch {
-      // revert handled by component toast
+      set({ sections: previousSections, project: previousProject });
     }
   },
 

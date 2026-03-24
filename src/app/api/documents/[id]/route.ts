@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { countWordsInMarkdown, normalizeStoredContent } from "@/lib/content";
+import { updateDocumentSchema } from "@/lib/validators";
+import { logger } from "@/lib/logger";
 
 // GET /api/documents/[id] - Get a single section
 export async function GET(
@@ -49,7 +51,7 @@ export async function GET(
       })),
     });
   } catch (error) {
-    console.error("Get document error:", error);
+    logger.error("Get document error", { error: String(error) });
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }
@@ -71,7 +73,16 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { title, content, order } = body;
+    const parsed = updateDocumentSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Dados inválidos", details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const { title, content, order } = parsed.data;
 
     const existingSection = await db.documentSection.findUnique({
       where: { id },
@@ -120,7 +131,7 @@ export async function PUT(
       content: normalizeStoredContent(section.content),
     });
   } catch (error) {
-    console.error("Update document error:", error);
+    logger.error("Update document error", { error: String(error) });
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }
@@ -176,7 +187,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Secção eliminada com sucesso" });
   } catch (error) {
-    console.error("Delete document error:", error);
+    logger.error("Delete document error", { error: String(error) });
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }

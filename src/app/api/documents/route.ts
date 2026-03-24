@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { countWordsInMarkdown, normalizeStoredContent } from "@/lib/content";
+import { createDocumentSchema } from "@/lib/validators";
+import { logger } from "@/lib/logger";
 
 // GET /api/documents - Get sections by project
 export async function GET(request: NextRequest) {
@@ -47,7 +49,7 @@ export async function GET(request: NextRequest) {
       }))
     );
   } catch (error) {
-    console.error("Get documents error:", error);
+    logger.error("Get documents error", { error: String(error) });
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }
@@ -65,14 +67,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { projectId, parentId, title, content, order } = body;
+    const parsed = createDocumentSchema.safeParse(body);
 
-    if (!projectId || !title) {
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "ID do projeto e título são obrigatórios" },
+        { error: "Dados inválidos", details: parsed.error.flatten().fieldErrors },
         { status: 400 }
       );
     }
+
+    const { projectId, parentId, title, content, order } = parsed.data;
 
     // Verify project belongs to user
     const project = await db.project.findFirst({
@@ -120,7 +124,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Create document error:", error);
+    logger.error("Create document error", { error: String(error) });
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }

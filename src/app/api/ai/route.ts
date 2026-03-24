@@ -13,6 +13,8 @@ import {
   setCachedResponse,
 } from "@/lib/ai-cache";
 import { AI_ACTION_CREDIT_COSTS, DEFAULT_AI_ACTION_COST } from "@/lib/credits";
+import { aiRequestSchema } from "@/lib/validators";
+import { logger } from "@/lib/logger";
 
 // System prompts for different education levels
 const EDUCATION_PROMPTS = {
@@ -116,7 +118,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action, text, context, projectId, useCache = true } = body;
+    const parsed = aiRequestSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Dados inválidos", details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const { action, text, context, projectId, useCache = true } = parsed.data;
 
     const creditsNeeded =
       AI_ACTION_CREDIT_COSTS[action as keyof typeof AI_ACTION_CREDIT_COSTS] ??
@@ -273,7 +284,7 @@ export async function POST(request: NextRequest) {
       plan: userPlan,
     });
   } catch (error) {
-    console.error("AI generation error:", error);
+    logger.error("AI generation error", { error: String(error) });
     return NextResponse.json(
       { error: getFriendlyZAIErrorMessage(error) },
       { status: getFriendlyZAIErrorStatus(error) }

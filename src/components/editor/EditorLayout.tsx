@@ -10,7 +10,6 @@ import { ChatMode } from "@/components/editor/modes/ChatMode";
 import { DocumentMode } from "@/components/editor/modes/DocumentMode";
 import { StructureMode } from "@/components/editor/modes/StructureMode";
 import { PreviewPane } from "@/components/editor/PreviewPane";
-import type { WorkspaceMode } from "@/components/workspace/WorkspaceModeTabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -29,8 +28,10 @@ import {
 } from "@/stores/assistant-store";
 import type { ChatAction, ReferenceData, Section } from "@/types/editor";
 
+type WorkspaceMode = "chat" | "document" | "structure" | "preview";
+
 interface EditorLayoutProps {
-  projectId?: string;
+  projectId: string;
   initialMode?: WorkspaceMode;
 }
 

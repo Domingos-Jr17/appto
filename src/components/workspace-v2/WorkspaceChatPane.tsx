@@ -1,10 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo } from "react";
-import { Bot, PanelLeftOpen, PanelRightOpen, Send, Sparkles, Wand2 } from "lucide-react";
+import { Bot, Download, FileDown, Loader2, PanelLeftOpen, PanelRightOpen, Send, Sparkles, Wand2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -36,12 +41,15 @@ interface WorkspaceChatPaneProps {
   credits: number;
   sidebarCollapsed: boolean;
   artifactCollapsed: boolean;
+  isSavingExport: "docx" | "pdf" | null;
   onOpenSidebar: () => void;
   onOpenArtifact: () => void;
   onChatPromptChange: (prompt: string) => void;
   onChatActionChange: (action: ChatAction) => void;
   onChatSubmit: () => void;
   onApplyContent: (content: string, action: "insert" | "replace" | "append" | "outline") => void;
+  onExport: (format: "docx" | "pdf") => void;
+  onSaveExport: (format: "docx" | "pdf") => void;
 }
 
 function formatMessageTime(value: Date) {
@@ -63,12 +71,15 @@ export function WorkspaceChatPane({
   credits,
   sidebarCollapsed,
   artifactCollapsed,
+  isSavingExport,
   onOpenSidebar,
   onOpenArtifact,
   onChatPromptChange,
   onChatActionChange,
   onChatSubmit,
   onApplyContent,
+  onExport,
+  onSaveExport,
 }: WorkspaceChatPaneProps) {
   const chatCost =
     chatAction === "rewrite" ? AI_ACTION_CREDIT_COSTS.improve : AI_ACTION_CREDIT_COSTS.generate;
@@ -107,9 +118,36 @@ export function WorkspaceChatPane({
             <Badge variant="outline" className="hidden rounded-full sm:inline-flex">
               {credits.toLocaleString("pt-MZ")} créditos
             </Badge>
-            <Button type="button" variant="outline" asChild className="hidden rounded-full lg:inline-flex">
-              <Link href={`/app/projects/${project.id}`}>Editor clássico</Link>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="rounded-full">
+                  {isSavingExport ? (
+                    <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Download className="mr-1 h-3.5 w-3.5" />
+                  )}
+                  <span className="hidden sm:inline">Exportar</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={() => onExport("docx")}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Descarregar DOCX
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onExport("pdf")}>
+                  <FileDown className="mr-2 h-4 w-4" />
+                  Descarregar PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onSaveExport("docx")}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Guardar DOCX
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onSaveExport("pdf")}>
+                  <FileDown className="mr-2 h-4 w-4" />
+                  Guardar PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {artifactCollapsed ? (
               <Button type="button" variant="ghost" size="icon" className="focus-ring rounded-full" onClick={onOpenArtifact}>
                 <PanelRightOpen className="h-4 w-4" />

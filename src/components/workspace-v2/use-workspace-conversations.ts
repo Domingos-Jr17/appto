@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { formatRelativeTime } from "./workspace-mappers";
 import type { WorkspaceConversationItem } from "./workspace-types";
 import { useWorkspaceConversationsStore } from "@/stores/workspace-conversations-store";
@@ -54,11 +54,17 @@ export function useWorkspaceConversations({
   const activeConversation =
     conversations.find((conversation) => conversation.id === activeConversationId) || null;
 
+  const prevDerivedRef = useRef<string>("");
+
   useEffect(() => {
     if (!projectId || derivedConversations.length === 0) return;
+    const currentKey = derivedConversations
+      .map((item) => `${item.id}:${item.updatedAt}`)
+      .join(",");
+    if (currentKey === prevDerivedRef.current) return;
+    prevDerivedRef.current = currentKey;
     store.syncDerivedConversations(projectId, derivedConversations);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [derivedConversations.length, projectId, store.syncDerivedConversations]);
+  }, [derivedConversations, projectId, store]);
 
   return {
     conversations,

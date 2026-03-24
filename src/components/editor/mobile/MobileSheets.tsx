@@ -3,7 +3,8 @@
 import { DocumentTree } from "@/components/editor/DocumentTree";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { Section } from "@/types/editor";
-import type { WorkspaceMode } from "@/components/workspace/WorkspaceModeTabs";
+
+type WorkspaceMode = "chat" | "document" | "structure" | "preview";
 
 interface MobileSheetsProps {
   projectTitle: string;

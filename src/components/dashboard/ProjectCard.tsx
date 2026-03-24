@@ -2,6 +2,17 @@
 
 import * as React from "react";
 import { MoreVertical, Clock, FileText } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { projectTypeStyles, type ProjectType } from "@/lib/project-type-styles";
 
@@ -30,6 +41,7 @@ export function ProjectCard({
 
   return (
     <Card
+      data-project-id={id}
       className={cn(
         "group relative overflow-hidden border-border/50 bg-card/80 backdrop-blur-xl card-hover cursor-pointer",
         className

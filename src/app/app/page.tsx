@@ -168,6 +168,12 @@ export default function WorkspaceHomePage() {
                       </Link>
                     </Button>
                     <Button asChild variant="outline" className="rounded-full px-5">
+                      <Link href={getProjectWorkspaceHref(leadProject)}>
+                        <Network className="mr-2 h-4 w-4" />
+                        Novo workspace
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="rounded-full px-5">
                       <Link href="/app/projects?new=1">
                         <Plus className="mr-2 h-4 w-4" />
                         Novo trabalho
@@ -248,9 +254,8 @@ export default function WorkspaceHomePage() {
             <CardContent className="space-y-3">
               {projects.length > 0 ? (
                 projects.slice(0, 5).map((project, index) => (
-                  <Link
+                  <div
                     key={project.id}
-                    href={getProjectHref(project)}
                     className="flex flex-col gap-4 rounded-3xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55 lg:flex-row lg:items-center lg:justify-between"
                   >
                     <div className="min-w-0">
@@ -277,11 +282,25 @@ export default function WorkspaceHomePage() {
                           {formatRelativeTime(new Date(project.updatedAt))}
                         </p>
                       </div>
-                      <div className="h-2 w-24 rounded-full bg-muted">
-                        <div className="h-full rounded-full bg-primary" style={{ width: `${getProgress(project)}%` }} />
+                      <div className="flex items-center gap-3">
+                        <Link
+                          href={getProjectHref(project)}
+                          className="rounded-full bg-foreground px-3 py-1.5 text-xs font-medium text-background transition-colors hover:bg-foreground/90"
+                        >
+                          Abrir
+                        </Link>
+                        <Link
+                          href={getProjectWorkspaceHref(project)}
+                          className="rounded-full border border-border/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                        >
+                          Workspace
+                        </Link>
+                        <div className="h-2 w-24 rounded-full bg-muted">
+                          <div className="h-full rounded-full bg-primary" style={{ width: `${getProgress(project)}%` }} />
+                        </div>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 ))
               ) : (
                 <div className="rounded-3xl border border-dashed border-border/60 bg-muted/25 p-8 text-center">
@@ -369,6 +388,10 @@ function getProjectHref(project: Project) {
   const mode = project.resumeMode;
   const qs = mode && mode !== "document" ? `?mode=${mode}` : "";
   return `/app/projects/${project.id}${qs}`;
+}
+
+function getProjectWorkspaceHref(project: Project) {
+  return `/app/projects/${project.id}/workspace`;
 }
 
 function getProgress(project: Project): number {

@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FileText, Sparkles, BookMarked, Database, FileDown, Languages, Zap, FolderOpen, Settings, Download, PenTool, Layout } from "lucide-react";
+import { Sparkles, BookMarked, FileDown, Languages, Zap, FolderOpen, Settings, Download, PenTool, Layout } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isFeaturePublic } from "@/lib/features";
 
 const sidebarItems = [
   { icon: FolderOpen, label: "Meus Projectos", active: true },
@@ -15,10 +16,9 @@ const sidebarItems = [
 interface FloatingBadgeProps {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  colorClass: string;
 }
 
-function FloatingBadge({ icon: Icon, label, colorClass }: FloatingBadgeProps) {
+function FloatingBadge({ icon: Icon, label }: FloatingBadgeProps) {
   return (
     <div className="flex items-center gap-2">
       <Icon className="w-4 h-4" />
@@ -258,7 +258,7 @@ export function ProductMockup() {
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-blue-500/10 text-blue-600 cursor-pointer"
         >
-          <FloatingBadge icon={Languages} label="PT-MZ Académico" colorClass="text-blue-600" />
+          <FloatingBadge icon={Languages} label="PT-MZ Académico" />
         </motion.div>
       </motion.div>
 
@@ -274,7 +274,7 @@ export function ProductMockup() {
           transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
           className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-emerald-500/10 text-emerald-600 cursor-pointer"
         >
-          <FloatingBadge icon={BookMarked} label="ABNT Ready" colorClass="text-emerald-600" />
+          <FloatingBadge icon={BookMarked} label="ABNT Ready" />
         </motion.div>
       </motion.div>
 
@@ -290,25 +290,27 @@ export function ProductMockup() {
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
           className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-purple-500/10 text-purple-600 cursor-pointer"
         >
-          <FloatingBadge icon={FileDown} label="DOCX Export" colorClass="text-purple-600" />
+          <FloatingBadge icon={FileDown} label="DOCX Export" />
         </motion.div>
       </motion.div>
 
-      <motion.div
-        className="absolute bottom-1/4 -left-2 md:-left-8"
-        initial={{ opacity: 0, scale: 0, x: -30, rotate: 15 }}
-        animate={{ opacity: 1, scale: 1, x: 0, rotate: 0 }}
-        transition={{ delay: 1.8, duration: 0.6, type: "spring", stiffness: 200 }}
-      >
+      {isFeaturePublic("realTimeStreaming") ? (
         <motion.div
-          whileHover={{ scale: 1.05, y: -2 }}
-          animate={{ y: [0, -7, 0] }}
-          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
-          className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-rose-500/10 text-rose-600 cursor-pointer"
+          className="absolute bottom-1/4 -left-2 md:-left-8"
+          initial={{ opacity: 0, scale: 0, x: -30, rotate: 15 }}
+          animate={{ opacity: 1, scale: 1, x: 0, rotate: 0 }}
+          transition={{ delay: 1.8, duration: 0.6, type: "spring", stiffness: 200 }}
         >
-          <FloatingBadge icon={Zap} label="Streaming AI" colorClass="text-rose-600" />
+          <motion.div
+            whileHover={{ scale: 1.05, y: -2 }}
+            animate={{ y: [0, -7, 0] }}
+            transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+            className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-rose-500/10 text-rose-600 cursor-pointer"
+          >
+            <FloatingBadge icon={Zap} label="Streaming AI" />
+          </motion.div>
         </motion.div>
-      </motion.div>
+      ) : null}
     </div>
   );
 }

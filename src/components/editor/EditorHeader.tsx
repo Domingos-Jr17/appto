@@ -45,7 +45,12 @@ export function EditorHeader({
     <div className="shrink-0 border-b border-border/50 bg-background/80 px-4 py-2 backdrop-blur lg:px-6">
       <div className="flex items-center justify-between">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <h1 className="truncate text-base font-semibold tracking-tight">{project.title}</h1>
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-semibold tracking-tight">{project.title}</h1>
+            <p className="hidden truncate text-[11px] text-muted-foreground xl:block">
+              {sectionTitle || "Sem secao activa"} · {wordCount.toLocaleString("pt-MZ")} palavras
+            </p>
+          </div>
           <span className="hidden text-[11px] text-muted-foreground md:inline">
             {getSaveCopy(autoSaveStatus, lastSaved)}
           </span>
@@ -92,6 +97,12 @@ export function EditorHeader({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <Button variant="ghost" size="icon" asChild className="h-8 w-8 rounded-full">
+            <Link href={`/app/projects/${project.id}/workspace`}>
+              <FolderTree className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
 
           <Button variant="ghost" size="icon" asChild className="h-8 w-8 rounded-full">
             <Link href="/app/projects">

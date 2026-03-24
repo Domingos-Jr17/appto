@@ -55,5 +55,14 @@ db/*.db
 db/*.db-*
 playwright-report
 test-results
+
 # Skills directory
 /skills/
+.codex
+.ai
+.opencode
+.agents
+
+
+CLAUDE.md
+AGENTS.md

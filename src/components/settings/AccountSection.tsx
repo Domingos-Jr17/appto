@@ -202,12 +202,12 @@ export function AccountSection() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-xl border border-border/50 bg-card/50 p-4 shadow-lg backdrop-blur-xl">
             <div className="mb-2 flex items-center gap-3">
-              <div className="rounded-lg bg-green-500/10 p-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
+              <div className="rounded-lg bg-success/10 p-2">
+                <CheckCircle className="h-4 w-4 text-success" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
-                <p className="font-semibold text-green-500">Activa</p>
+                <p className="font-semibold text-success">Activa</p>
               </div>
             </div>
           </div>

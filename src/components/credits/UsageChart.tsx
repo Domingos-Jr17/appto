@@ -41,7 +41,7 @@ export function UsageChart({ data, className }: UsageChartProps) {
             <BarChart3 className="h-5 w-5 text-primary" />
             Utilização Mensal
           </CardTitle>
-          <div className="flex items-center gap-1.5 text-xs text-emerald-500">
+          <div className="flex items-center gap-1.5 text-xs text-success">
             <TrendingUp className="h-3 w-3" />
             <span>Média: {avgCredits}/mês</span>
           </div>

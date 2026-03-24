@@ -130,7 +130,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         parentId: options.parentId,
         title: options.title,
         content: options.content || "",
-        order: Date.now(),
+        order: get().sections.length,
       }),
     });
 

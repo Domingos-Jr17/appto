@@ -233,7 +233,7 @@ export default function RegisterPage() {
             <p className="text-xs text-destructive">As senhas não coincidem</p>
           )}
           {confirmPassword && password === confirmPassword && (
-            <div className="flex items-center gap-1 text-xs text-green-500">
+            <div className="flex items-center gap-1 text-xs text-success">
               <Check className="w-3 h-3" />
               <span>Senhas coincidem</span>
             </div>

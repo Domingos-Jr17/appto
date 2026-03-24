@@ -54,8 +54,8 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
                   <Check className="h-3 w-3 text-primary-foreground" />
                 </div>
               )}
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10">
-                <span className="text-xl font-bold text-red-500">M</span>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10">
+                <span className="text-xl font-bold text-destructive">M</span>
               </div>
               <span className="font-medium">M-Pesa</span>
               <span className="text-xs text-muted-foreground">Vodacom</span>
@@ -76,8 +76,8 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
                   <Check className="h-3 w-3 text-primary-foreground" />
                 </div>
               )}
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
-                <span className="text-xl font-bold text-blue-500">e</span>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-info/10">
+                <span className="text-xl font-bold text-info">e</span>
               </div>
               <span className="font-medium">e-Mola</span>
               <span className="text-xs text-muted-foreground">Movitel</span>
@@ -119,7 +119,7 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
                     {pkg.credits.toLocaleString("pt-MZ")} créditos
                   </p>
                   {pkg.bonus && (
-                    <p className="text-sm text-emerald-500">
+                    <p className="text-sm text-success">
                       +{pkg.bonus.toLocaleString("pt-MZ")} bónus
                     </p>
                   )}

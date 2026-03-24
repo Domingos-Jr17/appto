@@ -26,6 +26,10 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -80,6 +84,7 @@
 
   /* Semantic colors */
   --destructive: oklch(0.6 0.2 25);
+  --destructive-foreground: oklch(0.98 0 0);
   --success: oklch(0.65 0.18 145);
   --warning: oklch(0.75 0.15 85);
   --info: oklch(0.65 0.15 230);
@@ -131,6 +136,7 @@
   --accent-foreground: oklch(0.18 0.015 260);
 
   --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.98 0 0);
   --success: oklch(0.55 0.18 145);
   --warning: oklch(0.7 0.15 85);
   --info: oklch(0.55 0.15 230);

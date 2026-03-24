@@ -76,8 +76,8 @@ export default function ResetPasswordPage() {
     return (
       <div className="glass glass-border rounded-2xl p-8 shadow-2xl shadow-primary/5 gradient-glow-subtle">
         <div className="text-center">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
-            <CheckCircle className="h-8 w-8 text-green-500" />
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+            <CheckCircle className="h-8 w-8 text-success" />
           </div>
           <h1 className="mb-2 text-2xl font-bold">Senha redefinida</h1>
           <p className="mb-6 text-sm text-muted-foreground">

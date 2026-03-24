@@ -77,7 +77,7 @@ export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
 
   if (status === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex h-svh items-center justify-center bg-background">
         <div className="h-9 w-9 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
@@ -86,53 +86,56 @@ export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
   if (!session?.user) return null;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f8f1dd,transparent_40%),linear-gradient(180deg,#fffdf8_0%,#f7f3ea_100%)] dark:bg-[radial-gradient(circle_at_top,#1d1a14,transparent_30%),linear-gradient(180deg,#12110f_0%,#0f0f10_100%)]">
-      <div className="flex min-h-screen">
-        <div className="hidden lg:block">
-          <ProjectSidebar
-            collapsed={collapsed}
-            currentPath={pathname}
-            credits={credits}
-            projects={projects}
-            user={session.user}
-            onToggleCollapse={() => setCollapsed((value) => !value)}
-          />
-        </div>
+    <div className="h-svh w-screen flex overflow-hidden bg-background">
+      {/* Desktop sidebar */}
+      <div className="hidden lg:block">
+        <ProjectSidebar
+          collapsed={collapsed}
+          currentPath={pathname}
+          credits={credits}
+          projects={projects}
+          user={session.user}
+          onToggleCollapse={() => setCollapsed((value) => !value)}
+        />
+      </div>
 
-        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-          <div className="sticky top-0 z-40 border-b border-border/50 bg-background/85 backdrop-blur lg:hidden">
-            <div className="flex items-center justify-between px-4 py-3">
-              <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[340px] max-w-[90vw] border-none p-0">
-                  {mobileSidebar}
-                </SheetContent>
-              </Sheet>
+      {/* Main content */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/* Mobile header */}
+        <div className="shrink-0 border-b border-border/50 bg-background/85 backdrop-blur lg:hidden">
+          <div className="flex items-center justify-between px-4 py-3">
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[340px] max-w-[90vw] border-none p-0">
+                {mobileSidebar}
+              </SheetContent>
+            </Sheet>
 
-              <p className="text-sm font-semibold tracking-tight">appto workspace</p>
+            <p className="text-sm font-semibold tracking-tight">appto</p>
 
-              <div className="rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs font-medium">
-                {credits.toLocaleString("pt-MZ")} creditos
-              </div>
+            <div className="rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs font-medium">
+              {credits.toLocaleString("pt-MZ")} creditos
             </div>
           </div>
+        </div>
 
-          <WorkspaceHeader credits={credits} />
+        {/* Workspace header - hidden on editor/project pages */}
+        <WorkspaceHeader credits={credits} />
 
-          <div
-            className={cn(
-              "min-w-0 flex-1",
-              pathname.startsWith("/app/editor") || pathname.startsWith("/app/projects/")
-                ? "flex flex-col overflow-hidden"
-                : "px-4 py-5 lg:px-8 lg:py-8"
-            )}
-          >
-            {children}
-          </div>
+        {/* Scrollable content root */}
+        <div
+          className={cn(
+            "min-w-0 min-h-0 flex-1",
+            pathname.startsWith("/app/editor") || pathname.startsWith("/app/projects/")
+              ? "flex flex-col overflow-hidden"
+              : "overflow-y-auto px-4 py-5 lg:px-8 lg:py-8"
+          )}
+        >
+          {children}
         </div>
       </div>
     </div>

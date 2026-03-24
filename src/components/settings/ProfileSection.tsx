@@ -247,7 +247,7 @@ export function ProfileSection() {
             <Mail className="h-4 w-4 text-muted-foreground" />
             Email
             {isEmailVerified ? (
-              <span className="flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs text-green-500">
+              <span className="flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs text-success">
                 <CheckCircle className="h-3 w-3" />
                 Verificado
               </span>

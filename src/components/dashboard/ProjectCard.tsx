@@ -3,54 +3,19 @@
 import * as React from "react";
 import { MoreVertical, Clock, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { projectTypeStyles, type ProjectType } from "@/lib/project-type-styles";
 
 interface ProjectCardProps {
   id: string;
   title: string;
-  type: "monografia" | "tese" | "artigo" | "relatório" | "dissertação" | "ensaio";
+  type: ProjectType;
   course: string;
   lastUpdated: string;
   progress: number;
   className?: string;
 }
 
-const typeStyles: Record<ProjectCardProps["type"], { label: string; className: string }> = {
-  monografia: {
-    label: "Monografia",
-    className: "bg-violet-500/10 backdrop-blur-xl text-violet-400 border border-violet-500/20",
-  },
-  tese: {
-    label: "Tese",
-    className: "bg-amber-500/10 backdrop-blur-xl text-amber-400 border border-amber-500/20",
-  },
-  artigo: {
-    label: "Artigo",
-    className: "bg-emerald-500/10 backdrop-blur-xl text-emerald-400 border border-emerald-500/20",
-  },
-  relatório: {
-    label: "Relatório",
-    className: "bg-sky-500/10 backdrop-blur-xl text-sky-400 border border-sky-500/20",
-  },
-  dissertação: {
-    label: "Dissertação",
-    className: "bg-pink-500/10 backdrop-blur-xl text-pink-400 border border-pink-500/20",
-  },
-  ensaio: {
-    label: "Ensaio",
-    className: "bg-orange-500/10 backdrop-blur-xl text-orange-400 border border-orange-500/20",
-  },
-};
+const typeStyles = projectTypeStyles;
 
 export function ProjectCard({
   id,

@@ -402,14 +402,11 @@ export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLa
     <div className="flex min-h-0 flex-1 flex-col">
       <EditorHeader
         project={project}
-        credits={credits}
-        workspaceMode={workspaceMode}
         sectionTitle={sectionTitle}
         wordCount={wordCount}
         autoSaveStatus={autoSaveStatus}
         lastSaved={lastSaved}
         isSavingExport={isSavingExport}
-        onModeChange={syncMode}
         onExport={handleExport}
         onSaveExport={handleSaveExport}
         onStructureDrawerOpen={() => setStructureDrawerOpen(true)}
@@ -471,8 +468,6 @@ export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLa
           sections={sections}
           activeSection={activeSection}
           activeSectionId={activeSectionId}
-          contextRailOpen={true}
-          onContextRailToggle={() => {}}
           onSectionSelect={handleSectionSelect}
           onSectionAdd={handleSectionAdd}
           onSectionRename={handleSectionRename}

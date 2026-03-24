@@ -47,8 +47,8 @@ export default function ForgotPasswordPage() {
       <div className="glass glass-border rounded-2xl p-8 shadow-2xl shadow-primary/5 gradient-glow-subtle animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
         {/* Success State */}
         <div className="text-center">
-          <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-8 h-8 text-green-500" />
+          <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-8 h-8 text-success" />
           </div>
           <h1 className="text-2xl font-bold mb-2">Email enviado!</h1>
           <p className="text-muted-foreground text-sm mb-6">

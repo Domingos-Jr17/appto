@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   BookOpen,
-  Coins,
   FilePenLine,
   FolderKanban,
   LayoutTemplate,
@@ -42,12 +41,6 @@ interface Project {
   };
 }
 
-interface UserData {
-  credits: number;
-  usedCredits: number;
-  subscription: { plan: string; status: string } | null;
-}
-
 const templates = [
   {
     title: "Monografia guiada",
@@ -76,7 +69,6 @@ export default function WorkspaceHomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [projects, setProjects] = React.useState<Project[]>([]);
-  const [userData, setUserData] = React.useState<UserData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -86,17 +78,14 @@ export default function WorkspaceHomePage() {
     }
 
     if (status === "authenticated") {
-      Promise.all([
-        fetch("/api/projects").then((response) => response.json()),
-        fetch("/api/user").then((response) => response.json()),
-      ])
-        .then(([projectsData, user]) => {
-          const normalizedProjects = Array.isArray(projectsData) ? projectsData : [];
+      fetch("/api/projects")
+        .then((response) => response.json())
+        .then((data) => {
+          const normalizedProjects = Array.isArray(data) ? data : [];
           normalizedProjects.sort(
             (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
           );
           setProjects(normalizedProjects);
-          setUserData(user);
         })
         .catch(console.error)
         .finally(() => setIsLoading(false));
@@ -121,6 +110,7 @@ export default function WorkspaceHomePage() {
 
   return (
     <div className="space-y-8">
+      {/* Hero: welcome + resume project */}
       <section className="grid gap-5 xl:grid-cols-[1.6fr_1fr]">
         <Card className="overflow-hidden border-border/60 bg-background/80 shadow-sm">
           <CardContent className="flex flex-col gap-8 p-6 lg:p-8">
@@ -205,6 +195,7 @@ export default function WorkspaceHomePage() {
           </CardContent>
         </Card>
 
+        {/* Stats sidebar */}
         <Card className="border-border/60 bg-background/80 shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-medium">Contexto rapido</CardTitle>
@@ -216,11 +207,9 @@ export default function WorkspaceHomePage() {
               <p className="mt-1 text-sm text-muted-foreground">trabalhos activos</p>
             </div>
             <div className="rounded-2xl bg-muted/45 p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Creditos</p>
-              <p className="mt-2 text-2xl font-semibold">
-                {(userData?.credits || 0).toLocaleString("pt-MZ")}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">saldo disponivel</p>
+              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Palavras</p>
+              <p className="mt-2 text-2xl font-semibold">{totalWords.toLocaleString("pt-MZ")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">acumuladas</p>
             </div>
             <div className="rounded-2xl bg-muted/45 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Prontas</p>
@@ -237,76 +226,79 @@ export default function WorkspaceHomePage() {
         </Card>
       </section>
 
+      {/* Projects + Fluxo principal */}
       <section className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
-        <Card className="border-border/60 bg-background/80 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div>
-              <CardTitle className="text-lg">Projectos recentes</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
-                A lista ja abre cada projecto no modo certo de continuidade.
-              </p>
-            </div>
-            <Button variant="ghost" size="sm" asChild className="rounded-full">
-              <Link href="/app/projects">
-                Ver todos
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {projects.length > 0 ? (
-              projects.slice(0, 5).map((project, index) => (
-                <Link
-                  key={project.id}
-                  href={getProjectHref(project)}
-                  className="flex flex-col gap-4 rounded-3xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55 lg:flex-row lg:items-center lg:justify-between"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        {index === 0 ? "Ultimo aberto" : RESUME_COPY[project.resumeMode]}
-                      </span>
-                      <Badge variant="secondary" className="rounded-full">
-                        {formatProjectType(project.type)}
-                      </Badge>
-                    </div>
-                    <h3 className="mt-2 truncate text-base font-semibold">{project.title}</h3>
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                      {project.lastEditedSection
-                        ? `Ultima secao: ${project.lastEditedSection.title}`
-                        : "Sem secao iniciada ainda."}
-                    </p>
-                  </div>
-
-                  <div className="flex min-w-[240px] items-center justify-between gap-4 rounded-2xl bg-background/70 px-4 py-3">
-                    <div className="text-sm">
-                      <p className="font-medium">{getProgress(project)}%</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatRelativeTime(new Date(project.updatedAt))}
+        <div className="space-y-5">
+          {/* Recent projects */}
+          <Card className="border-border/60 bg-background/80 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle className="text-lg">Projectos recentes</CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Abre cada projecto no modo certo de continuidade.
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" asChild className="rounded-full">
+                <Link href="/app/projects">
+                  Ver todos
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {projects.length > 0 ? (
+                projects.slice(0, 5).map((project, index) => (
+                  <Link
+                    key={project.id}
+                    href={getProjectHref(project)}
+                    className="flex flex-col gap-4 rounded-3xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55 lg:flex-row lg:items-center lg:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          {index === 0 ? "Ultimo aberto" : RESUME_COPY[project.resumeMode]}
+                        </span>
+                        <Badge variant="secondary" className="rounded-full">
+                          {formatProjectType(project.type)}
+                        </Badge>
+                      </div>
+                      <h3 className="mt-2 truncate text-base font-semibold">{project.title}</h3>
+                      <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                        {project.lastEditedSection
+                          ? `Ultima secao: ${project.lastEditedSection.title}`
+                          : "Sem secao iniciada ainda."}
                       </p>
                     </div>
-                    <div className="h-2 w-24 rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-primary" style={{ width: `${getProgress(project)}%` }} />
-                    </div>
-                  </div>
-                </Link>
-              ))
-            ) : (
-              <div className="rounded-3xl border border-dashed border-border/60 bg-muted/25 p-8 text-center">
-                <FolderKanban className="mx-auto h-10 w-10 text-muted-foreground/40" />
-                <h3 className="mt-4 text-lg font-medium">Sem projectos ainda</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  O workspace fica mais util quando ha um projecto para continuar. Pode criar um agora ou usar um template de arranque.
-                </p>
-                <Button asChild className="mt-5 rounded-full">
-                  <Link href="/app/projects?new=1">Criar primeiro trabalho</Link>
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        <div className="space-y-5">
+                    <div className="flex min-w-[240px] items-center justify-between gap-4 rounded-2xl bg-background/70 px-4 py-3">
+                      <div className="text-sm">
+                        <p className="font-medium">{getProgress(project)}%</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatRelativeTime(new Date(project.updatedAt))}
+                        </p>
+                      </div>
+                      <div className="h-2 w-24 rounded-full bg-muted">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${getProgress(project)}%` }} />
+                      </div>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="rounded-3xl border border-dashed border-border/60 bg-muted/25 p-8 text-center">
+                  <FolderKanban className="mx-auto h-10 w-10 text-muted-foreground/40" />
+                  <h3 className="mt-4 text-lg font-medium">Sem projectos ainda</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    O workspace fica mais util quando ha um projecto para continuar.
+                  </p>
+                  <Button asChild className="mt-5 rounded-full">
+                    <Link href="/app/projects?new=1">Criar primeiro trabalho</Link>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Fluxo principal - below projectos */}
           <Card className="border-border/60 bg-background/80 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">Fluxo principal</CardTitle>
@@ -339,7 +331,10 @@ export default function WorkspaceHomePage() {
               ))}
             </CardContent>
           </Card>
+        </div>
 
+        {/* Templates */}
+        <div className="space-y-5">
           <Card className="border-border/60 bg-background/80 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">Templates e atalhos</CardTitle>
@@ -362,20 +357,6 @@ export default function WorkspaceHomePage() {
                   </div>
                 </Link>
               ))}
-
-              <div className="rounded-3xl border border-border/50 bg-foreground px-5 py-4 text-background">
-                <p className="text-sm font-semibold">Palavras acumuladas</p>
-                <p className="mt-2 text-2xl font-semibold">{totalWords.toLocaleString("pt-MZ")}</p>
-                <p className="mt-1 text-sm text-background/75">
-                  O progresso total do workspace continua visivel sem dominar a pagina inicial.
-                </p>
-                <Button asChild variant="secondary" className="mt-4 rounded-full">
-                  <Link href="/app/credits">
-                    <Coins className="mr-2 h-4 w-4" />
-                    Gerir creditos
-                  </Link>
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </div>

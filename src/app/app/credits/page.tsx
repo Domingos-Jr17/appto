@@ -204,13 +204,13 @@ export default function CreditsPage() {
   const getTypeInfo = (type: string) => {
     switch (type) {
       case "PURCHASE":
-        return { icon: ArrowUpRight, color: "emerald", label: "Compra" };
+        return { icon: ArrowUpRight, color: "success", label: "Compra" };
       case "BONUS":
-        return { icon: Sparkles, color: "amber", label: "Bónus" };
+        return { icon: Sparkles, color: "warning", label: "Bónus" };
       case "REFUND":
-        return { icon: ArrowUpRight, color: "blue", label: "Reembolso" };
+        return { icon: ArrowUpRight, color: "info", label: "Reembolso" };
       default:
-        return { icon: ArrowDownRight, color: "sky", label: "Uso" };
+        return { icon: ArrowDownRight, color: "info", label: "Uso" };
     }
   };
 
@@ -356,26 +356,10 @@ export default function CreditsPage() {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <div
-                              className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-                                typeInfo.color === "emerald"
-                                  ? "bg-emerald-500/10"
-                                  : typeInfo.color === "amber"
-                                    ? "bg-amber-500/10"
-                                    : typeInfo.color === "sky"
-                                      ? "bg-sky-500/10"
-                                      : "bg-primary/10"
-                              }`}
+                              className={`flex h-8 w-8 items-center justify-center rounded-lg bg-${typeInfo.color}/10`}
                             >
                               <Icon
-                                className={`h-4 w-4 ${
-                                  typeInfo.color === "emerald"
-                                    ? "text-emerald-500"
-                                    : typeInfo.color === "amber"
-                                      ? "text-amber-500"
-                                      : typeInfo.color === "sky"
-                                        ? "text-sky-500"
-                                        : "text-primary"
-                                }`}
+                                className={`h-4 w-4 text-${typeInfo.color}`}
                               />
                             </div>
                             <div>
@@ -390,7 +374,7 @@ export default function CreditsPage() {
                         <TableCell className="text-right">
                           <span
                             className={
-                              isCredit ? "font-medium text-emerald-500" : "text-foreground"
+                              isCredit ? "font-medium text-success" : "text-foreground"
                             }
                           >
                             {isCredit ? "+" : ""}

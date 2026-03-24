@@ -61,21 +61,21 @@ export function CreditsBar({
     switch (autoSaveStatus) {
       case "saving":
         return (
-          <div className="flex items-center gap-1.5 text-yellow-400">
+          <div className="flex items-center gap-1.5 text-warning">
             <Cloud className="h-3.5 w-3.5 animate-pulse" />
             <span className="text-xs">Salvando...</span>
           </div>
         );
       case "saved":
         return (
-          <div className="flex items-center gap-1.5 text-green-400">
+          <div className="flex items-center gap-1.5 text-success">
             <CheckCircle2 className="h-3.5 w-3.5" />
             <span className="text-xs">Salvo</span>
           </div>
         );
       case "error":
         return (
-          <div className="flex items-center gap-1.5 text-red-400">
+          <div className="flex items-center gap-1.5 text-destructive">
             <CloudOff className="h-3.5 w-3.5" />
             <span className="text-xs">Erro ao salvar</span>
           </div>
@@ -107,7 +107,7 @@ export function CreditsBar({
                   className={cn(
                     "relative p-2 rounded-lg transition-all duration-300",
                     isLowCredits
-                      ? "bg-red-500/20 animate-pulse"
+                      ? "bg-destructive/20 animate-pulse"
                       : "bg-primary/10",
                     isHovered && !isLowCredits && "glow-primary"
                   )}
@@ -115,11 +115,11 @@ export function CreditsBar({
                   <Coins
                     className={cn(
                       "h-4 w-4",
-                      isLowCredits ? "text-red-400" : "text-primary"
+                      isLowCredits ? "text-destructive" : "text-primary"
                     )}
                   />
                   {isLowCredits && (
-                    <AlertTriangle className="absolute -top-1 -right-1 h-3 w-3 text-red-400" />
+                    <AlertTriangle className="absolute -top-1 -right-1 h-3 w-3 text-destructive" />
                   )}
                 </div>
 
@@ -140,7 +140,7 @@ export function CreditsBar({
                       className={cn(
                         "h-full rounded-full transition-all duration-500",
                         isLowCredits
-                          ? "bg-red-500"
+                          ? "bg-destructive"
                           : "bg-gradient-to-r from-primary to-primary/70"
                       )}
                       style={{ width: `${creditPercentage}%` }}
@@ -167,7 +167,7 @@ export function CreditsBar({
           className={cn(
             "gap-1.5 h-8 text-xs border-dashed transition-all duration-300",
             isLowCredits
-              ? "border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500"
+              ? "border-destructive/50 text-destructive hover:bg-destructive/10 hover:border-destructive"
               : "border-primary/30 hover:border-primary hover:bg-primary/5"
           )}
         >
@@ -194,7 +194,7 @@ export function CreditsBar({
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-2 cursor-help">
-                <Zap className="h-4 w-4 text-yellow-500" />
+                <Zap className="h-4 w-4 text-warning" />
                 <span className="text-xs">IA ativa</span>
               </div>
             </TooltipTrigger>

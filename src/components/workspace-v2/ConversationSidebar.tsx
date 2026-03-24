@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { MoreHorizontal, PanelLeftClose, PanelLeftOpen, Search, Sparkles } from "lucide-react";
+import {
+  BookCopy,
+  Coins,
+  FilePlus2,
+  FolderKanban,
+  MoreHorizontal,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+  Settings,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +22,13 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -19,15 +36,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import type { WorkspaceConversationItem } from "./workspace-types";
+import type {
+  WorkspaceConversationItem,
+  WorkspaceProjectLinkItem,
+} from "./workspace-types";
 
 interface SidebarUser {
   name?: string | null;
@@ -37,7 +50,9 @@ interface SidebarUser {
 
 interface ConversationSidebarProps {
   projectId: string;
+  projectTitle: string;
   user: SidebarUser;
+  recentProjects: WorkspaceProjectLinkItem[];
   conversations: WorkspaceConversationItem[];
   activeConversationId: string;
   collapsed: boolean;
@@ -59,29 +74,27 @@ function getInitials(name?: string | null) {
     .toUpperCase();
 }
 
-interface ConversationActionsProps {
-  conversation: WorkspaceConversationItem;
-  onRename: (conversation: WorkspaceConversationItem) => void;
+interface SessionActionsProps {
+  session: WorkspaceConversationItem;
+  onRename: (session: WorkspaceConversationItem) => void;
   onTogglePin: (conversationId: string) => void;
   onDelete: (conversationId: string) => void;
 }
 
-function ConversationActions({
-  conversation,
+function SessionActions({
+  session,
   onRename,
   onTogglePin,
   onDelete,
-}: ConversationActionsProps) {
+}: SessionActionsProps) {
   return (
     <>
-      <ContextMenuItem onClick={() => onTogglePin(conversation.id)}>
-        {conversation.pinned ? "Desafixar" : "Favoritar"}
+      <ContextMenuItem onClick={() => onTogglePin(session.id)}>
+        {session.pinned ? "Desafixar" : "Fixar"}
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => onRename(conversation)}>
-        Mudar o nome
-      </ContextMenuItem>
-      <ContextMenuItem>Adicionar ao projecto</ContextMenuItem>
-      <ContextMenuItem variant="destructive" onClick={() => onDelete(conversation.id)}>
+      <ContextMenuItem onClick={() => onRename(session)}>Renomear</ContextMenuItem>
+      <ContextMenuItem>Duplicar sessão</ContextMenuItem>
+      <ContextMenuItem variant="destructive" onClick={() => onDelete(session.id)}>
         Apagar
       </ContextMenuItem>
     </>
@@ -90,7 +103,9 @@ function ConversationActions({
 
 export function ConversationSidebar({
   projectId,
+  projectTitle,
   user,
+  recentProjects,
   conversations,
   activeConversationId,
   collapsed,
@@ -126,26 +141,26 @@ export function ConversationSidebar({
   };
 
   return (
-    <aside className="flex h-full flex-col border-r border-[#e8dfd2] bg-[#f7f1e7] text-[#2c241d] dark:border-[#2f2923] dark:bg-[#171412] dark:text-[#efe7dc]">
-      <div className="border-b border-inherit px-4 pb-4 pt-5">
+    <aside className="flex h-full flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground theme-transition">
+      <div className="glass-header border-b border-sidebar-border px-4 pb-4 pt-5">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#d97845] text-white shadow-sm">
-              <Sparkles className="h-5 w-5" />
+          <Link href="/app" className="flex items-center gap-3">
+            <div className="gradient-primary gradient-glow-subtle flex h-10 w-10 items-center justify-center rounded-2xl text-primary-foreground shadow-sm">
+              <BookCopy className="h-5 w-5" />
             </div>
             {!collapsed ? (
               <div>
-                <p className="text-sm font-semibold tracking-tight">appto workspace</p>
-                <p className="text-xs text-[#7a6756] dark:text-[#a69281]">Claude-like, focado no projecto</p>
+                <p className="text-sm font-semibold tracking-tight">appto</p>
+                <p className="text-xs text-sidebar-foreground/70">Workspace académico</p>
               </div>
             ) : null}
-          </div>
+          </Link>
 
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="rounded-full text-current hover:bg-black/5 dark:hover:bg-white/5"
+            className="focus-ring rounded-full text-current hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             onClick={onToggleCollapsed}
             aria-label={collapsed ? "Expandir sidebar" : "Recolher sidebar"}
           >
@@ -155,17 +170,30 @@ export function ConversationSidebar({
 
         {!collapsed ? (
           <div className="mt-4 space-y-3">
-            <Button asChild className="h-11 w-full justify-start rounded-2xl bg-[#2f241d] text-[#f8efe5] hover:bg-[#201711] dark:bg-[#efe7dc] dark:text-[#211a15] dark:hover:bg-[#ddd3c7]">
-              <Link href={`/app/projects/${projectId}/workspace`}>Novo bate-papo</Link>
-            </Button>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8b7765]" />
-              <Input
-                value={search}
-                onChange={(event) => onSearchChange(event.target.value)}
-                placeholder="Procurar conversas"
-                className="h-10 rounded-2xl border-[#e2d6c8] bg-white/70 pl-9 text-sm shadow-none dark:border-[#3a322b] dark:bg-[#201b17]"
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <Button asChild className="rounded-2xl bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90">
+                <Link href="/app/projects?new=1">
+                  <FilePlus2 className="mr-2 h-4 w-4" /> Novo trabalho
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-2xl border-sidebar-border bg-transparent">
+                <Link href="/app/projects">
+                  <FolderKanban className="mr-2 h-4 w-4" /> Projetos
+                </Link>
+              </Button>
+            </div>
+
+            <div className="glass glass-border rounded-3xl p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/60">
+                Projeto actual
+              </p>
+              <Link
+                href={`/app/projects/${projectId}/workspace`}
+                className="card-hover mt-2 block rounded-2xl border border-border/60 bg-background/70 px-3 py-3"
+              >
+                <p className="truncate text-sm font-medium text-foreground">{projectTitle}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Assistente + documento + estrutura</p>
+              </Link>
             </div>
           </div>
         ) : null}
@@ -174,124 +202,186 @@ export function ConversationSidebar({
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 scrollbar-thin">
         {collapsed ? (
           <div className="space-y-2">
-            {conversations.slice(0, 6).map((conversation) => (
-              <Button
-                key={conversation.id}
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-10 w-full rounded-2xl border border-transparent text-current hover:bg-black/5 dark:hover:bg-white/5",
-                  conversation.id === activeConversationId && "border-[#ddc8af] bg-[#eadfce] dark:border-[#4c4035] dark:bg-[#221d18]"
-                )}
-                onClick={() => onSelectConversation(conversation.id)}
-                aria-label={conversation.title}
-              >
-                <span className="text-xs font-semibold">{conversation.title.slice(0, 1).toUpperCase()}</span>
-              </Button>
-            ))}
+            <Button asChild variant="ghost" size="icon" className="h-10 w-full rounded-2xl hover:bg-sidebar-accent">
+              <Link href="/app/projects?new=1" aria-label="Novo trabalho">
+                <FilePlus2 className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="icon" className="h-10 w-full rounded-2xl hover:bg-sidebar-accent">
+              <Link href="/app/projects" aria-label="Projetos">
+                <FolderKanban className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="icon" className="h-10 w-full rounded-2xl hover:bg-sidebar-accent">
+              <Link href="/app/credits" aria-label="Créditos">
+                <Coins className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="icon" className="h-10 w-full rounded-2xl hover:bg-sidebar-accent">
+              <Link href="/app/settings" aria-label="Configurações">
+                <Settings className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         ) : (
-          <div>
-            <div className="mb-3 px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8b7765] dark:text-[#a69281]">
-              Conversas recentes
-            </div>
-            <div className="space-y-1.5">
-              {conversations.map((conversation) => (
-                <ContextMenu key={conversation.id}>
-                  <ContextMenuTrigger asChild>
-                    <div
-                      className={cn(
-                        "group flex items-start gap-2 rounded-2xl px-2 py-2 transition-colors",
-                        conversation.id === activeConversationId
-                          ? "bg-[#eadfce] dark:bg-[#221d18]"
-                          : "hover:bg-black/5 dark:hover:bg-white/5"
-                      )}
-                    >
-                      <button
-                        type="button"
-                        className="min-w-0 flex-1 text-left"
-                        onClick={() => onSelectConversation(conversation.id)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <p className="truncate text-sm font-medium">{conversation.title}</p>
-                          {conversation.pinned ? (
-                            <span className="rounded-full bg-[#ddc8af] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6d503b] dark:bg-[#3d3228] dark:text-[#d8c3b1]">
-                              fixo
-                            </span>
-                          ) : null}
-                        </div>
-                        <p className="mt-1 truncate text-xs text-[#7a6756] dark:text-[#a69281]">
-                          {conversation.subtitle}
-                        </p>
-                      </button>
+          <div className="space-y-5">
+            <section className="space-y-2">
+              <div className="px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/60">
+                Navegação
+              </div>
+              <div className="space-y-1.5">
+                <Link
+                  href="/app/credits"
+                  className="card-hover flex items-center gap-3 rounded-2xl border border-border/40 bg-card/70 px-3 py-3 text-sm text-foreground"
+                >
+                  <Coins className="h-4 w-4 text-primary" /> Créditos
+                </Link>
+                <Link
+                  href="/app/settings"
+                  className="card-hover flex items-center gap-3 rounded-2xl border border-border/40 bg-card/70 px-3 py-3 text-sm text-foreground"
+                >
+                  <Settings className="h-4 w-4 text-primary" /> Configurações
+                </Link>
+              </div>
+            </section>
 
-                      <div className="flex items-center gap-1 pl-2">
-                        <span className="text-[11px] text-[#8b7765] dark:text-[#a69281]">{conversation.updatedLabel}</span>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100 hover:bg-black/5 dark:hover:bg-white/5"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                           <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem onClick={() => onTogglePinConversation(conversation.id)}>
-                              {conversation.pinned ? "Desafixar" : "Favoritar"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openRenameDialog(conversation)}>
-                              Mudar o nome
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>Adicionar ao projecto</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onClick={() => onDeleteConversation(conversation.id)}
-                            >
-                              Apagar
-                            </DropdownMenuItem>
-                           </DropdownMenuContent>
-                         </DropdownMenu>
-                      </div>
+            <section className="space-y-2">
+              <div className="px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/60">
+                Projetos recentes
+              </div>
+              <div className="space-y-1.5">
+                {recentProjects.map((project) => (
+                  <Link
+                    key={project.id}
+                    href={`/app/projects/${project.id}/workspace`}
+                    className={cn(
+                      "card-hover flex rounded-2xl border px-3 py-3 transition-colors",
+                      project.id === projectId
+                        ? "border-primary/30 bg-primary/10"
+                        : "border-border/40 bg-card/70 hover:bg-accent/60"
+                    )}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">{project.title}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {project.wordCount.toLocaleString("pt-MZ")} palavras
+                      </p>
                     </div>
-                  </ContextMenuTrigger>
-                  <ContextMenuContent className="w-52">
-                    <ConversationActions
-                      conversation={conversation}
-                      onRename={openRenameDialog}
-                      onTogglePin={onTogglePinConversation}
-                      onDelete={onDeleteConversation}
-                    />
-                  </ContextMenuContent>
-                </ContextMenu>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+
+            <section className="space-y-2">
+              <div className="flex items-center justify-between px-2">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/60">
+                  Sessões do assistente
+                </span>
+                <span className="text-[11px] text-sidebar-foreground/50">{conversations.length}</span>
+              </div>
+
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(event) => onSearchChange(event.target.value)}
+                  placeholder="Filtrar sessões"
+                  className="h-10 rounded-2xl border-border/70 bg-background/70 pl-9"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                {conversations.map((conversation) => (
+                  <ContextMenu key={conversation.id}>
+                    <ContextMenuTrigger asChild>
+                      <div
+                        className={cn(
+                          "group flex items-start gap-2 rounded-2xl border px-3 py-3 transition-colors",
+                          conversation.id === activeConversationId
+                            ? "border-primary/30 bg-primary/10"
+                            : "border-border/40 bg-card/70 hover:bg-accent/60"
+                        )}
+                      >
+                        <button
+                          type="button"
+                          className="min-w-0 flex-1 text-left"
+                          onClick={() => onSelectConversation(conversation.id)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-sm font-medium text-foreground">{conversation.title}</p>
+                            {conversation.pinned ? (
+                              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">
+                                fixa
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-1 truncate text-xs text-muted-foreground">{conversation.subtitle}</p>
+                        </button>
+
+                        <div className="flex items-center gap-1 pl-2">
+                          <span className="text-[11px] text-muted-foreground">{conversation.updatedLabel}</span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem onClick={() => onTogglePinConversation(conversation.id)}>
+                                {conversation.pinned ? "Desafixar" : "Fixar"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openRenameDialog(conversation)}>
+                                Renomear
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>Duplicar sessão</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem variant="destructive" onClick={() => onDeleteConversation(conversation.id)}>
+                                Apagar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent className="w-52">
+                      <SessionActions
+                        session={conversation}
+                        onRename={openRenameDialog}
+                        onTogglePin={onTogglePinConversation}
+                        onDelete={onDeleteConversation}
+                      />
+                    </ContextMenuContent>
+                  </ContextMenu>
+                ))}
+              </div>
+            </section>
           </div>
         )}
       </div>
 
-      <div className="border-t border-inherit p-3">
+      <div className="border-t border-sidebar-border p-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
               className={cn(
-                "flex w-full items-center rounded-2xl px-2.5 py-2.5 text-left transition-colors hover:bg-black/5 dark:hover:bg-white/5",
+                "flex w-full items-center rounded-2xl px-2.5 py-2.5 text-left transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 collapsed && "justify-center px-0"
               )}
             >
-              <Avatar className="h-10 w-10 border border-black/5 dark:border-white/10">
+              <Avatar className="h-10 w-10 border border-border/60">
                 <AvatarImage src={user.image || undefined} alt={user.name || "Utilizador"} />
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
               {!collapsed ? (
                 <div className="ml-3 min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{user.name || "Utilizador"}</p>
-                  <p className="truncate text-xs text-[#7a6756] dark:text-[#a69281]">{user.email || "Sem email"}</p>
+                  <p className="truncate text-xs text-sidebar-foreground/60">{user.email || "Sem email"}</p>
                 </div>
               ) : null}
             </button>
@@ -303,13 +393,11 @@ export function ConversationSidebar({
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/app/settings">Configuracoes</Link>
+              <Link href="/app/settings">Configurações</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/app/credits">Upgrade e creditos</Link>
+              <Link href="/app/credits">Upgrade e créditos</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>Receber ajuda</DropdownMenuItem>
-            <DropdownMenuItem>Obter apps e extensoes</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -317,21 +405,19 @@ export function ConversationSidebar({
       <Dialog open={renameOpen} onOpenChange={(open) => !open && closeRenameDialog()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Renomear conversa</DialogTitle>
+            <DialogTitle>Renomear sessão</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
-            <Input
-              value={draftTitle}
-              onChange={(event) => setDraftTitle(event.target.value)}
-              placeholder="Novo nome da conversa"
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  submitRename();
-                }
-              }}
-            />
-          </div>
+          <Input
+            value={draftTitle}
+            onChange={(event) => setDraftTitle(event.target.value)}
+            placeholder="Novo nome da sessão"
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                submitRename();
+              }
+            }}
+          />
           <DialogFooter>
             <Button type="button" variant="outline" onClick={closeRenameDialog}>
               Cancelar

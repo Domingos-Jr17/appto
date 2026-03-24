@@ -18,7 +18,8 @@ test("authenticated user can open the new project workspace", async ({ page }) =
 
   await page.goto(`/app/projects/${workspaceProjectId}/workspace`);
 
-  await expect(page.getByText(/workspace v2/i)).toBeVisible();
-  await expect(page.getByRole("button", { name: /codigo/i })).toBeVisible();
-  await expect(page.getByRole("button", { name: /preview/i })).toBeVisible();
+  await expect(page.getByText(/assistente/i)).toBeVisible();
+  await expect(page.getByRole("tab", { name: /documento/i })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /estrutura/i })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /preview/i })).toBeVisible();
 });

@@ -6,12 +6,12 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: "http://127.0.0.1:3005",
     trace: "on-first-retry",
   },
   webServer: {
-    command: "bun run dev",
-    url: "http://127.0.0.1:3000",
+    command: "bunx next dev -p 3005",
+    url: "http://127.0.0.1:3005",
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

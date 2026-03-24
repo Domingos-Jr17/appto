@@ -11,6 +11,17 @@ export interface WorkspaceConversationItem {
   sectionId?: string;
 }
 
+export interface WorkspaceProjectLinkItem {
+  id: string;
+  title: string;
+  updatedAt: string;
+  wordCount: number;
+  resumeMode?: "chat" | "document" | "structure";
+  status?: string;
+}
+
+export type WorkspaceDocumentTab = "document" | "structure" | "preview";
+
 export interface PersistedWorkspaceConversation {
   id: string;
   title: string;

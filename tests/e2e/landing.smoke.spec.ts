@@ -5,7 +5,7 @@ test("landing exposes only public claims", async ({ page }) => {
 
   await expect(
     page.getByRole("heading", {
-      name: /copiloto/i,
+      name: /O seu copiloto para trabalhos académicos/i,
     })
   ).toBeVisible();
 

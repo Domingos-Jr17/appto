@@ -16,31 +16,12 @@ export function useWorkspaceConversations({
   derivedConversations,
   search,
 }: UseWorkspaceConversationsOptions) {
-  const projectState = useWorkspaceConversationsStore(
-    (state) =>
-      state.projects[projectId] ?? {
-        items: [],
-        activeConversationId: "",
-      }
-  );
-  const syncDerivedConversations = useWorkspaceConversationsStore(
-    (state) => state.syncDerivedConversations
-  );
-  const setActiveConversation = useWorkspaceConversationsStore(
-    (state) => state.setActiveConversation
-  );
-  const renameConversation = useWorkspaceConversationsStore(
-    (state) => state.renameConversation
-  );
-  const togglePinConversation = useWorkspaceConversationsStore(
-    (state) => state.togglePinConversation
-  );
-  const hideConversation = useWorkspaceConversationsStore((state) => state.hideConversation);
+  const store = useWorkspaceConversationsStore();
 
-  useEffect(() => {
-    if (!projectId || derivedConversations.length === 0) return;
-    syncDerivedConversations(projectId, derivedConversations);
-  }, [derivedConversations, projectId, syncDerivedConversations]);
+  const projectState = useMemo(
+    () => store.projects[projectId] ?? { items: [], activeConversationId: "" },
+    [store.projects, projectId]
+  );
 
   const allConversations = useMemo(
     () =>
@@ -73,15 +54,21 @@ export function useWorkspaceConversations({
   const activeConversation =
     conversations.find((conversation) => conversation.id === activeConversationId) || null;
 
+  useEffect(() => {
+    if (!projectId || derivedConversations.length === 0) return;
+    store.syncDerivedConversations(projectId, derivedConversations);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [derivedConversations.length, projectId, store.syncDerivedConversations]);
+
   return {
     conversations,
     activeConversation,
     activeConversationId,
-    setActiveConversation: (conversationId: string) => setActiveConversation(projectId, conversationId),
+    setActiveConversation: (conversationId: string) => store.setActiveConversation(projectId, conversationId),
     renameConversation: (conversationId: string, title: string) =>
-      renameConversation(projectId, conversationId, title),
+      store.renameConversation(projectId, conversationId, title),
     togglePinConversation: (conversationId: string) =>
-      togglePinConversation(projectId, conversationId),
-    hideConversation: (conversationId: string) => hideConversation(projectId, conversationId),
+      store.togglePinConversation(projectId, conversationId),
+    hideConversation: (conversationId: string) => store.hideConversation(projectId, conversationId),
   };
 }

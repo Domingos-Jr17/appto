@@ -115,8 +115,8 @@ export function buildArtifactSource(
 
   if (lastAssistantMessage) {
     return {
-      title: "Artefacto da conversa",
-      subtitle: "Ultima resposta gerada pelo assistente",
+      title: "Documento em desenvolvimento",
+      subtitle: "Última proposta gerada pelo assistente",
       content: lastAssistantMessage.content,
       empty: false,
       source: "assistant",
@@ -128,7 +128,7 @@ export function buildArtifactSource(
     subtitle: "Resumo inicial do projecto",
     content:
       project.description?.trim() ||
-      "Este workspace ainda nao tem artefactos gerados. Comece pela conversa ou seleccione uma secao para visualizar aqui.",
+      "Este workspace ainda não tem documento em desenvolvimento. Comece pelo assistente ou seleccione uma secção para visualizar aqui.",
     empty: !(project.description?.trim()),
     source: "project",
   };

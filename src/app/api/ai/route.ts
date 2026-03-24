@@ -163,7 +163,6 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = getSystemPrompt(userPlan, educationLevel);
 
-    let response: string;
     let prompt: string;
 
     switch (action) {
@@ -234,7 +233,7 @@ export async function POST(request: NextRequest) {
       thinking: { type: "disabled" },
     });
 
-    response = completion.choices[0]?.message?.content || "";
+    const response = completion.choices[0]?.message?.content || "";
 
     if (!response) {
       return NextResponse.json(
@@ -283,7 +282,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET endpoint for cache stats (admin only)
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || session.user.role !== "ADMIN") {

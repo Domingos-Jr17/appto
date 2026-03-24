@@ -102,7 +102,7 @@ export function EditorLayout({ projectId: propProjectId, initialMode }: EditorLa
       setWorkspaceMode(initialMode);
     } else {
       const resumeMode = project.resumeMode || (project.wordCount <= 0 ? "chat" : "document");
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time initialization after async load
+       
       setWorkspaceMode(resumeMode);
     }
 

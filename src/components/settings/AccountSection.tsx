@@ -107,7 +107,7 @@ export function AccountSection() {
         title: "Dados exportados",
         description: "O ficheiro foi descarregado com sucesso",
       });
-    } catch (_error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Não foi possível exportar os dados",

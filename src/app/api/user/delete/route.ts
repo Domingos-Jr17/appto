@@ -16,7 +16,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const { confirmation, currentPassword, otpCode } = await parseBody(
+    const { currentPassword, otpCode } = await parseBody(
       request,
       deleteAccountSchema
     );

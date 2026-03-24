@@ -1,16 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Search, SlidersHorizontal, Grid, List, ArrowUpDown } from "lucide-react";
+import { Search, Grid, List, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,12 +31,6 @@ interface ProjectFiltersProps {
   className?: string;
 }
 
-const statusLabels: Record<ProjectStatus, string> = {
-  all: "Todos",
-  in_progress: "Em progresso",
-  completed: "Completos",
-  archived: "Arquivados",
-};
 
 const sortLabels: Record<SortOption, string> = {
   updated: "Última actualização",

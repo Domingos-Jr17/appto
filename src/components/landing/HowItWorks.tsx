@@ -40,7 +40,7 @@ export function HowItWorks() {
           <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-border pointer-events-none" />
 
           <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-            {howItWorksSteps.map((step, index) => {
+            {howItWorksSteps.map((step) => {
               const Icon = iconMap[step.icon] || FolderPlus;
               return (
                 <StaggerItem key={step.step}>

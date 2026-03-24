@@ -47,7 +47,7 @@ export function FeaturesGrid() {
         </Reveal>
 
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {features.map((feature, index) => {
+          {features.map((feature) => {
             const Icon = iconMap[feature.icon] || PenTool;
             return (
               <StaggerItem key={feature.id}>

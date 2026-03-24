@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { Globe, BookOpen, Library, GraduationCap, Eye, MapPin } from "lucide-react";
 import { differentiators, genericComparison } from "./data";
 import { Reveal, StaggerContainer, StaggerItem } from "./animations";
-import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {

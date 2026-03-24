@@ -12,7 +12,7 @@ export async function GET() {
       environment: env.NODE_ENV,
       database: "reachable",
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         status: "error",

@@ -141,7 +141,7 @@ export function PreferencesSection() {
         title: "Preferências salvas",
         description: "As suas preferências foram actualizadas com sucesso",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Não foi possível salvar as preferências",

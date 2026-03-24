@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { Sparkles, Linkedin, Twitter, Instagram, Facebook, Mail, MapPin } from "lucide-react";
 import { footerLinks } from "./data";
-import { Reveal } from "./animations";
 
 const socialIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   Linkedin,

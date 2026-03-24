@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { apiError } from "@/lib/api";
 import { isFeatureVisible } from "@/lib/features";
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {

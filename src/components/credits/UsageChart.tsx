@@ -9,7 +9,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
 
 interface UsageData {

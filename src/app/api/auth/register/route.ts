@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { parseBody, handleApiError, apiSuccess, apiError } from "@/lib/api";
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const ledger = new CreditLedgerService(db);
+    new CreditLedgerService(db);
 
     const user = await db.$transaction(async (tx) => {
       const createdUser = await tx.user.create({

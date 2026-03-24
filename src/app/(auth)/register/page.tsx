@@ -70,7 +70,7 @@ export default function RegisterPage() {
         router.push("/app");
         router.refresh();
       }
-    } catch (err) {
+    } catch {
       setError("Ocorreu um erro. Tente novamente.");
       setIsLoading(false);
     }

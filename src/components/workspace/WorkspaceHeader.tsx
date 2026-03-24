@@ -17,7 +17,7 @@ interface WorkspaceHeaderProps {
   credits: number;
 }
 
-export function WorkspaceHeader({ credits }: WorkspaceHeaderProps) {
+export function WorkspaceHeader({ credits: _credits }: WorkspaceHeaderProps) {
   const pathname = usePathname();
 
   const copy = useMemo(() => {

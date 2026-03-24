@@ -478,6 +478,7 @@ export function SecuritySection() {
             {setupPayload ? (
               <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
                 <div className="rounded-xl border border-border/50 bg-background p-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={setupPayload.qrCodeDataUrl}
                     alt="QR code para configurar 2FA"

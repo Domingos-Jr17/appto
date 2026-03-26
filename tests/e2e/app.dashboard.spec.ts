@@ -1,8 +1,6 @@
-import { test, expect } from "./helpers";
+import { test, expect, loginAsSeedUser } from "./helpers";
 
 test.describe("App Dashboard", () => {
-  test.use({ storageState: { cookies: [], origins: [] } });
-
   test("redirects unauthenticated users to login", async ({ page }) => {
     await page.goto("/app");
     await expect(page).toHaveURL(/\/login/);
@@ -16,6 +14,7 @@ test.describe("App Dashboard", () => {
 
 test.describe("App Dashboard (authenticated)", () => {
   test.beforeEach(async ({ page }) => {
+    await loginAsSeedUser(page);
     await page.goto("/app");
     await expect(page.getByText("Continuar trabalho")).toBeVisible({ timeout: 15000 });
   });

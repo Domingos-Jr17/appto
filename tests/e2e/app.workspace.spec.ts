@@ -1,7 +1,8 @@
-import { test, expect, getFirstProjectId } from "./helpers";
+import { test, expect, loginAsSeedUser, getFirstProjectId } from "./helpers";
 
 test.describe("Project Workspace", () => {
   test.beforeEach(async ({ page }) => {
+    await loginAsSeedUser(page);
     const projectId = await getFirstProjectId(page);
     await page.goto(`/app/projects/${projectId}`);
     await expect(page.getByText(/assistente/i)).toBeVisible({ timeout: 15000 });

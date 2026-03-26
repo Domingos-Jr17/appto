@@ -1,8 +1,6 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Forgot Password", () => {
-  test.use({ storageState: { cookies: [], origins: [] } });
-
   test.beforeEach(async ({ page }) => {
     await page.goto("/forgot-password");
   });

@@ -1,7 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-test.use({ storageState: { cookies: [], origins: [] } });
-
 test("landing exposes only public claims", async ({ page }) => {
   await page.goto("/");
 

@@ -1,7 +1,8 @@
-import { test, expect } from "./helpers";
+import { test, expect, loginAsSeedUser } from "./helpers";
 
 test.describe("Projects", () => {
   test.beforeEach(async ({ page }) => {
+    await loginAsSeedUser(page);
     await page.goto("/app/projects");
     await expect(page.getByRole("heading", { name: "Projectos", exact: true })).toBeVisible({ timeout: 15000 });
   });

@@ -21,9 +21,10 @@ export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [credits, setCredits] = useState(0);
   const [projects, setProjects] = useState<SidebarProject[]>([]);
+  const isProjectWorkspaceRoute = /^\/app\/projects\/[^/]+(?:\/workspace)?$/.test(pathname);
 
   useEffect(() => {
-    if (status !== "authenticated") return;
+    if (status !== "authenticated" || isProjectWorkspaceRoute) return;
 
     let active = true;
 
@@ -58,7 +59,7 @@ export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
     return () => {
       active = false;
     };
-  }, [pathname, status]);
+  }, [isProjectWorkspaceRoute, pathname, status]);
 
   const mobileSidebar = useMemo(
     () => (
@@ -84,6 +85,10 @@ export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
   }
 
   if (!session?.user) return null;
+
+  if (isProjectWorkspaceRoute) {
+    return <div className="h-svh w-screen overflow-hidden bg-background">{children}</div>;
+  }
 
   return (
     <div className="h-svh w-screen flex overflow-hidden bg-background">

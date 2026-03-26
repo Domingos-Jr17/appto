@@ -71,7 +71,7 @@ interface ProjectSidebarProps {
 }
 
 function getProjectHref(project: SidebarProject) {
-  return `/app/projects/${project.id}/workspace`;
+  return `/app/projects/${project.id}`;
 }
 
 function ProjectList({

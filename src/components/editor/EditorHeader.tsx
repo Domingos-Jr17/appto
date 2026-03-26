@@ -99,7 +99,7 @@ export function EditorHeader({
           </DropdownMenu>
 
           <Button variant="ghost" size="icon" asChild className="h-8 w-8 rounded-full">
-            <Link href={`/app/projects/${project.id}/workspace`}>
+            <Link href={`/app/projects/${project.id}`}>
               <FolderTree className="h-3.5 w-3.5" />
             </Link>
           </Button>

@@ -368,7 +368,7 @@ export default function WorkspaceHomePage() {
 }
 
 function getProjectHref(project: Project) {
-  return `/app/projects/${project.id}/workspace`;
+  return `/app/projects/${project.id}`;
 }
 
 

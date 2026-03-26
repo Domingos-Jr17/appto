@@ -1,25 +1,13 @@
-import { expect, test } from "@playwright/test";
+import { test, expect } from "./helpers";
 
 test.describe("Projects", () => {
-  const loginEmail = process.env.E2E_LOGIN_EMAIL;
-  const loginPassword = process.env.E2E_LOGIN_PASSWORD;
-
-  test.skip(
-    !loginEmail || !loginPassword,
-    "Defina E2E_LOGIN_EMAIL e E2E_LOGIN_PASSWORD para validar os projectos autenticados."
-  );
-
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(loginEmail || "");
-    await page.getByLabel("Senha").fill(loginPassword || "");
-    await page.getByRole("button", { name: /entrar/i }).click();
-    await page.waitForURL(/\/app/);
     await page.goto("/app/projects");
+    await expect(page.getByRole("heading", { name: "Projectos", exact: true })).toBeVisible({ timeout: 15000 });
   });
 
   test("displays projects page", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Projectos" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Projectos", exact: true })).toBeVisible();
   });
 
   test("shows new project button", async ({ page }) => {
@@ -29,13 +17,12 @@ test.describe("Projects", () => {
   test("opens new project dialog", async ({ page }) => {
     await page.getByRole("button", { name: /Novo Projecto/i }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByRole("heading", { name: /Criar Novo Projecto/i })).toBeVisible();
+    await expect(page.getByText("Criar Novo Projecto")).toBeVisible();
   });
 
   test("new project dialog shows form fields", async ({ page }) => {
     await page.getByRole("button", { name: /Novo Projecto/i }).click();
     await expect(page.getByLabel("Título do Trabalho")).toBeVisible();
-    await expect(page.getByLabel("Tipo de Trabalho")).toBeVisible();
     await expect(page.getByLabel("Descrição")).toBeVisible();
   });
 

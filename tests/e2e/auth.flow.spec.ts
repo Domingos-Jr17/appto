@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Authentication Flow", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
   test("unauthenticated user is redirected to login from protected routes", async ({ page }) => {
     const protectedRoutes = ["/app", "/app/projects", "/app/settings", "/app/credits"];
     

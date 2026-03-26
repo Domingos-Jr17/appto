@@ -1,50 +1,38 @@
-import { expect, test } from "@playwright/test";
+import { test, expect } from "./helpers";
 
 test.describe("Credits", () => {
-  const loginEmail = process.env.E2E_LOGIN_EMAIL;
-  const loginPassword = process.env.E2E_LOGIN_PASSWORD;
-
-  test.skip(
-    !loginEmail || !loginPassword,
-    "Defina E2E_LOGIN_EMAIL e E2E_LOGIN_PASSWORD para validar os créditos autenticados."
-  );
-
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(loginEmail || "");
-    await page.getByLabel("Senha").fill(loginPassword || "");
-    await page.getByRole("button", { name: /entrar/i }).click();
-    await page.waitForURL(/\/app/);
     await page.goto("/app/credits");
+    await expect(page.getByRole("heading", { name: "Créditos", exact: true })).toBeVisible({ timeout: 15000 });
   });
 
   test("displays credits page", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Créditos" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Créditos", exact: true })).toBeVisible();
     await expect(page.getByText(/Gerencie o saldo/i)).toBeVisible();
   });
 
   test("shows balance card", async ({ page }) => {
-    await expect(page.getByText(/Saldo disponível/i)).toBeVisible();
+    await expect(page.getByText("Saldo de Créditos")).toBeVisible();
   });
 
   test("shows credit packages", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: /Recarregar Créditos/i })).toBeVisible();
-    await expect(page.getByText(/Starter/i)).toBeVisible();
-    await expect(page.getByText(/Standard/i)).toBeVisible();
-    await expect(page.getByText(/Academic/i)).toBeVisible();
+    await expect(page.getByText("Recarregar Créditos").first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Starter" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Standard" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Academic" })).toBeVisible();
   });
 
   test("shows transaction history section", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: /Histórico de Transacções/i })).toBeVisible();
+    await expect(page.getByText("Histórico de Transacções")).toBeVisible();
   });
 
   test("shows FAQ section", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: /Perguntas Frequentes/i })).toBeVisible();
+    await expect(page.getByText("Perguntas Frequentes")).toBeVisible();
     await expect(page.getByText(/O que são créditos/i)).toBeVisible();
   });
 
   test("can expand FAQ item", async ({ page }) => {
-    await page.getByRole("button", { name: /O que são créditos/i }).click();
+    await page.getByText("O que são créditos e como funcionam?").click();
     await expect(page.getByText(/Créditos são a unidade de consumo/i)).toBeVisible();
   });
 });

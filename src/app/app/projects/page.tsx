@@ -182,7 +182,7 @@ export default function ProjectsPage() {
       setNewDescription("");
       
       // Navigate to workspace with new project
-      router.push(`/app/projects/${data.project.id}/workspace`);
+      router.push(`/app/projects/${data.project.id}`);
     } catch (error: any) {
       toast({
         title: "Erro",

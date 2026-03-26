@@ -1,22 +1,10 @@
-import { expect, test } from "@playwright/test";
+import { test, expect, getFirstProjectId } from "./helpers";
 
 test.describe("Project Workspace", () => {
-  const workspaceProjectId = process.env.E2E_PROJECT_ID;
-  const loginEmail = process.env.E2E_LOGIN_EMAIL;
-  const loginPassword = process.env.E2E_LOGIN_PASSWORD;
-
-  test.skip(
-    !workspaceProjectId || !loginEmail || !loginPassword,
-    "Defina E2E_PROJECT_ID, E2E_LOGIN_EMAIL e E2E_LOGIN_PASSWORD para validar o workspace autenticado."
-  );
-
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(loginEmail || "");
-    await page.getByLabel("Senha").fill(loginPassword || "");
-    await page.getByRole("button", { name: /entrar/i }).click();
-    await page.waitForURL(/\/app/);
-    await page.goto(`/app/projects/${workspaceProjectId}/workspace`);
+    const projectId = await getFirstProjectId(page);
+    await page.goto(`/app/projects/${projectId}`);
+    await expect(page.getByText(/assistente/i)).toBeVisible({ timeout: 15000 });
   });
 
   test("displays workspace page", async ({ page }) => {

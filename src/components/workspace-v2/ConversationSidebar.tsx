@@ -188,7 +188,7 @@ export function ConversationSidebar({
                 Projeto actual
               </p>
               <Link
-                href={`/app/projects/${projectId}/workspace`}
+                href={`/app/projects/${projectId}`}
                 className="card-hover mt-2 block rounded-2xl border border-border/60 bg-background/70 px-3 py-3"
               >
                 <p className="truncate text-sm font-medium text-foreground">{projectTitle}</p>
@@ -253,7 +253,7 @@ export function ConversationSidebar({
                 {recentProjects.map((project) => (
                   <Link
                     key={project.id}
-                    href={`/app/projects/${project.id}/workspace`}
+                    href={`/app/projects/${project.id}`}
                     className={cn(
                       "card-hover flex rounded-2xl border px-3 py-3 transition-colors",
                       project.id === projectId

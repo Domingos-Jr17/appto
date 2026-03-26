@@ -1,25 +1,13 @@
-import { expect, test } from "@playwright/test";
+import { test, expect } from "./helpers";
 
 test.describe("Settings", () => {
-  const loginEmail = process.env.E2E_LOGIN_EMAIL;
-  const loginPassword = process.env.E2E_LOGIN_PASSWORD;
-
-  test.skip(
-    !loginEmail || !loginPassword,
-    "Defina E2E_LOGIN_EMAIL e E2E_LOGIN_PASSWORD para validar as configurações autenticadas."
-  );
-
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(loginEmail || "");
-    await page.getByLabel("Senha").fill(loginPassword || "");
-    await page.getByRole("button", { name: /entrar/i }).click();
-    await page.waitForURL(/\/app/);
     await page.goto("/app/settings");
+    await expect(page.getByRole("heading", { name: "Configurações", exact: true })).toBeVisible({ timeout: 15000 });
   });
 
   test("displays settings page", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Configurações" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Configurações", exact: true })).toBeVisible();
     await expect(page.getByText(/Gerencie suas preferências/i)).toBeVisible();
   });
 

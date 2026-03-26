@@ -13,11 +13,81 @@ import {
   Lightbulb,
   ArrowRight,
   Sparkles,
+  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatsCard } from "@/components/dashboard/StatsCard";
-import { ProjectCard } from "@/components/dashboard/ProjectCard";
+
+type Stat = {
+  title: string;
+  value: number | string;
+  icon: LucideIcon;
+  trend?: { value: number; isPositive: boolean };
+  description: string;
+};
+
+type Project = {
+  id: string;
+  title: string;
+  type: "monografia" | "artigo" | "tese" | "relatório";
+  course: string;
+  lastUpdated: string;
+  progress: number;
+};
+
+function StatsCard({ title, value, icon: Icon, trend, description }: Stat) {
+  return (
+    <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
+      <CardHeader className="flex flex-row items-start justify-between pb-3">
+        <div className="space-y-1">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            {title}
+          </CardTitle>
+          <div className="text-2xl font-bold">{value}</div>
+        </div>
+        <div className="rounded-lg bg-primary/10 p-2 text-primary">
+          <Icon className="h-4 w-4" />
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="flex items-center justify-between gap-2 text-sm">
+          <span className="text-muted-foreground">{description}</span>
+          {trend ? (
+            <span className={trend.isPositive ? "text-emerald-600" : "text-rose-600"}>
+              {trend.isPositive ? "+" : "-"}
+              {trend.value}%
+            </span>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ProjectCard({ title, type, course, lastUpdated, progress }: Project) {
+  return (
+    <Card className="border-border/50 bg-background/70 transition-colors hover:bg-accent/30">
+      <CardHeader className="space-y-2 pb-3">
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="line-clamp-2 text-base font-semibold">{title}</CardTitle>
+          <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
+            {type}
+          </span>
+        </div>
+        <p className="text-sm text-muted-foreground">{course}</p>
+      </CardHeader>
+      <CardContent className="space-y-3 pt-0">
+        <div className="h-2 overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
+        </div>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Progresso: {progress}%</span>
+          <span>{lastUpdated}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 // Mock data
 const stats = [

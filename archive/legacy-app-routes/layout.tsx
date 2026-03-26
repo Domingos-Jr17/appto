@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useState } from "react";
-import { Sidebar } from "@/components/dashboard/Sidebar";
 import { cn } from "@/lib/utils";
 import {
   Breadcrumb,
@@ -22,10 +21,50 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Bell, Search, ChevronDown } from "lucide-react";
+import { Bell, Search, ChevronDown, FolderKanban, Coins, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 interface AppLayoutProps {
   children: React.ReactNode;
+}
+
+type LegacySidebarProps = {
+  collapsed: boolean;
+  onToggle: () => void;
+};
+
+function LegacySidebar({ collapsed, onToggle }: LegacySidebarProps) {
+  return (
+    <aside
+      className={cn(
+        "fixed inset-y-0 left-0 z-40 flex border-r border-border/50 bg-card/90 backdrop-blur-xl transition-all duration-300",
+        collapsed ? "w-[72px]" : "w-[260px]"
+      )}
+    >
+      <div className="flex w-full flex-col p-3">
+        <div className="mb-6 flex items-center justify-between gap-2">
+          {!collapsed ? <span className="text-sm font-semibold">Arquivo legado</span> : null}
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onToggle}>
+            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        <nav className="space-y-2">
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground">
+            <FolderKanban className="h-4 w-4 shrink-0" />
+            {!collapsed ? <span>Dashboard</span> : null}
+          </div>
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground">
+            <FolderKanban className="h-4 w-4 shrink-0" />
+            {!collapsed ? <span>Projects</span> : null}
+          </div>
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground">
+            <Coins className="h-4 w-4 shrink-0" />
+            {!collapsed ? <span>Credits</span> : null}
+          </div>
+        </nav>
+      </div>
+    </aside>
+  );
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
@@ -34,7 +73,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
-      <Sidebar
+      <LegacySidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
       />

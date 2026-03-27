@@ -1,0 +1,779 @@
+- generic [ref=e1]:
+  - generic [ref=e51]:
+    - complementary [ref=e53]:
+      - generic [ref=e54]:
+        - generic [ref=e55]:
+          - link "appto Workspace académico" [ref=e56] [cursor=pointer]:
+            - /url: /app
+            - img [ref=e58]
+            - generic [ref=e62]:
+              - paragraph [ref=e63]: appto
+              - paragraph [ref=e64]: Workspace académico
+          - button "Recolher sidebar" [ref=e65]:
+            - img
+        - generic [ref=e66]:
+          - link "Novo projecto" [ref=e67] [cursor=pointer]:
+            - /url: /app/projects?new=1
+            - img
+            - generic [ref=e68]: Novo projecto
+          - generic [ref=e70]:
+            - generic [ref=e71]: Saldo disponível
+            - generic [ref=e72]: 4930 créditos
+      - generic [ref=e74]:
+        - paragraph [ref=e75]: Navegação
+        - generic [ref=e76]:
+          - link "Início" [ref=e77] [cursor=pointer]:
+            - /url: /app
+            - img [ref=e78]
+            - generic [ref=e81]: Início
+          - link "Projectos" [active] [ref=e82] [cursor=pointer]:
+            - /url: /app/projects
+            - img [ref=e83]
+            - generic [ref=e85]: Projectos
+          - link "Créditos 4930" [ref=e128] [cursor=pointer]:
+            - /url: /app/credits
+            - img [ref=e87]
+            - generic [ref=e92]: Créditos
+            - generic [ref=e93]: "4930"
+          - link "Definições" [ref=e94] [cursor=pointer]:
+            - /url: /app/settings
+            - img [ref=e95]
+            - generic [ref=e98]: Definições
+        - generic [ref=e99]:
+          - generic [ref=e100]:
+            - generic [ref=e101]: Projectos recentes
+            - generic [ref=e102]: "10"
+          - generic [ref=e103]:
+            - img
+            - textbox "Pesquisar projectos" [ref=e104]
+          - generic [ref=e129]:
+            - 'link "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas 521 palavras" [ref=e130] [cursor=pointer]':
+              - /url: /app/projects/cmn3e0xjc000qvb60jyh93ceu
+              - img [ref=e131]
+              - generic [ref=e134]:
+                - paragraph [ref=e135]: "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas"
+                - paragraph [ref=e136]: 521 palavras
+            - link "A Importância da Preservação Ambiental em Moçambique 28 palavras" [ref=e137] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0x0a000kvb60i606uzsi
+              - img [ref=e138]
+              - generic [ref=e141]:
+                - paragraph [ref=e142]: A Importância da Preservação Ambiental em Moçambique
+                - paragraph [ref=e143]: 28 palavras
+            - link "Análise da Sustentabilidade Ambiental em Empresas de Maputo 2100 palavras" [ref=e144] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0xw2000uvb60rftvaovj
+              - img [ref=e145]
+              - generic [ref=e148]:
+                - paragraph [ref=e149]: Análise da Sustentabilidade Ambiental em Empresas de Maputo
+                - paragraph [ref=e150]: 2100 palavras
+            - link "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique 4500 palavras" [ref=e151] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0xpt000svb60t6jf8owk
+              - img [ref=e152]
+              - generic [ref=e155]:
+                - paragraph [ref=e156]: Impacto das Tecnologias Digitais no Ensino Superior em Moçambique
+                - paragraph [ref=e157]: 4500 palavras
+            - link "Implementação de Sistema de Gestão de Inventário 600 palavras" [ref=e158] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0xcu000ovb600tkuvncg
+              - img [ref=e159]
+              - generic [ref=e162]:
+                - paragraph [ref=e163]: Implementação de Sistema de Gestão de Inventário
+                - paragraph [ref=e164]: 600 palavras
+            - link "Relatório de Estágio no Instituto Nacional de Meteorologia 2100 palavras" [ref=e165] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0x6a000mvb6082790jms
+              - img [ref=e166]
+              - generic [ref=e169]:
+                - paragraph [ref=e170]: Relatório de Estágio no Instituto Nacional de Meteorologia
+                - paragraph [ref=e171]: 2100 palavras
+            - link "Impacto das Redes Sociais na Aprendizagem dos Estudantes 850 palavras" [ref=e172] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0wnv000ivb60ixt1gxpy
+              - img [ref=e173]
+              - generic [ref=e176]:
+                - paragraph [ref=e177]: Impacto das Redes Sociais na Aprendizagem dos Estudantes
+                - paragraph [ref=e178]: 850 palavras
+            - link "Análise da Sustentabilidade Ambiental em Empresas de Maputo 2100 palavras" [ref=e179] [cursor=pointer]:
+              - /url: /app/projects/cmn3dzszk000uvb6wu97bu420
+              - img [ref=e180]
+              - generic [ref=e183]:
+                - paragraph [ref=e184]: Análise da Sustentabilidade Ambiental em Empresas de Maputo
+                - paragraph [ref=e185]: 2100 palavras
+            - link "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique 4500 palavras" [ref=e186] [cursor=pointer]:
+              - /url: /app/projects/cmn3dzstl000svb6wgbe55zi4
+              - img [ref=e187]
+              - generic [ref=e190]:
+                - paragraph [ref=e191]: Impacto das Tecnologias Digitais no Ensino Superior em Moçambique
+                - paragraph [ref=e192]: 4500 palavras
+            - 'link "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas 3200 palavras" [ref=e193] [cursor=pointer]':
+              - /url: /app/projects/cmn3dzsn0000qvb6w2kbdhysz
+              - img [ref=e194]
+              - generic [ref=e197]:
+                - paragraph [ref=e198]: "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas"
+                - paragraph [ref=e199]: 3200 palavras
+      - button "ET Estudante Teste teste@aptto.mz" [ref=e107]:
+        - generic [ref=e109]: ET
+        - generic [ref=e110]:
+          - paragraph [ref=e111]: Estudante Teste
+          - paragraph [ref=e112]: teste@aptto.mz
+    - generic [ref=e113]:
+      - banner [ref=e114]:
+        - generic [ref=e115]:
+          - generic [ref=e117]:
+            - generic [ref=e118]:
+              - heading "Projectos" [level=1] [ref=e389]
+              - generic [ref=e120]: SaaS académico
+            - paragraph [ref=e121]: Organize o pipeline editorial, filtre estados e abra cada trabalho no fluxo certo.
+          - generic [ref=e122]:
+            - generic [ref=e123]:
+              - img
+              - text: 4930 créditos
+            - link "Novo projecto" [ref=e390] [cursor=pointer]:
+              - /url: /app/projects?new=1
+              - img
+              - text: Novo projecto
+      - generic [ref=e391]:
+        - generic [ref=e393]:
+          - paragraph [ref=e394]: 22 projectos no total
+          - generic [ref=e395]:
+            - generic [ref=e396]: 19 em curso
+            - generic [ref=e397]: ·
+            - generic [ref=e398]: 3 concluídos
+            - generic [ref=e399]: ·
+            - generic [ref=e400]: 0 arquivados
+        - generic [ref=e402]:
+          - tablist [ref=e404]:
+            - tab "Todos" [selected] [ref=e405]
+            - tab "Em progresso" [ref=e406]
+            - tab "Completos" [ref=e407]
+            - tab "Arquivados" [ref=e408]
+          - generic [ref=e409]:
+            - generic [ref=e410]:
+              - img [ref=e411]
+              - textbox "Pesquisar projectos..." [ref=e414]
+            - generic [ref=e415]:
+              - button "Última actualização" [ref=e416]:
+                - img
+                - generic [ref=e417]: Última actualização
+              - generic [ref=e418]:
+                - button [ref=e419]:
+                  - img
+                - button [ref=e420]:
+                  - img
+        - generic [ref=e421]:
+          - generic [ref=e423] [cursor=pointer]:
+            - generic [ref=e424]:
+              - generic [ref=e425]:
+                - generic [ref=e426]:
+                  - generic [ref=e427]: Monografia
+                  - generic [ref=e428]:
+                    - img [ref=e429]
+                    - generic [ref=e432]: Em progresso
+                - 'link "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas" [ref=e433]':
+                  - /url: /app/projects/cmn3e0xjc000qvb60jyh93ceu
+                  - 'heading "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas" [level=4] [ref=e434]'
+              - button [ref=e435]:
+                - img
+            - generic [ref=e436]:
+              - img [ref=e437]
+              - generic [ref=e440]: TCC sobre desenvolvimento web
+              - generic [ref=e441]: •
+              - img [ref=e442]
+              - generic [ref=e446]: aptto
+            - generic [ref=e447]:
+              - generic [ref=e448]:
+                - img [ref=e449]
+                - generic [ref=e452]: Actualizado há 3 dias
+              - generic [ref=e453]:
+                - generic [ref=e454]:
+                  - generic [ref=e455]: Progresso
+                  - generic [ref=e456]: 4%
+                - progressbar [ref=e457]
+          - generic [ref=e460] [cursor=pointer]:
+            - generic [ref=e461]:
+              - generic [ref=e462]:
+                - generic [ref=e463]:
+                  - generic [ref=e464]: Monografia
+                  - generic [ref=e465]:
+                    - img [ref=e466]
+                    - generic [ref=e469]: Completo
+                - link "A Importância da Preservação Ambiental em Moçambique" [ref=e470]:
+                  - /url: /app/projects/cmn3e0x0a000kvb60i606uzsi
+                  - heading "A Importância da Preservação Ambiental em Moçambique" [level=4] [ref=e471]
+              - button [ref=e472]:
+                - img
+            - generic [ref=e473]:
+              - img [ref=e474]
+              - generic [ref=e477]: Projecto de investigação sobre meio ambiente
+              - generic [ref=e478]: •
+              - img [ref=e479]
+              - generic [ref=e483]: aptto
+            - generic [ref=e484]:
+              - generic [ref=e485]:
+                - img [ref=e486]
+                - generic [ref=e489]: Actualizado há 3 dias
+              - generic [ref=e490]:
+                - generic [ref=e491]:
+                  - generic [ref=e492]: Progresso
+                  - generic [ref=e493]: 100%
+                - progressbar [ref=e494]
+          - generic [ref=e497] [cursor=pointer]:
+            - generic [ref=e498]:
+              - generic [ref=e499]:
+                - generic [ref=e500]:
+                  - generic [ref=e501]: Dissertação
+                  - generic [ref=e502]:
+                    - img [ref=e503]
+                    - generic [ref=e506]: Em progresso
+                - link "Análise da Sustentabilidade Ambiental em Empresas de Maputo" [ref=e507]:
+                  - /url: /app/projects/cmn3e0xw2000uvb60rftvaovj
+                  - heading "Análise da Sustentabilidade Ambiental em Empresas de Maputo" [level=4] [ref=e508]
+              - button [ref=e509]:
+                - img
+            - generic [ref=e510]:
+              - img [ref=e511]
+              - generic [ref=e514]: Dissertação de mestrado sobre práticas sustentáveis
+              - generic [ref=e515]: •
+              - img [ref=e516]
+              - generic [ref=e520]: aptto
+            - generic [ref=e521]:
+              - generic [ref=e522]:
+                - img [ref=e523]
+                - generic [ref=e526]: Actualizado há 3 dias
+              - generic [ref=e527]:
+                - generic [ref=e528]:
+                  - generic [ref=e529]: Progresso
+                  - generic [ref=e530]: 17%
+                - progressbar [ref=e531]
+          - generic [ref=e534] [cursor=pointer]:
+            - generic [ref=e535]:
+              - generic [ref=e536]:
+                - generic [ref=e537]:
+                  - generic [ref=e538]: Monografia
+                  - generic [ref=e539]:
+                    - img [ref=e540]
+                    - generic [ref=e543]: Em progresso
+                - link "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique" [ref=e544]:
+                  - /url: /app/projects/cmn3e0xpt000svb60t6jf8owk
+                  - heading "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique" [level=4] [ref=e545]
+              - button [ref=e546]:
+                - img
+            - generic [ref=e547]:
+              - img [ref=e548]
+              - generic [ref=e551]: Monografia sobre a transformação digital nas universidades moçambicanas
+              - generic [ref=e552]: •
+              - img [ref=e553]
+              - generic [ref=e557]: aptto
+            - generic [ref=e558]:
+              - generic [ref=e559]:
+                - img [ref=e560]
+                - generic [ref=e563]: Actualizado há 3 dias
+              - generic [ref=e564]:
+                - generic [ref=e565]:
+                  - generic [ref=e566]: Progresso
+                  - generic [ref=e567]: 36%
+                - progressbar [ref=e568]
+          - generic [ref=e571] [cursor=pointer]:
+            - generic [ref=e572]:
+              - generic [ref=e573]:
+                - generic [ref=e574]:
+                  - generic [ref=e575]: Relatório
+                  - generic [ref=e576]:
+                    - img [ref=e577]
+                    - generic [ref=e580]: Em progresso
+                - link "Implementação de Sistema de Gestão de Inventário" [ref=e581]:
+                  - /url: /app/projects/cmn3e0xcu000ovb600tkuvncg
+                  - heading "Implementação de Sistema de Gestão de Inventário" [level=4] [ref=e582]
+              - button [ref=e583]:
+                - img
+            - generic [ref=e584]:
+              - img [ref=e585]
+              - generic [ref=e588]: Trabalho prático de desenvolvimento de software
+              - generic [ref=e589]: •
+              - img [ref=e590]
+              - generic [ref=e594]: aptto
+            - generic [ref=e595]:
+              - generic [ref=e596]:
+                - img [ref=e597]
+                - generic [ref=e600]: Actualizado há 3 dias
+              - generic [ref=e601]:
+                - generic [ref=e602]:
+                  - generic [ref=e603]: Progresso
+                  - generic [ref=e604]: 5%
+                - progressbar [ref=e605]
+          - generic [ref=e608] [cursor=pointer]:
+            - generic [ref=e609]:
+              - generic [ref=e610]:
+                - generic [ref=e611]:
+                  - generic [ref=e612]: Relatório
+                  - generic [ref=e613]:
+                    - img [ref=e614]
+                    - generic [ref=e617]: Em progresso
+                - link "Relatório de Estágio no Instituto Nacional de Meteorologia" [ref=e618]:
+                  - /url: /app/projects/cmn3e0x6a000mvb6082790jms
+                  - heading "Relatório de Estágio no Instituto Nacional de Meteorologia" [level=4] [ref=e619]
+              - button [ref=e620]:
+                - img
+            - generic [ref=e621]:
+              - img [ref=e622]
+              - generic [ref=e625]: Relatório de estágio profissional em meteorologia
+              - generic [ref=e626]: •
+              - img [ref=e627]
+              - generic [ref=e631]: aptto
+            - generic [ref=e632]:
+              - generic [ref=e633]:
+                - img [ref=e634]
+                - generic [ref=e637]: Actualizado há 3 dias
+              - generic [ref=e638]:
+                - generic [ref=e639]:
+                  - generic [ref=e640]: Progresso
+                  - generic [ref=e641]: 17%
+                - progressbar [ref=e642]
+          - generic [ref=e645] [cursor=pointer]:
+            - generic [ref=e646]:
+              - generic [ref=e647]:
+                - generic [ref=e648]:
+                  - generic [ref=e649]: Monografia
+                  - generic [ref=e650]:
+                    - img [ref=e651]
+                    - generic [ref=e654]: Em progresso
+                - link "Impacto das Redes Sociais na Aprendizagem dos Estudantes" [ref=e655]:
+                  - /url: /app/projects/cmn3e0wnv000ivb60ixt1gxpy
+                  - heading "Impacto das Redes Sociais na Aprendizagem dos Estudantes" [level=4] [ref=e656]
+              - button [ref=e657]:
+                - img
+            - generic [ref=e658]:
+              - img [ref=e659]
+              - generic [ref=e662]: Trabalho escolar sobre o uso de redes sociais na educação
+              - generic [ref=e663]: •
+              - img [ref=e664]
+              - generic [ref=e668]: aptto
+            - generic [ref=e669]:
+              - generic [ref=e670]:
+                - img [ref=e671]
+                - generic [ref=e674]: Actualizado há 3 dias
+              - generic [ref=e675]:
+                - generic [ref=e676]:
+                  - generic [ref=e677]: Progresso
+                  - generic [ref=e678]: 7%
+                - progressbar [ref=e679]
+          - generic [ref=e682] [cursor=pointer]:
+            - generic [ref=e683]:
+              - generic [ref=e684]:
+                - generic [ref=e685]:
+                  - generic [ref=e686]: Dissertação
+                  - generic [ref=e687]:
+                    - img [ref=e688]
+                    - generic [ref=e691]: Em progresso
+                - link "Análise da Sustentabilidade Ambiental em Empresas de Maputo" [ref=e692]:
+                  - /url: /app/projects/cmn3dzszk000uvb6wu97bu420
+                  - heading "Análise da Sustentabilidade Ambiental em Empresas de Maputo" [level=4] [ref=e693]
+              - button [ref=e694]:
+                - img
+            - generic [ref=e695]:
+              - img [ref=e696]
+              - generic [ref=e699]: Dissertação de mestrado sobre práticas sustentáveis
+              - generic [ref=e700]: •
+              - img [ref=e701]
+              - generic [ref=e705]: aptto
+            - generic [ref=e706]:
+              - generic [ref=e707]:
+                - img [ref=e708]
+                - generic [ref=e711]: Actualizado há 3 dias
+              - generic [ref=e712]:
+                - generic [ref=e713]:
+                  - generic [ref=e714]: Progresso
+                  - generic [ref=e715]: 17%
+                - progressbar [ref=e716]
+          - generic [ref=e719] [cursor=pointer]:
+            - generic [ref=e720]:
+              - generic [ref=e721]:
+                - generic [ref=e722]:
+                  - generic [ref=e723]: Monografia
+                  - generic [ref=e724]:
+                    - img [ref=e725]
+                    - generic [ref=e728]: Em progresso
+                - link "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique" [ref=e729]:
+                  - /url: /app/projects/cmn3dzstl000svb6wgbe55zi4
+                  - heading "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique" [level=4] [ref=e730]
+              - button [ref=e731]:
+                - img
+            - generic [ref=e732]:
+              - img [ref=e733]
+              - generic [ref=e736]: Monografia sobre a transformação digital nas universidades moçambicanas
+              - generic [ref=e737]: •
+              - img [ref=e738]
+              - generic [ref=e742]: aptto
+            - generic [ref=e743]:
+              - generic [ref=e744]:
+                - img [ref=e745]
+                - generic [ref=e748]: Actualizado há 3 dias
+              - generic [ref=e749]:
+                - generic [ref=e750]:
+                  - generic [ref=e751]: Progresso
+                  - generic [ref=e752]: 36%
+                - progressbar [ref=e753]
+          - generic [ref=e756] [cursor=pointer]:
+            - generic [ref=e757]:
+              - generic [ref=e758]:
+                - generic [ref=e759]:
+                  - generic [ref=e760]: Monografia
+                  - generic [ref=e761]:
+                    - img [ref=e762]
+                    - generic [ref=e765]: Em progresso
+                - 'link "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas" [ref=e766]':
+                  - /url: /app/projects/cmn3dzsn0000qvb6w2kbdhysz
+                  - 'heading "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas" [level=4] [ref=e767]'
+              - button [ref=e768]:
+                - img
+            - generic [ref=e769]:
+              - img [ref=e770]
+              - generic [ref=e773]: TCC sobre desenvolvimento web
+              - generic [ref=e774]: •
+              - img [ref=e775]
+              - generic [ref=e779]: aptto
+            - generic [ref=e780]:
+              - generic [ref=e781]:
+                - img [ref=e782]
+                - generic [ref=e785]: Actualizado há 3 dias
+              - generic [ref=e786]:
+                - generic [ref=e787]:
+                  - generic [ref=e788]: Progresso
+                  - generic [ref=e789]: 26%
+                - progressbar [ref=e790]
+          - generic [ref=e793] [cursor=pointer]:
+            - generic [ref=e794]:
+              - generic [ref=e795]:
+                - generic [ref=e796]:
+                  - generic [ref=e797]: Relatório
+                  - generic [ref=e798]:
+                    - img [ref=e799]
+                    - generic [ref=e802]: Em progresso
+                - link "Implementação de Sistema de Gestão de Inventário" [ref=e803]:
+                  - /url: /app/projects/cmn3dzsgw000ovb6w4guebbsz
+                  - heading "Implementação de Sistema de Gestão de Inventário" [level=4] [ref=e804]
+              - button [ref=e805]:
+                - img
+            - generic [ref=e806]:
+              - img [ref=e807]
+              - generic [ref=e810]: Trabalho prático de desenvolvimento de software
+              - generic [ref=e811]: •
+              - img [ref=e812]
+              - generic [ref=e816]: aptto
+            - generic [ref=e817]:
+              - generic [ref=e818]:
+                - img [ref=e819]
+                - generic [ref=e822]: Actualizado há 3 dias
+              - generic [ref=e823]:
+                - generic [ref=e824]:
+                  - generic [ref=e825]: Progresso
+                  - generic [ref=e826]: 5%
+                - progressbar [ref=e827]
+          - generic [ref=e830] [cursor=pointer]:
+            - generic [ref=e831]:
+              - generic [ref=e832]:
+                - generic [ref=e833]:
+                  - generic [ref=e834]: Relatório
+                  - generic [ref=e835]:
+                    - img [ref=e836]
+                    - generic [ref=e839]: Em progresso
+                - link "Relatório de Estágio no Instituto Nacional de Meteorologia" [ref=e840]:
+                  - /url: /app/projects/cmn3dzsaj000mvb6wjbi72zmy
+                  - heading "Relatório de Estágio no Instituto Nacional de Meteorologia" [level=4] [ref=e841]
+              - button [ref=e842]:
+                - img
+            - generic [ref=e843]:
+              - img [ref=e844]
+              - generic [ref=e847]: Relatório de estágio profissional em meteorologia
+              - generic [ref=e848]: •
+              - img [ref=e849]
+              - generic [ref=e853]: aptto
+            - generic [ref=e854]:
+              - generic [ref=e855]:
+                - img [ref=e856]
+                - generic [ref=e859]: Actualizado há 3 dias
+              - generic [ref=e860]:
+                - generic [ref=e861]:
+                  - generic [ref=e862]: Progresso
+                  - generic [ref=e863]: 17%
+                - progressbar [ref=e864]
+          - generic [ref=e867] [cursor=pointer]:
+            - generic [ref=e868]:
+              - generic [ref=e869]:
+                - generic [ref=e870]:
+                  - generic [ref=e871]: Monografia
+                  - generic [ref=e872]:
+                    - img [ref=e873]
+                    - generic [ref=e876]: Completo
+                - link "A Importância da Preservação Ambiental em Moçambique" [ref=e877]:
+                  - /url: /app/projects/cmn3dzs4m000kvb6w1oqpnygd
+                  - heading "A Importância da Preservação Ambiental em Moçambique" [level=4] [ref=e878]
+              - button [ref=e879]:
+                - img
+            - generic [ref=e880]:
+              - img [ref=e881]
+              - generic [ref=e884]: Projecto de investigação sobre meio ambiente
+              - generic [ref=e885]: •
+              - img [ref=e886]
+              - generic [ref=e890]: aptto
+            - generic [ref=e891]:
+              - generic [ref=e892]:
+                - img [ref=e893]
+                - generic [ref=e896]: Actualizado há 3 dias
+              - generic [ref=e897]:
+                - generic [ref=e898]:
+                  - generic [ref=e899]: Progresso
+                  - generic [ref=e900]: 100%
+                - progressbar [ref=e901]
+          - generic [ref=e904] [cursor=pointer]:
+            - generic [ref=e905]:
+              - generic [ref=e906]:
+                - generic [ref=e907]:
+                  - generic [ref=e908]: Monografia
+                  - generic [ref=e909]:
+                    - img [ref=e910]
+                    - generic [ref=e913]: Em progresso
+                - link "Impacto das Redes Sociais na Aprendizagem dos Estudantes" [ref=e914]:
+                  - /url: /app/projects/cmn3dzrrm000ivb6wgnb08khj
+                  - heading "Impacto das Redes Sociais na Aprendizagem dos Estudantes" [level=4] [ref=e915]
+              - button [ref=e916]:
+                - img
+            - generic [ref=e917]:
+              - img [ref=e918]
+              - generic [ref=e921]: Trabalho escolar sobre o uso de redes sociais na educação
+              - generic [ref=e922]: •
+              - img [ref=e923]
+              - generic [ref=e927]: aptto
+            - generic [ref=e928]:
+              - generic [ref=e929]:
+                - img [ref=e930]
+                - generic [ref=e933]: Actualizado há 3 dias
+              - generic [ref=e934]:
+                - generic [ref=e935]:
+                  - generic [ref=e936]: Progresso
+                  - generic [ref=e937]: 7%
+                - progressbar [ref=e938]
+          - generic [ref=e941] [cursor=pointer]:
+            - generic [ref=e942]:
+              - generic [ref=e943]:
+                - generic [ref=e944]:
+                  - generic [ref=e945]: Monografia
+                  - generic [ref=e946]:
+                    - img [ref=e947]
+                    - generic [ref=e950]: Em progresso
+                - link "as erros em maputo" [ref=e951]:
+                  - /url: /app/projects/cmn3dqmcc000xvbvodjncg2wv
+                  - heading "as erros em maputo" [level=4] [ref=e952]
+              - button [ref=e953]:
+                - img
+            - generic [ref=e954]:
+              - img [ref=e955]
+              - generic [ref=e958]: a outra face
+              - generic [ref=e959]: •
+              - img [ref=e960]
+              - generic [ref=e964]: aptto
+            - generic [ref=e965]:
+              - generic [ref=e966]:
+                - img [ref=e967]
+                - generic [ref=e970]: Actualizado há 3 dias
+              - generic [ref=e971]:
+                - generic [ref=e972]:
+                  - generic [ref=e973]: Progresso
+                  - generic [ref=e974]: 0%
+                - progressbar [ref=e975]
+          - generic [ref=e978] [cursor=pointer]:
+            - generic [ref=e979]:
+              - generic [ref=e980]:
+                - generic [ref=e981]:
+                  - generic [ref=e982]: Dissertação
+                  - generic [ref=e983]:
+                    - img [ref=e984]
+                    - generic [ref=e987]: Em progresso
+                - link "Análise da Sustentabilidade Ambiental em Empresas de Maputo" [ref=e988]:
+                  - /url: /app/projects/cmn3dljb1000uvbfcb3ny6di8
+                  - heading "Análise da Sustentabilidade Ambiental em Empresas de Maputo" [level=4] [ref=e989]
+              - button [ref=e990]:
+                - img
+            - generic [ref=e991]:
+              - img [ref=e992]
+              - generic [ref=e995]: Dissertação de mestrado sobre práticas sustentáveis
+              - generic [ref=e996]: •
+              - img [ref=e997]
+              - generic [ref=e1001]: aptto
+            - generic [ref=e1002]:
+              - generic [ref=e1003]:
+                - img [ref=e1004]
+                - generic [ref=e1007]: Actualizado há 3 dias
+              - generic [ref=e1008]:
+                - generic [ref=e1009]:
+                  - generic [ref=e1010]: Progresso
+                  - generic [ref=e1011]: 17%
+                - progressbar [ref=e1012]
+          - generic [ref=e1015] [cursor=pointer]:
+            - generic [ref=e1016]:
+              - generic [ref=e1017]:
+                - generic [ref=e1018]:
+                  - generic [ref=e1019]: Monografia
+                  - generic [ref=e1020]:
+                    - img [ref=e1021]
+                    - generic [ref=e1024]: Em progresso
+                - link "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique" [ref=e1025]:
+                  - /url: /app/projects/cmn3dlj4g000svbfc5e8z1q0g
+                  - heading "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique" [level=4] [ref=e1026]
+              - button [ref=e1027]:
+                - img
+            - generic [ref=e1028]:
+              - img [ref=e1029]
+              - generic [ref=e1032]: Monografia sobre a transformação digital nas universidades moçambicanas
+              - generic [ref=e1033]: •
+              - img [ref=e1034]
+              - generic [ref=e1038]: aptto
+            - generic [ref=e1039]:
+              - generic [ref=e1040]:
+                - img [ref=e1041]
+                - generic [ref=e1044]: Actualizado há 3 dias
+              - generic [ref=e1045]:
+                - generic [ref=e1046]:
+                  - generic [ref=e1047]: Progresso
+                  - generic [ref=e1048]: 36%
+                - progressbar [ref=e1049]
+          - generic [ref=e1052] [cursor=pointer]:
+            - generic [ref=e1053]:
+              - generic [ref=e1054]:
+                - generic [ref=e1055]:
+                  - generic [ref=e1056]: Monografia
+                  - generic [ref=e1057]:
+                    - img [ref=e1058]
+                    - generic [ref=e1061]: Em progresso
+                - 'link "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas" [ref=e1062]':
+                  - /url: /app/projects/cmn3dlivt000qvbfctqvjfw98
+                  - 'heading "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas" [level=4] [ref=e1063]'
+              - button [ref=e1064]:
+                - img
+            - generic [ref=e1065]:
+              - img [ref=e1066]
+              - generic [ref=e1069]: TCC sobre desenvolvimento web
+              - generic [ref=e1070]: •
+              - img [ref=e1071]
+              - generic [ref=e1075]: aptto
+            - generic [ref=e1076]:
+              - generic [ref=e1077]:
+                - img [ref=e1078]
+                - generic [ref=e1081]: Actualizado há 3 dias
+              - generic [ref=e1082]:
+                - generic [ref=e1083]:
+                  - generic [ref=e1084]: Progresso
+                  - generic [ref=e1085]: 26%
+                - progressbar [ref=e1086]
+          - generic [ref=e1089] [cursor=pointer]:
+            - generic [ref=e1090]:
+              - generic [ref=e1091]:
+                - generic [ref=e1092]:
+                  - generic [ref=e1093]: Relatório
+                  - generic [ref=e1094]:
+                    - img [ref=e1095]
+                    - generic [ref=e1098]: Em progresso
+                - link "Implementação de Sistema de Gestão de Inventário" [ref=e1099]:
+                  - /url: /app/projects/cmn3dlinc000ovbfcnaj6vexc
+                  - heading "Implementação de Sistema de Gestão de Inventário" [level=4] [ref=e1100]
+              - button [ref=e1101]:
+                - img
+            - generic [ref=e1102]:
+              - img [ref=e1103]
+              - generic [ref=e1106]: Trabalho prático de desenvolvimento de software
+              - generic [ref=e1107]: •
+              - img [ref=e1108]
+              - generic [ref=e1112]: aptto
+            - generic [ref=e1113]:
+              - generic [ref=e1114]:
+                - img [ref=e1115]
+                - generic [ref=e1118]: Actualizado há 3 dias
+              - generic [ref=e1119]:
+                - generic [ref=e1120]:
+                  - generic [ref=e1121]: Progresso
+                  - generic [ref=e1122]: 5%
+                - progressbar [ref=e1123]
+          - generic [ref=e1126] [cursor=pointer]:
+            - generic [ref=e1127]:
+              - generic [ref=e1128]:
+                - generic [ref=e1129]:
+                  - generic [ref=e1130]: Relatório
+                  - generic [ref=e1131]:
+                    - img [ref=e1132]
+                    - generic [ref=e1135]: Em progresso
+                - link "Relatório de Estágio no Instituto Nacional de Meteorologia" [ref=e1136]:
+                  - /url: /app/projects/cmn3dlif3000mvbfcfsp6e0jz
+                  - heading "Relatório de Estágio no Instituto Nacional de Meteorologia" [level=4] [ref=e1137]
+              - button [ref=e1138]:
+                - img
+            - generic [ref=e1139]:
+              - img [ref=e1140]
+              - generic [ref=e1143]: Relatório de estágio profissional em meteorologia
+              - generic [ref=e1144]: •
+              - img [ref=e1145]
+              - generic [ref=e1149]: aptto
+            - generic [ref=e1150]:
+              - generic [ref=e1151]:
+                - img [ref=e1152]
+                - generic [ref=e1155]: Actualizado há 3 dias
+              - generic [ref=e1156]:
+                - generic [ref=e1157]:
+                  - generic [ref=e1158]: Progresso
+                  - generic [ref=e1159]: 17%
+                - progressbar [ref=e1160]
+          - generic [ref=e1163] [cursor=pointer]:
+            - generic [ref=e1164]:
+              - generic [ref=e1165]:
+                - generic [ref=e1166]:
+                  - generic [ref=e1167]: Monografia
+                  - generic [ref=e1168]:
+                    - img [ref=e1169]
+                    - generic [ref=e1172]: Completo
+                - link "A Importância da Preservação Ambiental em Moçambique" [ref=e1173]:
+                  - /url: /app/projects/cmn3dli8r000kvbfcud3d1rkw
+                  - heading "A Importância da Preservação Ambiental em Moçambique" [level=4] [ref=e1174]
+              - button [ref=e1175]:
+                - img
+            - generic [ref=e1176]:
+              - img [ref=e1177]
+              - generic [ref=e1180]: Projecto de investigação sobre meio ambiente
+              - generic [ref=e1181]: •
+              - img [ref=e1182]
+              - generic [ref=e1186]: aptto
+            - generic [ref=e1187]:
+              - generic [ref=e1188]:
+                - img [ref=e1189]
+                - generic [ref=e1192]: Actualizado há 3 dias
+              - generic [ref=e1193]:
+                - generic [ref=e1194]:
+                  - generic [ref=e1195]: Progresso
+                  - generic [ref=e1196]: 100%
+                - progressbar [ref=e1197]
+          - generic [ref=e1200] [cursor=pointer]:
+            - generic [ref=e1201]:
+              - generic [ref=e1202]:
+                - generic [ref=e1203]:
+                  - generic [ref=e1204]: Monografia
+                  - generic [ref=e1205]:
+                    - img [ref=e1206]
+                    - generic [ref=e1209]: Em progresso
+                - link "Impacto das Redes Sociais na Aprendizagem dos Estudantes" [ref=e1210]:
+                  - /url: /app/projects/cmn3dlhs0000ivbfc4rufjek3
+                  - heading "Impacto das Redes Sociais na Aprendizagem dos Estudantes" [level=4] [ref=e1211]
+              - button [ref=e1212]:
+                - img
+            - generic [ref=e1213]:
+              - img [ref=e1214]
+              - generic [ref=e1217]: Trabalho escolar sobre o uso de redes sociais na educação
+              - generic [ref=e1218]: •
+              - img [ref=e1219]
+              - generic [ref=e1223]: aptto
+            - generic [ref=e1224]:
+              - generic [ref=e1225]:
+                - img [ref=e1226]
+                - generic [ref=e1229]: Actualizado há 3 dias
+              - generic [ref=e1230]:
+                - generic [ref=e1231]:
+                  - generic [ref=e1232]: Progresso
+                  - generic [ref=e1233]: 7%
+                - progressbar [ref=e1234]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e46] [cursor=pointer]:
+    - img [ref=e47]
+  - alert [ref=e50]

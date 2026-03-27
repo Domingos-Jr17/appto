@@ -1,0 +1,38 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "aptto" [ref=e7] [cursor=pointer]:
+      - /url: /
+      - img [ref=e9]
+      - generic [ref=e11]: aptto
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - heading "Bem-vindo de volta" [level=1] [ref=e15]
+        - paragraph [ref=e16]: Entre na sua conta para continuar
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]: Email
+          - generic [ref=e20]:
+            - img [ref=e21]
+            - textbox "Email" [ref=e24]:
+              - /placeholder: seu@email.com
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - generic [ref=e27]: Senha
+            - link "Esqueceu a senha?" [ref=e28] [cursor=pointer]:
+              - /url: /forgot-password
+          - generic [ref=e29]:
+            - img [ref=e30]
+            - textbox "Senha" [ref=e33]:
+              - /placeholder: ••••••••
+            - button [ref=e34]:
+              - img [ref=e35]
+        - button "Entrar" [ref=e38]:
+          - text: Entrar
+          - img
+      - paragraph [ref=e39]:
+        - text: Não tem conta?
+        - link "Criar conta" [ref=e40] [cursor=pointer]:
+          - /url: /register
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e46] [cursor=pointer]:
+    - img [ref=e47]

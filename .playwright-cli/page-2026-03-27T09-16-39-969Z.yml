@@ -1,0 +1,194 @@
+- generic [ref=e1]:
+  - generic [ref=e51]:
+    - complementary [ref=e53]:
+      - generic [ref=e54]:
+        - generic [ref=e55]:
+          - link "appto Workspace académico" [ref=e56] [cursor=pointer]:
+            - /url: /app
+            - img [ref=e58]
+            - generic [ref=e62]:
+              - paragraph [ref=e63]: appto
+              - paragraph [ref=e64]: Workspace académico
+          - button "Recolher sidebar" [ref=e65]:
+            - img
+        - generic [ref=e66]:
+          - link "Novo projecto" [ref=e67] [cursor=pointer]:
+            - /url: /app/projects?new=1
+            - img
+            - generic [ref=e68]: Novo projecto
+          - generic [ref=e70]:
+            - generic [ref=e71]: Saldo disponível
+            - generic [ref=e72]: 4930 créditos
+      - generic [ref=e74]:
+        - paragraph [ref=e75]: Navegação
+        - generic [ref=e76]:
+          - link "Início" [ref=e77] [cursor=pointer]:
+            - /url: /app
+            - img [ref=e78]
+            - generic [ref=e81]: Início
+          - link "Projectos" [ref=e82] [cursor=pointer]:
+            - /url: /app/projects
+            - img [ref=e83]
+            - generic [ref=e85]: Projectos
+          - link "Créditos 4930" [ref=e128] [cursor=pointer]:
+            - /url: /app/credits
+            - img [ref=e87]
+            - generic [ref=e92]: Créditos
+            - generic [ref=e93]: "4930"
+          - link "Definições" [active] [ref=e94] [cursor=pointer]:
+            - /url: /app/settings
+            - img [ref=e95]
+            - generic [ref=e98]: Definições
+        - generic [ref=e99]:
+          - generic [ref=e100]:
+            - generic [ref=e101]: Projectos recentes
+            - generic [ref=e102]: "10"
+          - generic [ref=e103]:
+            - img
+            - textbox "Pesquisar projectos" [ref=e104]
+          - generic [ref=e129]:
+            - 'link "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas 521 palavras" [ref=e130] [cursor=pointer]':
+              - /url: /app/projects/cmn3e0xjc000qvb60jyh93ceu
+              - img [ref=e131]
+              - generic [ref=e134]:
+                - paragraph [ref=e135]: "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas"
+                - paragraph [ref=e136]: 521 palavras
+            - link "A Importância da Preservação Ambiental em Moçambique 28 palavras" [ref=e137] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0x0a000kvb60i606uzsi
+              - img [ref=e138]
+              - generic [ref=e141]:
+                - paragraph [ref=e142]: A Importância da Preservação Ambiental em Moçambique
+                - paragraph [ref=e143]: 28 palavras
+            - link "Análise da Sustentabilidade Ambiental em Empresas de Maputo 2100 palavras" [ref=e144] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0xw2000uvb60rftvaovj
+              - img [ref=e145]
+              - generic [ref=e148]:
+                - paragraph [ref=e149]: Análise da Sustentabilidade Ambiental em Empresas de Maputo
+                - paragraph [ref=e150]: 2100 palavras
+            - link "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique 4500 palavras" [ref=e151] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0xpt000svb60t6jf8owk
+              - img [ref=e152]
+              - generic [ref=e155]:
+                - paragraph [ref=e156]: Impacto das Tecnologias Digitais no Ensino Superior em Moçambique
+                - paragraph [ref=e157]: 4500 palavras
+            - link "Implementação de Sistema de Gestão de Inventário 600 palavras" [ref=e158] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0xcu000ovb600tkuvncg
+              - img [ref=e159]
+              - generic [ref=e162]:
+                - paragraph [ref=e163]: Implementação de Sistema de Gestão de Inventário
+                - paragraph [ref=e164]: 600 palavras
+            - link "Relatório de Estágio no Instituto Nacional de Meteorologia 2100 palavras" [ref=e165] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0x6a000mvb6082790jms
+              - img [ref=e166]
+              - generic [ref=e169]:
+                - paragraph [ref=e170]: Relatório de Estágio no Instituto Nacional de Meteorologia
+                - paragraph [ref=e171]: 2100 palavras
+            - link "Impacto das Redes Sociais na Aprendizagem dos Estudantes 850 palavras" [ref=e172] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0wnv000ivb60ixt1gxpy
+              - img [ref=e173]
+              - generic [ref=e176]:
+                - paragraph [ref=e177]: Impacto das Redes Sociais na Aprendizagem dos Estudantes
+                - paragraph [ref=e178]: 850 palavras
+            - link "Análise da Sustentabilidade Ambiental em Empresas de Maputo 2100 palavras" [ref=e179] [cursor=pointer]:
+              - /url: /app/projects/cmn3dzszk000uvb6wu97bu420
+              - img [ref=e180]
+              - generic [ref=e183]:
+                - paragraph [ref=e184]: Análise da Sustentabilidade Ambiental em Empresas de Maputo
+                - paragraph [ref=e185]: 2100 palavras
+            - link "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique 4500 palavras" [ref=e186] [cursor=pointer]:
+              - /url: /app/projects/cmn3dzstl000svb6wgbe55zi4
+              - img [ref=e187]
+              - generic [ref=e190]:
+                - paragraph [ref=e191]: Impacto das Tecnologias Digitais no Ensino Superior em Moçambique
+                - paragraph [ref=e192]: 4500 palavras
+            - 'link "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas 3200 palavras" [ref=e193] [cursor=pointer]':
+              - /url: /app/projects/cmn3dzsn0000qvb6w2kbdhysz
+              - img [ref=e194]
+              - generic [ref=e197]:
+                - paragraph [ref=e198]: "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas"
+                - paragraph [ref=e199]: 3200 palavras
+      - button "ET Estudante Teste teste@aptto.mz" [ref=e107]:
+        - generic [ref=e109]: ET
+        - generic [ref=e110]:
+          - paragraph [ref=e111]: Estudante Teste
+          - paragraph [ref=e112]: teste@aptto.mz
+    - generic [ref=e113]:
+      - banner [ref=e114]:
+        - generic [ref=e115]:
+          - generic [ref=e117]:
+            - generic [ref=e118]:
+              - heading "Definições" [level=1] [ref=e1236]
+              - generic [ref=e120]: SaaS académico
+            - paragraph [ref=e121]: Gira preferências, segurança e notificações da conta num único espaço.
+          - generic [ref=e123]:
+            - img
+            - text: 4930 créditos
+      - generic [ref=e1237]:
+        - paragraph [ref=e1239]: Gira preferências, segurança, notificações e dados da conta num fluxo mais consistente com o resto do produto.
+        - generic [ref=e1241]:
+          - tablist [ref=e1243]:
+            - tab "Perfil" [selected] [ref=e1244]:
+              - img
+              - generic [ref=e1245]: Perfil
+            - tab "Preferências" [ref=e1246]:
+              - img
+              - generic [ref=e1247]: Preferências
+            - tab "Segurança" [ref=e1248]:
+              - img
+              - generic [ref=e1249]: Segurança
+            - tab "Notificações" [ref=e1250]:
+              - img
+              - generic [ref=e1251]: Notificações
+            - tab "Conta" [ref=e1252]:
+              - img
+              - generic [ref=e1253]: Conta
+          - tabpanel "Perfil" [ref=e1255]:
+            - generic [ref=e1256]:
+              - generic [ref=e1258]:
+                - img [ref=e1260]
+                - generic [ref=e1263]:
+                  - generic [ref=e1264]: Perfil
+                  - generic [ref=e1265]: Gira as suas informações pessoais
+              - generic [ref=e1267]:
+                - generic [ref=e1268]:
+                  - generic [ref=e1269]:
+                    - generic [ref=e1271]: ET
+                    - img [ref=e1273] [cursor=pointer]
+                  - generic [ref=e1276]:
+                    - heading "Foto de Perfil" [level=3] [ref=e1277]
+                    - paragraph [ref=e1278]: JPG, GIF ou PNG. Máximo de 2MB.
+                    - generic [ref=e1281]:
+                      - img
+                      - text: Carregar foto
+                - generic [ref=e1282]:
+                  - generic [ref=e1283]:
+                    - generic [ref=e1284]:
+                      - img [ref=e1285]
+                      - text: Nome completo
+                    - textbox "Nome completo" [ref=e1288]:
+                      - /placeholder: Seu nome completo
+                      - text: Estudante Teste
+                  - generic [ref=e1289]:
+                    - generic [ref=e1290]:
+                      - img [ref=e1291]
+                      - text: Email
+                      - generic [ref=e1294]:
+                        - img [ref=e1295]
+                        - text: Verificado
+                    - generic [ref=e1298]:
+                      - textbox "Email Verificado" [disabled]: teste@aptto.mz
+                    - paragraph [ref=e1299]: O email não pode ser alterado. Contacte o suporte se precisar de ajuda.
+                - generic [ref=e1300]:
+                  - heading "Informações da Conta" [level=3] [ref=e1301]
+                  - generic [ref=e1302]:
+                    - generic [ref=e1303]:
+                      - paragraph [ref=e1304]: Tipo de Conta
+                      - paragraph [ref=e1305]: STUDENT
+                    - generic [ref=e1306]:
+                      - paragraph [ref=e1307]: Créditos Disponíveis
+                      - paragraph [ref=e1308]: 4,930 créditos
+                - button "Salvar alterações" [ref=e1310]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e46] [cursor=pointer]:
+    - img [ref=e47]
+  - alert [ref=e50]

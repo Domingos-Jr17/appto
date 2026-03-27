@@ -1,0 +1,513 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e1577]:
+    - complementary [ref=e1579]:
+      - generic [ref=e1580]:
+        - generic [ref=e1581]:
+          - link "appto Workspace académico" [ref=e1582] [cursor=pointer]:
+            - /url: /app
+            - img [ref=e1584]
+            - generic [ref=e1588]:
+              - paragraph [ref=e1589]: appto
+              - paragraph [ref=e1590]: Workspace académico
+          - button "Recolher sidebar" [ref=e1591]:
+            - img
+        - generic [ref=e1592]:
+          - link "Novo projecto" [ref=e1593] [cursor=pointer]:
+            - /url: /app/projects?new=1
+            - img
+            - generic [ref=e1594]: Novo projecto
+          - generic [ref=e1596]:
+            - generic [ref=e1597]: Saldo disponível
+            - generic [ref=e1598]: 4930 créditos
+      - generic [ref=e1600]:
+        - paragraph [ref=e1601]: Navegação
+        - generic [ref=e1602]:
+          - link "Início" [ref=e1603] [cursor=pointer]:
+            - /url: /app
+            - img [ref=e1604]
+            - generic [ref=e1607]: Início
+          - link "Projectos" [ref=e1608] [cursor=pointer]:
+            - /url: /app/projects
+            - img [ref=e1609]
+            - generic [ref=e1611]: Projectos
+          - link "Créditos 4930" [ref=e1612] [cursor=pointer]:
+            - /url: /app/credits
+            - img [ref=e1613]
+            - generic [ref=e1618]: Créditos
+            - generic [ref=e1619]: "4930"
+          - link "Definições" [ref=e1620] [cursor=pointer]:
+            - /url: /app/settings
+            - img [ref=e1621]
+            - generic [ref=e1624]: Definições
+        - generic [ref=e1625]:
+          - generic [ref=e1626]:
+            - generic [ref=e1627]: Projectos recentes
+            - generic [ref=e1628]: "10"
+          - generic [ref=e1629]:
+            - img
+            - textbox "Pesquisar projectos" [ref=e1630]
+          - generic [ref=e1631]:
+            - 'link "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas 521 palavras" [ref=e1632] [cursor=pointer]':
+              - /url: /app/projects/cmn3e0xjc000qvb60jyh93ceu
+              - img [ref=e1633]
+              - generic [ref=e1636]:
+                - paragraph [ref=e1637]: "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas"
+                - paragraph [ref=e1638]: 521 palavras
+            - link "A Importância da Preservação Ambiental em Moçambique 28 palavras" [ref=e1639] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0x0a000kvb60i606uzsi
+              - img [ref=e1640]
+              - generic [ref=e1643]:
+                - paragraph [ref=e1644]: A Importância da Preservação Ambiental em Moçambique
+                - paragraph [ref=e1645]: 28 palavras
+            - link "Análise da Sustentabilidade Ambiental em Empresas de Maputo 2100 palavras" [ref=e1646] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0xw2000uvb60rftvaovj
+              - img [ref=e1647]
+              - generic [ref=e1650]:
+                - paragraph [ref=e1651]: Análise da Sustentabilidade Ambiental em Empresas de Maputo
+                - paragraph [ref=e1652]: 2100 palavras
+            - link "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique 4500 palavras" [ref=e1653] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0xpt000svb60t6jf8owk
+              - img [ref=e1654]
+              - generic [ref=e1657]:
+                - paragraph [ref=e1658]: Impacto das Tecnologias Digitais no Ensino Superior em Moçambique
+                - paragraph [ref=e1659]: 4500 palavras
+            - link "Implementação de Sistema de Gestão de Inventário 600 palavras" [ref=e1660] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0xcu000ovb600tkuvncg
+              - img [ref=e1661]
+              - generic [ref=e1664]:
+                - paragraph [ref=e1665]: Implementação de Sistema de Gestão de Inventário
+                - paragraph [ref=e1666]: 600 palavras
+            - link "Relatório de Estágio no Instituto Nacional de Meteorologia 2100 palavras" [ref=e1667] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0x6a000mvb6082790jms
+              - img [ref=e1668]
+              - generic [ref=e1671]:
+                - paragraph [ref=e1672]: Relatório de Estágio no Instituto Nacional de Meteorologia
+                - paragraph [ref=e1673]: 2100 palavras
+            - link "Impacto das Redes Sociais na Aprendizagem dos Estudantes 850 palavras" [ref=e1674] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0wnv000ivb60ixt1gxpy
+              - img [ref=e1675]
+              - generic [ref=e1678]:
+                - paragraph [ref=e1679]: Impacto das Redes Sociais na Aprendizagem dos Estudantes
+                - paragraph [ref=e1680]: 850 palavras
+            - link "Análise da Sustentabilidade Ambiental em Empresas de Maputo 2100 palavras" [ref=e1681] [cursor=pointer]:
+              - /url: /app/projects/cmn3dzszk000uvb6wu97bu420
+              - img [ref=e1682]
+              - generic [ref=e1685]:
+                - paragraph [ref=e1686]: Análise da Sustentabilidade Ambiental em Empresas de Maputo
+                - paragraph [ref=e1687]: 2100 palavras
+            - link "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique 4500 palavras" [ref=e1688] [cursor=pointer]:
+              - /url: /app/projects/cmn3dzstl000svb6wgbe55zi4
+              - img [ref=e1689]
+              - generic [ref=e1692]:
+                - paragraph [ref=e1693]: Impacto das Tecnologias Digitais no Ensino Superior em Moçambique
+                - paragraph [ref=e1694]: 4500 palavras
+            - 'link "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas 3200 palavras" [ref=e1695] [cursor=pointer]':
+              - /url: /app/projects/cmn3dzsn0000qvb6w2kbdhysz
+              - img [ref=e1696]
+              - generic [ref=e1699]:
+                - paragraph [ref=e1700]: "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas"
+                - paragraph [ref=e1701]: 3200 palavras
+      - button "ET Estudante Teste teste@aptto.mz" [ref=e1703]:
+        - generic [ref=e1705]: ET
+        - generic [ref=e1706]:
+          - paragraph [ref=e1707]: Estudante Teste
+          - paragraph [ref=e1708]: teste@aptto.mz
+    - generic [ref=e1709]:
+      - banner [ref=e1710]:
+        - generic [ref=e1711]:
+          - generic [ref=e1713]:
+            - generic [ref=e1714]:
+              - heading "Créditos" [level=1] [ref=e1715]
+              - generic [ref=e1716]: SaaS académico
+            - paragraph [ref=e1717]: Controle saldo, consumo e recargas sem sair do ambiente de trabalho.
+          - generic [ref=e1719]:
+            - img
+            - text: 4930 créditos
+      - generic [ref=e1721]:
+        - paragraph [ref=e1723]: Gira o saldo, acompanha o consumo mensal e recarrega a conta sem sair do fluxo principal do produto.
+        - generic [ref=e1724]:
+          - generic [ref=e1725]:
+            - generic [ref=e1726]:
+              - generic [ref=e1728]:
+                - img [ref=e1729]
+                - text: Saldo de Créditos
+              - generic [ref=e1734]:
+                - generic [ref=e1735]:
+                  - generic [ref=e1736]:
+                    - generic [ref=e1737]: "4930"
+                    - generic [ref=e1738]: créditos
+                  - paragraph [ref=e1739]:
+                    - text: Aproximadamente
+                    - generic [ref=e1740]: 98 trabalhos
+                    - text: disponíveis
+                - generic [ref=e1741]:
+                  - generic [ref=e1742]:
+                    - img [ref=e1744]
+                    - generic [ref=e1747]:
+                      - paragraph [ref=e1748]: Usados este mês
+                      - paragraph [ref=e1749]: "70"
+                  - generic [ref=e1750]:
+                    - img [ref=e1752]
+                    - generic [ref=e1754]:
+                      - paragraph [ref=e1755]: Créditos/trabalho
+                      - paragraph [ref=e1756]: ~50
+                - button "Recarregar Créditos" [ref=e1757]:
+                  - img
+                  - text: Recarregar Créditos
+            - generic [ref=e1758]:
+              - generic [ref=e1760]:
+                - generic [ref=e1761]:
+                  - img [ref=e1762]
+                  - text: Utilização Mensal
+                - generic [ref=e1764]:
+                  - img [ref=e1765]
+                  - generic [ref=e1768]: "Média: 48/mês"
+              - generic [ref=e1769]:
+                - img [ref=e1773]:
+                  - generic [ref=e1775]:
+                    - generic [ref=e1777]: out.
+                    - generic [ref=e1779]: nov.
+                    - generic [ref=e1781]: dez.
+                    - generic [ref=e1783]: jan.
+                    - generic [ref=e1785]: fev.
+                    - generic [ref=e1787]: mar.
+                  - generic [ref=e1789]:
+                    - generic [ref=e1791]: "0"
+                    - generic [ref=e1793]: "75"
+                    - generic [ref=e1795]: "150"
+                    - generic [ref=e1797]: "225"
+                    - generic [ref=e1799]: "300"
+                - generic [ref=e1805]:
+                  - generic [ref=e1806]: Total utilizado (6 meses)
+                  - generic [ref=e1807]: 285 créditos
+          - generic [ref=e1809]:
+            - generic [ref=e1811]:
+              - img [ref=e1812]
+              - text: Recarregar Créditos
+            - generic [ref=e1815]:
+              - generic [ref=e1816]:
+                - generic [ref=e1817]:
+                  - heading "Starter" [level=3] [ref=e1818]
+                  - generic [ref=e1819]:
+                    - text: "100"
+                    - generic [ref=e1820]: MZN
+                  - paragraph [ref=e1821]: 500 créditos
+                - list [ref=e1822]:
+                  - listitem [ref=e1823]:
+                    - generic [ref=e1826]: 500 créditos no saldo
+                  - listitem [ref=e1827]:
+                    - generic [ref=e1830]: Checkout sandbox com confirmação automática em ambiente de teste
+                  - listitem [ref=e1831]:
+                    - generic [ref=e1834]: Histórico de compra persistido na conta
+                - button "Seleccionar" [ref=e1835]
+              - generic [ref=e1836]:
+                - generic [ref=e1837]: Mais Popular
+                - generic [ref=e1838]:
+                  - heading "Standard" [level=3] [ref=e1839]
+                  - generic [ref=e1840]:
+                    - text: "250"
+                    - generic [ref=e1841]: MZN
+                  - paragraph [ref=e1842]: 1500 créditos
+                - list [ref=e1843]:
+                  - listitem [ref=e1844]:
+                    - generic [ref=e1847]: 1500 créditos no saldo
+                  - listitem [ref=e1848]:
+                    - generic [ref=e1851]: Checkout sandbox com confirmação automática em ambiente de teste
+                  - listitem [ref=e1852]:
+                    - generic [ref=e1855]: Histórico de compra persistido na conta
+                - button "Seleccionar" [ref=e1856]
+              - generic [ref=e1857]:
+                - generic [ref=e1858]:
+                  - heading "Pro" [level=3] [ref=e1859]
+                  - generic [ref=e1860]:
+                    - text: "700"
+                    - generic [ref=e1861]: MZN
+                  - paragraph [ref=e1862]: 5000 créditos
+                - list [ref=e1863]:
+                  - listitem [ref=e1864]:
+                    - generic [ref=e1867]: 5000 créditos no saldo
+                  - listitem [ref=e1868]:
+                    - generic [ref=e1871]: Checkout sandbox com confirmação automática em ambiente de teste
+                  - listitem [ref=e1872]:
+                    - generic [ref=e1875]: Histórico de compra persistido na conta
+                - button "Seleccionar" [ref=e1876]
+              - generic [ref=e1877]:
+                - generic [ref=e1878]:
+                  - heading "Academic" [level=3] [ref=e1879]
+                  - generic [ref=e1880]:
+                    - text: "1800"
+                    - generic [ref=e1881]: MZN
+                  - paragraph [ref=e1882]: 15 000 créditos
+                - list [ref=e1883]:
+                  - listitem [ref=e1884]:
+                    - generic [ref=e1887]: 15 000 créditos no saldo
+                  - listitem [ref=e1888]:
+                    - generic [ref=e1891]: Checkout sandbox com confirmação automática em ambiente de teste
+                  - listitem [ref=e1892]:
+                    - generic [ref=e1895]: Histórico de compra persistido na conta
+                - button "Seleccionar" [ref=e1896]
+        - generic [ref=e1897]:
+          - generic [ref=e1899]:
+            - generic [ref=e1900]:
+              - img [ref=e1901]
+              - text: Histórico de Transacções
+            - generic [ref=e1905]: 24 transacções
+          - table [ref=e1909]:
+            - rowgroup [ref=e1910]:
+              - row "Descrição Data Créditos" [ref=e1911]:
+                - columnheader "Descrição" [ref=e1912]
+                - columnheader "Data" [ref=e1913]
+                - columnheader "Créditos" [ref=e1914]
+            - rowgroup [ref=e1915]:
+              - 'row "IA: generate Uso 24/03/2026 -10" [ref=e1916]':
+                - 'cell "IA: generate Uso" [ref=e1917]':
+                  - generic [ref=e1918]:
+                    - img [ref=e1920]
+                    - generic [ref=e1923]:
+                      - text: "IA: generate"
+                      - paragraph [ref=e1924]: Uso
+                - cell "24/03/2026" [ref=e1925]
+                - cell "-10" [ref=e1926]
+              - 'row "IA: generate Uso 24/03/2026 -10" [ref=e1927]':
+                - 'cell "IA: generate Uso" [ref=e1928]':
+                  - generic [ref=e1929]:
+                    - img [ref=e1931]
+                    - generic [ref=e1934]:
+                      - text: "IA: generate"
+                      - paragraph [ref=e1935]: Uso
+                - cell "24/03/2026" [ref=e1936]
+                - cell "-10" [ref=e1937]
+              - 'row "Exportação DOCX: Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas Uso 24/03/2026 -5" [ref=e1938]':
+                - 'cell "Exportação DOCX: Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas Uso" [ref=e1939]':
+                  - generic [ref=e1940]:
+                    - img [ref=e1942]
+                    - generic [ref=e1945]:
+                      - text: "Exportação DOCX: Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas"
+                      - paragraph [ref=e1946]: Uso
+                - cell "24/03/2026" [ref=e1947]
+                - cell "-5" [ref=e1948]
+              - 'row "IA: improve Uso 24/03/2026 -5" [ref=e1949]':
+                - 'cell "IA: improve Uso" [ref=e1950]':
+                  - generic [ref=e1951]:
+                    - img [ref=e1953]
+                    - generic [ref=e1956]:
+                      - text: "IA: improve"
+                      - paragraph [ref=e1957]: Uso
+                - cell "24/03/2026" [ref=e1958]
+                - cell "-5" [ref=e1959]
+              - 'row "IA: generate Uso 24/03/2026 -10" [ref=e1960]':
+                - 'cell "IA: generate Uso" [ref=e1961]':
+                  - generic [ref=e1962]:
+                    - img [ref=e1964]
+                    - generic [ref=e1967]:
+                      - text: "IA: generate"
+                      - paragraph [ref=e1968]: Uso
+                - cell "24/03/2026" [ref=e1969]
+                - cell "-10" [ref=e1970]
+              - 'row "IA: generate Uso 24/03/2026 -10" [ref=e1971]':
+                - 'cell "IA: generate Uso" [ref=e1972]':
+                  - generic [ref=e1973]:
+                    - img [ref=e1975]
+                    - generic [ref=e1978]:
+                      - text: "IA: generate"
+                      - paragraph [ref=e1979]: Uso
+                - cell "24/03/2026" [ref=e1980]
+                - cell "-10" [ref=e1981]
+              - 'row "IA: generate Uso 24/03/2026 -10" [ref=e1982]':
+                - 'cell "IA: generate Uso" [ref=e1983]':
+                  - generic [ref=e1984]:
+                    - img [ref=e1986]
+                    - generic [ref=e1989]:
+                      - text: "IA: generate"
+                      - paragraph [ref=e1990]: Uso
+                - cell "24/03/2026" [ref=e1991]
+                - cell "-10" [ref=e1992]
+              - 'row "IA: generate Uso 24/03/2026 -10" [ref=e1993]':
+                - 'cell "IA: generate Uso" [ref=e1994]':
+                  - generic [ref=e1995]:
+                    - img [ref=e1997]
+                    - generic [ref=e2000]:
+                      - text: "IA: generate"
+                      - paragraph [ref=e2001]: Uso
+                - cell "24/03/2026" [ref=e2002]
+                - cell "-10" [ref=e2003]
+              - row "Compra via M-Pesa Compra 23/03/2026 +1500" [ref=e2004]:
+                - cell "Compra via M-Pesa Compra" [ref=e2005]:
+                  - generic [ref=e2006]:
+                    - img [ref=e2008]
+                    - generic [ref=e2011]:
+                      - text: Compra via M-Pesa
+                      - paragraph [ref=e2012]: Compra
+                - cell "23/03/2026" [ref=e2013]
+                - cell "+1500" [ref=e2014]:
+                  - generic [ref=e2015]: "+1500"
+              - 'row "IA: improve Uso 23/03/2026 -5" [ref=e2016]':
+                - 'cell "IA: improve Uso" [ref=e2017]':
+                  - generic [ref=e2018]:
+                    - img [ref=e2020]
+                    - generic [ref=e2023]:
+                      - text: "IA: improve"
+                      - paragraph [ref=e2024]: Uso
+                - cell "23/03/2026" [ref=e2025]
+                - cell "-5" [ref=e2026]
+              - 'row "IA: generate Uso 23/03/2026 -10" [ref=e2027]':
+                - 'cell "IA: generate Uso" [ref=e2028]':
+                  - generic [ref=e2029]:
+                    - img [ref=e2031]
+                    - generic [ref=e2034]:
+                      - text: "IA: generate"
+                      - paragraph [ref=e2035]: Uso
+                - cell "23/03/2026" [ref=e2036]
+                - cell "-10" [ref=e2037]
+              - 'row "Geração de trabalho: Impacto das Tecnologias no Ensino Superior Uso 23/03/2026 -50" [ref=e2038]':
+                - 'cell "Geração de trabalho: Impacto das Tecnologias no Ensino Superior Uso" [ref=e2039]':
+                  - generic [ref=e2040]:
+                    - img [ref=e2042]
+                    - generic [ref=e2045]:
+                      - text: "Geração de trabalho: Impacto das Tecnologias no Ensino Superior"
+                      - paragraph [ref=e2046]: Uso
+                - cell "23/03/2026" [ref=e2047]
+                - cell "-50" [ref=e2048]
+              - row "Bónus de boas-vindas Bónus 23/03/2026 +5000" [ref=e2049]:
+                - cell "Bónus de boas-vindas Bónus" [ref=e2050]:
+                  - generic [ref=e2051]:
+                    - img [ref=e2053]
+                    - generic [ref=e2055]:
+                      - text: Bónus de boas-vindas
+                      - paragraph [ref=e2056]: Bónus
+                - cell "23/03/2026" [ref=e2057]
+                - cell "+5000" [ref=e2058]:
+                  - generic [ref=e2059]: "+5000"
+              - row "Compra via M-Pesa Compra 23/03/2026 +1500" [ref=e2060]:
+                - cell "Compra via M-Pesa Compra" [ref=e2061]:
+                  - generic [ref=e2062]:
+                    - img [ref=e2064]
+                    - generic [ref=e2067]:
+                      - text: Compra via M-Pesa
+                      - paragraph [ref=e2068]: Compra
+                - cell "23/03/2026" [ref=e2069]
+                - cell "+1500" [ref=e2070]:
+                  - generic [ref=e2071]: "+1500"
+              - 'row "IA: improve Uso 23/03/2026 -5" [ref=e2072]':
+                - 'cell "IA: improve Uso" [ref=e2073]':
+                  - generic [ref=e2074]:
+                    - img [ref=e2076]
+                    - generic [ref=e2079]:
+                      - text: "IA: improve"
+                      - paragraph [ref=e2080]: Uso
+                - cell "23/03/2026" [ref=e2081]
+                - cell "-5" [ref=e2082]
+              - 'row "IA: generate Uso 23/03/2026 -10" [ref=e2083]':
+                - 'cell "IA: generate Uso" [ref=e2084]':
+                  - generic [ref=e2085]:
+                    - img [ref=e2087]
+                    - generic [ref=e2090]:
+                      - text: "IA: generate"
+                      - paragraph [ref=e2091]: Uso
+                - cell "23/03/2026" [ref=e2092]
+                - cell "-10" [ref=e2093]
+              - 'row "Geração de trabalho: Impacto das Tecnologias no Ensino Superior Uso 23/03/2026 -50" [ref=e2094]':
+                - 'cell "Geração de trabalho: Impacto das Tecnologias no Ensino Superior Uso" [ref=e2095]':
+                  - generic [ref=e2096]:
+                    - img [ref=e2098]
+                    - generic [ref=e2101]:
+                      - text: "Geração de trabalho: Impacto das Tecnologias no Ensino Superior"
+                      - paragraph [ref=e2102]: Uso
+                - cell "23/03/2026" [ref=e2103]
+                - cell "-50" [ref=e2104]
+              - row "Bónus de boas-vindas Bónus 23/03/2026 +5000" [ref=e2105]:
+                - cell "Bónus de boas-vindas Bónus" [ref=e2106]:
+                  - generic [ref=e2107]:
+                    - img [ref=e2109]
+                    - generic [ref=e2111]:
+                      - text: Bónus de boas-vindas
+                      - paragraph [ref=e2112]: Bónus
+                - cell "23/03/2026" [ref=e2113]
+                - cell "+5000" [ref=e2114]:
+                  - generic [ref=e2115]: "+5000"
+              - 'row "Geração de trabalho: as erros em maputo Uso 23/03/2026 -20" [ref=e2116]':
+                - 'cell "Geração de trabalho: as erros em maputo Uso" [ref=e2117]':
+                  - generic [ref=e2118]:
+                    - img [ref=e2120]
+                    - generic [ref=e2123]:
+                      - text: "Geração de trabalho: as erros em maputo"
+                      - paragraph [ref=e2124]: Uso
+                - cell "23/03/2026" [ref=e2125]
+                - cell "-20" [ref=e2126]
+              - row "Compra via M-Pesa Compra 23/03/2026 +1500" [ref=e2127]:
+                - cell "Compra via M-Pesa Compra" [ref=e2128]:
+                  - generic [ref=e2129]:
+                    - img [ref=e2131]
+                    - generic [ref=e2134]:
+                      - text: Compra via M-Pesa
+                      - paragraph [ref=e2135]: Compra
+                - cell "23/03/2026" [ref=e2136]
+                - cell "+1500" [ref=e2137]:
+                  - generic [ref=e2138]: "+1500"
+              - 'row "IA: improve Uso 23/03/2026 -5" [ref=e2139]':
+                - 'cell "IA: improve Uso" [ref=e2140]':
+                  - generic [ref=e2141]:
+                    - img [ref=e2143]
+                    - generic [ref=e2146]:
+                      - text: "IA: improve"
+                      - paragraph [ref=e2147]: Uso
+                - cell "23/03/2026" [ref=e2148]
+                - cell "-5" [ref=e2149]
+              - 'row "IA: generate Uso 23/03/2026 -10" [ref=e2150]':
+                - 'cell "IA: generate Uso" [ref=e2151]':
+                  - generic [ref=e2152]:
+                    - img [ref=e2154]
+                    - generic [ref=e2157]:
+                      - text: "IA: generate"
+                      - paragraph [ref=e2158]: Uso
+                - cell "23/03/2026" [ref=e2159]
+                - cell "-10" [ref=e2160]
+              - 'row "Geração de trabalho: Impacto das Tecnologias no Ensino Superior Uso 23/03/2026 -50" [ref=e2161]':
+                - 'cell "Geração de trabalho: Impacto das Tecnologias no Ensino Superior Uso" [ref=e2162]':
+                  - generic [ref=e2163]:
+                    - img [ref=e2165]
+                    - generic [ref=e2168]:
+                      - text: "Geração de trabalho: Impacto das Tecnologias no Ensino Superior"
+                      - paragraph [ref=e2169]: Uso
+                - cell "23/03/2026" [ref=e2170]
+                - cell "-50" [ref=e2171]
+              - row "Bónus de boas-vindas Bónus 23/03/2026 +5000" [ref=e2172]:
+                - cell "Bónus de boas-vindas Bónus" [ref=e2173]:
+                  - generic [ref=e2174]:
+                    - img [ref=e2176]
+                    - generic [ref=e2178]:
+                      - text: Bónus de boas-vindas
+                      - paragraph [ref=e2179]: Bónus
+                - cell "23/03/2026" [ref=e2180]
+                - cell "+5000" [ref=e2181]:
+                  - generic [ref=e2182]: "+5000"
+        - generic [ref=e2183]:
+          - generic [ref=e2185]:
+            - img [ref=e2186]
+            - text: Perguntas Frequentes
+          - generic [ref=e2190]:
+            - heading "O que são créditos e como funcionam?" [level=3] [ref=e2192]:
+              - button "O que são créditos e como funcionam?" [ref=e2193]:
+                - text: O que são créditos e como funcionam?
+                - img
+            - heading "Quanto custa cada operação?" [level=3] [ref=e2195]:
+              - button "Quanto custa cada operação?" [ref=e2196]:
+                - text: Quanto custa cada operação?
+                - img
+            - heading "Posso obter reembolso dos créditos?" [level=3] [ref=e2198]:
+              - button "Posso obter reembolso dos créditos?" [ref=e2199]:
+                - text: Posso obter reembolso dos créditos?
+                - img
+            - heading "Os créditos expiram?" [level=3] [ref=e2201]:
+              - button "Os créditos expiram?" [ref=e2202]:
+                - text: Os créditos expiram?
+                - img
+            - heading "Como funciona o pagamento por M-Pesa/e-Mola?" [level=3] [ref=e2204]:
+              - button "Como funciona o pagamento por M-Pesa/e-Mola?" [ref=e2205]:
+                - text: Como funciona o pagamento por M-Pesa/e-Mola?
+                - img
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e46] [cursor=pointer]:
+    - img [ref=e47]
+  - alert [ref=e50]
+  - generic [ref=e2206]: "0"

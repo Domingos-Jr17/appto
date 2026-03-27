@@ -1,0 +1,238 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e1314]:
+    - complementary [ref=e1316]:
+      - generic [ref=e1317]:
+        - generic [ref=e1318]:
+          - link "appto Workspace académico" [ref=e1319] [cursor=pointer]:
+            - /url: /app
+            - img [ref=e1321]
+            - generic [ref=e1325]:
+              - paragraph [ref=e1326]: appto
+              - paragraph [ref=e1327]: Workspace académico
+          - button "Recolher sidebar" [ref=e1328]:
+            - img
+        - generic [ref=e1329]:
+          - link "Novo projecto" [ref=e1330] [cursor=pointer]:
+            - /url: /app/projects?new=1
+            - img
+            - generic [ref=e1331]: Novo projecto
+          - generic [ref=e1332]:
+            - generic [ref=e1334]: Projecto actual
+            - 'link "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas Assistente, estrutura e documento" [ref=e1335] [cursor=pointer]':
+              - /url: /app/projects/cmn3e0xjc000qvb60jyh93ceu
+              - paragraph [ref=e1336]: "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas"
+              - paragraph [ref=e1337]: Assistente, estrutura e documento
+      - generic [ref=e1339]:
+        - paragraph [ref=e1340]: Navegação
+        - generic [ref=e1341]:
+          - link "Início" [ref=e1342] [cursor=pointer]:
+            - /url: /app
+            - img [ref=e1343]
+            - generic [ref=e1346]: Início
+          - link "Projectos" [ref=e1347] [cursor=pointer]:
+            - /url: /app/projects
+            - img [ref=e1348]
+            - generic [ref=e1350]: Projectos
+          - link "Créditos 4930" [ref=e1351] [cursor=pointer]:
+            - /url: /app/credits
+            - img [ref=e1352]
+            - generic [ref=e1357]: Créditos
+            - generic [ref=e1358]: "4930"
+          - link "Definições" [ref=e1359] [cursor=pointer]:
+            - /url: /app/settings
+            - img [ref=e1360]
+            - generic [ref=e1363]: Definições
+        - generic [ref=e1364]:
+          - generic [ref=e1365]:
+            - generic [ref=e1366]: Projectos recentes
+            - generic [ref=e1367]: "8"
+          - generic [ref=e1368]:
+            - img
+            - textbox "Pesquisar projectos" [ref=e1369]
+          - generic [ref=e1370]:
+            - 'link "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas 521 palavras" [ref=e1371] [cursor=pointer]':
+              - /url: /app/projects/cmn3e0xjc000qvb60jyh93ceu
+              - img [ref=e1372]
+              - generic [ref=e1375]:
+                - paragraph [ref=e1376]: "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas"
+                - paragraph [ref=e1377]: 521 palavras
+            - link "A Importância da Preservação Ambiental em Moçambique 28 palavras" [ref=e1378] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0x0a000kvb60i606uzsi
+              - img [ref=e1379]
+              - generic [ref=e1382]:
+                - paragraph [ref=e1383]: A Importância da Preservação Ambiental em Moçambique
+                - paragraph [ref=e1384]: 28 palavras
+            - link "Análise da Sustentabilidade Ambiental em Empresas de Maputo 2100 palavras" [ref=e1385] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0xw2000uvb60rftvaovj
+              - img [ref=e1386]
+              - generic [ref=e1389]:
+                - paragraph [ref=e1390]: Análise da Sustentabilidade Ambiental em Empresas de Maputo
+                - paragraph [ref=e1391]: 2100 palavras
+            - link "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique 4500 palavras" [ref=e1392] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0xpt000svb60t6jf8owk
+              - img [ref=e1393]
+              - generic [ref=e1396]:
+                - paragraph [ref=e1397]: Impacto das Tecnologias Digitais no Ensino Superior em Moçambique
+                - paragraph [ref=e1398]: 4500 palavras
+            - link "Implementação de Sistema de Gestão de Inventário 600 palavras" [ref=e1399] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0xcu000ovb600tkuvncg
+              - img [ref=e1400]
+              - generic [ref=e1403]:
+                - paragraph [ref=e1404]: Implementação de Sistema de Gestão de Inventário
+                - paragraph [ref=e1405]: 600 palavras
+            - link "Relatório de Estágio no Instituto Nacional de Meteorologia 2100 palavras" [ref=e1406] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0x6a000mvb6082790jms
+              - img [ref=e1407]
+              - generic [ref=e1410]:
+                - paragraph [ref=e1411]: Relatório de Estágio no Instituto Nacional de Meteorologia
+                - paragraph [ref=e1412]: 2100 palavras
+            - link "Impacto das Redes Sociais na Aprendizagem dos Estudantes 850 palavras" [ref=e1413] [cursor=pointer]:
+              - /url: /app/projects/cmn3e0wnv000ivb60ixt1gxpy
+              - img [ref=e1414]
+              - generic [ref=e1417]:
+                - paragraph [ref=e1418]: Impacto das Redes Sociais na Aprendizagem dos Estudantes
+                - paragraph [ref=e1419]: 850 palavras
+            - link "Análise da Sustentabilidade Ambiental em Empresas de Maputo 2100 palavras" [ref=e1420] [cursor=pointer]:
+              - /url: /app/projects/cmn3dzszk000uvb6wu97bu420
+              - img [ref=e1421]
+              - generic [ref=e1424]:
+                - paragraph [ref=e1425]: Análise da Sustentabilidade Ambiental em Empresas de Maputo
+                - paragraph [ref=e1426]: 2100 palavras
+        - generic [ref=e1427]:
+          - generic [ref=e1428]:
+            - generic [ref=e1429]: Sessões do assistente
+            - generic [ref=e1430]: "7"
+          - generic [ref=e1431]:
+            - img
+            - textbox "Filtrar sessões" [ref=e1432]
+          - generic [ref=e1433]:
+            - generic [ref=e1434]:
+              - 'button "Trabalho de Conclusão de Curso: Desenvolvim... fixa TCC sobre desenvolvimento web" [ref=e1435]':
+                - generic [ref=e1436]:
+                  - paragraph [ref=e1437]: "Trabalho de Conclusão de Curso: Desenvolvim..."
+                  - generic [ref=e1438]: fixa
+                - paragraph [ref=e1439]: TCC sobre desenvolvimento web
+              - generic [ref=e1440]:
+                - generic [ref=e1441]: ha 3 dias
+                - button [ref=e1442]:
+                  - img
+            - generic [ref=e1443]:
+              - button "Desenvolvimento 10 palavras" [ref=e1444]:
+                - paragraph [ref=e1446]: Desenvolvimento
+                - paragraph [ref=e1447]: 10 palavras
+              - generic [ref=e1448]:
+                - generic [ref=e1449]: ha 3 dias
+                - button [ref=e1450]:
+                  - img
+            - generic [ref=e1451]:
+              - button "Conclusão 4 palavras" [ref=e1452]:
+                - paragraph [ref=e1454]: Conclusão
+                - paragraph [ref=e1455]: 4 palavras
+              - generic [ref=e1456]:
+                - generic [ref=e1457]: ha 3 dias
+                - button [ref=e1458]:
+                  - img
+            - generic [ref=e1459]:
+              - button "Introdução 18 palavras" [ref=e1460]:
+                - paragraph [ref=e1462]: Introdução
+                - paragraph [ref=e1463]: 18 palavras
+              - generic [ref=e1464]:
+                - generic [ref=e1465]: ha 3 dias
+                - button [ref=e1466]:
+                  - img
+            - generic [ref=e1467]:
+              - button "Aqui está uma proposta de conteúdo para o s... 489 palavras" [ref=e1468]:
+                - paragraph [ref=e1470]: Aqui está uma proposta de conteúdo para o s...
+                - paragraph [ref=e1471]: 489 palavras
+              - generic [ref=e1472]:
+                - generic [ref=e1473]: ha 3 dias
+                - button [ref=e1474]:
+                  - img
+            - generic [ref=e1475]:
+              - button "Aqui está uma proposta de conteúdo para o s... Secao ainda sem conteudo" [ref=e1476]:
+                - paragraph [ref=e1478]: Aqui está uma proposta de conteúdo para o s...
+                - paragraph [ref=e1479]: Secao ainda sem conteudo
+              - generic [ref=e1480]:
+                - generic [ref=e1481]: ha 3 dias
+                - button [ref=e1482]:
+                  - img
+            - generic [ref=e1483]:
+              - 'button "### Estrutura Sugerida do Capítulo: Introdu... Secao ainda sem conteudo" [ref=e1484]':
+                - paragraph [ref=e1486]: "### Estrutura Sugerida do Capítulo: Introdu..."
+                - paragraph [ref=e1487]: Secao ainda sem conteudo
+              - generic [ref=e1488]:
+                - generic [ref=e1489]: ha 3 dias
+                - button [ref=e1490]:
+                  - img
+      - button "ET Estudante Teste teste@aptto.mz" [ref=e1492]:
+        - generic [ref=e1494]: ET
+        - generic [ref=e1495]:
+          - paragraph [ref=e1496]: Estudante Teste
+          - paragraph [ref=e1497]: teste@aptto.mz
+    - separator [ref=e1498]:
+      - img [ref=e1500]
+    - generic [ref=e1508]:
+      - generic [ref=e1510]:
+        - generic [ref=e1512]:
+          - generic [ref=e1513]:
+            - paragraph [ref=e1514]: "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas"
+            - generic [ref=e1515]: Assistente
+          - paragraph [ref=e1516]: "Secção activa: Desenvolvimento"
+        - generic [ref=e1517]:
+          - generic [ref=e1518]: 4930 créditos
+          - button "Exportar" [ref=e1519]:
+            - img
+            - generic [ref=e1520]: Exportar
+      - generic [ref=e1523]:
+        - img [ref=e1525]
+        - heading "O teu assistente para construir o trabalho." [level=1] [ref=e1527]
+        - paragraph [ref=e1528]: Peça ajuda para estruturar capítulos, rever argumentos, abrir novas secções e transformar ideias num documento académico real.
+        - generic [ref=e1529]:
+          - button "Melhorar argumento" [ref=e1530]
+          - button "Criar proxima secao" [ref=e1531]
+          - button "Outline final" [ref=e1532]
+      - generic [ref=e1536]:
+        - generic [ref=e1537]:
+          - combobox [ref=e1538]:
+            - generic: Explorar tema
+            - img
+          - generic [ref=e1539]:
+            - textbox "Peça ajuda para orientar o trabalho, melhorar a secção activa ou planear a próxima parte..." [ref=e1540]
+            - button [disabled]:
+              - img
+        - generic [ref=e1541]:
+          - generic [ref=e1542]: 10 créditos
+          - generic [ref=e1543]: "Contexto: Desenvolvimento"
+    - separator [ref=e1544]:
+      - img [ref=e1546]
+    - complementary [ref=e1555]:
+      - generic [ref=e1556]:
+        - tablist [ref=e1557]:
+          - tab "Documento" [selected] [ref=e1558]:
+            - img
+            - text: Documento
+          - tab "Estrutura" [ref=e1559]:
+            - img
+            - text: Estrutura
+          - tab "Preview" [ref=e1560]:
+            - img
+            - text: Preview
+        - button "Copiar" [ref=e1561]:
+          - img
+          - text: Copiar
+        - button "Recolher painel do documento" [ref=e1562]:
+          - img
+      - tabpanel "Documento" [ref=e1563]:
+        - generic [ref=e1564]:
+          - generic [ref=e1565]:
+            - generic [ref=e1566]:
+              - generic [ref=e1567]: Secção activa
+              - generic [ref=e1568]: 10 palavras
+            - paragraph [ref=e1569]: Edite a secção activa com apoio do assistente. As alterações continuam ligadas ao documento real.
+          - generic [ref=e1574]:
+            - textbox "Título da secção" [ref=e1575]: Desenvolvimento
+            - textbox "A secção activa aparece aqui. Use o assistente para gerar e refine o texto directamente neste painel." [ref=e1576]: O conteúdo principal será desenvolvido aqui.
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e46] [cursor=pointer]:
+    - img [ref=e47]
+  - alert [ref=e50]

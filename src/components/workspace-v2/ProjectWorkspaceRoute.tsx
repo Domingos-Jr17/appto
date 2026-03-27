@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { FolderTree, Loader2 } from "lucide-react";
-import { ConversationSidebar } from "@/components/workspace-v2/ConversationSidebar";
+import { ProjectSidebar } from "@/components/workspace/ProjectSidebar";
 import { WorkspaceDocumentPanel } from "@/components/workspace-v2/WorkspaceDocumentPanel";
 import { WorkspaceChatPane } from "@/components/workspace-v2/WorkspaceChatPane";
 import { WorkspaceThreePane } from "@/components/workspace-v2/WorkspaceThreePane";
@@ -104,7 +104,7 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
           data.slice(0, 8).map((item) => ({
             id: item.id,
             title: item.title,
-            updatedAt: item.lastEditedSection?.updatedAt || new Date().toISOString(),
+            updatedAt: item.lastEditedSection?.updatedAt || item.updatedAt,
             wordCount: item.wordCount,
             resumeMode: item.resumeMode,
             status: item.status,
@@ -430,21 +430,36 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
 
   const sidebar = (
     <WorkspaceErrorBoundary label="sidebar">
-      <ConversationSidebar
-        projectId={project.id}
-        projectTitle={project.title}
-        user={session?.user || {}}
-        recentProjects={recentProjects}
-        conversations={conversations}
-        activeConversationId={activeConversationId}
+      <ProjectSidebar
         collapsed={sidebarCollapsed}
-        search={conversationSearch}
-        onSearchChange={setConversationSearch}
-        onSelectConversation={handleConversationSelect}
-        onRenameConversation={renameConversation}
-        onTogglePinConversation={togglePinConversation}
-        onDeleteConversation={hideConversation}
-        onToggleCollapsed={() => setSidebarCollapsed((value) => !value)}
+        currentPath={`/app/projects/${project.id}`}
+        credits={credits}
+        projects={recentProjects.map((item) => ({
+          id: item.id,
+          title: item.title,
+          updatedAt: item.updatedAt,
+          wordCount: item.wordCount,
+          resumeMode: item.resumeMode,
+          status: item.status || "IN_PROGRESS",
+        }))}
+        user={session?.user || {}}
+        workspace={{
+          currentProject: {
+            id: project.id,
+            title: project.title,
+            subtitle: "Assistente, estrutura e documento",
+          },
+          conversations,
+          activeConversationId,
+          search: conversationSearch,
+          onSearchChange: setConversationSearch,
+          onSelectConversation: handleConversationSelect,
+          onRenameConversation: renameConversation,
+          onTogglePinConversation: togglePinConversation,
+          onDeleteConversation: hideConversation,
+        }}
+        onToggleCollapse={() => setSidebarCollapsed((value) => !value)}
+        onNavigate={() => setMobileSidebarOpen(false)}
       />
     </WorkspaceErrorBoundary>
   );

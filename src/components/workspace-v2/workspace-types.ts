@@ -1,15 +1,7 @@
+import type { WorkspaceSidebarConversationItem } from "@/components/workspace/workspaceSidebarTypes";
 import type { AssistantMessage, Project, Section } from "@/types/editor";
 
-export interface WorkspaceConversationItem {
-  id: string;
-  title: string;
-  subtitle: string;
-  updatedLabel: string;
-  updatedAt: string;
-  pinned?: boolean;
-  kind: "project" | "section" | "assistant";
-  sectionId?: string;
-}
+export type WorkspaceConversationItem = WorkspaceSidebarConversationItem;
 
 export interface WorkspaceProjectLinkItem {
   id: string;

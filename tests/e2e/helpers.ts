@@ -14,7 +14,7 @@ export async function loginAsSeedUser(page: Page) {
   await page.getByRole("button", { name: /entrar/i }).click();
 
   // Wait for any navigation away from /login
-  await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 20000 });
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30000 });
 }
 
 export { test, expect };

@@ -85,7 +85,7 @@ export function ProjectFilters({
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Pesquisar projectos..."
+            placeholder="Pesquisar sessões..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             className="h-11 rounded-2xl border-border/60 bg-muted/30 pl-10"

@@ -41,8 +41,13 @@ export function mergeProjectConversations(
   derivedItems: WorkspaceConversationItem[]
 ) {
   const merged = new Map<string, PersistedWorkspaceConversation>();
+  const derivedIds = new Set(derivedItems.map((item) => item.id));
 
   for (const existing of existingItems) {
+    if (!existing.hidden && !derivedIds.has(existing.id)) {
+      continue;
+    }
+
     merged.set(existing.id, {
       ...existing,
       updatedAt: normalizeDate(existing.updatedAt),

@@ -103,7 +103,7 @@ interface ProjectSidebarProps {
 }
 
 function getProjectHref(project: SidebarProject) {
-  return `/app/projects/${project.id}`;
+  return `/app/sessoes/${project.id}`;
 }
 
 function SidebarNavLink({
@@ -275,25 +275,25 @@ export function ProjectSidebar({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button asChild className={cn("h-11 w-full rounded-2xl", collapsed && "px-0")}>
-                  <Link href="/app/projects?new=1" onClick={onNavigate} aria-label="Novo projecto">
+                  <Link href="/app/sessoes?new=1" onClick={onNavigate} aria-label="Nova sessão">
                     <FilePlus2 className="h-4 w-4" />
-                    {!collapsed ? <span>Novo projecto</span> : null}
+                    {!collapsed ? <span>Nova sessão</span> : null}
                   </Link>
                 </Button>
               </TooltipTrigger>
-              {collapsed ? <TooltipContent side="right">Novo projecto</TooltipContent> : null}
+              {collapsed ? <TooltipContent side="right">Nova sessão</TooltipContent> : null}
             </Tooltip>
 
             {!collapsed ? (
               <div className="surface-muted rounded-3xl px-3 py-3">
                 <div className="flex items-center justify-between gap-2 text-xs font-medium text-sidebar-foreground/70">
-                  <span>{workspace?.currentProject ? "Projecto actual" : "Saldo disponível"}</span>
+                  <span>{workspace?.currentProject ? "Sessão actual" : "Saldo disponível"}</span>
                   {!workspace?.currentProject ? <span>{credits.toLocaleString("pt-MZ")} créditos</span> : null}
                 </div>
 
                 {workspace?.currentProject ? (
                   <Link
-                    href={`/app/projects/${workspace.currentProject.id}`}
+                    href={`/app/sessoes/${workspace.currentProject.id}`}
                     onClick={onNavigate}
                     className="mt-2 block rounded-2xl border border-sidebar-border/70 bg-background/75 px-3 py-3 transition-colors hover:bg-background"
                   >
@@ -331,7 +331,7 @@ export function ProjectSidebar({
               {!collapsed ? (
                 <div className="flex items-center justify-between px-2">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/60">
-                    Projectos recentes
+                    Sessões recentes
                   </span>
                   <span className="text-[11px] text-sidebar-foreground/50">{recentProjects.length}</span>
                 </div>
@@ -343,7 +343,7 @@ export function ProjectSidebar({
                   <Input
                     value={projectSearch}
                     onChange={(event) => setProjectSearch(event.target.value)}
-                    placeholder="Pesquisar projectos"
+                    placeholder="Pesquisar sessões"
                     className="h-10 rounded-2xl border-sidebar-border bg-background/70 pl-10"
                   />
                 </div>
@@ -390,7 +390,7 @@ export function ProjectSidebar({
                 </div>
               ) : !collapsed ? (
                 <p className="rounded-2xl border border-dashed border-sidebar-border px-3 py-6 text-center text-sm text-sidebar-foreground/65">
-                  {projectSearch ? "Nenhum projecto encontrado" : "Sem projectos recentes"}
+                  {projectSearch ? "Nenhuma sessão encontrada" : "Sem sessões recentes"}
                 </p>
               ) : null}
             </div>
@@ -399,7 +399,7 @@ export function ProjectSidebar({
               <section className="space-y-2">
                 <div className="flex items-center justify-between px-2">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/60">
-                    Sessões do assistente
+                    Itens da sessão
                   </span>
                   <span className="text-[11px] text-sidebar-foreground/50">{workspace.conversations.length}</span>
                 </div>
@@ -409,7 +409,7 @@ export function ProjectSidebar({
                   <Input
                     value={workspace.search}
                     onChange={(event) => workspace.onSearchChange(event.target.value)}
-                    placeholder="Filtrar sessões"
+                    placeholder="Filtrar histórico"
                     className="h-10 rounded-2xl border-sidebar-border bg-background/70 pl-10"
                   />
                 </div>

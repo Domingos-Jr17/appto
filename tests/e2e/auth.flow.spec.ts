@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.describe("Authentication Flow", () => {
   test("unauthenticated user is redirected to login from protected routes", async ({ page }) => {
-    const protectedRoutes = ["/app", "/app/projects", "/app/settings", "/app/credits"];
+    const protectedRoutes = ["/app", "/app/sessoes", "/app/projects", "/app/settings", "/app/credits"];
     
     for (const route of protectedRoutes) {
       await page.goto(route);

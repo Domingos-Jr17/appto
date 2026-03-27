@@ -6,8 +6,18 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/app/projects",
+        destination: "/app/sessoes",
+        permanent: false,
+      },
+      {
+        source: "/app/projects/:id",
+        destination: "/app/sessoes/:id",
+        permanent: false,
+      },
+      {
         source: "/app/projects/:id/workspace",
-        destination: "/app/projects/:id",
+        destination: "/app/sessoes/:id",
         permanent: false,
       },
     ];

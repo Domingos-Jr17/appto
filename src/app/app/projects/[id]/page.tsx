@@ -1,4 +1,4 @@
-import { ProjectWorkspaceRoute } from "@/components/workspace-v2/ProjectWorkspaceRoute";
+import { redirect } from "next/navigation";
 
 interface ProjectWorkspacePageProps {
   params: Promise<{ id: string }>;
@@ -7,5 +7,5 @@ interface ProjectWorkspacePageProps {
 export default async function ProjectWorkspacePage({ params }: ProjectWorkspacePageProps) {
   const resolvedParams = await params;
 
-  return <ProjectWorkspaceRoute projectId={resolvedParams.id} />;
+  redirect(`/app/sessoes/${resolvedParams.id}`);
 }

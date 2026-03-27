@@ -117,7 +117,7 @@ export function WorkspaceDocumentPanel({
             <div className="border-b border-border/60 px-4 py-4">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="rounded-full">
-                  {activeSection ? "Secção activa" : "Resumo do projecto"}
+                  {activeSection ? "Secção activa" : "Resumo da sessão"}
                 </Badge>
                 <Badge variant="outline" className="rounded-full">
                   {documentWordCount.toLocaleString("pt-MZ")} palavras

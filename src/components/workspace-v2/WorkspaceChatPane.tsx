@@ -109,7 +109,7 @@ export function WorkspaceChatPane({
                 <p className="truncate text-xs text-muted-foreground">
                   {activeSection
                     ? `Secção activa: ${activeSection.title}`
-                    : activeConversation?.title || "Orientação académica do projecto"}
+                    : activeConversation?.title || "Orientação académica da sessão"}
                 </p>
             </div>
           </div>
@@ -165,7 +165,7 @@ export function WorkspaceChatPane({
                 <Sparkles className="h-6 w-6" />
               </div>
               <h1 className="mt-6 text-3xl font-semibold tracking-tight lg:text-4xl">
-                O teu assistente para construir o trabalho.
+                O teu assistente para desenvolver a sessão.
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
                 Peça ajuda para estruturar capítulos, rever argumentos, abrir novas secções e transformar ideias num documento académico real.
@@ -280,7 +280,7 @@ export function WorkspaceChatPane({
                 <Badge variant="outline" className="rounded-full">
                   {chatCost} créditos
                 </Badge>
-                <span>Contexto: {activeSection?.title || "projecto completo"}</span>
+                <span>Contexto: {activeSection?.title || "sessão completa"}</span>
               </div>
             </div>
           </div>

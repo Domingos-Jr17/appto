@@ -129,7 +129,7 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
   }, [projectId, clearChat, resetEditor]);
 
   useEffect(() => {
-    if (!project || initializedProjectId.current === projectId) return;
+    if (!project || project.id !== projectId || initializedProjectId.current === projectId) return;
 
     const preferredSectionId = getPreferredSectionId(project, sections);
     if (preferredSectionId) {
@@ -171,12 +171,24 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
     search: conversationSearch,
   });
 
+  useEffect(() => {
+    if (!activeSectionId || activeConversationId !== `project-${projectId}`) return;
+
+    const matchingConversation = conversations.find(
+      (conversation) => conversation.kind === "section" && conversation.sectionId === activeSectionId
+    );
+
+    if (matchingConversation) {
+      setActiveConversation(matchingConversation.id);
+    }
+  }, [activeConversationId, activeSectionId, conversations, projectId, setActiveConversation]);
+
   const artifact = useMemo(() => {
     if (!project) return null;
-    return buildArtifactSource(project, activeSection, chatMessages);
-  }, [activeSection, chatMessages, project]);
+    return buildArtifactSource(project, activeSection, activeConversation, chatMessages);
+  }, [activeConversation, activeSection, chatMessages, project]);
 
-  const documentTitle = activeSection ? sectionTitle : project?.title || "";
+  const documentTitle = activeSection ? sectionTitle : artifact?.title || project?.title || "";
   const documentContent = activeSection ? content : artifact?.content || "";
   const documentWordCount = activeSection ? wordCount : artifact?.content ? countWordsInMarkdown(artifact.content) : 0;
 
@@ -266,16 +278,19 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
     (conversationId: string) => {
       setActiveConversation(conversationId);
       const selected = conversations.find((conversation) => conversation.id === conversationId);
-      if (selected?.sectionId) {
+      if (selected?.kind === "section" && selected.sectionId) {
         const matchingSection = findSectionById(selected.sectionId, sections);
         if (matchingSection) {
           selectSection(matchingSection);
           setDocumentTab("document");
         }
+      } else {
+        resetEditor();
+        setDocumentTab("document");
       }
       setMobileSidebarOpen(false);
     },
-    [conversations, sections, selectSection, setActiveConversation]
+    [conversations, resetEditor, sections, selectSection, setActiveConversation]
   );
 
   const handleDocumentTitleChange = useCallback(
@@ -403,7 +418,7 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
       <div className="flex flex-1 items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">A carregar o novo workspace do projecto...</p>
+          <p className="text-sm text-muted-foreground">A carregar a sessão de trabalho...</p>
         </div>
       </div>
     );
@@ -415,12 +430,12 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
         <Card className="w-full max-w-xl border-border/60 bg-background/80 text-center shadow-sm">
           <CardContent className="space-y-4 p-10">
             <FolderTree className="mx-auto h-10 w-10 text-muted-foreground/40" />
-            <h2 className="text-2xl font-semibold">Projecto não encontrado</h2>
+            <h2 className="text-2xl font-semibold">Sessão não encontrada</h2>
             <p className="text-sm leading-6 text-muted-foreground">
-              Não foi possível abrir este workspace. Volte à lista de projectos e tente novamente.
+              Não foi possível abrir esta sessão. Volte à biblioteca e tente novamente.
             </p>
             <Button asChild className="rounded-full">
-              <Link href="/app/projects">Ver projectos</Link>
+              <Link href="/app/sessoes">Ver sessões</Link>
             </Button>
           </CardContent>
         </Card>
@@ -432,7 +447,7 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
     <WorkspaceErrorBoundary label="sidebar">
       <ProjectSidebar
         collapsed={sidebarCollapsed}
-        currentPath={`/app/projects/${project.id}`}
+        currentPath={`/app/sessoes/${project.id}`}
         credits={credits}
         projects={recentProjects.map((item) => ({
           id: item.id,
@@ -447,7 +462,7 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
           currentProject: {
             id: project.id,
             title: project.title,
-            subtitle: "Assistente, estrutura e documento",
+            subtitle: "Chat, estrutura e documento",
           },
           conversations,
           activeConversationId,

@@ -83,13 +83,51 @@ describe("workspace mappers", () => {
     expect(conversations.some((conversation) => conversation.kind === "assistant")).toBe(true);
   });
 
+  test("uses a stable fallback timestamp for a fresh session without last section", () => {
+    const freshProject: Project = {
+      ...project,
+      lastEditedSection: null,
+      description: null,
+    };
+
+    const conversations = buildWorkspaceConversations(freshProject, [], chatMessages);
+
+    expect(conversations[0]?.updatedAt).toBe(now.toISOString());
+    expect(conversations[0]?.subtitle).toBe("Workspace principal da sessão");
+  });
+
+  test("handles malformed section timestamps without breaking conversation mapping", () => {
+    const malformedSections: Section[] = [
+      {
+        ...sections[0],
+        updatedAt: "not-a-date",
+      },
+    ];
+
+    const conversations = buildWorkspaceConversations(project, malformedSections, chatMessages);
+
+    expect(conversations.find((conversation) => conversation.kind === "section")?.updatedAt).toBe(
+      new Date(0).toISOString()
+    );
+  });
+
   test("uses active section as artifact source before falling back to assistant content", () => {
-    const fromSection = buildArtifactSource(project, sections[0], chatMessages);
+    const fromSection = buildArtifactSource(project, sections[0], null, chatMessages);
     expect(fromSection.source).toBe("section");
     expect(fromSection.title).toBe("Introducao");
 
-    const fromAssistant = buildArtifactSource(project, null, chatMessages);
+    const fromAssistant = buildArtifactSource(project, null, null, chatMessages);
     expect(fromAssistant.source).toBe("assistant");
+  });
+
+  test("uses selected assistant conversation as artifact source", () => {
+    const conversations = buildWorkspaceConversations(project, sections, chatMessages);
+    const assistantConversation = conversations.find((conversation) => conversation.kind === "assistant") || null;
+
+    const artifact = buildArtifactSource(project, null, assistantConversation, chatMessages);
+
+    expect(artifact.source).toBe("assistant");
+    expect(artifact.title).toBe("Proposta do assistente");
   });
 
   test("splits code view into stable numbered lines", () => {

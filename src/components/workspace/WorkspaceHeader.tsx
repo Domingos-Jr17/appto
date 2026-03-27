@@ -18,13 +18,13 @@ const PAGE_META: Record<
 > = {
   "/app": {
     title: "Início",
-    description: "Retome o trabalho académico e avance para a próxima decisão com clareza.",
+    description: "Retome a sessão certa e avance para a próxima decisão com clareza.",
   },
-  "/app/projects": {
-    title: "Projectos",
-    description: "Organize o pipeline editorial, filtre estados e abra cada trabalho no fluxo certo.",
-    actionLabel: "Novo projecto",
-    actionHref: "/app/projects?new=1",
+  "/app/sessoes": {
+    title: "Sessões",
+    description: "Organize a biblioteca, filtre estados e abra cada sessão no fluxo certo.",
+    actionLabel: "Nova sessão",
+    actionHref: "/app/sessoes?new=1",
   },
   "/app/credits": {
     title: "Créditos",
@@ -45,10 +45,10 @@ export function WorkspaceHeader({ credits, onOpenMobileNav }: WorkspaceHeaderPro
   const pathname = usePathname();
 
   const meta = useMemo(() => {
-    if (pathname.startsWith("/app/projects/")) return null;
+    if (pathname.startsWith("/app/sessoes/")) return null;
 
     if (pathname === "/app") return PAGE_META["/app"];
-    if (pathname.startsWith("/app/projects")) return PAGE_META["/app/projects"];
+    if (pathname.startsWith("/app/sessoes")) return PAGE_META["/app/sessoes"];
     if (pathname.startsWith("/app/credits")) return PAGE_META["/app/credits"];
     if (pathname.startsWith("/app/settings")) return PAGE_META["/app/settings"];
 

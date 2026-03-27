@@ -14,6 +14,13 @@ function truncate(value: string, max = 44): string {
   return `${value.slice(0, max - 1)}...`;
 }
 
+function normalizeTimestamp(value?: string | Date | null) {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
 export function formatRelativeTime(rawDate?: string | Date | null): string {
   if (!rawDate) return "agora";
 
@@ -52,27 +59,36 @@ export function buildWorkspaceConversations(
     .filter((message) => message.role === "assistant" && message.content.trim())
     .slice(-MAX_RECENT_ASSISTANT_MESSAGES)
     .reverse();
+  const fallbackUpdatedAt = [
+    normalizeTimestamp(project.lastEditedSection?.updatedAt),
+    ...flatSections.map((section) => normalizeTimestamp(section.updatedAt)),
+    ...chatMessages.map((message) => normalizeTimestamp(message.createdAt)),
+  ].reduce<Date>((latest, current) => {
+    if (!current) return latest;
+    return current.getTime() > latest.getTime() ? current : latest;
+  }, new Date(0));
+  const normalizedFallbackUpdatedAt = fallbackUpdatedAt.toISOString();
 
   const items: WorkspaceConversationItem[] = [
     {
       id: `project-${project.id}`,
       title: truncate(project.title),
-      subtitle: project.description?.trim() || "Workspace principal do projecto",
-      updatedAt: new Date(project.lastEditedSection?.updatedAt || Date.now()).toISOString(),
-      updatedLabel: formatRelativeTime(project.lastEditedSection?.updatedAt || new Date()),
+      subtitle: project.description?.trim() || "Workspace principal da sessão",
+      updatedAt: normalizedFallbackUpdatedAt,
+      updatedLabel: formatRelativeTime(fallbackUpdatedAt),
       pinned: true,
       kind: "project",
-      sectionId: project.lastEditedSection?.id || undefined,
     },
   ];
 
   for (const section of flatSections) {
+      const sectionUpdatedAt = normalizeTimestamp(section.updatedAt) || new Date(0);
       items.push({
         id: `section-${section.id}`,
         title: truncate(section.title),
         subtitle: section.content.trim() ? `${section.wordCount} palavras` : "Secao ainda sem conteudo",
-        updatedAt: new Date(section.updatedAt).toISOString(),
-        updatedLabel: formatRelativeTime(section.updatedAt),
+        updatedAt: sectionUpdatedAt.toISOString(),
+        updatedLabel: formatRelativeTime(sectionUpdatedAt),
         kind: "section",
         sectionId: section.id,
     });
@@ -95,6 +111,7 @@ export function buildWorkspaceConversations(
 export function buildArtifactSource(
   project: Project,
   activeSection: Section | null,
+  activeConversation: WorkspaceConversationItem | null,
   chatMessages: AssistantMessage[]
 ): WorkspaceArtifactSource {
   if (activeSection) {
@@ -106,6 +123,34 @@ export function buildArtifactSource(
       content: activeSection.content,
       empty: activeSection.content.trim().length === 0,
       source: "section",
+    };
+  }
+
+  if (activeConversation?.kind === "assistant") {
+    const assistantMessage = chatMessages.find(
+      (message) => message.role === "assistant" && `assistant-${message.id}` === activeConversation.id
+    );
+
+    if (assistantMessage) {
+      return {
+        title: "Proposta do assistente",
+        subtitle: activeConversation.updatedLabel,
+        content: assistantMessage.content,
+        empty: false,
+        source: "assistant",
+      };
+    }
+  }
+
+  if (activeConversation?.kind === "project") {
+    return {
+      title: project.title,
+      subtitle: "Resumo inicial da sessão",
+      content:
+        project.description?.trim() ||
+        "Esta sessão ainda não tem documento em desenvolvimento. Comece pelo assistente ou seleccione uma secção para visualizar aqui.",
+      empty: !(project.description?.trim()),
+      source: "project",
     };
   }
 
@@ -125,10 +170,10 @@ export function buildArtifactSource(
 
   return {
     title: project.title,
-    subtitle: "Resumo inicial do projecto",
+    subtitle: "Resumo inicial da sessão",
     content:
       project.description?.trim() ||
-      "Este workspace ainda não tem documento em desenvolvimento. Comece pelo assistente ou seleccione uma secção para visualizar aqui.",
+      "Esta sessão ainda não tem documento em desenvolvimento. Comece pelo assistente ou seleccione uma secção para visualizar aqui.",
     empty: !(project.description?.trim()),
     source: "project",
   };

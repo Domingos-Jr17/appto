@@ -68,4 +68,46 @@ describe("workspace conversations store helpers", () => {
     const hidden = hideProjectConversation(mergeProjectConversations([], derived), "assistant-m1");
     expect(hidden.find((item) => item.id === "assistant-m1")?.hidden).toBe(true);
   });
+
+  test("prunes stale visible items that disappear from derived conversations", () => {
+    const existing: PersistedWorkspaceConversation[] = [
+      {
+        id: "project-p1",
+        title: "Workspace principal",
+        subtitle: "Sessão actual",
+        updatedAt: "2026-03-24T10:00:00.000Z",
+        pinned: true,
+        kind: "project",
+        sectionId: "s1",
+      },
+      {
+        id: "assistant-old",
+        title: "Resposta antiga",
+        subtitle: "Resposta recente do assistente",
+        updatedAt: "2026-03-24T09:00:00.000Z",
+        kind: "assistant",
+      },
+    ];
+
+    const merged = mergeProjectConversations(existing, derived.filter((item) => item.id === "project-p1"));
+
+    expect(merged.map((item) => item.id)).toEqual(["project-p1"]);
+  });
+
+  test("keeps hidden items out of view but preserved in storage metadata", () => {
+    const existing: PersistedWorkspaceConversation[] = [
+      {
+        id: "assistant-hidden",
+        title: "Resposta escondida",
+        subtitle: "Resposta recente do assistente",
+        updatedAt: "2026-03-24T09:00:00.000Z",
+        kind: "assistant",
+        hidden: true,
+      },
+    ];
+
+    const merged = mergeProjectConversations(existing, derived.filter((item) => item.id === "project-p1"));
+
+    expect(merged.some((item) => item.id === "assistant-hidden" && item.hidden)).toBe(true);
+  });
 });

@@ -63,7 +63,7 @@ function AppWorkspaceShellChrome({ children, user }: AppWorkspaceShellProps) {
         <div
           className={cn(
             "min-w-0 min-h-0 flex-1",
-            pathname.startsWith("/app/projects/")
+            pathname.startsWith("/app/sessoes/")
               ? "flex flex-col overflow-hidden"
               : "overflow-y-auto px-4 py-5 lg:px-8 lg:py-7"
           )}
@@ -77,7 +77,7 @@ function AppWorkspaceShellChrome({ children, user }: AppWorkspaceShellProps) {
 
 export function AppWorkspaceShell({ children, user }: AppWorkspaceShellProps) {
   const pathname = usePathname();
-  const isProjectWorkspaceRoute = /^\/app\/projects\/[^/]+$/.test(pathname);
+  const isProjectWorkspaceRoute = /^\/app\/sessoes\/[^/]+$/.test(pathname);
 
   if (isProjectWorkspaceRoute) {
     return <div className="h-svh w-screen overflow-hidden bg-background">{children}</div>;

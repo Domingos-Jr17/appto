@@ -37,7 +37,7 @@ const templates = [
   },
 ];
 
-const RESUME_COPY = "Abrir workspace";
+const RESUME_COPY = "Abrir sessão";
 
 export default function WorkspaceHomePage() {
   const { data: session, status } = useSession();
@@ -66,16 +66,16 @@ export default function WorkspaceHomePage() {
         <Card className="overflow-hidden border-border/60 bg-background/80 shadow-sm">
           <CardContent className="flex flex-col gap-8 p-6 lg:p-8">
             <div className="space-y-4">
-              <Badge variant="secondary" className="w-fit rounded-full px-3 py-1 text-xs">
-                Continuar trabalho
-              </Badge>
+                <Badge variant="secondary" className="w-fit rounded-full px-3 py-1 text-xs">
+                  Continuar sessão
+                </Badge>
               <div className="space-y-3">
                 <h2 className="text-3xl font-semibold tracking-tight text-foreground lg:text-4xl">
                   {firstName}, entre directamente no próximo passo.
                 </h2>
                 <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                  A área autenticada agora privilegia continuidade: retomar o último projecto,
-                  abrir a última secção ou iniciar um novo trabalho sem passar por um dashboard pesado.
+                  A área autenticada agora privilegia continuidade: retomar a última sessão,
+                  abrir a última secção ou iniciar uma nova sessão sem passar por um dashboard pesado.
                 </p>
               </div>
             </div>
@@ -119,9 +119,9 @@ export default function WorkspaceHomePage() {
                       </Link>
                     </Button>
                     <Button asChild variant="outline" className="rounded-full px-5">
-                      <Link href="/app/projects?new=1">
+                      <Link href="/app/sessoes?new=1">
                         <Plus className="mr-2 h-4 w-4" />
-                        Novo trabalho
+                        Nova sessão
                       </Link>
                     </Button>
                   </div>
@@ -130,14 +130,14 @@ export default function WorkspaceHomePage() {
             ) : (
               <div className="rounded-3xl border border-dashed border-border/60 bg-muted/20 p-6 lg:p-8">
                 <div className="max-w-2xl space-y-4">
-                  <h3 className="text-2xl font-semibold tracking-tight">Ainda não há projectos</h3>
+                  <h3 className="text-2xl font-semibold tracking-tight">Ainda não há sessões</h3>
                   <p className="text-sm leading-6 text-muted-foreground">
-                    Crie o primeiro trabalho e o fluxo principal abre logo em conversa, estrutura ou documento conforme o estado do projecto.
+                    Crie a primeira sessão e o fluxo principal abre logo em conversa, estrutura ou documento conforme o estado do trabalho.
                   </p>
                   <Button asChild className="rounded-full px-5">
-                    <Link href="/app/projects?new=1">
+                    <Link href="/app/sessoes?new=1">
                       <Plus className="mr-2 h-4 w-4" />
-                      Criar primeiro trabalho
+                      Criar primeira sessão
                     </Link>
                   </Button>
                 </div>
@@ -155,7 +155,7 @@ export default function WorkspaceHomePage() {
             <div className="surface-muted rounded-2xl p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Em curso</p>
               <p className="mt-2 text-2xl font-semibold">{activeProjects}</p>
-              <p className="mt-1 text-sm text-muted-foreground">trabalhos activos</p>
+                <p className="mt-1 text-sm text-muted-foreground">sessões activas</p>
             </div>
             <div className="surface-muted rounded-2xl p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Palavras</p>
@@ -170,7 +170,7 @@ export default function WorkspaceHomePage() {
             <div className="rounded-2xl bg-foreground px-4 py-4 text-background">
               <p className="text-xs uppercase tracking-[0.16em] text-background/70">Próxima acção</p>
               <p className="mt-2 text-sm font-medium">
-                {leadProject ? getNextAction(leadProject) : "Criar o primeiro projecto e gerar um outline base."}
+                {leadProject ? getNextAction(leadProject) : "Criar a primeira sessão e gerar um outline base."}
               </p>
             </div>
           </CardContent>
@@ -180,17 +180,17 @@ export default function WorkspaceHomePage() {
       {/* Projects + Fluxo principal */}
       <section className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-5">
-          {/* Recent projects */}
+          {/* Recent sessions */}
           <Card className="surface-panel rounded-3xl border-border/60 bg-background/80 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
-                <CardTitle className="text-lg">Projectos recentes</CardTitle>
+                <CardTitle className="text-lg">Sessões recentes</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Abre cada projecto no modo certo de continuidade.
+                  Abra cada sessão no modo certo de continuidade.
                 </p>
               </div>
               <Button variant="ghost" size="sm" asChild className="rounded-full">
-                <Link href="/app/projects">
+                <Link href="/app/sessoes">
                   Ver todos
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -206,7 +206,7 @@ export default function WorkspaceHomePage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          {index === 0 ? "Último aberto" : RESUME_COPY}
+                          {index === 0 ? "Última sessão" : RESUME_COPY}
                         </span>
                         <Badge variant="secondary" className="rounded-full">
                           {formatProjectType(project.type)}
@@ -232,7 +232,7 @@ export default function WorkspaceHomePage() {
                           href={getProjectHref(project)}
                           className="rounded-full bg-foreground px-3 py-1.5 text-xs font-medium text-background transition-colors hover:bg-foreground/90"
                         >
-                          Abrir
+                          Abrir sessão
                         </Link>
                         <div className="h-2 w-24 rounded-full bg-muted">
                           <div className="h-full rounded-full bg-primary" style={{ width: `${getProgress(project)}%` }} />
@@ -244,19 +244,19 @@ export default function WorkspaceHomePage() {
               ) : (
                 <div className="rounded-3xl border border-dashed border-border/60 bg-muted/25 p-8 text-center">
                   <FolderKanban className="mx-auto h-10 w-10 text-muted-foreground/40" />
-                  <h3 className="mt-4 text-lg font-medium">Sem projectos ainda</h3>
+                  <h3 className="mt-4 text-lg font-medium">Sem sessões ainda</h3>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    O workspace fica mais útil quando há um projecto para continuar.
+                    O workspace fica mais útil quando há uma sessão para continuar.
                   </p>
                   <Button asChild className="mt-5 rounded-full">
-                    <Link href="/app/projects?new=1">Criar primeiro trabalho</Link>
+                    <Link href="/app/sessoes?new=1">Criar primeira sessão</Link>
                   </Button>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Fluxo principal - below projectos */}
+          {/* Fluxo principal - abaixo das sessões */}
           <Card className="surface-panel rounded-3xl border-border/60 bg-background/80 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">Fluxo principal</CardTitle>
@@ -301,7 +301,7 @@ export default function WorkspaceHomePage() {
               {templates.map((template) => (
                 <Link
                   key={template.title}
-                  href="/app/projects?new=1"
+                  href="/app/sessoes?new=1"
                   className="block rounded-2xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55"
                 >
                   <div className="flex items-start gap-3">
@@ -324,7 +324,7 @@ export default function WorkspaceHomePage() {
 }
 
 function getProjectHref(project: AppProjectRecord) {
-  return `/app/projects/${project.id}`;
+  return `/app/sessoes/${project.id}`;
 }
 
 
@@ -355,7 +355,7 @@ function getNextAction(project: AppProjectRecord) {
   if (project.wordCount === 0) return "Gerar outline e aprovar a estrutura inicial.";
   if (project.lastEditedSection) return `Retomar a secção "${project.lastEditedSection.title}".`;
   if (project.sectionSummary.review > 0) return "Rever secções prontas e preparar exportação.";
-  return "Abrir o projecto e continuar a escrita.";
+  return "Abrir a sessão e continuar a escrita.";
 }
 
 function formatProjectType(type: string) {

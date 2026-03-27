@@ -108,7 +108,7 @@ function ProjectCard({
                 <span>{statusStyle.label}</span>
               </div>
             </div>
-            <Link href={`/app/projects/${project.id}`}>
+            <Link href={`/app/sessoes/${project.id}`}>
               <h4 className="line-clamp-2 text-base font-semibold leading-tight hover:text-primary transition-colors">
                 {project.title}
               </h4>
@@ -124,11 +124,11 @@ function ProjectCard({
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem asChild>
-                <Link href={`/app/projects/${project.id}`}>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem asChild>
+                <Link href={`/app/sessoes/${project.id}`}>
                   <FileText className="mr-2 h-4 w-4" />
-                  Abrir
+                  Abrir sessão
                 </Link>
               </DropdownMenuItem>
               {onEdit && (
@@ -226,7 +226,7 @@ function ProjectListItem({
               <span>{statusStyle.label}</span>
             </div>
           </div>
-          <Link href={`/app/projects/${project.id}`}>
+          <Link href={`/app/sessoes/${project.id}`}>
             <h4 className="font-semibold truncate hover:text-primary transition-colors">
               {project.title}
             </h4>
@@ -267,11 +267,11 @@ function ProjectListItem({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem asChild>
-              <Link href={`/app/projects/${project.id}`}>
-                <FileText className="mr-2 h-4 w-4" />
-                Abrir
-              </Link>
-            </DropdownMenuItem>
+                  <Link href={`/app/sessoes/${project.id}`}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Abrir sessão
+                  </Link>
+                </DropdownMenuItem>
             {onEdit && (
               <DropdownMenuItem onClick={() => onEdit(project.id)}>
                 <Pencil className="mr-2 h-4 w-4" />
@@ -318,9 +318,9 @@ export function ProjectGrid({
         <div className="rounded-full bg-muted/50 p-4 mb-4">
           <FileText className="h-10 w-10 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">Nenhum projecto encontrado</h3>
+        <h3 className="text-lg font-semibold mb-2">Nenhuma sessão encontrada</h3>
         <p className="text-muted-foreground max-w-sm">
-          Não tem projectos nesta categoria. Crie um novo projecto para começar.
+          Não tem sessões nesta categoria. Crie uma nova sessão para começar.
         </p>
       </div>
     );

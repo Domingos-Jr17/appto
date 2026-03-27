@@ -271,7 +271,7 @@ export function AccountSection() {
 
         <div className="rounded-xl border border-border/50 bg-accent/50 p-4 shadow-lg backdrop-blur-xl">
           <p className="mb-4 text-sm text-muted-foreground">
-            Será descarregado um ficheiro JSON com projectos, secções,
+            Será descarregado um ficheiro JSON com sessões, secções,
             transacções, créditos e configurações associadas à conta.
           </p>
           <Button variant="outline" onClick={handleExportData} disabled={isExporting}>
@@ -328,7 +328,7 @@ export function AccountSection() {
                   </AlertDialogTitle>
                   <AlertDialogDescription className="text-left">
                     Esta ação é irreversível. Todos os seus dados, incluindo
-                    projectos, secções e créditos, serão permanentemente removidos.
+                    sessões, secções e créditos, serão permanentemente removidos.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
 

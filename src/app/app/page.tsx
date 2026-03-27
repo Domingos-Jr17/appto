@@ -9,15 +9,18 @@ import {
   FilePenLine,
   FolderKanban,
   LayoutTemplate,
-  Loader2,
   Network,
   Plus,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { useAppWorkspaceData } from "@/components/workspace/AppWorkspaceDataContext";
 import type { AppProjectRecord } from "@/lib/app-data";
+import { calculateProjectProgress } from "@/lib/progress";
 
 const templates = [
   {
@@ -42,13 +45,15 @@ const RESUME_COPY = "Abrir sessão";
 export default function WorkspaceHomePage() {
   const { data: session, status } = useSession();
   const { projects, isLoading } = useAppWorkspaceData();
+  const [showMainFlow, setShowMainFlow] = React.useState(true);
+
+  React.useLayoutEffect(() => {
+    if (typeof window === "undefined") return;
+    setShowMainFlow(window.localStorage.getItem("appto:hide-main-flow") !== "1");
+  }, []);
 
   if (isLoading || status === "loading") {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const firstName = session?.user?.name?.split(" ")[0] || "Estudante";
@@ -58,12 +63,20 @@ export default function WorkspaceHomePage() {
   ).length;
   const reviewReady = projects.reduce((total, project) => total + project.sectionSummary.review, 0);
   const totalWords = projects.reduce((total, project) => total + project.wordCount, 0);
+  const shouldShowMainFlow = showMainFlow && projects.length < 3;
+
+  const dismissMainFlow = () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("appto:hide-main-flow", "1");
+    }
+    setShowMainFlow(false);
+  };
 
   return (
     <div className="space-y-8">
       {/* Hero: welcome + resume project */}
       <section className="grid gap-5 xl:grid-cols-[1.6fr_1fr]">
-        <Card className="overflow-hidden border-border/60 bg-background/80 shadow-sm">
+        <Card className="surface-panel overflow-hidden rounded-xl bg-background/80">
           <CardContent className="flex flex-col gap-8 p-6 lg:p-8">
             <div className="space-y-4">
                 <Badge variant="secondary" className="w-fit rounded-full px-3 py-1 text-xs">
@@ -81,7 +94,7 @@ export default function WorkspaceHomePage() {
             </div>
 
             {leadProject ? (
-              <div className="surface-muted rounded-3xl p-5 lg:p-6">
+              <div className="surface-muted card-hover rounded-xl p-5 lg:p-6">
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
@@ -128,46 +141,46 @@ export default function WorkspaceHomePage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-3xl border border-dashed border-border/60 bg-muted/20 p-6 lg:p-8">
-                <div className="max-w-2xl space-y-4">
-                  <h3 className="text-2xl font-semibold tracking-tight">Ainda não há sessões</h3>
-                  <p className="text-sm leading-6 text-muted-foreground">
-                    Crie a primeira sessão e o fluxo principal abre logo em conversa, estrutura ou documento conforme o estado do trabalho.
-                  </p>
+              <EmptyState
+                icon={FolderKanban}
+                title="Ainda não há sessões"
+                description="Crie a primeira sessão e o fluxo principal abre logo em conversa, estrutura ou documento conforme o estado do trabalho."
+                className="items-start text-left lg:items-start"
+                action={
                   <Button asChild className="rounded-full px-5">
                     <Link href="/app/sessoes?new=1">
                       <Plus className="mr-2 h-4 w-4" />
                       Criar primeira sessão
                     </Link>
                   </Button>
-                </div>
-              </div>
+                }
+              />
             )}
           </CardContent>
         </Card>
 
         {/* Stats sidebar */}
-        <Card className="surface-panel rounded-3xl border-border/60 bg-background/80 shadow-sm">
+        <Card className="surface-panel rounded-xl bg-background/80">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-medium">Contexto rápido</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="surface-muted rounded-2xl p-4">
+            <div className="surface-muted rounded-xl p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Em curso</p>
               <p className="mt-2 text-2xl font-semibold">{activeProjects}</p>
                 <p className="mt-1 text-sm text-muted-foreground">sessões activas</p>
             </div>
-            <div className="surface-muted rounded-2xl p-4">
+            <div className="surface-muted rounded-xl p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Palavras</p>
               <p className="mt-2 text-2xl font-semibold">{totalWords.toLocaleString("pt-MZ")}</p>
               <p className="mt-1 text-sm text-muted-foreground">acumuladas</p>
             </div>
-            <div className="surface-muted rounded-2xl p-4">
+            <div className="surface-muted rounded-xl p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Prontas</p>
               <p className="mt-2 text-2xl font-semibold">{reviewReady}</p>
               <p className="mt-1 text-sm text-muted-foreground">secções em revisão final</p>
             </div>
-            <div className="rounded-2xl bg-foreground px-4 py-4 text-background">
+            <div className="rounded-xl bg-foreground px-4 py-4 text-background">
               <p className="text-xs uppercase tracking-[0.16em] text-background/70">Próxima acção</p>
               <p className="mt-2 text-sm font-medium">
                 {leadProject ? getNextAction(leadProject) : "Criar a primeira sessão e gerar um outline base."}
@@ -181,7 +194,7 @@ export default function WorkspaceHomePage() {
       <section className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-5">
           {/* Recent sessions */}
-          <Card className="surface-panel rounded-3xl border-border/60 bg-background/80 shadow-sm">
+          <Card className="surface-panel rounded-xl bg-background/80">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
                 <CardTitle className="text-lg">Sessões recentes</CardTitle>
@@ -201,7 +214,7 @@ export default function WorkspaceHomePage() {
                 projects.slice(0, 5).map((project, index) => (
                   <div
                     key={project.id}
-                    className="flex flex-col gap-4 rounded-2xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55 lg:flex-row lg:items-center lg:justify-between"
+                      className="card-hover flex flex-col gap-4 rounded-xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55 lg:flex-row lg:items-center lg:justify-between"
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -222,7 +235,7 @@ export default function WorkspaceHomePage() {
 
                     <div className="flex min-w-[240px] items-center justify-between gap-4 rounded-2xl bg-background/70 px-4 py-3">
                       <div className="text-sm">
-                        <p className="font-medium">{getProgress(project)}%</p>
+                         <p className="font-medium">{calculateProjectProgress(project)}%</p>
                         <p className="text-xs text-muted-foreground">
                           {formatRelativeTime(new Date(project.updatedAt))}
                         </p>
@@ -235,65 +248,74 @@ export default function WorkspaceHomePage() {
                           Abrir sessão
                         </Link>
                         <div className="h-2 w-24 rounded-full bg-muted">
-                          <div className="h-full rounded-full bg-primary" style={{ width: `${getProgress(project)}%` }} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                           <div className="h-full rounded-full bg-primary" style={{ width: `${calculateProjectProgress(project)}%` }} />
+                         </div>
+                       </div>
+                     </div>
+                   </div>
                 ))
               ) : (
-                <div className="rounded-3xl border border-dashed border-border/60 bg-muted/25 p-8 text-center">
-                  <FolderKanban className="mx-auto h-10 w-10 text-muted-foreground/40" />
-                  <h3 className="mt-4 text-lg font-medium">Sem sessões ainda</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    O workspace fica mais útil quando há uma sessão para continuar.
-                  </p>
-                  <Button asChild className="mt-5 rounded-full">
-                    <Link href="/app/sessoes?new=1">Criar primeira sessão</Link>
-                  </Button>
-                </div>
+                <EmptyState
+                  icon={FolderKanban}
+                  title="Sem sessões ainda"
+                  description="O workspace fica mais útil quando há uma sessão para continuar."
+                  action={
+                    <Button asChild className="rounded-full">
+                      <Link href="/app/sessoes?new=1">Criar primeira sessão</Link>
+                    </Button>
+                  }
+                />
               )}
             </CardContent>
           </Card>
 
-          {/* Fluxo principal - abaixo das sessões */}
-          <Card className="surface-panel rounded-3xl border-border/60 bg-background/80 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Fluxo principal</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3">
-              {[
-                {
-                  icon: LayoutTemplate,
-                  title: "Conversar",
-                  description: "Use o chat como ponto de partida para outline, ideias e decisões.",
-                },
-                {
-                  icon: Network,
-                  title: "Estruturar",
-                  description: "Reordene capítulos, subtítulos e acompanhe o estado editorial.",
-                },
-                {
-                  icon: FilePenLine,
-                  title: "Escrever",
-                  description: "Passe ao documento quando houver uma secção clara para desenvolver.",
-                },
-              ].map((item) => (
-                <div key={item.title} className="surface-muted rounded-2xl p-4">
-                  <div className="w-fit rounded-2xl bg-primary/10 p-2.5">
-                    <item.icon className="h-4 w-4 text-primary" />
-                  </div>
-                  <h3 className="mt-4 text-sm font-semibold">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+          {shouldShowMainFlow ? (
+            <Card className="surface-panel rounded-xl bg-background/80">
+              <CardHeader className="flex flex-row items-start justify-between gap-4 pb-2">
+                <div>
+                  <CardTitle className="text-lg">Fluxo principal</CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Um guia rápido para a primeira sessão ou para retomar o método de trabalho.
+                  </p>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
+                <Button variant="ghost" size="icon" className="rounded-full" onClick={dismissMainFlow}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                {[
+                  {
+                    icon: LayoutTemplate,
+                    title: "Conversar",
+                    description: "Use o chat como ponto de partida para outline, ideias e decisões.",
+                  },
+                  {
+                    icon: Network,
+                    title: "Estruturar",
+                    description: "Reordene capítulos, subtítulos e acompanhe o estado editorial.",
+                  },
+                  {
+                    icon: FilePenLine,
+                    title: "Escrever",
+                    description: "Passe ao documento quando houver uma secção clara para desenvolver.",
+                  },
+                ].map((item) => (
+                  <div key={item.title} className="surface-muted rounded-xl p-4">
+                    <div className="w-fit rounded-xl bg-primary/10 p-2.5">
+                      <item.icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <h3 className="mt-4 text-sm font-semibold">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
 
         {/* Templates */}
         <div className="space-y-5">
-          <Card className="surface-panel rounded-3xl border-border/60 bg-background/80 shadow-sm">
+          <Card className="surface-panel rounded-xl bg-background/80">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">Templates e atalhos</CardTitle>
             </CardHeader>
@@ -302,10 +324,10 @@ export default function WorkspaceHomePage() {
                 <Link
                   key={template.title}
                   href="/app/sessoes?new=1"
-                  className="block rounded-2xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55"
+                  className="card-hover block rounded-xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-fit rounded-2xl bg-primary/10 p-2.5">
+                    <div className="w-fit rounded-xl bg-primary/10 p-2.5">
                       <template.icon className="h-4 w-4 text-primary" />
                     </div>
                     <div>
@@ -326,31 +348,6 @@ export default function WorkspaceHomePage() {
 function getProjectHref(project: AppProjectRecord) {
   return `/app/sessoes/${project.id}`;
 }
-
-
-
-function getProgress(project: AppProjectRecord): number {
-  if (project.status === "COMPLETED") return 100;
-
-  const total =
-    project.sectionSummary.empty +
-    project.sectionSummary.started +
-    project.sectionSummary.drafting +
-    project.sectionSummary.review +
-    project.sectionSummary.stale;
-
-  if (total === 0) return project.wordCount > 0 ? 16 : 8;
-
-  const weighted =
-    project.sectionSummary.empty * 10 +
-    project.sectionSummary.started * 38 +
-    project.sectionSummary.drafting * 72 +
-    project.sectionSummary.review * 100 +
-    project.sectionSummary.stale * 28;
-
-  return Math.max(8, Math.min(100, Math.round(weighted / total)));
-}
-
 function getNextAction(project: AppProjectRecord) {
   if (project.wordCount === 0) return "Gerar outline e aprovar a estrutura inicial.";
   if (project.lastEditedSection) return `Retomar a secção "${project.lastEditedSection.title}".`;

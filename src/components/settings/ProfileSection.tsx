@@ -106,13 +106,13 @@ export function ProfileSection() {
       });
 
       if (!updateResponse.ok) {
-        throw new Error("Erro ao actualizar foto");
+        throw new Error("Erro ao actualizar a foto");
       }
 
       await update();
       toast({
         title: "Foto actualizada",
-        description: "A sua foto de perfil foi actualizada",
+        description: "A sua foto de perfil foi actualizada com sucesso",
       });
     } catch {
       toast({
@@ -136,18 +136,18 @@ export function ProfileSection() {
       });
 
       if (!response.ok) {
-        throw new Error("Erro ao salvar");
+        throw new Error("Erro ao guardar");
       }
 
       await update();
       toast({
         title: "Perfil actualizado",
-        description: "As suas informações foram salvas com sucesso",
+        description: "As suas informações foram guardadas com sucesso",
       });
     } catch {
       toast({
         title: "Erro",
-        description: "Não foi possível salvar as alterações",
+        description: "Não foi possível guardar as alterações",
         variant: "destructive",
       });
     } finally {
@@ -273,14 +273,14 @@ export function ProfileSection() {
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Informações da Conta</h3>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-lg border border-border/50 bg-muted/30 p-4">
+          <div className="rounded-xl border border-border/50 bg-muted/30 p-4">
             <p className="text-sm text-muted-foreground">Tipo de Conta</p>
             <p className="font-medium capitalize">{user?.role || "Estudante"}</p>
           </div>
-          <div className="rounded-lg border border-border/50 bg-muted/30 p-4">
+          <div className="rounded-xl border border-border/50 bg-muted/30 p-4">
             <p className="text-sm text-muted-foreground">Créditos Disponíveis</p>
             <p className="font-medium">
-              {user?.credits?.toLocaleString() || 0} créditos
+              {user?.credits?.toLocaleString("pt-MZ") || 0} créditos
             </p>
           </div>
         </div>
@@ -293,10 +293,10 @@ export function ProfileSection() {
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Salvando...
+              A guardar...
             </>
           ) : (
-            "Salvar alterações"
+            "Guardar alterações"
           )}
         </Button>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import type { ReactNode } from "react";
 
 interface WorkspaceThreePaneProps {
@@ -59,12 +59,14 @@ export function WorkspaceThreePane({
 
       <Sheet open={mobileSidebarOpen} onOpenChange={onMobileSidebarOpenChange}>
         <SheetContent side="left" className="w-[340px] max-w-[92vw] p-0">
+          <SheetTitle className="sr-only">Navegação da sessão</SheetTitle>
           {sidebar}
         </SheetContent>
       </Sheet>
 
       <Sheet open={mobileArtifactOpen} onOpenChange={onMobileArtifactOpenChange}>
         <SheetContent side="right" className="w-[380px] max-w-[96vw] p-0">
+          <SheetTitle className="sr-only">Painel do documento</SheetTitle>
           {artifact}
         </SheetContent>
       </Sheet>

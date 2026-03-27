@@ -12,7 +12,7 @@ export async function GET(
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("NÃ£o autorizado", 401);
+      return apiError("Não autorizado", 401);
     }
 
     const { id } = await params;
@@ -25,11 +25,11 @@ export async function GET(
     });
 
     if (!storedFile) {
-      return apiError("Ficheiro nÃ£o encontrado", 404);
+      return apiError("Ficheiro não encontrado", 404);
     }
 
     return getStoredFileContentResponse(storedFile);
   } catch (error) {
-    return handleApiError(error, "NÃ£o foi possÃ­vel servir o ficheiro");
+    return handleApiError(error, "Não foi possível servir o ficheiro");
   }
 }

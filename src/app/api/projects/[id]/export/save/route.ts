@@ -17,7 +17,7 @@ export async function POST(
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("NÃ£o autorizado", 401);
+      return apiError("Não autorizado", 401);
     }
 
     const { id } = await params;
@@ -36,7 +36,7 @@ export async function POST(
     });
 
     if (!project) {
-      return apiError("Projeto nÃ£o encontrado", 404);
+      return apiError("Projecto não encontrado", 404);
     }
 
     const model = DocumentExportService.createModel(project);
@@ -115,6 +115,6 @@ export async function POST(
       },
     });
   } catch (error) {
-    return handleApiError(error, "NÃ£o foi possÃ­vel guardar a exportaÃ§Ã£o");
+    return handleApiError(error, "Não foi possível guardar a exportação");
   }
 }

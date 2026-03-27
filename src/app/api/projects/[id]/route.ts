@@ -49,7 +49,7 @@ export async function GET(
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "NÃ£o autorizado" }, { status: 401 });
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -75,7 +75,7 @@ export async function GET(
     });
 
     if (!project) {
-      return NextResponse.json({ error: "Projeto nÃ£o encontrado" }, { status: 404 });
+      return NextResponse.json({ error: "Projecto não encontrado" }, { status: 404 });
     }
 
     return NextResponse.json(serializeProject(project));
@@ -93,7 +93,7 @@ export async function PUT(
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "NÃ£o autorizado" }, { status: 401 });
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -105,7 +105,7 @@ export async function PUT(
     });
 
     if (!existingProject) {
-      return NextResponse.json({ error: "Projeto nÃ£o encontrado" }, { status: 404 });
+      return NextResponse.json({ error: "Projecto não encontrado" }, { status: 404 });
     }
 
     const project = await db.project.update({
@@ -147,7 +147,7 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "NÃ£o autorizado" }, { status: 401 });
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -156,7 +156,7 @@ export async function DELETE(
     });
 
     if (!existingProject) {
-      return NextResponse.json({ error: "Projeto nÃ£o encontrado" }, { status: 404 });
+      return NextResponse.json({ error: "Projecto não encontrado" }, { status: 404 });
     }
 
     const storedFiles = await db.storedFile.findMany({

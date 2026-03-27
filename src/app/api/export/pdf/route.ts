@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const projectId = searchParams.get("projectId");
 
     if (!projectId) {
-      return apiError("ID do projeto é obrigatório", 400);
+      return apiError("ID do projecto é obrigatório", 400);
     }
 
     const project = await db.project.findFirst({
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!project) {
-      return apiError("Projeto não encontrado", 404);
+      return apiError("Projecto não encontrado", 404);
     }
 
     const model = DocumentExportService.createModel(project);

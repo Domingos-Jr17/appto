@@ -174,7 +174,7 @@ export function validateFileUpload(input: {
   const rules = FILE_RULES[input.kind];
 
   if (!rules) {
-    throw new Error("Tipo de ficheiro nÃ£o suportado");
+    throw new Error("Tipo de ficheiro não suportado");
   }
 
   if (input.sizeBytes > rules.maxSizeBytes) {
@@ -182,7 +182,7 @@ export function validateFileUpload(input: {
   }
 
   if (!rules.mimeTypes.includes(input.mimeType)) {
-    throw new Error("Tipo de ficheiro nÃ£o permitido");
+    throw new Error("Tipo de ficheiro não permitido");
   }
 
   if (rules.requiresProject && !input.projectId) {

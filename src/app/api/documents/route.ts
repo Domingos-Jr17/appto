@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     if (!projectId) {
       return NextResponse.json(
-        { error: "ID do projeto é obrigatório" },
+        { error: "ID do projecto é obrigatório" },
         { status: 400 }
       );
     }
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     if (!project) {
       return NextResponse.json(
-        { error: "Projeto não encontrado" },
+        { error: "Projecto não encontrado" },
         { status: 404 }
       );
     }
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     if (!project) {
       return NextResponse.json(
-        { error: "Projeto não encontrado" },
+        { error: "Projecto não encontrado" },
         { status: 404 }
       );
     }

@@ -25,19 +25,19 @@ export async function GET(
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("NÃ£o autorizado", 401);
+      return apiError("Não autorizado", 401);
     }
 
     const { id } = await params;
     const storedFile = await getOwnedFile(id, session.user.id);
 
     if (!storedFile) {
-      return apiError("Ficheiro nÃ£o encontrado", 404);
+      return apiError("Ficheiro não encontrado", 404);
     }
 
     return apiSuccess(await serializeStoredFile(storedFile));
   } catch (error) {
-    return handleApiError(error, "NÃ£o foi possÃ­vel obter o ficheiro");
+    return handleApiError(error, "Não foi possível obter o ficheiro");
   }
 }
 
@@ -49,14 +49,14 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("NÃ£o autorizado", 401);
+      return apiError("Não autorizado", 401);
     }
 
     const { id } = await params;
     const storedFile = await getOwnedFile(id, session.user.id);
 
     if (!storedFile) {
-      return apiError("Ficheiro nÃ£o encontrado", 404);
+      return apiError("Ficheiro não encontrado", 404);
     }
 
     await deleteStoredObject(storedFile).catch(() => null);
@@ -67,6 +67,6 @@ export async function DELETE(
 
     return apiSuccess({ success: true });
   } catch (error) {
-    return handleApiError(error, "NÃ£o foi possÃ­vel eliminar o ficheiro");
+    return handleApiError(error, "Não foi possível eliminar o ficheiro");
   }
 }

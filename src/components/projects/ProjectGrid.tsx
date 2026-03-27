@@ -20,6 +20,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,7 +90,7 @@ function ProjectCard({
   return (
     <Card
       className={cn(
-        "surface-panel card-hover group relative cursor-pointer overflow-hidden rounded-3xl border-border/50 bg-card/80",
+        "surface-panel card-hover group relative cursor-pointer overflow-hidden rounded-xl bg-card/80",
         project.status === "archived" && "opacity-75"
       )}
     >
@@ -208,7 +209,7 @@ function ProjectListItem({
   return (
     <Card
       className={cn(
-        "surface-panel card-hover group cursor-pointer rounded-3xl border-border/50 bg-card/80",
+        "surface-panel card-hover group cursor-pointer rounded-xl bg-card/80",
         project.status === "archived" && "opacity-75"
       )}
     >
@@ -314,15 +315,12 @@ export function ProjectGrid({
 }: ProjectGridProps) {
   if (projects.length === 0) {
     return (
-      <div className={cn("flex flex-col items-center justify-center py-16 text-center", className)}>
-        <div className="rounded-full bg-muted/50 p-4 mb-4">
-          <FileText className="h-10 w-10 text-muted-foreground" />
-        </div>
-        <h3 className="text-lg font-semibold mb-2">Nenhuma sessão encontrada</h3>
-        <p className="text-muted-foreground max-w-sm">
-          Não tem sessões nesta categoria. Crie uma nova sessão para começar.
-        </p>
-      </div>
+       <EmptyState
+         icon={FileText}
+         title="Nenhuma sessão encontrada"
+         description="Não tem sessões nesta categoria. Crie uma nova sessão para começar."
+         className={cn("py-16", className)}
+       />
     );
   }
 

@@ -12,7 +12,7 @@ export async function PUT(
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("NÃ£o autorizado", 401);
+      return apiError("Não autorizado", 401);
     }
 
     const { id } = await params;
@@ -26,7 +26,7 @@ export async function PUT(
     });
 
     if (!storedFile) {
-      return apiError("Upload nÃ£o encontrado", 404);
+      return apiError("Upload não encontrado", 404);
     }
 
     const bytes = new Uint8Array(await request.arrayBuffer());
@@ -34,6 +34,6 @@ export async function PUT(
 
     return apiSuccess({ success: true });
   } catch (error) {
-    return handleApiError(error, "NÃ£o foi possÃ­vel guardar o ficheiro");
+    return handleApiError(error, "Não foi possível guardar o ficheiro");
   }
 }

@@ -140,7 +140,7 @@ export default function CreditsPage() {
 
       toast({
         title: "Checkout concluído",
-        description: `Pagamento sandbox confirmado. Saldo atualizado para ${data.balance} créditos.`,
+        description: `Pagamento sandbox confirmado. Saldo actualizado para ${data.balance} créditos.`,
       });
 
       await fetchCredits();
@@ -233,7 +233,7 @@ export default function CreditsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="surface-panel rounded-3xl px-5 py-4">
+      <div className="surface-panel rounded-xl px-5 py-4">
         <p className="text-sm leading-6 text-muted-foreground">
           Gira o saldo, acompanha o consumo mensal e recarrega a conta sem sair do fluxo principal do produto.
         </p>
@@ -250,7 +250,7 @@ export default function CreditsPage() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card id="credit-packages" className="surface-panel rounded-3xl border-border/50 bg-card/80">
+          <Card id="credit-packages" className="surface-panel rounded-xl bg-card/80">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base font-medium">
                 <Sparkles className="h-5 w-5 text-primary" />
@@ -262,7 +262,7 @@ export default function CreditsPage() {
                 {plans.map((plan) => (
                   <div
                     key={plan.packageKey}
-                    className={`relative rounded-3xl border p-5 ${
+                    className={`relative rounded-xl border p-5 ${
                       plan.popular
                         ? "border-primary/35 bg-primary/8 surface-strong"
                         : "border-border/50 bg-muted/30"
@@ -308,7 +308,7 @@ export default function CreditsPage() {
                       {isPurchasing === plan.packageKey ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : null}
-                      {isPurchasing === plan.packageKey ? "Processando..." : "Seleccionar"}
+                      {isPurchasing === plan.packageKey ? "A processar..." : "Seleccionar"}
                     </Button>
                   </div>
                 ))}
@@ -318,7 +318,7 @@ export default function CreditsPage() {
         </div>
       </div>
 
-      <Card className="surface-panel rounded-3xl border-border/50 bg-card/80">
+      <Card className="surface-panel rounded-xl bg-card/80">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base font-medium">
@@ -332,7 +332,7 @@ export default function CreditsPage() {
         </CardHeader>
         <CardContent>
           {creditData.transactions.length > 0 ? (
-            <div className="overflow-hidden rounded-lg border border-border/50">
+            <div className="overflow-hidden rounded-xl border border-border/50">
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
@@ -393,7 +393,7 @@ export default function CreditsPage() {
         </CardContent>
       </Card>
 
-      <Card className="surface-panel rounded-3xl border-border/50 bg-card/80">
+      <Card className="surface-panel rounded-xl bg-card/80">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-medium">
             <HelpCircle className="h-5 w-5 text-primary" />

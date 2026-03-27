@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
 
     if (!userCredits || userCredits.balance < 10) {
       return NextResponse.json(
-        { error: "Créditos insuficientes para criar um novo projeto" },
+        { error: "Créditos insuficientes para criar um novo projecto" },
         { status: 400 }
       );
     }
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
           userId: session.user.id,
           amount: -10,
           type: "USAGE",
-          description: `Criação do projeto: ${title}`,
+          description: `Criação do projecto: ${title}`,
         },
       });
 

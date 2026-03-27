@@ -14,7 +14,7 @@ export async function assertProjectOwnership(projectId: string, userId: string) 
   });
 
   if (!project) {
-    throw new Error("Projeto nÃ£o encontrado");
+    throw new Error("Projecto não encontrado");
   }
 
   return project;

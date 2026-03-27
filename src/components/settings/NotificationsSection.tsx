@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { SettingsSectionSkeleton } from "@/components/skeletons/SettingsSectionSkeleton";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2,
@@ -63,17 +64,17 @@ export function NotificationsSection() {
       });
 
       if (!response.ok) {
-        throw new Error("Erro ao salvar");
+        throw new Error("Erro ao guardar");
       }
 
       toast({
-        title: "Preferências salvas",
+        title: "Preferências guardadas",
         description: "As suas preferências de notificação foram actualizadas",
       });
     } catch {
       toast({
         title: "Erro",
-        description: "Não foi possível salvar as preferências",
+        description: "Não foi possível guardar as preferências",
         variant: "destructive",
       });
     } finally {
@@ -82,11 +83,7 @@ export function NotificationsSection() {
   };
 
   if (isFetching) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
+    return <SettingsSectionSkeleton />;
   }
 
   return (
@@ -151,10 +148,10 @@ export function NotificationsSection() {
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Salvando...
+              A guardar...
             </>
           ) : (
-            "Salvar preferências"
+            "Guardar preferências"
           )}
         </Button>
       </div>

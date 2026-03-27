@@ -47,7 +47,7 @@ const plans = [
     description: "Para equipas e utilizadores intensivos em fase piloto",
     features: [
       { text: "60.000 créditos", included: true },
-      { text: "Fluxo de projeto avançado", included: true },
+      { text: "Fluxo de projecto avançado", included: true },
       { text: "Modelos avançados", included: true },
       { text: "Sem limites diários", included: true },
       { text: "Suporte prioritário", included: true },
@@ -119,7 +119,7 @@ export function PricingCards() {
             Planos que <span className="text-primary">cabem no seu bolso</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Comece gratuitamente e evolua conforme suas necessidades académicas
+            Comece gratuitamente e evolua conforme as suas necessidades académicas
           </p>
         </motion.div>
 

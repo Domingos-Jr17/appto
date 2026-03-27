@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Card,
@@ -39,7 +40,7 @@ const tabs = [
         value: "notificacoes",
         label: "Notificações",
         icon: Bell,
-        description: "Gerencie as suas preferências de notificação",
+        description: "Gira as suas preferências de notificação",
     },
     {
         value: "conta",
@@ -50,24 +51,38 @@ const tabs = [
 ];
 
 export default function SettingsPage() {
+    const pathname = usePathname();
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const requestedTab = searchParams.get("tab") || "perfil";
+    const activeTab = tabs.some((tab) => tab.value === requestedTab) ? requestedTab : "perfil";
+
     return (
         <div className="space-y-6">
-            <div className="surface-panel rounded-3xl px-5 py-4">
+            <div className="surface-panel rounded-xl px-5 py-4">
                 <p className="text-sm text-muted-foreground">
                     Gira preferências, segurança, notificações e dados da conta
                     num fluxo mais consistente com o resto do produto.
                 </p>
             </div>
 
-            <Tabs defaultValue="perfil" className="w-full">
+            <Tabs
+                value={activeTab}
+                onValueChange={(value) => {
+                    const params = new URLSearchParams(searchParams.toString());
+                    params.set("tab", value);
+                    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+                }}
+                className="w-full"
+            >
                 <div className="flex flex-col gap-6 lg:flex-row">
                     <div className="lg:w-64 shrink-0">
-                        <TabsList className="surface-panel flex h-auto w-full flex-col gap-1 rounded-3xl p-2">
+                        <TabsList className="surface-panel flex h-auto w-full flex-col gap-1 rounded-xl p-2">
                             {tabs.map((tab) => (
                                 <TabsTrigger
                                     key={tab.value}
                                     value={tab.value}
-                                    className="w-full justify-start gap-3 rounded-2xl px-3 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none hover:bg-accent/50 transition-colors"
+                                    className="w-full justify-start gap-3 rounded-xl px-3 py-3 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none hover:bg-accent/50 transition-colors"
                                 >
                                     <tab.icon className="h-4 w-4" />
                                     <span className="font-medium">
@@ -85,7 +100,7 @@ export default function SettingsPage() {
                                 value={tab.value}
                                 className="mt-0 focus-visible:outline-none"
                             >
-                                <Card className="surface-panel rounded-3xl border border-border bg-card shadow-sm">
+                                <Card className="surface-panel rounded-xl bg-card">
                                     <CardHeader className="border-b border-border/50">
                                         <div className="flex items-center gap-3">
                                             <div className="rounded-2xl bg-primary/10 p-2.5">

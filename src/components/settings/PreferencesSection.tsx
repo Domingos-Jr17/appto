@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
+import { SettingsSectionSkeleton } from "@/components/skeletons/SettingsSectionSkeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
 import {
@@ -134,17 +135,17 @@ export function PreferencesSection() {
       });
 
       if (!response.ok) {
-        throw new Error("Erro ao salvar");
+        throw new Error("Erro ao guardar");
       }
 
       toast({
-        title: "Preferências salvas",
+        title: "Preferências guardadas",
         description: "As suas preferências foram actualizadas com sucesso",
       });
     } catch {
       toast({
         title: "Erro",
-        description: "Não foi possível salvar as preferências",
+        description: "Não foi possível guardar as preferências",
         variant: "destructive",
       });
     } finally {
@@ -153,11 +154,7 @@ export function PreferencesSection() {
   };
 
   if (isFetching) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
+    return <SettingsSectionSkeleton />;
   }
 
   return (
@@ -261,10 +258,10 @@ export function PreferencesSection() {
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
             <Save className="h-4 w-4 text-muted-foreground" />
-            Salvamento Automático
+            Guarda Automática
           </Label>
           <p className="text-sm text-muted-foreground">
-            Salvar automaticamente suas alterações a cada 30 segundos
+            Guardar automaticamente as suas alterações a cada 30 segundos
           </p>
         </div>
         <Switch
@@ -360,10 +357,10 @@ export function PreferencesSection() {
           {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Salvando...
+              A guardar...
             </>
           ) : (
-            "Salvar preferências"
+            "Guardar preferências"
           )}
         </Button>
       </div>

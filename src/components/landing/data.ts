@@ -205,7 +205,7 @@ export const differentiators = landingDifferentiators.filter((item) =>
 export const genericComparison = [
   { feature: "Português académico moçambicano", aptto: true, generic: false },
   { feature: "Normas ABNT nativas", aptto: true, generic: false },
-  { feature: "Fluxo de editor e projetos próprio", aptto: true, generic: false },
+  { feature: "Fluxo de editor e projectos próprio", aptto: true, generic: false },
   { feature: "Foco em estrutura académica", aptto: true, generic: false },
   { feature: "Contexto de Moçambique", aptto: true, generic: false },
   { feature: "Créditos transparentes", aptto: true, generic: false },

@@ -2,18 +2,15 @@
 
 import Link from "next/link";
 import { type ComponentType, useMemo, useState } from "react";
-import { signOut } from "next-auth/react";
 import {
   BookCopy,
   FilePlus2,
   FolderDot,
-  LogOut,
   MoreHorizontal,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,7 +30,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -69,12 +65,6 @@ export interface SidebarProject {
   };
 }
 
-interface SidebarUser {
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-}
-
 interface WorkspaceSidebarConfig {
   currentProject?: {
     id: string;
@@ -96,7 +86,6 @@ interface ProjectSidebarProps {
   currentPath: string;
   credits: number;
   projects: SidebarProject[];
-  user: SidebarUser;
   onToggleCollapse: () => void;
   onNavigate?: () => void;
   workspace?: WorkspaceSidebarConfig;
@@ -187,21 +176,14 @@ export function ProjectSidebar({
   currentPath,
   credits,
   projects,
-  user,
   onToggleCollapse,
   onNavigate,
   workspace,
 }: ProjectSidebarProps) {
+  const isWorkspacePanel = Boolean(workspace);
   const [projectSearch, setProjectSearch] = useState("");
   const [renameTarget, setRenameTarget] = useState<WorkspaceSidebarConversationItem | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
-
-  const initials = (user.name || "A")
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 
   const filteredProjects = useMemo(() => {
     const normalized = projectSearch.trim().toLowerCase();
@@ -272,20 +254,22 @@ export function ProjectSidebar({
           </div>
 
           <div className="mt-4 space-y-3">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button asChild className={cn("h-11 w-full rounded-2xl", collapsed && "px-0")}>
-                  <Link href="/app/sessoes?new=1" onClick={onNavigate} aria-label="Nova sessão">
-                    <FilePlus2 className="h-4 w-4" />
-                    {!collapsed ? <span>Nova sessão</span> : null}
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              {collapsed ? <TooltipContent side="right">Nova sessão</TooltipContent> : null}
-            </Tooltip>
+            {!isWorkspacePanel ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button asChild className={cn("h-11 w-full rounded-xl", collapsed && "px-0")}>
+                    <Link href="/app/sessoes?new=1" onClick={onNavigate} aria-label="Nova sessão">
+                      <FilePlus2 className="h-4 w-4" />
+                      {!collapsed ? <span>Nova sessão</span> : null}
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                {collapsed ? <TooltipContent side="right">Nova sessão</TooltipContent> : null}
+              </Tooltip>
+            ) : null}
 
             {!collapsed ? (
-              <div className="surface-muted rounded-3xl px-3 py-3">
+              <div className="surface-muted rounded-xl px-3 py-3">
                 <div className="flex items-center justify-between gap-2 text-xs font-medium text-sidebar-foreground/70">
                   <span>{workspace?.currentProject ? "Sessão actual" : "Saldo disponível"}</span>
                   {!workspace?.currentProject ? <span>{credits.toLocaleString("pt-MZ")} créditos</span> : null}
@@ -295,7 +279,7 @@ export function ProjectSidebar({
                   <Link
                     href={`/app/sessoes/${workspace.currentProject.id}`}
                     onClick={onNavigate}
-                    className="mt-2 block rounded-2xl border border-sidebar-border/70 bg-background/75 px-3 py-3 transition-colors hover:bg-background"
+                    className="mt-2 block rounded-xl border border-sidebar-border/70 bg-background/75 px-3 py-3 transition-colors hover:bg-background"
                   >
                     <p className="truncate text-sm font-medium text-foreground">{workspace.currentProject.title}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -310,90 +294,94 @@ export function ProjectSidebar({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 scrollbar-thin">
           <div className="space-y-5">
-            {!collapsed ? <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/60">Navegação</p> : null}
+            {!isWorkspacePanel && !collapsed ? <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/60">Navegação</p> : null}
 
-            <div className="space-y-1.5">
-              {workspaceNavItems.map((item) => (
-                <SidebarNavLink
-                  key={item.href}
-                  href={item.href}
-                  label={item.label}
-                  icon={item.icon}
-                  currentPath={currentPath}
-                  collapsed={collapsed}
-                  badge={item.href === "/app/credits" && !collapsed ? credits.toLocaleString("pt-MZ") : undefined}
-                  onNavigate={onNavigate}
-                />
-              ))}
-            </div>
-
-            <div className="space-y-3">
-              {!collapsed ? (
-                <div className="flex items-center justify-between px-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/60">
-                    Sessões recentes
-                  </span>
-                  <span className="text-[11px] text-sidebar-foreground/50">{recentProjects.length}</span>
-                </div>
-              ) : null}
-
-              {!collapsed ? (
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={projectSearch}
-                    onChange={(event) => setProjectSearch(event.target.value)}
-                    placeholder="Pesquisar sessões"
-                    className="h-10 rounded-2xl border-sidebar-border bg-background/70 pl-10"
+            {!isWorkspacePanel ? (
+              <div className="space-y-1.5">
+                {workspaceNavItems.map((item) => (
+                  <SidebarNavLink
+                    key={item.href}
+                    href={item.href}
+                    label={item.label}
+                    icon={item.icon}
+                    currentPath={currentPath}
+                    collapsed={collapsed}
+                    badge={item.href === "/app/credits" && !collapsed ? credits.toLocaleString("pt-MZ") : undefined}
+                    onNavigate={onNavigate}
                   />
-                </div>
-              ) : null}
+                ))}
+              </div>
+            ) : null}
 
-              {recentProjects.length > 0 ? (
-                <div className="space-y-1.5">
-                  {recentProjects.map((project) => {
-                    const href = getProjectHref(project);
-                    const active = currentPath === href;
-                    const item = (
-                      <Link
-                        key={project.id}
-                        href={href}
-                        onClick={onNavigate}
-                        className={cn(
-                          "group flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors",
-                          active
-                            ? "border-primary/30 bg-primary/10 text-foreground"
-                            : "border-border/40 bg-card/60 text-foreground hover:bg-sidebar-accent"
-                        )}
-                      >
-                        <FolderDot className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
-                        {!collapsed ? (
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">{project.title}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {project.wordCount.toLocaleString("pt-MZ")} palavras
-                            </p>
-                          </div>
-                        ) : null}
-                      </Link>
-                    );
+            {!isWorkspacePanel ? (
+              <div className="space-y-3">
+                {!collapsed ? (
+                  <div className="flex items-center justify-between px-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/60">
+                      Sessões recentes
+                    </span>
+                    <span className="text-[11px] text-sidebar-foreground/50">{recentProjects.length}</span>
+                  </div>
+                ) : null}
 
-                    if (!collapsed) return item;
+                {!collapsed ? (
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={projectSearch}
+                      onChange={(event) => setProjectSearch(event.target.value)}
+                      placeholder="Pesquisar sessões"
+                      className="h-10 rounded-lg border-sidebar-border bg-background/70 pl-10"
+                    />
+                  </div>
+                ) : null}
 
-                    return (
-                      <Tooltip key={project.id}>
-                        <TooltipTrigger asChild>{item}</TooltipTrigger>
-                        <TooltipContent side="right">{project.title}</TooltipContent>
-                      </Tooltip>
-                    );
-                  })}
-                </div>
-              ) : !collapsed ? (
-                <p className="rounded-2xl border border-dashed border-sidebar-border px-3 py-6 text-center text-sm text-sidebar-foreground/65">
-                  {projectSearch ? "Nenhuma sessão encontrada" : "Sem sessões recentes"}
-                </p>
-              ) : null}
-            </div>
+                {recentProjects.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {recentProjects.map((project) => {
+                      const href = getProjectHref(project);
+                      const active = currentPath === href;
+                      const item = (
+                        <Link
+                          key={project.id}
+                          href={href}
+                          onClick={onNavigate}
+                          className={cn(
+                            "group flex items-center gap-3 rounded-xl border px-3 py-3 transition-colors",
+                            active
+                              ? "border-primary/30 bg-primary/10 text-foreground"
+                              : "border-border/40 bg-card/60 text-foreground hover:bg-sidebar-accent"
+                          )}
+                        >
+                          <FolderDot className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
+                          {!collapsed ? (
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium">{project.title}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {project.wordCount.toLocaleString("pt-MZ")} palavras
+                              </p>
+                            </div>
+                          ) : null}
+                        </Link>
+                      );
+
+                      if (!collapsed) return item;
+
+                      return (
+                        <Tooltip key={project.id}>
+                          <TooltipTrigger asChild>{item}</TooltipTrigger>
+                          <TooltipContent side="right">{project.title}</TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                ) : !collapsed ? (
+                  <p className="rounded-xl border border-dashed border-sidebar-border px-3 py-6 text-center text-sm text-sidebar-foreground/65">
+                    {projectSearch ? "Nenhuma sessão encontrada" : "Sem sessões recentes"}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
             {workspace && !collapsed ? (
               <section className="space-y-2">
@@ -410,17 +398,17 @@ export function ProjectSidebar({
                     value={workspace.search}
                     onChange={(event) => workspace.onSearchChange(event.target.value)}
                     placeholder="Filtrar histórico"
-                    className="h-10 rounded-2xl border-sidebar-border bg-background/70 pl-10"
+                    className="h-10 rounded-lg border-sidebar-border bg-background/70 pl-10"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  {workspace.conversations.map((conversation) => (
-                    <ContextMenu key={conversation.id}>
+                  {workspace.conversations.map((conversation, index) => (
+                    <ContextMenu key={`${conversation.kind}-${conversation.id}-${index}`}>
                       <ContextMenuTrigger asChild>
                         <div
                           className={cn(
-                            "group flex items-start gap-2 rounded-2xl border px-3 py-3 transition-colors",
+                            "group flex items-start gap-2 rounded-xl border px-3 py-3 transition-colors",
                             conversation.id === workspace.activeConversationId
                               ? "border-primary/30 bg-primary/10"
                               : "border-border/40 bg-card/70 hover:bg-accent/60"
@@ -485,8 +473,8 @@ export function ProjectSidebar({
                     </ContextMenu>
                   ))}
 
-                  {workspace.conversations.length === 0 ? (
-                    <p className="rounded-2xl border border-dashed border-sidebar-border px-3 py-6 text-center text-sm text-sidebar-foreground/65">
+                    {workspace.conversations.length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-sidebar-border px-3 py-6 text-center text-sm text-sidebar-foreground/65">
                       Sem sessões visíveis
                     </p>
                   ) : null}
@@ -496,44 +484,6 @@ export function ProjectSidebar({
           </div>
         </div>
 
-        <div className="shrink-0 border-t border-sidebar-border p-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className={cn(
-                  "flex w-full items-center rounded-2xl px-2.5 py-2.5 text-left transition-colors hover:bg-sidebar-accent hover:text-foreground",
-                  collapsed && "justify-center px-0"
-                )}
-              >
-                <Avatar className="h-10 w-10 border border-sidebar-border/80">
-                  <AvatarImage src={user.image || undefined} alt={user.name || "Utilizador"} />
-                  <AvatarFallback>{initials}</AvatarFallback>
-                </Avatar>
-                {!collapsed ? (
-                  <div className="ml-3 min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">{user.name || "Utilizador"}</p>
-                    <p className="truncate text-xs text-sidebar-foreground/60">{user.email || "Sem email"}</p>
-                  </div>
-                ) : null}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" side="top" className="w-64">
-              <DropdownMenuLabel className="space-y-1 px-2 py-2 font-normal">
-                <p className="truncate text-sm font-medium text-foreground">{user.name || "Utilizador"}</p>
-                <p className="truncate text-xs text-muted-foreground">{user.email || "Sem email"}</p>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => void signOut({ callbackUrl: "/login" })}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Terminar sessão
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </aside>
 
         {workspace ? (

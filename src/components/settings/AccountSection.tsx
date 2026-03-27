@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { SettingsSectionSkeleton } from "@/components/skeletons/SettingsSectionSkeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -179,11 +180,7 @@ export function AccountSection() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
+    return <SettingsSectionSkeleton />;
   }
 
   return (

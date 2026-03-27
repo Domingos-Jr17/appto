@@ -12,7 +12,7 @@ export async function GET(
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("NÃ£o autorizado", 401);
+      return apiError("Não autorizado", 401);
     }
 
     const { id } = await params;
@@ -25,7 +25,7 @@ export async function GET(
     });
 
     if (!project) {
-      return apiError("Projeto nÃ£o encontrado", 404);
+      return apiError("Projecto não encontrado", 404);
     }
 
     const exports = await db.projectExport.findMany({
@@ -45,6 +45,6 @@ export async function GET(
       ),
     });
   } catch (error) {
-    return handleApiError(error, "NÃ£o foi possÃ­vel listar as exportaÃ§Ãµes");
+    return handleApiError(error, "Não foi possível listar as exportações");
   }
 }

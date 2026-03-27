@@ -2,16 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
-import { FolderTree, Loader2 } from "lucide-react";
+import { FolderTree } from "lucide-react";
+import { useAppWorkspaceData } from "@/components/workspace/AppWorkspaceDataContext";
 import { ProjectSidebar } from "@/components/workspace/ProjectSidebar";
 import { WorkspaceDocumentPanel } from "@/components/workspace-v2/WorkspaceDocumentPanel";
 import { WorkspaceChatPane } from "@/components/workspace-v2/WorkspaceChatPane";
 import { WorkspaceThreePane } from "@/components/workspace-v2/WorkspaceThreePane";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { WorkspaceLoadingSkeleton } from "@/components/skeletons/WorkspaceLoadingSkeleton";
 import { useToast } from "@/hooks/use-toast";
-import { fetchAppProjects } from "@/lib/app-data";
 import { countWordsInMarkdown } from "@/lib/content";
 import {
   extractOutlineTitles,
@@ -26,7 +27,7 @@ import {
 import { useEditorStore } from "@/stores/editor-store";
 import { useProjectStore } from "@/stores/project-store";
 import type { ChatAction, Section } from "@/types/editor";
-import type { WorkspaceDocumentTab, WorkspaceProjectLinkItem } from "./workspace-types";
+import type { WorkspaceDocumentTab } from "./workspace-types";
 import {
   buildArtifactSource,
   buildWorkspaceConversations,
@@ -40,8 +41,8 @@ interface ProjectWorkspaceRouteProps {
 }
 
 export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps) {
-  const { data: session } = useSession();
   const { toast } = useToast();
+  const { projects: appProjects, setCredits: setWorkspaceCredits } = useAppWorkspaceData();
   const initializedProjectId = useRef<string | null>(null);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -51,7 +52,6 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
   const [mobileArtifactOpen, setMobileArtifactOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [conversationSearch, setConversationSearch] = useState("");
-  const [recentProjects, setRecentProjects] = useState<WorkspaceProjectLinkItem[]>([]);
 
   const project = useProjectStore((state) => state.project);
   const sections = useProjectStore((state) => state.sections);
@@ -93,34 +93,8 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
   }, [fetchProject, projectId]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadRecentProjects() {
-      try {
-        const data = await fetchAppProjects("sortBy=updatedAt&sortOrder=desc");
-        if (cancelled) return;
-
-        setRecentProjects(
-          data.slice(0, 8).map((item) => ({
-            id: item.id,
-            title: item.title,
-            updatedAt: item.lastEditedSection?.updatedAt || item.updatedAt,
-            wordCount: item.wordCount,
-            resumeMode: item.resumeMode,
-            status: item.status,
-          }))
-        );
-      } catch {
-        if (!cancelled) setRecentProjects([]);
-      }
-    }
-
-    void loadRecentProjects();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    setWorkspaceCredits(credits);
+  }, [credits, setWorkspaceCredits]);
 
   useEffect(() => {
     clearChat();
@@ -187,6 +161,19 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
     if (!project) return null;
     return buildArtifactSource(project, activeSection, activeConversation, chatMessages);
   }, [activeConversation, activeSection, chatMessages, project]);
+
+  const recentProjects = useMemo(
+    () =>
+      appProjects.slice(0, 8).map((item) => ({
+        id: item.id,
+        title: item.title,
+        updatedAt: item.lastEditedSection?.updatedAt || item.updatedAt,
+        wordCount: item.wordCount,
+        resumeMode: item.resumeMode,
+        status: item.status,
+      })),
+    [appProjects]
+  );
 
   const documentTitle = activeSection ? sectionTitle : artifact?.title || project?.title || "";
   const documentContent = activeSection ? content : artifact?.content || "";
@@ -414,29 +401,24 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
   }, [saveExport, projectId, toast]);
 
   if (isLoading) {
-    return (
-      <div className="flex flex-1 items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">A carregar a sessão de trabalho...</p>
-        </div>
-      </div>
-    );
+    return <WorkspaceLoadingSkeleton />;
   }
 
   if (!project || !artifact) {
     return (
       <div className="flex flex-1 items-center justify-center bg-background px-6">
         <Card className="w-full max-w-xl border-border/60 bg-background/80 text-center shadow-sm">
-          <CardContent className="space-y-4 p-10">
-            <FolderTree className="mx-auto h-10 w-10 text-muted-foreground/40" />
-            <h2 className="text-2xl font-semibold">Sessão não encontrada</h2>
-            <p className="text-sm leading-6 text-muted-foreground">
-              Não foi possível abrir esta sessão. Volte à biblioteca e tente novamente.
-            </p>
-            <Button asChild className="rounded-full">
-              <Link href="/app/sessoes">Ver sessões</Link>
-            </Button>
+          <CardContent className="p-10">
+            <EmptyState
+              icon={FolderTree}
+              title="Sessão não encontrada"
+              description="Não foi possível abrir esta sessão. Volte à biblioteca e tente novamente."
+              action={
+                <Button asChild className="rounded-full">
+                  <Link href="/app/sessoes">Ver sessões</Link>
+                </Button>
+              }
+            />
           </CardContent>
         </Card>
       </div>
@@ -457,7 +439,6 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
           resumeMode: item.resumeMode,
           status: item.status || "IN_PROGRESS",
         }))}
-        user={session?.user || {}}
         workspace={{
           currentProject: {
             id: project.id,

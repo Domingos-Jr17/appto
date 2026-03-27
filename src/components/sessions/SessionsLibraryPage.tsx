@@ -35,16 +35,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SessionsLibrarySkeleton } from "@/components/skeletons/SessionsLibrarySkeleton";
 import { useToast } from "@/hooks/use-toast";
 import { ProjectGrid, type Project } from "@/components/projects/ProjectGrid";
 import { useAppWorkspaceData } from "@/components/workspace/AppWorkspaceDataContext";
-import type { AppProjectRecord } from "@/lib/app-data";
 import {
   ProjectFilters,
   type ProjectStatus,
   type ViewMode,
   type SortOption,
 } from "@/components/projects/ProjectFilters";
+import { calculateProjectProgress } from "@/lib/progress";
 
 const SESSION_TYPES = [
   { value: "SCHOOL_WORK", label: "Trabalho Escolar", group: "Secundário" },
@@ -127,7 +129,7 @@ export function SessionsLibraryPage() {
         type: sessionTypeLabels[session.type] || "monografia",
         course: session.description || "Sem descrição",
         institution: "aptto",
-        progress: calculateProgress(session),
+        progress: calculateProjectProgress(session),
         status: mapStatus(session.status),
         lastUpdated: formatRelativeTime(new Date(session.updatedAt)),
         createdAt: session.createdAt,
@@ -289,12 +291,15 @@ export function SessionsLibraryPage() {
     [sessions]
   );
 
+  const hasFilteredResults = Boolean(search.trim()) || status !== "all";
+
+  const resetFilters = () => {
+    setSearch("");
+    setStatus("all");
+  };
+
   if (isLoading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <SessionsLibrarySkeleton />;
   }
 
   return (
@@ -349,7 +354,7 @@ export function SessionsLibraryPage() {
               />
             </div>
 
-            <div className="surface-muted flex items-center justify-between rounded-2xl p-4">
+            <div className="surface-muted flex items-center justify-between rounded-xl p-4">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-primary" />
@@ -398,7 +403,7 @@ export function SessionsLibraryPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="surface-panel flex flex-col gap-4 rounded-3xl p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
+      <div className="surface-panel flex flex-col gap-4 rounded-xl p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
         <div className="space-y-2">
           <p className="text-sm font-medium text-foreground">{sessionCounts.all} sessões no total</p>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -416,7 +421,7 @@ export function SessionsLibraryPage() {
         </Button>
       </div>
 
-      <div className="surface-panel rounded-3xl p-4 lg:p-5">
+      <div className="surface-panel rounded-xl p-4 lg:p-5">
         <ProjectFilters
           status={status}
           onStatusChange={setStatus}
@@ -437,19 +442,24 @@ export function SessionsLibraryPage() {
           onArchive={handleArchiveSession}
         />
       ) : (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <FileText className="mb-4 h-16 w-16 text-muted-foreground/30" />
-          <h3 className="mb-2 text-lg font-medium">Nenhuma sessão encontrada</h3>
-          <p className="mb-4 max-w-md text-sm text-muted-foreground">
-            {search ? "Tente ajustar os filtros de busca" : "Crie a sua primeira sessão com IA"}
-          </p>
-          {!search ? (
-            <Button onClick={() => setDialogOpen(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Criar sessão
-            </Button>
-          ) : null}
-        </div>
+        <EmptyState
+          icon={FileText}
+          title="Nenhuma sessão encontrada"
+          description={hasFilteredResults ? "Não existem sessões compatíveis com estes filtros. Ajuste a pesquisa ou volte a ver todas as sessões." : "Crie a sua primeira sessão com IA."}
+          className="py-16"
+          action={
+            hasFilteredResults ? (
+              <Button onClick={resetFilters} variant="outline" className="rounded-full">
+                Limpar filtros
+              </Button>
+            ) : (
+              <Button onClick={() => setDialogOpen(true)} className="gap-2 rounded-full">
+                <Plus className="h-4 w-4" />
+                Criar sessão
+              </Button>
+            )
+          }
+        />
       )}
 
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
@@ -476,13 +486,6 @@ export function SessionsLibraryPage() {
       </AlertDialog>
     </div>
   );
-}
-
-function calculateProgress(session: AppProjectRecord): number {
-  if (session.status === "COMPLETED") return 100;
-  if (session.wordCount === 0) return 0;
-  const expectedWords = 50 * 250;
-  return Math.min(100, Math.round((session.wordCount / expectedWords) * 100));
 }
 
 function mapStatus(status: string): Project["status"] {

@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("NÃ£o autorizado", 401);
+      return apiError("Não autorizado", 401);
     }
 
     const payload = await parseBody(request, createFileUploadSchema);
@@ -59,6 +59,6 @@ export async function POST(request: Request) {
       upload: await createUploadIntent(storedFile),
     });
   } catch (error) {
-    return handleApiError(error, "NÃ£o foi possÃ­vel iniciar o upload");
+    return handleApiError(error, "Não foi possível iniciar o upload");
   }
 }

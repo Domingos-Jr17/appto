@@ -21,7 +21,7 @@ async function getExportModel(projectId: string, userId: string) {
   });
 
   if (!project) {
-    throw new Error("Projeto não encontrado");
+    throw new Error("Projecto não encontrado");
   }
 
   return DocumentExportService.createModel(project);
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const projectId = searchParams.get("projectId");
 
     if (!projectId) {
-      return apiError("ID do projeto é obrigatório", 400);
+      return apiError("ID do projecto é obrigatório", 400);
     }
 
     const model = await getExportModel(projectId, session.user.id);

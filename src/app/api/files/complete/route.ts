@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("NÃ£o autorizado", 401);
+      return apiError("Não autorizado", 401);
     }
 
     const { fileId } = await parseBody(request, completeFileUploadSchema);
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     });
 
     if (!storedFile) {
-      return apiError("Ficheiro nÃ£o encontrado", 404);
+      return apiError("Ficheiro não encontrado", 404);
     }
 
     await finalizeUploadedFile(storedFile);
@@ -40,6 +40,6 @@ export async function POST(request: Request) {
       file: await serializeStoredFile(readyFile),
     });
   } catch (error) {
-    return handleApiError(error, "NÃ£o foi possÃ­vel concluir o upload");
+    return handleApiError(error, "Não foi possível concluir o upload");
   }
 }

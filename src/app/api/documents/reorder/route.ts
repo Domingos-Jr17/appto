@@ -41,7 +41,7 @@ export async function PATCH(request: NextRequest) {
     });
 
     if (!project) {
-      return NextResponse.json({ error: "Projeto não encontrado" }, { status: 404 });
+      return NextResponse.json({ error: "Projecto não encontrado" }, { status: 404 });
     }
 
     const allowedIds = new Set(project.sections.map((section) => section.id));

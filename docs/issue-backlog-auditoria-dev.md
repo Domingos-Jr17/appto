@@ -1,5 +1,22 @@
 # Backlog priorizado da auditoria técnica — branch `dev`
 
+> **Status (2026-03-27):** Este documento foi gerado durante a auditoria inicial. Vários itens já foram parcial ou totalmente resolvidos:
+>
+> | Issue | Status | Notas |
+> |-------|--------|-------|
+> | 1 (Git hygiene) | **Parcial** | `.gitignore` atualizado, mas `db/custom.db` ainda presente |
+> | 2 (TypeScript/lint) | **Parcial** | `noImplicitAny: false` ainda ativo; `ignoreBuildErrors` removido do `next.config.ts` |
+> | 3 (Consolidar estrutura) | **Parcial** | `workspace-v2/` existe como alternativa ao `workspace/`; `projects/` redireciona para `sessoes/` |
+> | 4 (Claims vs realidade) | **Pendente** | |
+> | 5 (Validação API) | **Parcial** | `zod` adicionado; validação em `env.ts` e `validators.ts` |
+> | 6 (Autosave editor) | **Pendente** | |
+> | 7 (Editor robusto) | **Parcial** | `MDXEditor` integrado |
+> | 8 (Créditos/billing) | **Parcial** | `credit-ledger.ts` e `payments.ts` implementados |
+> | 9 (SQLite → PostgreSQL) | **Concluído** | PostgreSQL com Prisma; schema completo com 17 modelos |
+> | 10 (Rate limiting/observabilidade) | **Parcial** | `rate-limit.ts`, `logger.ts`, `/api/health` implementados |
+> | 11 (Documentação) | **Parcial** | README e CHANGELOG atualizados |
+> | 12 (Demo landing) | **Pendente** | |
+
 Este documento converte a auditoria técnica em issues executáveis, prontas para serem copiadas para o GitHub Issues.
 
 ---

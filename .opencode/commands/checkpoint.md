@@ -7,50 +7,59 @@ Create or verify a checkpoint in your workflow.
 
 ## Usage
 
-`/checkpoint [create|verify|list] [name]`
+`/checkpoint [create|verify|list|clear] [name]`
+
+## Implementation
+
+Run the checkpoint script: `bun scripts/checkpoint.mjs <action> [name]`
 
 ## Create Checkpoint
 
 When creating a checkpoint:
 
 1. Run `/verify quick` to ensure current state is clean
-2. Create a git stash or commit with checkpoint name
-3. Log checkpoint to `.ai/checkpoints.log`:
+2. Run: `bun scripts/checkpoint.mjs create <name>`
+   - Stashes uncommitted changes with checkpoint name
+   - Records git SHA, timestamp, test results, build status
+   - Logs to `.ai/checkpoints.log`
 
-```bash
-echo "$(date +%Y-%m-%d-%H:%M) | $CHECKPOINT_NAME | $(git rev-parse --short HEAD)" >> .ai/checkpoints.log
-```
-
-4. Report checkpoint created
+3. Report checkpoint created
 
 ## Verify Checkpoint
 
 When verifying against a checkpoint:
 
-1. Read checkpoint from log
-2. Compare current state to checkpoint:
-   - Files added since checkpoint
-   - Files modified since checkpoint
+1. Run: `bun scripts/checkpoint.mjs verify <name>`
+2. Compares current state to checkpoint:
+   - Files added/modified/deleted since checkpoint
    - Test pass rate now vs then
-   - Coverage now vs then
+   - Build status now vs then
 
-3. Report:
+3. Report format:
 ```
 CHECKPOINT COMPARISON: $NAME
 ============================
-Files changed: X
-Tests: +Y passed / -Z failed
-Coverage: +X% / -Y%
-Build: [PASS/FAIL]
+Files added:     X
+Files modified:  X
+Files deleted:   X
+Tests:       +Y passed
+Build:       PASS -> PASS
 ```
 
 ## List Checkpoints
 
-Show all checkpoints with:
-- Name
-- Timestamp
-- Git SHA
-- Status (current, behind, ahead)
+1. Run: `bun scripts/checkpoint.mjs list`
+
+Shows all checkpoints with:
+- Name, Timestamp, Git SHA
+- Test pass rate, Build status
+- Status (current, behind)
+
+## Clear Checkpoints
+
+1. Run: `bun scripts/checkpoint.mjs clear`
+
+Removes old checkpoints, keeps last 5.
 
 ## Arguments
 

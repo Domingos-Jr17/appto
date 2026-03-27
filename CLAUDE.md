@@ -11,7 +11,9 @@
 
 ## Rules
 
-Project rules are in `.claude/rules/` and auto-loaded.
+- Never hardcode secrets — use environment variables
+- Validate all inputs at system boundaries
+- Run security audit before committing
 
 ## Available Commands
 
@@ -57,7 +59,7 @@ Project rules are in `.claude/rules/` and auto-loaded.
 
 ## Skills
 
-Skills are auto-loaded from `.claude/skills/`. Read the relevant skill before starting complex tasks.
+Skills are auto-loaded from `.agents/skills/` and `.opencode/skills/`. Read the relevant skill before starting complex tasks.
 
 - `api-design` — REST and GraphQL API design patterns and conventions.
 - `backend-patterns` — Backend development patterns for APIs, databases, auth and services.

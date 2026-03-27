@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { Coins, PanelLeftOpen, Plus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { PanelLeftOpen, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const PAGE_META: Record<
@@ -73,22 +72,12 @@ export function WorkspaceHeader({ credits, onOpenMobileNav }: WorkspaceHeaderPro
           </Button>
 
           <div className="min-w-0 space-y-1">
-            <div className="flex items-center gap-2">
-              <h1 className="truncate text-lg font-semibold tracking-tight lg:text-xl">{meta.title}</h1>
-              <Badge variant="outline" className="hidden rounded-full text-[11px] lg:inline-flex">
-                SaaS académico
-              </Badge>
-            </div>
+            <h1 className="truncate text-lg font-semibold tracking-tight lg:text-xl">{meta.title}</h1>
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{meta.description}</p>
           </div>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <Badge variant="outline" className="hidden rounded-full border-border/70 px-3 py-1 lg:inline-flex">
-            <Coins className="mr-1.5 h-3.5 w-3.5" />
-            {credits.toLocaleString("pt-MZ")} créditos
-          </Badge>
-
           {meta.actionLabel && meta.actionHref ? (
             <Button asChild className="hidden rounded-full px-4 lg:inline-flex">
               <Link href={meta.actionHref}>

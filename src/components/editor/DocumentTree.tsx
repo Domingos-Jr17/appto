@@ -196,8 +196,8 @@ export function DocumentTree({
           onDrop={() => handleDrop(section.id)}
           onClick={() => !isEditing && onSectionSelect(section.id)}
           className={cn(
-            "group rounded-3xl border px-3 py-3 transition-colors",
-            "cursor-pointer border-transparent bg-muted/25 hover:border-border/70 hover:bg-muted/45",
+            "group rounded-xl border px-3 py-3 transition-colors",
+            "cursor-pointer border-transparent bg-muted/25 hover:border-border/50 hover:bg-muted/50",
             isActive && "border-primary/30 bg-primary/10",
             dragOverId === section.id && "border-primary/50 bg-primary/5",
             depth > 0 && "ml-5"

@@ -24,7 +24,7 @@ export function BalanceCard({
   return (
     <Card
       className={cn(
-        "surface-strong relative overflow-hidden rounded-3xl border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card",
+        "surface-strong relative overflow-hidden rounded-xl border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card",
         className
       )}
     >

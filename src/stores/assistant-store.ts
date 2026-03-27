@@ -7,11 +7,13 @@ interface AssistantStoreState {
   chatPrompt: string;
   chatAction: ChatAction;
   isChatLoading: boolean;
+  activeProjectId: string | null;
+  requestVersion: number;
 
   setChatPrompt: (prompt: string) => void;
   setChatAction: (action: ChatAction) => void;
   addMessage: (message: AssistantMessage) => void;
-  clearChat: () => void;
+  clearChat: (projectId?: string | null) => void;
 
   sendMessage: (
     prompt: string,
@@ -29,6 +31,8 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
   chatPrompt: "",
   chatAction: "brainstorm",
   isChatLoading: false,
+  activeProjectId: null,
+  requestVersion: 0,
 
   setChatPrompt: (chatPrompt) => set({ chatPrompt }),
   setChatAction: (chatAction) => set({ chatAction }),
@@ -36,7 +40,15 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
   addMessage: (message) =>
     set((state) => ({ chatMessages: [...state.chatMessages, message] })),
 
-  clearChat: () => set({ chatMessages: [] }),
+  clearChat: (projectId = null) =>
+    set((state) => ({
+      chatMessages: [],
+      chatPrompt: "",
+      chatAction: "brainstorm",
+      isChatLoading: false,
+      activeProjectId: projectId,
+      requestVersion: state.requestVersion + 1,
+    })),
 
   sendMessage: async (
     prompt,
@@ -55,6 +67,8 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
         : AI_ACTION_CREDIT_COSTS.generate;
 
     if (credits < cost) return "";
+
+    const requestVersion = get().requestVersion + 1;
 
     const label =
       action === "outline"
@@ -75,6 +89,8 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
     set((state) => ({
       chatMessages: [...state.chatMessages, userMessage],
       isChatLoading: true,
+      activeProjectId: projectId,
+      requestVersion,
     }));
 
     try {
@@ -103,6 +119,11 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
         throw new Error(data.error || "Erro ao gerar conteudo.");
       }
 
+      const currentState = get();
+      if (currentState.requestVersion !== requestVersion || currentState.activeProjectId !== projectId) {
+        return "";
+      }
+
       onCreditsUpdate(data.remainingCredits);
 
       const assistantMessage: AssistantMessage = {
@@ -112,14 +133,25 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
         createdAt: new Date(),
       };
 
-      set((state) => ({
-        chatMessages: [...state.chatMessages, assistantMessage],
-        isChatLoading: false,
-        chatPrompt: "",
-      }));
+      set((state) => {
+        if (state.requestVersion !== requestVersion || state.activeProjectId !== projectId) {
+          return state;
+        }
+
+        return {
+          chatMessages: [...state.chatMessages, assistantMessage],
+          isChatLoading: false,
+          chatPrompt: "",
+        };
+      });
 
       return data.response;
     } catch (error) {
+      const currentState = get();
+      if (currentState.requestVersion !== requestVersion || currentState.activeProjectId !== projectId) {
+        return "";
+      }
+
       set({ isChatLoading: false });
       throw error;
     }

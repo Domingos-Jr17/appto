@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Bot, Download, FileDown, Loader2, PanelLeftOpen, PanelRightOpen, Send, Sparkles, Wand2 } from "lucide-react";
+import { Bot, Download, FileDown, Loader2, PanelRightOpen, Send, Sparkles, Wand2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,22 +27,18 @@ import type {
   Project,
   Section,
 } from "@/types/editor";
-import type { WorkspaceConversationItem } from "./workspace-types";
 
 interface WorkspaceChatPaneProps {
   project: Project;
   activeSection: Section | null;
-  activeConversation: WorkspaceConversationItem | null;
   chatMessages: AssistantMessage[];
   chatPrompt: string;
   chatAction: ChatAction;
   isChatLoading: boolean;
   suggestions: ChatSuggestion[];
   credits: number;
-  sidebarCollapsed: boolean;
   artifactCollapsed: boolean;
   isSavingExport: "docx" | "pdf" | null;
-  onOpenSidebar: () => void;
   onOpenArtifact: () => void;
   onChatPromptChange: (prompt: string) => void;
   onChatActionChange: (action: ChatAction) => void;
@@ -62,17 +58,14 @@ function formatMessageTime(value: Date) {
 export function WorkspaceChatPane({
   project,
   activeSection,
-  activeConversation,
   chatMessages,
   chatPrompt,
   chatAction,
   isChatLoading,
   suggestions,
   credits,
-  sidebarCollapsed,
   artifactCollapsed,
   isSavingExport,
-  onOpenSidebar,
   onOpenArtifact,
   onChatPromptChange,
   onChatActionChange,
@@ -93,12 +86,6 @@ export function WorkspaceChatPane({
       <div className="app-shell-header relative z-10 border-b border-border/60 px-4 py-3 lg:px-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-2">
-            {sidebarCollapsed ? (
-              <Button type="button" variant="ghost" size="icon" className="focus-ring rounded-full" onClick={onOpenSidebar}>
-                <PanelLeftOpen className="h-4 w-4" />
-              </Button>
-            ) : null}
-
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <p className="truncate text-sm font-semibold tracking-tight">{project.title}</p>
@@ -106,11 +93,9 @@ export function WorkspaceChatPane({
                   Assistente
                 </Badge>
               </div>
-                <p className="truncate text-xs text-muted-foreground">
-                  {activeSection
-                    ? `Secção activa: ${activeSection.title}`
-                    : activeConversation?.title || "Orientação académica da sessão"}
-                </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {activeSection ? `Secção activa: ${activeSection.title}` : "Orientação académica da sessão"}
+              </p>
             </div>
           </div>
 
@@ -118,6 +103,10 @@ export function WorkspaceChatPane({
             <Badge variant="outline" className="hidden rounded-full sm:inline-flex">
               {credits.toLocaleString("pt-MZ")} créditos
             </Badge>
+            <Button type="button" variant="ghost" size="sm" className="rounded-full lg:hidden" onClick={onOpenArtifact}>
+              <PanelRightOpen className="h-4 w-4" />
+              <span>Documento</span>
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="rounded-full">
@@ -149,7 +138,7 @@ export function WorkspaceChatPane({
               </DropdownMenuContent>
             </DropdownMenu>
             {artifactCollapsed ? (
-              <Button type="button" variant="ghost" size="icon" className="focus-ring rounded-full" onClick={onOpenArtifact}>
+              <Button type="button" variant="ghost" size="icon" className="focus-ring hidden rounded-full lg:inline-flex" onClick={onOpenArtifact}>
                 <PanelRightOpen className="h-4 w-4" />
               </Button>
             ) : null}
@@ -191,7 +180,7 @@ export function WorkspaceChatPane({
               <article
                 key={message.id}
                 className={cn(
-                  "max-w-[92%] rounded-3xl border px-5 py-4 shadow-sm transition-colors",
+                  "max-w-[92%] rounded-xl border px-5 py-4 shadow-sm transition-colors",
                   message.role === "user"
                     ? "ml-auto border-primary/20 bg-primary/10"
                     : "mr-auto glass glass-border bg-card/90"
@@ -235,7 +224,7 @@ export function WorkspaceChatPane({
 
       <div className="app-shell-header relative z-10 border-t border-border/60 px-4 py-4 lg:px-6">
         <div className="mx-auto max-w-3xl">
-          <div className="glass glass-border rounded-3xl p-3 shadow-sm">
+          <div className="glass glass-border rounded-xl p-3 shadow-sm">
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Select value={chatAction} onValueChange={(value) => onChatActionChange(value as ChatAction)}>

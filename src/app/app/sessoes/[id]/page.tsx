@@ -7,5 +7,5 @@ interface SessionWorkspacePageProps {
 export default async function SessionWorkspacePage({ params }: SessionWorkspacePageProps) {
   const resolvedParams = await params;
 
-  return <ProjectWorkspaceRoute projectId={resolvedParams.id} />;
+  return <ProjectWorkspaceRoute key={resolvedParams.id} projectId={resolvedParams.id} />;
 }

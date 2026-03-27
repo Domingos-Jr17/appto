@@ -62,7 +62,7 @@ export function WorkspaceHeader({ credits, onOpenMobileNav, projects, user }: Wo
   const pathname = usePathname();
 
   const meta = useMemo(() => {
-    const projectMatch = pathname.match(/^\/app\/sessoes\/([^/]+)$/);
+    const projectMatch = pathname.match(/^\/app\/sessoes\/([^/]+)(?:\/.*)?$/);
     if (projectMatch) {
       const activeProject = projects.find((project) => project.id === projectMatch[1]);
 
@@ -84,13 +84,13 @@ export function WorkspaceHeader({ credits, onOpenMobileNav, projects, user }: Wo
     return PAGE_META["/app"];
   }, [pathname, projects]);
 
-  const isProjectWorkspace = /^\/app\/sessoes\/[^/]+$/.test(pathname);
+  const isProjectWorkspace = /^\/app\/sessoes\/[^/]+(?:\/.*)?$/.test(pathname);
 
   return (
     <header className={isProjectWorkspace ? "app-shell-header shrink-0 border-b border-border/50 px-4 py-2.5 lg:px-6 lg:py-3" : "app-shell-header shrink-0 border-b border-border/50 px-4 py-3 lg:px-6 lg:py-4"}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-3">
-          {!isProjectWorkspace ? (
+          {onOpenMobileNav ? (
             <Button
               type="button"
               variant="ghost"
@@ -101,11 +101,13 @@ export function WorkspaceHeader({ credits, onOpenMobileNav, projects, user }: Wo
             >
               <PanelLeftOpen className="h-4 w-4" />
             </Button>
-          ) : (
+          ) : null}
+
+          {isProjectWorkspace ? (
             <Link href="/app" className="mt-0.5 hidden rounded-full border border-border/60 bg-card/70 px-3 py-1.5 text-sm font-semibold text-foreground lg:inline-flex">
               aptto
             </Link>
-          )}
+          ) : null}
 
           <div className="min-w-0 space-y-1">
             <h1 className="truncate text-lg font-semibold tracking-tight lg:text-xl">{meta.title}</h1>

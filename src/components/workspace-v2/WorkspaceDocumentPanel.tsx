@@ -132,7 +132,7 @@ export function WorkspaceDocumentPanel({
 
             <ScrollArea className="min-h-0 flex-1">
               <div className="space-y-4 p-4">
-                <div className="glass glass-border rounded-3xl p-4">
+                <div className="glass glass-border rounded-xl p-4">
                   <Input
                     value={documentTitle}
                     onChange={(event) => onDocumentTitleChange(event.target.value)}
@@ -145,7 +145,7 @@ export function WorkspaceDocumentPanel({
                     onChange={(event) => onDocumentContentChange(event.target.value)}
                     placeholder="A secção activa aparece aqui. Use o assistente para gerar e refine o texto directamente neste painel."
                     disabled={!activeSection}
-                    className="min-h-[420px] resize-none rounded-3xl border-border/70 bg-background/70 p-4 text-sm leading-7"
+                    className="min-h-[420px] resize-none rounded-xl border-border/70 bg-background/70 p-4 text-sm leading-7"
                   />
                 </div>
               </div>

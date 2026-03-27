@@ -150,7 +150,7 @@ function verifyCheckpoint(name) {
   const currentBuild = getBuildStatus();
 
   const testDelta = parseInt(currentTests.passed) - parseInt(cp.testPassed);
-  const failDelta = parseInt(currentTests.total) - parseInt(currentTests.passed) - (parseInt(cp.testTotal) - parseInt(cp.testPassed));
+  const _failDelta = parseInt(currentTests.total) - parseInt(currentTests.passed) - (parseInt(cp.testTotal) - parseInt(cp.testPassed));
 
   console.log(`\nCHECKPOINT COMPARISON: ${name}`);
   console.log("============================");

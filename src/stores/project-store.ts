@@ -25,6 +25,9 @@ interface ProjectStoreState {
   savedExports: SavedExport[];
   isSavingExport: "docx" | "pdf" | null;
   isLoading: boolean;
+  activeProjectId: string | null;
+  activeProjectVersion: number;
+  saveExportToken: number;
 
   setProject: (project: Project) => void;
   setSections: (sections: Section[]) => void;
@@ -58,6 +61,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   savedExports: [],
   isSavingExport: null,
   isLoading: true,
+  activeProjectId: null,
+  activeProjectVersion: 0,
+  saveExportToken: 0,
 
   setProject: (project) => set({ project }),
   setSections: (sections) => set({ sections }),
@@ -90,7 +96,13 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   },
 
   fetchProject: async (projectId) => {
-    set({ isLoading: true });
+    const projectVersion = get().activeProjectVersion + 1;
+    set({
+      isLoading: true,
+      isSavingExport: null,
+      activeProjectId: projectId,
+      activeProjectVersion: projectVersion,
+    });
     try {
       const [projectResponse, creditsResponse, exportsResponse] =
         await Promise.all([
@@ -107,6 +119,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         ? await exportsResponse.json()
         : { exports: [] };
 
+      const currentState = get();
+      if (currentState.activeProjectVersion !== projectVersion || currentState.activeProjectId !== projectId) {
+        return;
+      }
+
       const tree = buildSectionTree(projectData.sections);
 
       set({
@@ -114,15 +131,25 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         sections: tree,
         credits: creditsData.balance || 0,
         savedExports: exportsData.exports || [],
+        activeProjectId: projectId,
+        activeProjectVersion: projectVersion,
         isLoading: false,
       });
     } catch (error) {
+      const currentState = get();
+      if (currentState.activeProjectVersion !== projectVersion || currentState.activeProjectId !== projectId) {
+        return;
+      }
+
       logger.error("Fetch project failed", { projectId, error: String(error) });
-      set({ isLoading: false });
+      set({ project: null, sections: [], savedExports: [], isLoading: false });
     }
   },
 
   createSection: async (projectId, options) => {
+    const { activeProjectId, activeProjectVersion } = get();
+    if (activeProjectId !== projectId) return null;
+
     const response = await fetch("/api/documents", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -138,6 +165,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     if (!response.ok) throw new Error();
 
     const newSection = await response.json();
+    const currentState = get();
+    if (currentState.activeProjectId !== projectId || currentState.activeProjectVersion !== activeProjectVersion) {
+      return null;
+    }
+
     const mappedSection = deriveSection({
       id: newSection.id,
       title: newSection.title,
@@ -151,6 +183,10 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     });
 
     set((state) => {
+      if (state.activeProjectId !== projectId || state.activeProjectVersion !== activeProjectVersion) {
+        return state;
+      }
+
       const nextTree = insertTree(
         state.sections,
         mappedSection,
@@ -167,6 +203,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
   renameSection: async (sectionId, newTitle) => {
     const state = get();
+    const activeProjectId = state.activeProjectId;
+    const activeProjectVersion = state.activeProjectVersion;
     const existing = findSectionById(sectionId, state.sections);
     const response = await fetch(`/api/documents/${sectionId}`, {
       method: "PUT",
@@ -179,8 +217,19 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
     if (!response.ok) throw new Error();
     const savedSection = await response.json();
+    const currentState = get();
+    if (
+      currentState.activeProjectId !== activeProjectId ||
+      currentState.activeProjectVersion !== activeProjectVersion
+    ) {
+      return;
+    }
 
     set((state) => {
+      if (state.activeProjectId !== activeProjectId || state.activeProjectVersion !== activeProjectVersion) {
+        return state;
+      }
+
       const nextTree = normalizeSectionTree(
         updateTree(state.sections, sectionId, (section) => ({
           ...section,
@@ -198,12 +247,17 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   },
 
   deleteSection: async (sectionId) => {
+    const { activeProjectId, activeProjectVersion } = get();
     const response = await fetch(`/api/documents/${sectionId}`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error();
 
     set((state) => {
+      if (state.activeProjectId !== activeProjectId || state.activeProjectVersion !== activeProjectVersion) {
+        return state;
+      }
+
       const nextTree = normalizeSectionTree(
         removeTree(state.sections, sectionId)
       );
@@ -216,8 +270,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
   reorderSections: async (projectId, tree) => {
     const normalizedTree = normalizeSectionTree(tree);
-    const project = get().project;
-    const previousSections = get().sections;
+    const { project, sections: previousSections, activeProjectId, activeProjectVersion } = get();
+    if (activeProjectId !== projectId) return;
+
     const previousProject = project;
     const syncedProject = project
       ? syncProjectWithTree(project, normalizedTree)
@@ -240,12 +295,22 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
       if (!response.ok) throw new Error();
       const reorderedSections = await response.json();
+      const currentState = get();
+      if (currentState.activeProjectId !== projectId || currentState.activeProjectVersion !== activeProjectVersion) {
+        return;
+      }
+
       const nextTree = buildSectionTree(reorderedSections);
       const syncedProject2 = project
         ? syncProjectWithTree(project, nextTree)
         : project;
       set({ sections: nextTree, project: syncedProject2 });
     } catch {
+      const currentState = get();
+      if (currentState.activeProjectId !== projectId || currentState.activeProjectVersion !== activeProjectVersion) {
+        return;
+      }
+
       set({ sections: previousSections, project: previousProject });
     }
   },
@@ -272,7 +337,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   },
 
   saveExport: async (projectId, format) => {
-    set({ isSavingExport: format });
+    const { activeProjectId, activeProjectVersion } = get();
+    if (activeProjectId !== projectId) return;
+
+    const saveExportToken = get().saveExportToken + 1;
+    set({ isSavingExport: format, saveExportToken });
     try {
       const exportFormat = format === "pdf" ? "PDF" : "DOCX";
       const response = await fetch(
@@ -289,11 +358,17 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         throw new Error(data.error || "Erro ao guardar exportacao");
       }
 
-      set((state) => ({
-        savedExports: [data.export, ...state.savedExports].slice(0, 6),
-      }));
+      set((state) => {
+        if (state.activeProjectId !== projectId || state.activeProjectVersion !== activeProjectVersion) {
+          return state;
+        }
+
+        return {
+          savedExports: [data.export, ...state.savedExports].slice(0, 6),
+        };
+      });
     } finally {
-      set({ isSavingExport: null });
+      set((state) => (state.saveExportToken === saveExportToken ? { isSavingExport: null } : state));
     }
   },
 }));

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { FolderTree } from "lucide-react";
 import { useAppWorkspaceData } from "@/components/workspace/AppWorkspaceDataContext";
-import { ProjectSidebar } from "@/components/workspace/ProjectSidebar";
 import { WorkspaceDocumentPanel } from "@/components/workspace-v2/WorkspaceDocumentPanel";
 import { WorkspaceChatPane } from "@/components/workspace-v2/WorkspaceChatPane";
 import { WorkspaceThreePane } from "@/components/workspace-v2/WorkspaceThreePane";
@@ -30,10 +29,8 @@ import type { ChatAction, Section } from "@/types/editor";
 import type { WorkspaceDocumentTab } from "./workspace-types";
 import {
   buildArtifactSource,
-  buildWorkspaceConversations,
   getPreferredSectionId,
 } from "./workspace-mappers";
-import { useWorkspaceConversations } from "./use-workspace-conversations";
 import { WorkspaceErrorBoundary } from "./WorkspaceErrorBoundary";
 
 interface ProjectWorkspaceRouteProps {
@@ -42,21 +39,19 @@ interface ProjectWorkspaceRouteProps {
 
 export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps) {
   const { toast } = useToast();
-  const { projects: appProjects, setCredits: setWorkspaceCredits } = useAppWorkspaceData();
+  const { setCredits: setWorkspaceCredits } = useAppWorkspaceData();
   const initializedProjectId = useRef<string | null>(null);
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [artifactCollapsed, setArtifactCollapsed] = useState(false);
   const [documentTab, setDocumentTab] = useState<WorkspaceDocumentTab>("document");
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [mobileArtifactOpen, setMobileArtifactOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [conversationSearch, setConversationSearch] = useState("");
 
   const project = useProjectStore((state) => state.project);
   const sections = useProjectStore((state) => state.sections);
   const credits = useProjectStore((state) => state.credits);
   const isLoading = useProjectStore((state) => state.isLoading);
+  const activeProjectStoreId = useProjectStore((state) => state.activeProjectId);
   const fetchProject = useProjectStore((state) => state.fetchProject);
   const createSection = useProjectStore((state) => state.createSection);
   const renameSection = useProjectStore((state) => state.renameSection);
@@ -97,9 +92,18 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
   }, [credits, setWorkspaceCredits]);
 
   useEffect(() => {
-    clearChat();
+    clearChat(projectId);
     resetEditor();
     initializedProjectId.current = null;
+
+    const frame = window.requestAnimationFrame(() => {
+      setArtifactCollapsed(false);
+      setDocumentTab("document");
+      setMobileArtifactOpen(false);
+      setCopied(false);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, [projectId, clearChat, resetEditor]);
 
   useEffect(() => {
@@ -126,54 +130,10 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
     [activeSection, project, sectionTitle]
   );
 
-  const derivedConversations = useMemo(
-    () => (project ? buildWorkspaceConversations(project, sections, chatMessages) : []),
-    [chatMessages, project, sections]
-  );
-
-  const {
-    conversations,
-    activeConversation,
-    activeConversationId,
-    setActiveConversation,
-    renameConversation,
-    togglePinConversation,
-    hideConversation,
-  } = useWorkspaceConversations({
-    projectId,
-    derivedConversations,
-    search: conversationSearch,
-  });
-
-  useEffect(() => {
-    if (!activeSectionId || activeConversationId !== `project-${projectId}`) return;
-
-    const matchingConversation = conversations.find(
-      (conversation) => conversation.kind === "section" && conversation.sectionId === activeSectionId
-    );
-
-    if (matchingConversation) {
-      setActiveConversation(matchingConversation.id);
-    }
-  }, [activeConversationId, activeSectionId, conversations, projectId, setActiveConversation]);
-
   const artifact = useMemo(() => {
     if (!project) return null;
-    return buildArtifactSource(project, activeSection, activeConversation, chatMessages);
-  }, [activeConversation, activeSection, chatMessages, project]);
-
-  const recentProjects = useMemo(
-    () =>
-      appProjects.slice(0, 8).map((item) => ({
-        id: item.id,
-        title: item.title,
-        updatedAt: item.lastEditedSection?.updatedAt || item.updatedAt,
-        wordCount: item.wordCount,
-        resumeMode: item.resumeMode,
-        status: item.status,
-      })),
-    [appProjects]
-  );
+    return buildArtifactSource(project, activeSection, null, chatMessages);
+  }, [activeSection, chatMessages, project]);
 
   const documentTitle = activeSection ? sectionTitle : artifact?.title || project?.title || "";
   const documentContent = activeSection ? content : artifact?.content || "";
@@ -259,25 +219,6 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
       }
     },
     [activeSectionId, appendContent, content, createSection, projectId, replaceContent, selectSection, toast, updateSectionTree]
-  );
-
-  const handleConversationSelect = useCallback(
-    (conversationId: string) => {
-      setActiveConversation(conversationId);
-      const selected = conversations.find((conversation) => conversation.id === conversationId);
-      if (selected?.kind === "section" && selected.sectionId) {
-        const matchingSection = findSectionById(selected.sectionId, sections);
-        if (matchingSection) {
-          selectSection(matchingSection);
-          setDocumentTab("document");
-        }
-      } else {
-        resetEditor();
-        setDocumentTab("document");
-      }
-      setMobileSidebarOpen(false);
-    },
-    [conversations, resetEditor, sections, selectSection, setActiveConversation]
   );
 
   const handleDocumentTitleChange = useCallback(
@@ -400,7 +341,7 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
     }
   }, [saveExport, projectId, toast]);
 
-  if (isLoading) {
+  if (isLoading || activeProjectStoreId !== projectId || (project && project.id !== projectId)) {
     return <WorkspaceLoadingSkeleton />;
   }
 
@@ -425,60 +366,19 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
     );
   }
 
-  const sidebar = (
-    <WorkspaceErrorBoundary label="sidebar">
-      <ProjectSidebar
-        collapsed={sidebarCollapsed}
-        currentPath={`/app/sessoes/${project.id}`}
-        credits={credits}
-        projects={recentProjects.map((item) => ({
-          id: item.id,
-          title: item.title,
-          updatedAt: item.updatedAt,
-          wordCount: item.wordCount,
-          resumeMode: item.resumeMode,
-          status: item.status || "IN_PROGRESS",
-        }))}
-        workspace={{
-          currentProject: {
-            id: project.id,
-            title: project.title,
-            subtitle: "Chat, estrutura e documento",
-          },
-          conversations,
-          activeConversationId,
-          search: conversationSearch,
-          onSearchChange: setConversationSearch,
-          onSelectConversation: handleConversationSelect,
-          onRenameConversation: renameConversation,
-          onTogglePinConversation: togglePinConversation,
-          onDeleteConversation: hideConversation,
-        }}
-        onToggleCollapse={() => setSidebarCollapsed((value) => !value)}
-        onNavigate={() => setMobileSidebarOpen(false)}
-      />
-    </WorkspaceErrorBoundary>
-  );
-
   const chat = (
     <WorkspaceErrorBoundary label="chat">
       <WorkspaceChatPane
         project={project}
         activeSection={activeSection}
-        activeConversation={activeConversation}
         chatMessages={chatMessages}
         chatPrompt={chatPrompt}
         chatAction={chatAction}
         isChatLoading={isChatLoading}
         suggestions={chatSuggestions}
         credits={credits}
-        sidebarCollapsed={sidebarCollapsed}
         artifactCollapsed={artifactCollapsed}
         isSavingExport={isSavingExport}
-        onOpenSidebar={() => {
-          setSidebarCollapsed(false);
-          setMobileSidebarOpen(true);
-        }}
         onOpenArtifact={() => {
           setArtifactCollapsed(false);
           setMobileArtifactOpen(true);
@@ -529,14 +429,10 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
   return (
     <div className="min-h-0 flex-1 overflow-hidden">
       <WorkspaceThreePane
-        sidebarCollapsed={sidebarCollapsed}
         artifactCollapsed={artifactCollapsed}
-        mobileSidebarOpen={mobileSidebarOpen}
         mobileArtifactOpen={mobileArtifactOpen}
-        sidebar={sidebar}
         chat={chat}
         artifact={artifactPanel}
-        onMobileSidebarOpenChange={setMobileSidebarOpen}
         onMobileArtifactOpenChange={setMobileArtifactOpen}
       />
     </div>

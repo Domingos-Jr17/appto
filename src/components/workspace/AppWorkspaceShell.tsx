@@ -22,7 +22,6 @@ interface AppWorkspaceShellProps {
 
 function AppWorkspaceShellChrome({ children, user }: AppWorkspaceShellProps) {
   const pathname = usePathname();
-  const isProjectWorkspaceRoute = /^\/app\/sessoes\/[^/]+$/.test(pathname);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { projects, credits } = useAppWorkspaceData();
 
@@ -69,27 +68,23 @@ function AppWorkspaceShellChrome({ children, user }: AppWorkspaceShellProps) {
 
   return (
     <div className="h-svh w-screen flex overflow-hidden bg-background">
-      {!isProjectWorkspaceRoute ? (
-        <div className="hidden lg:block">
-          <ProjectSidebar
-            collapsed={collapsed}
-            currentPath={pathname}
-            credits={credits}
-            projects={projects as SidebarProject[]}
-            onToggleCollapse={toggleSidebarCollapse}
-          />
-        </div>
-      ) : null}
+      <div className="hidden lg:block">
+        <ProjectSidebar
+          collapsed={collapsed}
+          currentPath={pathname}
+          credits={credits}
+          projects={projects as SidebarProject[]}
+          onToggleCollapse={toggleSidebarCollapse}
+        />
+      </div>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        {!isProjectWorkspaceRoute ? (
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetContent side="left" className="w-[340px] max-w-[92vw] border-none bg-transparent p-0 shadow-none">
-              <SheetTitle className="sr-only">Navegação principal</SheetTitle>
-              {mobileSidebar}
-            </SheetContent>
-          </Sheet>
-        ) : null}
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetContent side="left" className="w-[340px] max-w-[92vw] border-none bg-transparent p-0 shadow-none">
+            <SheetTitle className="sr-only">Navegação principal</SheetTitle>
+            {mobileSidebar}
+          </SheetContent>
+        </Sheet>
 
         <WorkspaceHeader
           credits={credits}

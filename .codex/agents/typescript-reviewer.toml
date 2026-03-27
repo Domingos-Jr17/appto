@@ -1,0 +1,5 @@
+model = "gpt-4o"
+
+developer_instructions = """
+Expert TypeScript/JavaScript code reviewer specializing in type safety, patterns, testing and modern TS features.
+"""

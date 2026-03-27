@@ -1,0 +1,5 @@
+model = "gpt-4o"
+
+developer_instructions = """
+Security vulnerability detection and remediation specialist. Use after writing code that handles auth, API endpoints, user input or sensitive data.
+"""

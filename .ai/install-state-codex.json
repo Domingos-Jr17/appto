@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "target": "codex",
+  "adapterId": "codex",
+  "targetRoot": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad",
+  "profile": "frontend",
+  "requestedModules": [
+    "rules-core",
+    "rules-typescript",
+    "agents-core",
+    "commands-core",
+    "hooks-runtime",
+    "skills-core",
+    "skills-frontend",
+    "skills-data",
+    "skills-workflow",
+    "rules-framework-nextjs"
+  ],
+  "resolvedModules": [
+    "rules-core",
+    "rules-typescript",
+    "agents-core",
+    "commands-core",
+    "hooks-runtime",
+    "skills-core",
+    "skills-frontend",
+    "skills-data",
+    "skills-workflow",
+    "rules-framework-nextjs"
+  ],
+  "sourceVersion": "1.0.0",
+  "installedAt": "2026-03-24T15:42:15.042Z",
+  "operations": [
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\AGENTS.md"
+    },
+    {
+      "moduleId": "platform-configs",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\config.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\architect.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\architect.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\build-error-resolver.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\build-error-resolver.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\code-reviewer.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\code-reviewer.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\database-reviewer.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\database-reviewer.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\doc-updater.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\doc-updater.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\docs-lookup.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\docs-lookup.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\e2e-runner.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\e2e-runner.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\flutter-reviewer.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\flutter-reviewer.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\go-reviewer.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\go-reviewer.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\planner.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\planner.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\python-reviewer.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\python-reviewer.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\refactor-cleaner.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\refactor-cleaner.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\security-reviewer.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\security-reviewer.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\tdd-guide.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\tdd-guide.toml"
+    },
+    {
+      "moduleId": "agents-core",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\agents\\typescript-reviewer.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.codex\\agents\\typescript-reviewer.toml"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\api-design\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\api-design\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\backend-patterns\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\backend-patterns\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\coding-standards\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\coding-standards\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\continuous-learning\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\continuous-learning\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\database-migrations\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\database-migrations\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\django-tdd\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\django-tdd\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\django-verification\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\django-verification\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\e2e-testing\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\e2e-testing\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\flutter-testing\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\flutter-testing\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\frontend-patterns\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\frontend-patterns\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\mcp-server-patterns\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\mcp-server-patterns\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\postgres-patterns\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\postgres-patterns\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\python-patterns\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\python-patterns\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\python-testing\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\python-testing\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\security-review\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\security-review\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\security-scan\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\security-scan\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\strategic-compact\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\strategic-compact\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\tdd-workflow\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\tdd-workflow\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\verification-loop\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.agents\\skills\\verification-loop\\SKILL.md"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "",
+  "name": "appto-grad",
+  "description": "",
+  "profiles": [
+    "frontend"
+  ],
+  "languages": [
+    "typescript"
+  ],
+  "frameworks": [
+    "nextjs"
+  ],
+  "targets": [
+    "claude",
+    "codex",
+    "opencode"
+  ],
+  "hooksProfile": "standard",
+  "include": [],
+  "exclude": [],
+  "overrides": {
+    "rules": [],
+    "skills": [],
+    "commands": []
+  },
+  "context": {
+    "architecture": ".ai/context/architecture.md",
+    "product": ".ai/context/product.md",
+    "domain": ".ai/context/domain.md"
+  }
+}

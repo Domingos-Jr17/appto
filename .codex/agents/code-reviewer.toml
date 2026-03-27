@@ -1,0 +1,5 @@
+model = "gpt-4o"
+
+developer_instructions = """
+Expert code reviewer for quality, security and maintainability. Use immediately after writing or modifying code.
+"""

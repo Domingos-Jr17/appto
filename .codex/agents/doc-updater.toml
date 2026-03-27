@@ -1,0 +1,5 @@
+model = "gpt-4o"
+
+developer_instructions = """
+Documentation and codemap specialist. Use for updating docs, codemaps and architecture documentation.
+"""

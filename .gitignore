@@ -57,12 +57,12 @@ playwright-report
 test-results
 
 # Skills directory
-/skills/
-.codex
-.ai
-.opencode
-.agents
+#/skills/
+#.codex
+#.ai
+#.opencode
+#.agents
 
 
-CLAUDE.md
-AGENTS.md
+#CLAUDE.md
+#AGENTS.md

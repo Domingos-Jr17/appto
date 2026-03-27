@@ -1,0 +1,329 @@
+{
+  "version": 1,
+  "target": "claude",
+  "adapterId": "claude",
+  "targetRoot": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad",
+  "profile": "frontend",
+  "requestedModules": [
+    "rules-core",
+    "rules-typescript",
+    "agents-core",
+    "commands-core",
+    "hooks-runtime",
+    "skills-core",
+    "skills-frontend",
+    "skills-data",
+    "skills-workflow",
+    "rules-framework-nextjs"
+  ],
+  "resolvedModules": [
+    "rules-core",
+    "rules-typescript",
+    "agents-core",
+    "commands-core",
+    "hooks-runtime",
+    "skills-core",
+    "skills-frontend",
+    "skills-data",
+    "skills-workflow",
+    "rules-framework-nextjs"
+  ],
+  "sourceVersion": "1.0.0",
+  "installedAt": "2026-03-24T15:42:15.019Z",
+  "operations": [
+    {
+      "moduleId": "platform-configs",
+      "action": "generate",
+      "source": "(generated from catalog)",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\CLAUDE.md"
+    },
+    {
+      "moduleId": "hooks-runtime",
+      "action": "generate",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\hooks\\hooks.json",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\settings.json"
+    },
+    {
+      "moduleId": "rules-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\rules\\common\\architecture.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\rules\\architecture.md"
+    },
+    {
+      "moduleId": "rules-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\rules\\common\\coding-style.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\rules\\coding-style.md"
+    },
+    {
+      "moduleId": "rules-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\rules\\common\\git.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\rules\\git.md"
+    },
+    {
+      "moduleId": "rules-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\rules\\common\\security.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\rules\\security.md"
+    },
+    {
+      "moduleId": "rules-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\rules\\common\\testing.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\rules\\testing.md"
+    },
+    {
+      "moduleId": "rules-typescript",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\rules\\typescript\\style.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\rules\\style.md"
+    },
+    {
+      "moduleId": "rules-framework-nextjs",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\rules\\frameworks\\nextjs\\rules.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\rules\\rules.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\architect.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\architect.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\build-fix.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\build-fix.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\checkpoint.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\checkpoint.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\code-review.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\code-review.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\context-budget.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\context-budget.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\e2e.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\e2e.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\learn.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\learn.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\model-route.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\model-route.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\orchestrate.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\orchestrate.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\plan.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\plan.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\quality-gate.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\quality-gate.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\refactor-clean.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\refactor-clean.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\resume-session.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\resume-session.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\rules-distill.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\rules-distill.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\save-session.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\save-session.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\security.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\security.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\setup-pm.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\setup-pm.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\tdd.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\tdd.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\test-coverage.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\test-coverage.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\update-docs.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\update-docs.md"
+    },
+    {
+      "moduleId": "commands-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\commands\\verify.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\commands\\verify.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\api-design\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\api-design\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\backend-patterns\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\backend-patterns\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\coding-standards\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\coding-standards\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\continuous-learning\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\continuous-learning\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\database-migrations\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\database-migrations\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\django-tdd\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\django-tdd\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\django-verification\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\django-verification\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\e2e-testing\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\e2e-testing\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\flutter-testing\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\flutter-testing\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\frontend-patterns\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\frontend-patterns\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\mcp-server-patterns\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\mcp-server-patterns\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\postgres-patterns\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\postgres-patterns\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\python-patterns\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\python-patterns\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\python-testing\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\python-testing\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\security-review\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\security-review\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\security-scan\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\security-scan\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\strategic-compact\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\strategic-compact\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\tdd-workflow\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\tdd-workflow\\SKILL.md"
+    },
+    {
+      "moduleId": "skills-core",
+      "action": "copy",
+      "source": "C:\\Users\\TIMANE\\devkit-ide\\catalog\\skills\\verification-loop\\SKILL.md",
+      "destination": "E:\\02_Dev_Tech\\Projectos\\2026\\appto-grad\\.claude\\skills\\verification-loop\\SKILL.md"
+    }
+  ]
+}

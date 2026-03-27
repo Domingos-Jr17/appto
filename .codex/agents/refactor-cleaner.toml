@@ -1,0 +1,5 @@
+model = "gpt-4o"
+
+developer_instructions = """
+Dead code cleanup and consolidation specialist. Use for removing unused code, duplicates and refactoring.
+"""

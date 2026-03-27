@@ -1,0 +1,351 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "build",
+  "instructions": [
+    "AGENTS.md",
+    "CONTRIBUTING.md",
+    "skills/api-design/SKILL.md",
+    "skills/backend-patterns/SKILL.md",
+    "skills/coding-standards/SKILL.md",
+    "skills/continuous-learning/SKILL.md",
+    "skills/database-migrations/SKILL.md",
+    "skills/django-tdd/SKILL.md",
+    "skills/django-verification/SKILL.md",
+    "skills/e2e-testing/SKILL.md",
+    "skills/flutter-testing/SKILL.md",
+    "skills/frontend-patterns/SKILL.md",
+    "skills/mcp-server-patterns/SKILL.md",
+    "skills/postgres-patterns/SKILL.md",
+    "skills/python-patterns/SKILL.md",
+    "skills/python-testing/SKILL.md",
+    "skills/security-review/SKILL.md",
+    "skills/security-scan/SKILL.md",
+    "skills/strategic-compact/SKILL.md",
+    "skills/tdd-workflow/SKILL.md",
+    "skills/verification-loop/SKILL.md"
+  ],
+  "plugin": [
+    "./plugins"
+  ],
+  "agent": {
+    "build": {
+      "description": "Primary coding agent for development work",
+      "mode": "primary",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "read": true
+      }
+    },
+    "architect": {
+      "id": "architect",
+      "description": "Software architecture specialist for system design, scalability and technical decision-making. Use for architectural decisions, design patterns and system structure.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/architect.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    },
+    "build-error-resolver": {
+      "id": "build-error-resolver",
+      "description": "Build and type error resolution specialist. Use when build fails or type errors occur. Fixes errors with minimal diffs.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/build-error-resolver.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    },
+    "code-reviewer": {
+      "id": "code-reviewer",
+      "description": "Expert code reviewer for quality, security and maintainability. Use immediately after writing or modifying code.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/code-reviewer.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    },
+    "database-reviewer": {
+      "id": "database-reviewer",
+      "description": "PostgreSQL database specialist for query optimization, schema design, security, and performance. Use PROACTIVELY when writing SQL, creating migrations, designing schemas, or troubleshooting database performance. Incorporates Supabase best practices.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/database-reviewer.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    },
+    "doc-updater": {
+      "id": "doc-updater",
+      "description": "Documentation and codemap specialist. Use for updating docs, codemaps and architecture documentation.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/doc-updater.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    },
+    "docs-lookup": {
+      "id": "docs-lookup",
+      "description": "When the user asks how to use a library, framework, or API or needs up-to-date code examples, use Context7 MCP to fetch current documentation and return answers with examples. Invoke for docs/API/setup questions.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/docs-lookup.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    },
+    "e2e-runner": {
+      "id": "e2e-runner",
+      "description": "End-to-end testing specialist. Generates, maintains and runs E2E tests for critical user flows.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/e2e-runner.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    },
+    "flutter-reviewer": {
+      "id": "flutter-reviewer",
+      "description": "Flutter and Dart code reviewer. Reviews Flutter code for widget best practices, state management patterns, Dart idioms, performance pitfalls, accessibility, and clean architecture violations. Library-agnostic.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/flutter-reviewer.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    },
+    "go-reviewer": {
+      "id": "go-reviewer",
+      "description": "Expert Go code reviewer specializing in idiomatic Go, concurrency, error handling and performance.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/go-reviewer.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    },
+    "planner": {
+      "id": "planner",
+      "description": "Expert planning specialist for complex features and refactoring. Use before writing code for implementation planning, architectural changes, or complex refactoring.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/planner.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    },
+    "python-reviewer": {
+      "id": "python-reviewer",
+      "description": "Expert Python code reviewer specializing in Pythonic code, type hints, error handling and performance.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/python-reviewer.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    },
+    "refactor-cleaner": {
+      "id": "refactor-cleaner",
+      "description": "Dead code cleanup and consolidation specialist. Use for removing unused code, duplicates and refactoring.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/refactor-cleaner.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    },
+    "security-reviewer": {
+      "id": "security-reviewer",
+      "description": "Security vulnerability detection and remediation specialist. Use after writing code that handles auth, API endpoints, user input or sensitive data.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/security-reviewer.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    },
+    "tdd-guide": {
+      "id": "tdd-guide",
+      "description": "Test-Driven Development specialist enforcing write-tests-first methodology. Use when writing new features, fixing bugs or refactoring code. Ensures 80%+ test coverage.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/tdd-guide.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    },
+    "typescript-reviewer": {
+      "id": "typescript-reviewer",
+      "description": "Expert TypeScript/JavaScript code reviewer specializing in type safety, patterns, testing and modern TS features.",
+      "mode": "subagent",
+      "prompt": "{file:prompts/agents/typescript-reviewer.txt}",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true
+      }
+    }
+  },
+  "command": {
+    "architect": {
+      "id": "architect",
+      "description": "Architectural assessment and design recommendations.",
+      "template": "{file:commands/architect.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "build-fix": {
+      "id": "build-fix",
+      "description": "Fix build errors and type errors with minimal changes.",
+      "template": "{file:commands/build-fix.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "checkpoint": {
+      "id": "checkpoint",
+      "description": "Create, verify, or list workflow checkpoints for progress tracking.",
+      "template": "{file:commands/checkpoint.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "code-review": {
+      "id": "code-review",
+      "description": "Review code for quality, security and maintainability.",
+      "template": "{file:commands/code-review.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "context-budget": {
+      "id": "context-budget",
+      "description": "Analyze context window usage across agents, skills, and rules to find optimization opportunities.",
+      "template": "{file:commands/context-budget.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "e2e": {
+      "id": "e2e",
+      "description": "Generate and run end-to-end tests for critical user flows.",
+      "template": "{file:commands/e2e.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "learn": {
+      "id": "learn",
+      "description": "Extract reusable patterns from the current session and save as skills.",
+      "template": "{file:commands/learn.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "model-route": {
+      "id": "model-route",
+      "description": "Recommend the best model tier for the current task by complexity and budget.",
+      "template": "{file:commands/model-route.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "orchestrate": {
+      "id": "orchestrate",
+      "description": "Orchestrate multiple agents for complex tasks (planning + implementation + review).",
+      "template": "{file:commands/orchestrate.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "plan": {
+      "id": "plan",
+      "description": "Create a detailed implementation plan before writing code. Waits for user confirmation.",
+      "template": "{file:commands/plan.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "quality-gate": {
+      "id": "quality-gate",
+      "description": "Run quality checks on demand for a file or project scope.",
+      "template": "{file:commands/quality-gate.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "refactor-clean": {
+      "id": "refactor-clean",
+      "description": "Remove dead code and consolidate duplicates.",
+      "template": "{file:commands/refactor-clean.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "resume-session": {
+      "id": "resume-session",
+      "description": "Load the most recent session file and resume work with full context from where the last session ended.",
+      "template": "{file:commands/resume-session.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "rules-distill": {
+      "id": "rules-distill",
+      "description": "\"Scan skills to extract cross-cutting principles and distill them into rules\"",
+      "template": "{file:commands/rules-distill.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "save-session": {
+      "id": "save-session",
+      "description": "Save current session state to a dated file so work can be resumed in a future session with full context.",
+      "template": "{file:commands/save-session.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "security": {
+      "id": "security",
+      "description": "Run security review on code, dependencies and configurations.",
+      "template": "{file:commands/security.md}\n\n$ARGUMENTS",
+      "subtask": true,
+      "agent": "security-reviewer"
+    },
+    "setup-pm": {
+      "id": "setup-pm",
+      "description": "Configure your preferred package manager (npm/pnpm/yarn/bun)",
+      "template": "{file:commands/setup-pm.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "tdd": {
+      "id": "tdd",
+      "description": "Test-driven development workflow. Write tests first, then implement.",
+      "template": "{file:commands/tdd.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "test-coverage": {
+      "id": "test-coverage",
+      "description": "Check test coverage and identify gaps.",
+      "template": "{file:commands/test-coverage.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "update-docs": {
+      "id": "update-docs",
+      "description": "Update documentation and architecture maps.",
+      "template": "{file:commands/update-docs.md}\n\n$ARGUMENTS",
+      "subtask": true
+    },
+    "verify": {
+      "id": "verify",
+      "description": "Run verification loop — execute checks, validate results, fix issues.",
+      "template": "{file:commands/verify.md}\n\n$ARGUMENTS",
+      "subtask": true
+    }
+  }
+}

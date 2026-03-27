@@ -3,7 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   BookOpen,
@@ -17,28 +16,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-interface Project {
-  id: string;
-  title: string;
-  type: string;
-  description: string | null;
-  status: string;
-  wordCount: number;
-  updatedAt: string;
-  lastEditedSection: {
-    id: string;
-    title: string;
-    updatedAt: string;
-  } | null;
-  sectionSummary: {
-    empty: number;
-    started: number;
-    drafting: number;
-    review: number;
-    stale: number;
-  };
-}
+import { useAppWorkspaceData } from "@/components/workspace/AppWorkspaceDataContext";
+import type { AppProjectRecord } from "@/lib/app-data";
 
 const templates = [
   {
@@ -62,30 +41,7 @@ const RESUME_COPY = "Abrir workspace";
 
 export default function WorkspaceHomePage() {
   const { data: session, status } = useSession();
-  const router = useRouter();
-  const [projects, setProjects] = React.useState<Project[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-      return;
-    }
-
-    if (status === "authenticated") {
-      fetch("/api/projects")
-        .then((response) => response.json())
-        .then((data) => {
-          const normalizedProjects = Array.isArray(data) ? data : [];
-          normalizedProjects.sort(
-            (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
-          );
-          setProjects(normalizedProjects);
-        })
-        .catch(console.error)
-        .finally(() => setIsLoading(false));
-    }
-  }, [router, status]);
+  const { projects, isLoading } = useAppWorkspaceData();
 
   if (isLoading || status === "loading") {
     return (
@@ -367,13 +323,13 @@ export default function WorkspaceHomePage() {
   );
 }
 
-function getProjectHref(project: Project) {
+function getProjectHref(project: AppProjectRecord) {
   return `/app/projects/${project.id}`;
 }
 
 
 
-function getProgress(project: Project): number {
+function getProgress(project: AppProjectRecord): number {
   if (project.status === "COMPLETED") return 100;
 
   const total =
@@ -395,7 +351,7 @@ function getProgress(project: Project): number {
   return Math.max(8, Math.min(100, Math.round(weighted / total)));
 }
 
-function getNextAction(project: Project) {
+function getNextAction(project: AppProjectRecord) {
   if (project.wordCount === 0) return "Gerar outline e aprovar a estrutura inicial.";
   if (project.lastEditedSection) return `Retomar a secção "${project.lastEditedSection.title}".`;
   if (project.sectionSummary.review > 0) return "Rever secções prontas e preparar exportação.";

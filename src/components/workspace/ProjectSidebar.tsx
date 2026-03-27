@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type ComponentType, useEffect, useMemo, useState } from "react";
+import { type ComponentType, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
 import {
   BookCopy,
@@ -150,12 +150,6 @@ export function ProjectSidebar({
     return projects.filter((project) => project.title.toLowerCase().includes(normalized));
   }, [projects, search]);
 
-  useEffect(() => {
-    if (collapsed && search) {
-      setSearch("");
-    }
-  }, [collapsed, search]);
-
   const recentProjects = [...filteredProjects]
     .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
     .slice(0, collapsed ? 4 : 10);
@@ -187,7 +181,12 @@ export function ProjectSidebar({
               variant="ghost"
               size="icon"
               className="hidden rounded-full text-current hover:bg-sidebar-accent hover:text-foreground lg:inline-flex"
-              onClick={onToggleCollapse}
+              onClick={() => {
+                if (!collapsed && search) {
+                  setSearch("");
+                }
+                onToggleCollapse();
+              }}
               aria-label={collapsed ? "Expandir sidebar" : "Recolher sidebar"}
             >
               {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}

@@ -11,6 +11,7 @@ import { WorkspaceThreePane } from "@/components/workspace-v2/WorkspaceThreePane
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { fetchAppProjects } from "@/lib/app-data";
 import { countWordsInMarkdown } from "@/lib/content";
 import {
   extractOutlineTitles,
@@ -24,7 +25,7 @@ import {
 } from "@/stores/assistant-store";
 import { useEditorStore } from "@/stores/editor-store";
 import { useProjectStore } from "@/stores/project-store";
-import type { ChatAction, Project, Section } from "@/types/editor";
+import type { ChatAction, Section } from "@/types/editor";
 import type { WorkspaceDocumentTab, WorkspaceProjectLinkItem } from "./workspace-types";
 import {
   buildArtifactSource,
@@ -96,9 +97,7 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
 
     async function loadRecentProjects() {
       try {
-        const response = await fetch("/api/projects?sortBy=updatedAt&sortOrder=desc");
-        if (!response.ok) return;
-        const data = (await response.json()) as Project[];
+        const data = await fetchAppProjects("sortBy=updatedAt&sortOrder=desc");
         if (cancelled) return;
 
         setRecentProjects(

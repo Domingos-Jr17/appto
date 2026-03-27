@@ -1,63 +1,27 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { ProjectSidebar, type SidebarProject } from "./ProjectSidebar";
+import { AppWorkspaceDataProvider, useAppWorkspaceData } from "./AppWorkspaceDataContext";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 
 interface AppWorkspaceShellProps {
   children: React.ReactNode;
+  user: {
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  };
 }
 
-export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
+function AppWorkspaceShellChrome({ children, user }: AppWorkspaceShellProps) {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [credits, setCredits] = useState(0);
-  const [projects, setProjects] = useState<SidebarProject[]>([]);
-  const isProjectWorkspaceRoute = /^\/app\/projects\/[^/]+(?:\/workspace)?$/.test(pathname);
-
-  useEffect(() => {
-    if (status !== "authenticated" || isProjectWorkspaceRoute) return;
-
-    let active = true;
-
-    Promise.all([
-      fetch("/api/projects").then((response) => response.json()),
-      fetch("/api/credits").then((response) => response.json()),
-    ])
-      .then(([projectsData, creditsData]) => {
-        if (!active) return;
-
-        setProjects(
-          Array.isArray(projectsData)
-            ? projectsData.map((project) => ({
-                id: project.id,
-                title: project.title,
-                status: project.status,
-                updatedAt: project.updatedAt,
-                wordCount: project.wordCount ?? 0,
-                resumeMode: project.resumeMode,
-                lastEditedSection: project.lastEditedSection,
-                sectionSummary: project.sectionSummary,
-              }))
-            : []
-        );
-        setCredits(creditsData.balance || 0);
-      })
-      .catch(() => {
-        if (!active) return;
-        setProjects([]);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [isProjectWorkspaceRoute, pathname, status]);
+  const { projects, credits } = useAppWorkspaceData();
 
   const mobileSidebar = useMemo(
     () => (
@@ -65,28 +29,14 @@ export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
         collapsed={false}
         currentPath={pathname}
         credits={credits}
-        projects={projects}
-        user={session?.user || {}}
+        projects={projects as SidebarProject[]}
+        user={user}
         onToggleCollapse={() => undefined}
         onNavigate={() => setMobileOpen(false)}
       />
     ),
-    [credits, pathname, projects, session?.user]
+    [credits, pathname, projects, user]
   );
-
-  if (status === "loading") {
-    return (
-      <div className="flex h-svh items-center justify-center bg-background">
-        <div className="h-9 w-9 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!session?.user) return null;
-
-  if (isProjectWorkspaceRoute) {
-    return <div className="h-svh w-screen overflow-hidden bg-background">{children}</div>;
-  }
 
   return (
     <div className="h-svh w-screen flex overflow-hidden bg-background">
@@ -95,8 +45,8 @@ export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
           collapsed={collapsed}
           currentPath={pathname}
           credits={credits}
-          projects={projects}
-          user={session.user}
+          projects={projects as SidebarProject[]}
+          user={user}
           onToggleCollapse={() => setCollapsed((value) => !value)}
         />
       </div>
@@ -113,7 +63,7 @@ export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
         <div
           className={cn(
             "min-w-0 min-h-0 flex-1",
-            pathname.startsWith("/app/editor") || pathname.startsWith("/app/projects/")
+            pathname.startsWith("/app/projects/")
               ? "flex flex-col overflow-hidden"
               : "overflow-y-auto px-4 py-5 lg:px-8 lg:py-7"
           )}
@@ -122,5 +72,20 @@ export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+export function AppWorkspaceShell({ children, user }: AppWorkspaceShellProps) {
+  const pathname = usePathname();
+  const isProjectWorkspaceRoute = /^\/app\/projects\/[^/]+$/.test(pathname);
+
+  if (isProjectWorkspaceRoute) {
+    return <div className="h-svh w-screen overflow-hidden bg-background">{children}</div>;
+  }
+
+  return (
+    <AppWorkspaceDataProvider>
+      <AppWorkspaceShellChrome user={user}>{children}</AppWorkspaceShellChrome>
+    </AppWorkspaceDataProvider>
   );
 }

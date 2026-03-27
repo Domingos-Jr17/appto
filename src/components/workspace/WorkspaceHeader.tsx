@@ -45,7 +45,7 @@ export function WorkspaceHeader({ credits, onOpenMobileNav }: WorkspaceHeaderPro
   const pathname = usePathname();
 
   const meta = useMemo(() => {
-    if (pathname.startsWith("/app/editor") || pathname.startsWith("/app/projects/")) return null;
+    if (pathname.startsWith("/app/projects/")) return null;
 
     if (pathname === "/app") return PAGE_META["/app"];
     if (pathname.startsWith("/app/projects")) return PAGE_META["/app/projects"];

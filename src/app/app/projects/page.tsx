@@ -37,6 +37,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ProjectGrid, type Project } from "@/components/projects/ProjectGrid";
+import { useAppWorkspaceData } from "@/components/workspace/AppWorkspaceDataContext";
+import type { AppProjectRecord } from "@/lib/app-data";
 import {
   ProjectFilters,
   type ProjectStatus,
@@ -63,12 +65,12 @@ const PROJECT_TYPES = [
   { value: "REPORT", label: "Relatório", group: "Geral" },
 ];
 
-const projectTypeLabels: Record<string, string> = {
-  SCHOOL_WORK: "trabalho escolar",
-  RESEARCH_PROJECT: "projecto de investigação",
-  INTERNSHIP_REPORT: "relatório de estágio",
-  PRACTICAL_WORK: "trabalho prático",
-  TCC: "trabalho de conclusão de curso",
+const projectTypeLabels: Record<string, Project["type"]> = {
+  SCHOOL_WORK: "monografia",
+  RESEARCH_PROJECT: "monografia",
+  INTERNSHIP_REPORT: "relatório",
+  PRACTICAL_WORK: "relatório",
+  TCC: "monografia",
   MONOGRAPHY: "monografia",
   DISSERTATION: "dissertação",
   THESIS: "tese",
@@ -81,9 +83,7 @@ export default function ProjectsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [credits, setCredits] = useState(0);
+  const { projects: rawProjects, credits, isLoading, refresh } = useAppWorkspaceData();
   const [status, setStatus] = useState<ProjectStatus>("all");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -98,11 +98,6 @@ export default function ProjectsPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [openedFromUrl, setOpenedFromUrl] = useState(false);
-
-  // Fetch projects and credits
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   useEffect(() => {
     const shouldOpenFromUrl = searchParams.get("new") === "1";
@@ -131,36 +126,21 @@ export default function ProjectsPage() {
     }
   };
 
-  const fetchData = async () => {
-    try {
-      const [projectsRes, creditsRes] = await Promise.all([
-        fetch("/api/projects"),
-        fetch("/api/credits"),
-      ]);
-
-      const projectsData = await projectsRes.json();
-      const creditsData = await creditsRes.json();
-
-      setProjects(
-        projectsData.map((p: any) => ({
-          id: p.id,
-          title: p.title,
-          type: projectTypeLabels[p.type] || "monografia",
-          course: p.description || "Sem descrição",
-          institution: "aptto",
-          progress: calculateProgress(p),
-          status: mapStatus(p.status),
-          lastUpdated: formatRelativeTime(new Date(p.updatedAt)),
-          createdAt: p.createdAt,
-        }))
-      );
-      setCredits(creditsData.balance || 0);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const projects = React.useMemo<Project[]>(
+    () =>
+      rawProjects.map((project) => ({
+        id: project.id,
+        title: project.title,
+        type: projectTypeLabels[project.type] || "monografia",
+        course: project.description || "Sem descrição",
+        institution: "aptto",
+        progress: calculateProgress(project),
+        status: mapStatus(project.status),
+        lastUpdated: formatRelativeTime(new Date(project.updatedAt)),
+        createdAt: project.createdAt,
+      })),
+    [rawProjects]
+  );
 
   const handleCreateProject = async () => {
     if (!newTitle.trim()) {
@@ -236,7 +216,7 @@ export default function ProjectsPage() {
       });
 
       // Refresh projects list
-      fetchData();
+      await refresh();
     } catch {
       toast({
         title: "Erro",
@@ -268,7 +248,7 @@ export default function ProjectsPage() {
       });
 
       // Refresh projects list
-      fetchData();
+      await refresh();
     } catch {
       toast({
         title: "Erro",
@@ -517,15 +497,15 @@ export default function ProjectsPage() {
   );
 }
 
-function calculateProgress(project: any): number {
+function calculateProgress(project: AppProjectRecord): number {
   if (project.status === "COMPLETED") return 100;
   if (project.wordCount === 0) return 0;
   const expectedWords = 50 * 250;
   return Math.min(100, Math.round((project.wordCount / expectedWords) * 100));
 }
 
-function mapStatus(status: string): ProjectStatus {
-  const map: Record<string, ProjectStatus> = {
+function mapStatus(status: string): Project["status"] {
+  const map: Record<string, Project["status"]> = {
     DRAFT: "in_progress",
     IN_PROGRESS: "in_progress",
     REVIEW: "in_progress",

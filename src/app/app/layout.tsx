@@ -30,5 +30,5 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   if (!session?.user) return null;
 
-  return <AppWorkspaceShell>{children}</AppWorkspaceShell>;
+  return <AppWorkspaceShell user={session.user}>{children}</AppWorkspaceShell>;
 }

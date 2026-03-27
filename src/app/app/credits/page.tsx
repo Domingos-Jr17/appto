@@ -28,29 +28,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
+import { useAppWorkspaceData } from "@/components/workspace/AppWorkspaceDataContext";
 import { BalanceCard } from "@/components/credits/BalanceCard";
 import { UsageChart } from "@/components/credits/UsageChart";
-
-interface Transaction {
-  id: string;
-  type: string;
-  description: string;
-  amount: number;
-  createdAt: string;
-}
-
-interface CreditPackage {
-  credits: number;
-  price: number;
-  currency: string;
-}
-
-interface CreditData {
-  balance: number;
-  used: number;
-  transactions: Transaction[];
-  packages: Record<string, CreditPackage>;
-}
+import { fetchCreditDetails, type CreditDetailsRecord } from "@/lib/app-data";
 
 const faqItems = [
   {
@@ -82,9 +63,10 @@ const faqItems = [
 
 export default function CreditsPage() {
   const { toast } = useToast();
+  const { setCredits } = useAppWorkspaceData();
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
-  const [creditData, setCreditData] = useState<CreditData>({
+  const [creditData, setCreditData] = useState<CreditDetailsRecord>({
     balance: 0,
     used: 0,
     transactions: [],
@@ -93,14 +75,9 @@ export default function CreditsPage() {
 
   const fetchCredits = React.useCallback(async () => {
     try {
-      const response = await fetch("/api/credits?transactions=true");
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Não foi possível carregar os créditos.");
-      }
-
+      const data = await fetchCreditDetails();
       setCreditData(data);
+      setCredits(data.balance);
     } catch (error) {
       toast({
         title: "Erro",
@@ -113,7 +90,7 @@ export default function CreditsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [setCredits, toast]);
 
   useEffect(() => {
     void fetchCredits();

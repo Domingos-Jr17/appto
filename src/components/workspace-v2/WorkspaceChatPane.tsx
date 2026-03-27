@@ -20,6 +20,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { AI_ACTION_CREDIT_COSTS } from "@/lib/credits";
+import { shouldShowLowCreditsNotice } from "@/lib/workspace-ui";
 import type {
   AssistantMessage,
   ChatAction,
@@ -78,6 +79,7 @@ export function WorkspaceChatPane({
     chatAction === "rewrite" ? AI_ACTION_CREDIT_COSTS.improve : AI_ACTION_CREDIT_COSTS.generate;
 
   const emptySuggestions = useMemo(() => suggestions.slice(0, 3), [suggestions]);
+  const showLowCreditsNotice = shouldShowLowCreditsNotice(credits);
 
   return (
     <section className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
@@ -87,12 +89,7 @@ export function WorkspaceChatPane({
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-2">
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="truncate text-sm font-semibold tracking-tight">{project.title}</p>
-                <Badge variant="outline" className="rounded-full">
-                  Assistente
-                </Badge>
-              </div>
+              <p className="truncate text-sm font-semibold tracking-tight">{project.title}</p>
               <p className="truncate text-xs text-muted-foreground">
                 {activeSection ? `Secção activa: ${activeSection.title}` : "Orientação académica da sessão"}
               </p>
@@ -100,12 +97,15 @@ export function WorkspaceChatPane({
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="hidden rounded-full sm:inline-flex">
-              {credits.toLocaleString("pt-MZ")} créditos
-            </Badge>
-            <Button type="button" variant="ghost" size="sm" className="rounded-full lg:hidden" onClick={onOpenArtifact}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="rounded-full lg:hidden"
+              onClick={onOpenArtifact}
+              aria-label="Abrir documento"
+            >
               <PanelRightOpen className="h-4 w-4" />
-              <span>Documento</span>
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -270,6 +270,11 @@ export function WorkspaceChatPane({
                   {chatCost} créditos
                 </Badge>
                 <span>Contexto: {activeSection?.title || "sessão completa"}</span>
+                {showLowCreditsNotice ? (
+                  <span className="font-medium text-warning">
+                    Saldo baixo: {credits.toLocaleString("pt-MZ")} créditos restantes
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>

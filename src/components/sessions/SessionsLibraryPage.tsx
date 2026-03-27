@@ -403,7 +403,7 @@ export function SessionsLibraryPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="surface-panel flex flex-col gap-4 rounded-xl p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
+      <div className="surface-panel rounded-xl p-4 lg:p-5">
         <div className="space-y-2">
           <p className="text-sm font-medium text-foreground">{sessionCounts.all} sessões no total</p>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -414,11 +414,6 @@ export function SessionsLibraryPage() {
             <span>{sessionCounts.archived} arquivadas</span>
           </div>
         </div>
-
-        <Button onClick={() => setDialogOpen(true)} className="gap-2 lg:hidden">
-          <Plus className="h-4 w-4" />
-          Nova sessão
-        </Button>
       </div>
 
       <div className="surface-panel rounded-xl p-4 lg:p-5">

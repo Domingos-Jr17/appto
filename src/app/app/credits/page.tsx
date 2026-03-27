@@ -32,6 +32,7 @@ import { useAppWorkspaceData } from "@/components/workspace/AppWorkspaceDataCont
 import { BalanceCard } from "@/components/credits/BalanceCard";
 import { UsageChart } from "@/components/credits/UsageChart";
 import { fetchCreditDetails, type CreditDetailsRecord } from "@/lib/app-data";
+import { getVisibleCreditTransactions } from "@/lib/workspace-ui";
 
 const faqItems = [
   {
@@ -66,6 +67,7 @@ export default function CreditsPage() {
   const { setCredits } = useAppWorkspaceData();
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
+  const [showFullHistory, setShowFullHistory] = useState(false);
   const [creditData, setCreditData] = useState<CreditDetailsRecord>({
     balance: 0,
     used: 0,
@@ -181,6 +183,12 @@ export default function CreditsPage() {
     document.getElementById("credit-packages")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
+  const visibleTransactions = React.useMemo(
+    () => getVisibleCreditTransactions(creditData.transactions, showFullHistory, 6),
+    [creditData.transactions, showFullHistory]
+  );
+  const hasHiddenTransactions = creditData.transactions.length > visibleTransactions.length;
+
   const getTypeInfo = (type: string) => {
     switch (type) {
       case "PURCHASE":
@@ -233,12 +241,6 @@ export default function CreditsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="surface-panel rounded-xl px-5 py-4">
-        <p className="text-sm leading-6 text-muted-foreground">
-          Gira o saldo, acompanha o consumo mensal e recarrega a conta sem sair do fluxo principal do produto.
-        </p>
-      </div>
-
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-1">
           <BalanceCard
@@ -325,61 +327,84 @@ export default function CreditsPage() {
               <History className="h-5 w-5 text-primary" />
               Histórico de Transacções
             </CardTitle>
-            <span className="text-sm text-muted-foreground">
-              {creditData.transactions.length} transacções
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">
+                {creditData.transactions.length} transacções
+              </span>
+              {creditData.transactions.length > 6 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => setShowFullHistory((value) => !value)}
+                  aria-expanded={showFullHistory}
+                  aria-controls="credit-history-table"
+                >
+                  {showFullHistory ? "Mostrar menos" : "Ver histórico completo"}
+                </Button>
+              ) : null}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           {creditData.transactions.length > 0 ? (
-            <div className="overflow-hidden rounded-xl border border-border/50">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-muted-foreground">Descrição</TableHead>
-                    <TableHead className="text-muted-foreground">Data</TableHead>
-                    <TableHead className="text-right text-muted-foreground">
-                      Créditos
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {creditData.transactions.map((tx) => {
-                    const typeInfo = getTypeInfo(tx.type);
-                    const Icon = typeInfo.icon;
-                    const isCredit = tx.amount > 0;
+            <div className="space-y-3">
+              <div id="credit-history-table" className="overflow-hidden rounded-xl border border-border/50">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="text-muted-foreground">Descrição</TableHead>
+                      <TableHead className="text-muted-foreground">Data</TableHead>
+                      <TableHead className="text-right text-muted-foreground">
+                        Créditos
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {visibleTransactions.map((tx) => {
+                      const typeInfo = getTypeInfo(tx.type);
+                      const Icon = typeInfo.icon;
+                      const isCredit = tx.amount > 0;
 
-                    return (
-                      <TableRow key={tx.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-2xl ${typeInfo.surfaceClass}`}>
-                              <Icon className={`h-4 w-4 ${typeInfo.iconClass}`} />
+                      return (
+                        <TableRow key={tx.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className={`flex h-8 w-8 items-center justify-center rounded-2xl ${typeInfo.surfaceClass}`}>
+                                <Icon className={`h-4 w-4 ${typeInfo.iconClass}`} />
+                              </div>
+                              <div>
+                                <span className="font-medium">{tx.description}</span>
+                                <p className="text-xs text-muted-foreground">{typeInfo.label}</p>
+                              </div>
                             </div>
-                            <div>
-                              <span className="font-medium">{tx.description}</span>
-                              <p className="text-xs text-muted-foreground">{typeInfo.label}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {formatDate(tx.createdAt)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <span
-                            className={
-                              isCredit ? "font-medium text-success" : "text-foreground"
-                            }
-                          >
-                            {isCredit ? "+" : ""}
-                            {tx.amount}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {formatDate(tx.createdAt)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <span
+                              className={
+                                isCredit ? "font-medium text-success" : "text-foreground"
+                              }
+                            >
+                              {isCredit ? "+" : ""}
+                              {tx.amount}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {hasHiddenTransactions ? (
+                <p className="text-sm text-muted-foreground">
+                  A mostrar as 6 transacções mais recentes. Abra o histórico completo apenas quando precisar de mais detalhe.
+                </p>
+              ) : null}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center">

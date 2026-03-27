@@ -30,6 +30,8 @@ const PAGE_META: Record<
   "/app": {
     title: "Início",
     breadcrumb: [{ label: "Início" }],
+    actionLabel: "Nova sessão",
+    actionHref: "/app/sessoes?new=1",
   },
   "/app/sessoes": {
     title: "Sessões",
@@ -134,10 +136,10 @@ export function WorkspaceHeader({ credits, onOpenMobileNav, projects, user }: Wo
             </a>
           </Button>
           {meta.actionLabel && meta.actionHref ? (
-            <Button asChild className="hidden rounded-full px-4 lg:inline-flex">
-              <Link href={meta.actionHref}>
+            <Button asChild className="rounded-full px-3 sm:px-4">
+              <Link href={meta.actionHref} aria-label={meta.actionLabel}>
                 <Plus className="h-4 w-4" />
-                {meta.actionLabel}
+                <span className="hidden sm:inline">{meta.actionLabel}</span>
               </Link>
             </Button>
           ) : null}

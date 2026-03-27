@@ -5,6 +5,8 @@ import { authOptions } from "@/lib/auth";
 import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
 import { db } from "@/lib/db";
 import { serializeStoredFile } from "@/lib/files";
+import { CreditLedgerService } from "@/lib/credit-ledger";
+import { CREDIT_DEFAULTS } from "@/lib/credits";
 import { DocumentExportService } from "@/lib/document-export";
 import { buildStoredFileRecord, createChecksum, uploadBufferToStorage } from "@/lib/storage";
 import { saveProjectExportSchema } from "@/lib/validators";
@@ -38,6 +40,16 @@ export async function POST(
     if (!project) {
       return apiError("Projecto não encontrado", 404);
     }
+
+    const ledger = new CreditLedgerService(db);
+    const chargeAmount =
+      format === "PDF" ? CREDIT_DEFAULTS.exportPdf : CREDIT_DEFAULTS.exportDocx;
+    await ledger.charge(
+      session.user.id,
+      chargeAmount,
+      `Guardado exportação ${format}: ${project.title}`,
+      { projectId: id, format: format.toLowerCase() }
+    );
 
     const model = DocumentExportService.createModel(project);
     const buffer =
@@ -107,6 +119,7 @@ export async function POST(
 
     return apiSuccess({
       success: true,
+      creditsUsed: chargeAmount,
       export: {
         id: savedExport.id,
         format: savedExport.format,

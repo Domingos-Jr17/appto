@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { SidebarProject } from "./ProjectSidebar";
+import type { SidebarProject } from "./AppSidebar";
 
 interface NotificationBellProps {
   credits: number;

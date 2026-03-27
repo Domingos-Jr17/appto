@@ -31,7 +31,7 @@ export function ProfileSection() {
     name: "",
     email: "",
   });
-  const [isEmailVerified] = useState(true);
+  const [isEmailVerified] = useState(false);
 
   useEffect(() => {
     if (session?.user) {

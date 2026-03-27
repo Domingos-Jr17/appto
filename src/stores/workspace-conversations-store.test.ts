@@ -5,7 +5,7 @@ import {
   renameProjectConversation,
   toggleProjectConversationPin,
 } from "@/stores/workspace-conversations-store";
-import type { PersistedWorkspaceConversation, WorkspaceConversationItem } from "@/components/workspace-v2/workspace-types";
+import type { PersistedWorkspaceConversation, WorkspaceConversationItem } from "@/components/session-workspace/types";
 
 const derived: WorkspaceConversationItem[] = [
   {

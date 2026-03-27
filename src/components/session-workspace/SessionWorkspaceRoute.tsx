@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { FolderTree } from "lucide-react";
-import { useAppWorkspaceData } from "@/components/workspace/AppWorkspaceDataContext";
-import { WorkspaceDocumentPanel } from "@/components/workspace-v2/WorkspaceDocumentPanel";
-import { WorkspaceChatPane } from "@/components/workspace-v2/WorkspaceChatPane";
-import { WorkspaceThreePane } from "@/components/workspace-v2/WorkspaceThreePane";
+import { useAppShellData } from "@/components/app-shell/AppShellDataContext";
+import { DocumentPane } from "@/components/session-workspace/DocumentPane";
+import { ChatPane } from "@/components/session-workspace/ChatPane";
+import { SessionWorkspaceLayout } from "@/components/session-workspace/SessionWorkspaceLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -26,20 +26,20 @@ import {
 import { useEditorStore } from "@/stores/editor-store";
 import { useProjectStore } from "@/stores/project-store";
 import type { ChatAction, Section } from "@/types/editor";
-import type { WorkspaceDocumentTab } from "./workspace-types";
+import type { WorkspaceDocumentTab } from "./types";
 import {
   buildArtifactSource,
   getPreferredSectionId,
-} from "./workspace-mappers";
-import { WorkspaceErrorBoundary } from "./WorkspaceErrorBoundary";
+} from "./mappers";
+import { SessionWorkspaceErrorBoundary } from "./SessionWorkspaceErrorBoundary";
 
-interface ProjectWorkspaceRouteProps {
+interface SessionWorkspaceRouteProps {
   projectId: string;
 }
 
-export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps) {
+export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps) {
   const { toast } = useToast();
-  const { setCredits: setWorkspaceCredits } = useAppWorkspaceData();
+  const { setCredits: setAppCredits } = useAppShellData();
   const initializedProjectId = useRef<string | null>(null);
 
   const [artifactCollapsed, setArtifactCollapsed] = useState(false);
@@ -67,6 +67,8 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
   const sectionTitle = useEditorStore((state) => state.sectionTitle);
   const content = useEditorStore((state) => state.content);
   const wordCount = useEditorStore((state) => state.wordCount);
+  const autoSaveStatus = useEditorStore((state) => state.autoSaveStatus);
+  const lastSaved = useEditorStore((state) => state.lastSaved);
   const selectSection = useEditorStore((state) => state.selectSection);
   const updateTitle = useEditorStore((state) => state.updateTitle);
   const updateContent = useEditorStore((state) => state.updateContent);
@@ -88,8 +90,8 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
   }, [fetchProject, projectId]);
 
   useEffect(() => {
-    setWorkspaceCredits(credits);
-  }, [credits, setWorkspaceCredits]);
+    setAppCredits(credits);
+  }, [credits, setAppCredits]);
 
   useEffect(() => {
     clearChat(projectId);
@@ -367,8 +369,8 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
   }
 
   const chat = (
-    <WorkspaceErrorBoundary label="chat">
-      <WorkspaceChatPane
+    <SessionWorkspaceErrorBoundary label="chat">
+      <ChatPane
         project={project}
         activeSection={activeSection}
         chatMessages={chatMessages}
@@ -390,12 +392,12 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
         onExport={handleExport}
         onSaveExport={handleSaveExport}
       />
-    </WorkspaceErrorBoundary>
+    </SessionWorkspaceErrorBoundary>
   );
 
   const artifactPanel = (
-    <WorkspaceErrorBoundary label="document">
-      <WorkspaceDocumentPanel
+    <SessionWorkspaceErrorBoundary label="document">
+      <DocumentPane
         project={project}
         sections={sections}
         activeSection={activeSection}
@@ -406,6 +408,8 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
         tab={documentTab}
         copied={copied}
         collapsed={artifactCollapsed}
+        saveStatus={autoSaveStatus}
+        lastSaved={lastSaved}
         onTabChange={setDocumentTab}
         onCopy={handleCopy}
         onDocumentTitleChange={handleDocumentTitleChange}
@@ -423,12 +427,12 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
         onSectionReorder={handleSectionReorder}
         onToggleCollapsed={() => setArtifactCollapsed((value) => !value)}
       />
-    </WorkspaceErrorBoundary>
+    </SessionWorkspaceErrorBoundary>
   );
 
   return (
     <div className="min-h-0 flex-1 overflow-hidden">
-      <WorkspaceThreePane
+      <SessionWorkspaceLayout
         artifactCollapsed={artifactCollapsed}
         mobileArtifactOpen={mobileArtifactOpen}
         chat={chat}

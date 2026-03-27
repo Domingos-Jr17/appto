@@ -6,21 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
-interface PaymentPackage {
-  id: string;
-  credits: number;
-  price: number;
-  popular?: boolean;
-  bonus?: number;
-}
-
-const paymentPackages: PaymentPackage[] = [
-  { id: "starter", credits: 500, price: 250 },
-  { id: "basic", credits: 1200, price: 500, bonus: 100 },
-  { id: "standard", credits: 2500, price: 1000, popular: true, bonus: 300 },
-  { id: "premium", credits: 5500, price: 2000, bonus: 1000 },
-];
+import { CREDIT_PACKAGES_DISPLAY } from "@/lib/credits";
 
 interface PaymentMethodsProps {
   className?: string;
@@ -28,7 +14,7 @@ interface PaymentMethodsProps {
 
 export function PaymentMethods({ className }: PaymentMethodsProps) {
   const [selectedMethod, setSelectedMethod] = React.useState<"mpesa" | "emola">("mpesa");
-  const [selectedPackage, setSelectedPackage] = React.useState<string>("standard");
+  const [selectedPackage, setSelectedPackage] = React.useState<string>("basic");
 
   return (
     <div className={cn("space-y-6", className)}>
@@ -41,6 +27,7 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
           <div className="grid grid-cols-2 gap-3">
             {/* M-Pesa */}
             <button
+              type="button"
               onClick={() => setSelectedMethod("mpesa")}
               className={cn(
                 "relative flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all",
@@ -63,6 +50,7 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
 
             {/* e-Mola */}
             <button
+              type="button"
               onClick={() => setSelectedMethod("emola")}
               className={cn(
                 "relative flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all",
@@ -93,13 +81,14 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
         </CardHeader>
         <CardContent>
           <div className="grid gap-3">
-            {paymentPackages.map((pkg) => (
+            {CREDIT_PACKAGES_DISPLAY.map((pkg) => (
               <button
-                key={pkg.id}
-                onClick={() => setSelectedPackage(pkg.id)}
+                type="button"
+                key={pkg.key}
+                onClick={() => setSelectedPackage(pkg.key)}
                 className={cn(
                   "relative flex items-center justify-between rounded-xl border-2 p-4 transition-all text-left",
-                  selectedPackage === pkg.id
+                  selectedPackage === pkg.key
                     ? "border-primary bg-primary/5"
                     : "border-border/50 hover:border-border bg-muted/30"
                 )}
@@ -109,7 +98,7 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
                     Popular
                   </Badge>
                 )}
-                {selectedPackage === pkg.id && (
+                {selectedPackage === pkg.key && (
                   <div className="absolute -top-2 -left-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                     <Check className="h-3 w-3 text-primary-foreground" />
                   </div>
@@ -118,13 +107,8 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
                   <p className="font-semibold">
                     {pkg.credits.toLocaleString("pt-MZ")} créditos
                   </p>
-                  {pkg.bonus && (
-                    <p className="text-sm text-success">
-                      +{pkg.bonus.toLocaleString("pt-MZ")} bónus
-                    </p>
-                  )}
                   <p className="text-xs text-muted-foreground mt-1">
-                    ~{Math.floor((pkg.credits + (pkg.bonus || 0)) / 50)} trabalhos
+                    {pkg.description}
                   </p>
                 </div>
                 <div className="text-right">

@@ -4,14 +4,14 @@ import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { ProjectSidebar, type SidebarProject } from "./ProjectSidebar";
-import { AppWorkspaceDataProvider, useAppWorkspaceData } from "./AppWorkspaceDataContext";
-import { WorkspaceHeader } from "./WorkspaceHeader";
+import { AppSidebar, type SidebarProject } from "./AppSidebar";
+import { AppShellDataProvider, useAppShellData } from "./AppShellDataContext";
+import { AppHeader } from "./AppHeader";
 
 const SIDEBAR_COLLAPSE_EVENT = "appto:sidebar-collapse";
 const SIDEBAR_COLLAPSE_KEY = "appto:sidebar-collapsed";
 
-interface AppWorkspaceShellProps {
+interface AppShellProps {
   children: React.ReactNode;
   user: {
     name?: string | null;
@@ -20,10 +20,10 @@ interface AppWorkspaceShellProps {
   };
 }
 
-function AppWorkspaceShellChrome({ children, user }: AppWorkspaceShellProps) {
+function AppShellChrome({ children, user }: AppShellProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { projects, credits } = useAppWorkspaceData();
+  const { projects, credits } = useAppShellData();
 
   const subscribeToCollapse = useCallback((onStoreChange: () => void) => {
     if (typeof window === "undefined") {
@@ -54,7 +54,7 @@ function AppWorkspaceShellChrome({ children, user }: AppWorkspaceShellProps) {
 
   const mobileSidebar = useMemo(
     () => (
-      <ProjectSidebar
+      <AppSidebar
         collapsed={false}
         currentPath={pathname}
         credits={credits}
@@ -69,7 +69,7 @@ function AppWorkspaceShellChrome({ children, user }: AppWorkspaceShellProps) {
   return (
     <div className="h-svh w-screen flex overflow-hidden bg-background">
       <div className="hidden lg:block">
-        <ProjectSidebar
+        <AppSidebar
           collapsed={collapsed}
           currentPath={pathname}
           credits={credits}
@@ -86,7 +86,7 @@ function AppWorkspaceShellChrome({ children, user }: AppWorkspaceShellProps) {
           </SheetContent>
         </Sheet>
 
-        <WorkspaceHeader
+        <AppHeader
           credits={credits}
           projects={projects as SidebarProject[]}
           user={user}
@@ -108,10 +108,10 @@ function AppWorkspaceShellChrome({ children, user }: AppWorkspaceShellProps) {
   );
 }
 
-export function AppWorkspaceShell({ children, user }: AppWorkspaceShellProps) {
+export function AppShell({ children, user }: AppShellProps) {
   return (
-    <AppWorkspaceDataProvider>
-      <AppWorkspaceShellChrome user={user}>{children}</AppWorkspaceShellChrome>
-    </AppWorkspaceDataProvider>
+    <AppShellDataProvider>
+      <AppShellChrome user={user}>{children}</AppShellChrome>
+    </AppShellDataProvider>
   );
 }

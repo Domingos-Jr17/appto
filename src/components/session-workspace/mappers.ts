@@ -3,8 +3,9 @@ import type {
   PersistedWorkspaceConversation,
   WorkspaceArtifactSource,
   WorkspaceConversationItem,
-} from "./workspace-types";
+} from "./types";
 import { flattenSections } from "@/lib/editor-helpers";
+import { DEFAULT_PROJECT_SECTIONS } from "@/lib/project-templates";
 
 const MAX_CONVERSATION_SECTIONS = 6;
 const MAX_RECENT_ASSISTANT_MESSAGES = 2;
@@ -40,13 +41,28 @@ export function formatRelativeTime(rawDate?: string | Date | null): string {
   return date.toLocaleDateString("pt-MZ");
 }
 
-export function getPreferredSectionId(project: Project | null, sections: Section[]): string | null {
-  return (
-    project?.lastEditedSection?.id ||
-    sections.find((section) => section.children.length > 0)?.children[0]?.id ||
-    sections[0]?.id ||
-    null
+function isSectionEditable(sectionTitle: string): boolean {
+  return DEFAULT_PROJECT_SECTIONS.some(
+    (tpl) => tpl.title === sectionTitle && tpl.isPrimaryEditable
   );
+}
+
+export function getPreferredSectionId(project: Project | null, sections: Section[]): string | null {
+  if (!sections.length) return project?.lastEditedSection?.id || null;
+
+  if (project?.lastEditedSection?.id) {
+    const match = sections.find((s) => s.id === project.lastEditedSection!.id);
+    if (match) return match.id;
+  }
+
+  const flat = flattenSections(sections);
+  for (const section of flat) {
+    if (isSectionEditable(section.title)) {
+      return section.id;
+    }
+  }
+
+  return sections[0]?.id || null;
 }
 
 export function buildWorkspaceConversations(

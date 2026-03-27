@@ -2,10 +2,10 @@ import { describe, expect, test } from "bun:test";
 import type { AppProjectRecord, CreditTransaction } from "@/lib/app-data";
 import {
   buildDashboardSummary,
-  getActiveSettingsTab,
   getVisibleCreditTransactions,
   shouldShowLowCreditsNotice,
 } from "@/lib/workspace-ui";
+import { getActiveSettingsTab } from "@/lib/user-settings";
 
 const projects: AppProjectRecord[] = [
   {

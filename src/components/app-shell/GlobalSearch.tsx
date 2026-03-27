@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
-import type { SidebarProject } from "./ProjectSidebar";
-import { workspaceNavItems } from "./workspaceNav";
+import type { SidebarProject } from "./AppSidebar";
+import { appNavItems } from "./app-nav";
 
 interface GlobalSearchProps {
   projects: SidebarProject[];
@@ -111,7 +111,7 @@ export function GlobalSearch({ projects }: GlobalSearchProps) {
           <CommandSeparator />
 
           <CommandGroup heading="Navegação">
-            {workspaceNavItems.map((item) => {
+            {appNavItems.map((item) => {
               const Icon = item.icon;
               return (
                 <CommandItem key={item.href} onSelect={() => openAndClose(item.href)}>

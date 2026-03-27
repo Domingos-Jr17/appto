@@ -4,7 +4,7 @@ import * as React from "react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { AppWorkspaceShell } from "@/components/workspace/AppWorkspaceShell";
+import { AppShell } from "@/components/app-shell/AppShell";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -30,5 +30,5 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   if (!session?.user) return null;
 
-  return <AppWorkspaceShell user={session.user}>{children}</AppWorkspaceShell>;
+  return <AppShell user={session.user}>{children}</AppShell>;
 }

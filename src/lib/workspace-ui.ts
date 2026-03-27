@@ -1,40 +1,5 @@
 import type { AppProjectRecord, CreditTransaction } from "@/lib/app-data";
 
-export const SETTINGS_TABS = [
-  {
-    value: "perfil",
-    label: "Perfil",
-    description: "Gira as suas informações pessoais",
-  },
-  {
-    value: "preferencias",
-    label: "Preferências",
-    description: "Personalize a sua experiência",
-  },
-  {
-    value: "seguranca",
-    label: "Segurança",
-    description: "Definições de segurança da conta",
-  },
-  {
-    value: "notificacoes",
-    label: "Notificações",
-    description: "Gira as suas preferências de notificação",
-  },
-  {
-    value: "conta",
-    label: "Conta",
-    description: "Gestão da conta",
-  },
-] as const;
-
-export const SETTINGS_TAB_VALUES = SETTINGS_TABS.map((tab) => tab.value) as [
-  (typeof SETTINGS_TABS)[number]["value"],
-  ...(typeof SETTINGS_TABS)[number]["value"][],
-];
-
-export type SettingsTabValue = (typeof SETTINGS_TAB_VALUES)[number];
-
 export interface DashboardSummary {
   activeProjects: number;
   totalWords: number;
@@ -71,10 +36,6 @@ export function getVisibleCreditTransactions(
   );
 
   return expanded ? orderedTransactions : orderedTransactions.slice(0, limit);
-}
-
-export function getActiveSettingsTab(requestedTab: string | null): SettingsTabValue {
-  return SETTINGS_TAB_VALUES.find((tab) => tab === requestedTab) || "perfil";
 }
 
 function getNextAction(project: AppProjectRecord) {

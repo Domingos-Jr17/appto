@@ -20,6 +20,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -153,8 +163,27 @@ export function DocumentTree({
   const [editingTitle, setEditingTitle] = useState("");
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [pendingDeleteTitle, setPendingDeleteTitle] = useState<string | null>(null);
 
   const totalSections = useMemo(() => countAllSections(sections), [sections]);
+
+  const handleConfirmDelete = () => {
+    if (pendingDeleteId) {
+      onSectionDelete(pendingDeleteId);
+      setPendingDeleteId(null);
+      setPendingDeleteTitle(null);
+    }
+  };
+
+  const handleRequestDelete = (section: Section) => {
+    if (section.wordCount > 0 || (section.children?.length ?? 0) > 0) {
+      setPendingDeleteId(section.id);
+      setPendingDeleteTitle(section.title);
+    } else {
+      onSectionDelete(section.id);
+    }
+  };
 
   const handleDrop = (targetId: string) => {
     if (!draggedId || draggedId === targetId) {
@@ -301,7 +330,7 @@ export function DocumentTree({
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
-                      onClick={() => onSectionDelete(section.id)}
+                      onClick={() => handleRequestDelete(section)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Eliminar
@@ -344,6 +373,28 @@ export function DocumentTree({
           Novo capítulo
         </Button>
       </div>
+
+      <AlertDialog open={pendingDeleteId !== null} onOpenChange={(open) => {
+        if (!open) {
+          setPendingDeleteId(null);
+          setPendingDeleteTitle(null);
+        }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar secção?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A secção &quot;{pendingDeleteTitle}&quot; contém conteúdo. Esta acção é irreversível.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-white hover:bg-destructive/90">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

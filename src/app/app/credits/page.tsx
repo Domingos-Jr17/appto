@@ -28,11 +28,12 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { useAppWorkspaceData } from "@/components/workspace/AppWorkspaceDataContext";
+import { useAppShellData } from "@/components/app-shell/AppShellDataContext";
 import { BalanceCard } from "@/components/credits/BalanceCard";
 import { UsageChart } from "@/components/credits/UsageChart";
 import { fetchCreditDetails, type CreditDetailsRecord } from "@/lib/app-data";
 import { getVisibleCreditTransactions } from "@/lib/workspace-ui";
+import { CREDIT_PACKAGES_DISPLAY } from "@/lib/credits";
 
 const faqItems = [
   {
@@ -43,7 +44,7 @@ const faqItems = [
   {
     question: "Quanto custa cada operação?",
     answer:
-      "Os custos são centralizados no servidor. Hoje, gerar conteúdo custa 10 créditos, melhorar texto custa 5, referências custam 3 e exportação DOCX/PDF usa uma tarifa dedicada.",
+      "Cada operação tem um custo fixo definido no servidor. Gerar conteúdo custa 10 créditos, melhorar texto custa 5, referências custam 3 e exportação DOCX custa 5. Consulte a lista completa de custos na página de créditos.",
   },
   {
     question: "Posso obter reembolso dos créditos?",
@@ -64,7 +65,7 @@ const faqItems = [
 
 export default function CreditsPage() {
   const { toast } = useToast();
-  const { setCredits } = useAppWorkspaceData();
+  const { setCredits } = useAppShellData();
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
   const [showFullHistory, setShowFullHistory] = useState(false);
@@ -99,27 +100,8 @@ export default function CreditsPage() {
   }, [fetchCredits]);
 
   const plans = React.useMemo(() => {
-    return Object.entries(creditData.packages).map(([packageKey, value]) => ({
-      name:
-        packageKey === "starter"
-          ? "Starter"
-          : packageKey === "basic"
-            ? "Standard"
-            : packageKey === "academic"
-              ? "Academic"
-              : "Pro",
-      price: value.price,
-      credits: value.credits,
-      packageKey,
-      popular: packageKey === "basic",
-      currency: value.currency,
-      features: [
-        `${value.credits.toLocaleString("pt-MZ")} créditos no saldo`,
-        "Checkout sandbox com confirmação automática em ambiente de teste",
-        "Histórico de compra persistido na conta",
-      ],
-    }));
-  }, [creditData.packages]);
+    return CREDIT_PACKAGES_DISPLAY;
+  }, []);
 
   const handlePurchase = async (packageKey: string) => {
     setIsPurchasing(packageKey);
@@ -263,11 +245,11 @@ export default function CreditsPage() {
               <div className="grid gap-4 md:grid-cols-3">
                 {plans.map((plan) => (
                   <div
-                    key={plan.packageKey}
-                    className={`relative rounded-xl border p-5 ${
+                    key={plan.key}
+                    className={`relative rounded-xl border p-5 transition-all duration-200 ${
                       plan.popular
-                        ? "border-primary/35 bg-primary/8 surface-strong"
-                        : "border-border/50 bg-muted/30"
+                        ? "border-primary/35 bg-primary/8 surface-strong hover:border-primary/50 hover:shadow-md"
+                        : "border-border/50 bg-muted/30 hover:border-primary/30 hover:bg-muted/40 hover:shadow-sm"
                     }`}
                   >
                     {plan.popular ? (
@@ -304,13 +286,13 @@ export default function CreditsPage() {
                           : ""
                       }`}
                       variant={plan.popular ? "default" : "outline"}
-                      onClick={() => handlePurchase(plan.packageKey)}
+                      onClick={() => handlePurchase(plan.key)}
                       disabled={isPurchasing !== null}
                     >
-                      {isPurchasing === plan.packageKey ? (
+                      {isPurchasing === plan.key ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : null}
-                      {isPurchasing === plan.packageKey ? "A processar..." : "Seleccionar"}
+                      {isPurchasing === plan.key ? "A processar..." : "Seleccionar"}
                     </Button>
                   </div>
                 ))}

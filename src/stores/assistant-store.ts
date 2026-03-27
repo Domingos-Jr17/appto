@@ -61,10 +61,23 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
   ) => {
     if (!prompt.trim() || get().isChatLoading) return "";
 
+    const actionToApiAction: Record<ChatAction, string> = {
+      brainstorm: "generate",
+      outline: "outline",
+      section: "generate-section",
+      rewrite: "improve",
+    };
+
+    const apiAction = actionToApiAction[action];
+
     const cost =
       action === "rewrite"
         ? AI_ACTION_CREDIT_COSTS.improve
-        : AI_ACTION_CREDIT_COSTS.generate;
+        : action === "outline"
+          ? AI_ACTION_CREDIT_COSTS.outline
+          : action === "section"
+            ? AI_ACTION_CREDIT_COSTS["generate-section"]
+            : AI_ACTION_CREDIT_COSTS.generate;
 
     if (credits < cost) return "";
 
@@ -107,7 +120,7 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "generate",
+          action: apiAction,
           text: composedPrompt,
           context: sectionTitle,
           projectId,

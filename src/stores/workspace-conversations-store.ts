@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import type {
   PersistedWorkspaceConversation,
   WorkspaceConversationItem,
-} from "@/components/workspace-v2/workspace-types";
+} from "@/components/session-workspace/types";
 
 interface ProjectConversationState {
   items: PersistedWorkspaceConversation[];

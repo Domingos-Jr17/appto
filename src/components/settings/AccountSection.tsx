@@ -192,7 +192,7 @@ export function AccountSection() {
             Status da Conta
           </Label>
           <p className="text-sm text-muted-foreground">
-            Informações sobre sua conta e assinatura.
+            Informações sobre a sua conta e créditos.
           </p>
         </div>
 

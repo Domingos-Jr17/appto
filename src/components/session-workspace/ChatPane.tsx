@@ -29,7 +29,7 @@ import type {
   Section,
 } from "@/types/editor";
 
-interface WorkspaceChatPaneProps {
+interface ChatPaneProps {
   project: Project;
   activeSection: Section | null;
   chatMessages: AssistantMessage[];
@@ -56,7 +56,7 @@ function formatMessageTime(value: Date) {
   });
 }
 
-export function WorkspaceChatPane({
+export function ChatPane({
   project,
   activeSection,
   chatMessages,
@@ -74,9 +74,15 @@ export function WorkspaceChatPane({
   onApplyContent,
   onExport,
   onSaveExport,
-}: WorkspaceChatPaneProps) {
-  const chatCost =
-    chatAction === "rewrite" ? AI_ACTION_CREDIT_COSTS.improve : AI_ACTION_CREDIT_COSTS.generate;
+}: ChatPaneProps) {
+  const actionToCost: Record<ChatAction, number> = {
+    brainstorm: AI_ACTION_CREDIT_COSTS.generate,
+    outline: AI_ACTION_CREDIT_COSTS.outline,
+    section: AI_ACTION_CREDIT_COSTS["generate-section"],
+    rewrite: AI_ACTION_CREDIT_COSTS.improve,
+  };
+
+  const chatCost = actionToCost[chatAction] ?? AI_ACTION_CREDIT_COSTS.generate;
 
   const emptySuggestions = useMemo(() => suggestions.slice(0, 3), [suggestions]);
   const showLowCreditsNotice = shouldShowLowCreditsNotice(credits);
@@ -202,12 +208,20 @@ export function WorkspaceChatPane({
 
                 {message.role === "assistant" ? (
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" className="rounded-full" onClick={() => onApplyContent(message.content, "insert")}>
-                      Aplicar ao documento
-                    </Button>
-                    <Button size="sm" variant="outline" className="rounded-full" onClick={() => onApplyContent(message.content, "replace")}>
-                      Substituir secção
-                    </Button>
+                    {activeSection ? (
+                      <>
+                        <Button size="sm" variant="outline" className="rounded-full" onClick={() => onApplyContent(message.content, "insert")}>
+                          Aplicar ao documento
+                        </Button>
+                        <Button size="sm" variant="outline" className="rounded-full" onClick={() => onApplyContent(message.content, "replace")}>
+                          Substituir secção
+                        </Button>
+                      </>
+                    ) : (
+                      <Button size="sm" variant="outline" className="rounded-full" disabled>
+                        Selecione uma secção para aplicar
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline" className="rounded-full" onClick={() => onApplyContent(message.content, "append")}>
                       Criar nova secção
                     </Button>

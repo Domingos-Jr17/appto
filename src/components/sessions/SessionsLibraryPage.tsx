@@ -39,7 +39,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SessionsLibrarySkeleton } from "@/components/skeletons/SessionsLibrarySkeleton";
 import { useToast } from "@/hooks/use-toast";
 import { ProjectGrid, type Project } from "@/components/projects/ProjectGrid";
-import { useAppWorkspaceData } from "@/components/workspace/AppWorkspaceDataContext";
+import { useAppShellData } from "@/components/app-shell/AppShellDataContext";
 import {
   ProjectFilters,
   type ProjectStatus,
@@ -80,7 +80,7 @@ export function SessionsLibraryPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { projects: rawSessions, credits, isLoading, refresh } = useAppWorkspaceData();
+  const { projects: rawSessions, credits, isLoading, refresh } = useAppShellData();
   const [status, setStatus] = useState<ProjectStatus>("all");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");

@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
+import { DEFAULT_PROJECT_SECTIONS } from "@/lib/project-templates";
+import { CREDIT_DEFAULTS } from "@/lib/credits";
 
 function serializeProject(project: {
   id: string;
@@ -125,7 +127,7 @@ export async function POST(request: NextRequest) {
       where: { userId: session.user.id },
     });
 
-    if (!userCredits || userCredits.balance < 10) {
+    if (!userCredits || userCredits.balance < CREDIT_DEFAULTS.createProject) {
       return NextResponse.json(
         { error: "Créditos insuficientes para criar um novo projecto" },
         { status: 400 }
@@ -138,8 +140,8 @@ export async function POST(request: NextRequest) {
       await tx.credit.update({
         where: { userId: session.user.id },
         data: {
-          balance: { decrement: 10 },
-          used: { increment: 10 },
+          balance: { decrement: CREDIT_DEFAULTS.createProject },
+          used: { increment: CREDIT_DEFAULTS.createProject },
         },
       });
 
@@ -147,7 +149,7 @@ export async function POST(request: NextRequest) {
       await tx.creditTransaction.create({
         data: {
           userId: session.user.id,
-          amount: -10,
+          amount: -CREDIT_DEFAULTS.createProject,
           type: "USAGE",
           description: `Criação do projecto: ${title}`,
         },
@@ -163,25 +165,9 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Create default document structure
-      const defaultSections = [
-        { title: "Capa", order: 1 },
-        { title: "Resumo", order: 2 },
-        { title: "Abstract", order: 3 },
-        { title: "Agradecimentos", order: 4 },
-        { title: "Índice", order: 5 },
-        { title: "1. Introdução", order: 6 },
-        { title: "2. Revisão da Literatura", order: 7 },
-        { title: "3. Metodologia", order: 8 },
-        { title: "4. Resultados", order: 9 },
-        { title: "5. Discussão", order: 10 },
-        { title: "6. Conclusão", order: 11 },
-        { title: "Referências", order: 12 },
-        { title: "Anexos", order: 13 },
-      ];
-
+      // Create default document structure from template
       await tx.documentSection.createMany({
-        data: defaultSections.map((section) => ({
+        data: DEFAULT_PROJECT_SECTIONS.map((section) => ({
           projectId: newProject.id,
           title: section.title,
           order: section.order,

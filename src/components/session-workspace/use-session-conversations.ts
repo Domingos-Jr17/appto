@@ -1,21 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { formatRelativeTime } from "./workspace-mappers";
-import type { WorkspaceConversationItem } from "./workspace-types";
+import { formatRelativeTime } from "./mappers";
+import type { WorkspaceConversationItem } from "./types";
 import { useWorkspaceConversationsStore } from "@/stores/workspace-conversations-store";
 
-interface UseWorkspaceConversationsOptions {
+interface UseSessionConversationsOptions {
   projectId: string;
   derivedConversations: WorkspaceConversationItem[];
   search: string;
 }
 
-export function useWorkspaceConversations({
+export function useSessionConversations({
   projectId,
   derivedConversations,
   search,
-}: UseWorkspaceConversationsOptions) {
+}: UseSessionConversationsOptions) {
   const store = useWorkspaceConversationsStore();
 
   const projectState = useMemo(

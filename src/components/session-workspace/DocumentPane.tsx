@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Eye, FileText, GitBranch, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { Check, Copy, Eye, FileText, GitBranch, Loader2, PanelRightClose, PanelRightOpen, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { DocumentTree } from "@/components/editor/DocumentTree";
 import { PreviewPane } from "@/components/editor/PreviewPane";
-import type { Project, Section } from "@/types/editor";
-import type { WorkspaceArtifactSource, WorkspaceDocumentTab } from "./workspace-types";
+import { getSaveCopy } from "@/lib/editor-helpers";
+import type { AutoSaveStatus, Project, Section } from "@/types/editor";
+import type { WorkspaceArtifactSource, WorkspaceDocumentTab } from "./types";
 
-interface WorkspaceDocumentPanelProps {
+interface DocumentPaneProps {
   project: Project;
   sections: Section[];
   activeSection: Section | null;
@@ -23,6 +24,8 @@ interface WorkspaceDocumentPanelProps {
   tab: WorkspaceDocumentTab;
   copied: boolean;
   collapsed: boolean;
+  saveStatus: AutoSaveStatus;
+  lastSaved: Date | undefined;
   onTabChange: (tab: WorkspaceDocumentTab) => void;
   onCopy: () => void;
   onToggleCollapsed: () => void;
@@ -35,7 +38,7 @@ interface WorkspaceDocumentPanelProps {
   onSectionReorder: (sections: Section[]) => void;
 }
 
-export function WorkspaceDocumentPanel({
+export function DocumentPane({
   project,
   sections,
   activeSection,
@@ -46,6 +49,8 @@ export function WorkspaceDocumentPanel({
   tab,
   copied,
   collapsed,
+  saveStatus,
+  lastSaved,
   onTabChange,
   onCopy,
   onToggleCollapsed,
@@ -56,7 +61,9 @@ export function WorkspaceDocumentPanel({
   onSectionRename,
   onSectionDelete,
   onSectionReorder,
-}: WorkspaceDocumentPanelProps) {
+}: DocumentPaneProps) {
+  const saveCopy = getSaveCopy(saveStatus, lastSaved);
+
   if (collapsed) {
     return (
       <div className="flex h-full items-start justify-center border-l border-border/60 bg-card p-2">
@@ -122,6 +129,22 @@ export function WorkspaceDocumentPanel({
                 <Badge variant="outline" className="rounded-full">
                   {documentWordCount.toLocaleString("pt-MZ")} palavras
                 </Badge>
+                {saveStatus === "saving" ? (
+                  <Badge variant="outline" className="rounded-full gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    {saveCopy}
+                  </Badge>
+                ) : saveStatus === "error" ? (
+                  <Badge variant="outline" className="rounded-full gap-1 text-destructive border-destructive/40">
+                    <AlertCircle className="h-3 w-3" />
+                    {saveCopy}
+                  </Badge>
+                ) : lastSaved ? (
+                  <Badge variant="outline" className="rounded-full gap-1 text-muted-foreground">
+                    <Check className="h-3 w-3" />
+                    {saveCopy}
+                  </Badge>
+                ) : null}
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
                 {activeSection

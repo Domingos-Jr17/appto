@@ -3,7 +3,7 @@
 import * as React from "react";
 import { fetchAppProjects, fetchCreditsBalance, sortProjectsByUpdatedAt, type AppProjectRecord } from "@/lib/app-data";
 
-interface AppWorkspaceDataContextValue {
+interface AppShellDataContextValue {
   projects: AppProjectRecord[];
   credits: number;
   isLoading: boolean;
@@ -11,9 +11,9 @@ interface AppWorkspaceDataContextValue {
   setCredits: React.Dispatch<React.SetStateAction<number>>;
 }
 
-const AppWorkspaceDataContext = React.createContext<AppWorkspaceDataContextValue | null>(null);
+const AppShellDataContext = React.createContext<AppShellDataContextValue | null>(null);
 
-export function AppWorkspaceDataProvider({ children }: { children: React.ReactNode }) {
+export function AppShellDataProvider({ children }: { children: React.ReactNode }) {
   const [projects, setProjects] = React.useState<AppProjectRecord[]>([]);
   const [credits, setCredits] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -52,14 +52,14 @@ export function AppWorkspaceDataProvider({ children }: { children: React.ReactNo
     [credits, isLoading, projects, refresh]
   );
 
-  return <AppWorkspaceDataContext.Provider value={value}>{children}</AppWorkspaceDataContext.Provider>;
+  return <AppShellDataContext.Provider value={value}>{children}</AppShellDataContext.Provider>;
 }
 
-export function useAppWorkspaceData() {
-  const context = React.useContext(AppWorkspaceDataContext);
+export function useAppShellData() {
+  const context = React.useContext(AppShellDataContext);
 
   if (!context) {
-    throw new Error("useAppWorkspaceData must be used within AppWorkspaceDataProvider");
+    throw new Error("useAppShellData must be used within AppShellDataProvider");
   }
 
   return context;

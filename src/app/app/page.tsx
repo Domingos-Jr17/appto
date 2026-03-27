@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
-import { useAppWorkspaceData } from "@/components/workspace/AppWorkspaceDataContext";
+import { useAppShellData } from "@/components/app-shell/AppShellDataContext";
 import type { AppProjectRecord } from "@/lib/app-data";
 import { calculateProjectProgress } from "@/lib/progress";
 import { buildDashboardSummary } from "@/lib/workspace-ui";
@@ -16,7 +16,7 @@ const RESUME_COPY = "Abrir sessão";
 
 export default function WorkspaceHomePage() {
   const { data: session, status } = useSession();
-  const { projects, isLoading } = useAppWorkspaceData();
+  const { projects, isLoading } = useAppShellData();
 
   if (isLoading || status === "loading") {
     return <DashboardSkeleton />;
@@ -127,9 +127,12 @@ export default function WorkspaceHomePage() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-medium">Visão rápida</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+<CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {overviewItems.map((item) => (
-            <div key={item.label} className="surface-muted rounded-xl p-4">
+            <div
+              key={item.label}
+              className="surface-muted rounded-xl p-4 transition-all duration-200 hover:bg-muted/70 hover:shadow-sm"
+            >
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{item.label}</p>
               <p className={item.isText ? "mt-3 text-sm font-medium leading-6" : "mt-3 text-2xl font-semibold"}>
                 {item.value}
@@ -144,8 +147,8 @@ export default function WorkspaceHomePage() {
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div>
             <CardTitle className="text-lg">Sessões recentes</CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Abra rapidamente a sessão certa sem percorrer um dashboard pesado.
+<p className="mt-1 text-sm text-muted-foreground">
+              Aceda directamente às sessões mais recentes para continuar o trabalho.
             </p>
           </div>
           <Button variant="ghost" size="sm" asChild className="rounded-full">

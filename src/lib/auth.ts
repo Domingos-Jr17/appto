@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { AuthSecurityService } from "@/lib/auth-security";
 import { CreditLedgerService } from "@/lib/credit-ledger";
+import { CREDIT_DEFAULTS } from "@/lib/credits";
 import { verifySync } from "otplib";
 import { decryptText } from "@/lib/crypto";
 import { AuthSessionEvent } from "@prisma/client";
@@ -171,7 +172,7 @@ export const authOptions: NextAuthOptions = {
       if (!existingCredits) {
         await ledger.grant(
           user.id,
-          150,
+          CREDIT_DEFAULTS.initialBalance,
           "BONUS",
           "Créditos iniciais de boas-vindas",
           { source: account?.provider ?? "credentials" }
@@ -182,7 +183,7 @@ export const authOptions: NextAuthOptions = {
             userId: user.id,
             plan: "FREE",
             status: "ACTIVE",
-            creditsPerMonth: 150,
+            creditsPerMonth: CREDIT_DEFAULTS.initialBalance,
           },
         });
 

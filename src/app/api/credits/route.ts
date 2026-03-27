@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
-import { CREDIT_PACKAGES } from "@/lib/credits";
+import { CREDIT_PACKAGES, CREDIT_DEFAULTS } from "@/lib/credits";
 import { paymentCheckoutSchema } from "@/lib/validators";
 import { PaymentService } from "@/lib/payments";
 import { env } from "@/lib/env";
@@ -23,18 +23,6 @@ export async function GET(request: NextRequest) {
 
     const credits = await db.credit.findUnique({
       where: { userId: session.user.id },
-      include: includeTransactions
-        ? {
-            user: {
-              include: {
-                transactions: {
-                  orderBy: { createdAt: "desc" },
-                  take: 50,
-                },
-              },
-            },
-          }
-        : undefined,
     });
 
     if (!credits) {
@@ -42,7 +30,7 @@ export async function GET(request: NextRequest) {
       const newCredits = await db.credit.create({
         data: {
           userId: session.user.id,
-          balance: 150,
+          balance: CREDIT_DEFAULTS.initialBalance,
         },
       });
 

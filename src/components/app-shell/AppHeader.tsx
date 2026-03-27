@@ -13,7 +13,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import type { SidebarProject } from "./ProjectSidebar";
+import type { SidebarProject } from "./AppSidebar";
 import { GlobalSearch } from "./GlobalSearch";
 import { NotificationBell } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
@@ -49,7 +49,7 @@ const PAGE_META: Record<
   },
 };
 
-interface WorkspaceHeaderProps {
+interface AppHeaderProps {
   credits: number;
   onOpenMobileNav?: () => void;
   projects: SidebarProject[];
@@ -60,7 +60,7 @@ interface WorkspaceHeaderProps {
   };
 }
 
-export function WorkspaceHeader({ credits, onOpenMobileNav, projects, user }: WorkspaceHeaderProps) {
+export function AppHeader({ credits, onOpenMobileNav, projects, user }: AppHeaderProps) {
   const pathname = usePathname();
 
   const meta = useMemo(() => {

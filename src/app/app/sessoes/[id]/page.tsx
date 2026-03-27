@@ -1,4 +1,4 @@
-import { ProjectWorkspaceRoute } from "@/components/workspace-v2/ProjectWorkspaceRoute";
+import { SessionWorkspaceRoute } from "@/components/session-workspace/SessionWorkspaceRoute";
 
 interface SessionWorkspacePageProps {
   params: Promise<{ id: string }>;
@@ -7,5 +7,5 @@ interface SessionWorkspacePageProps {
 export default async function SessionWorkspacePage({ params }: SessionWorkspacePageProps) {
   const resolvedParams = await params;
 
-  return <ProjectWorkspaceRoute key={resolvedParams.id} projectId={resolvedParams.id} />;
+  return <SessionWorkspaceRoute key={resolvedParams.id} projectId={resolvedParams.id} />;
 }

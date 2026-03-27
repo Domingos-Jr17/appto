@@ -4,7 +4,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import type { ReactNode } from "react";
 
-interface WorkspaceThreePaneProps {
+interface SessionWorkspaceLayoutProps {
   artifactCollapsed: boolean;
   mobileArtifactOpen: boolean;
   chat: ReactNode;
@@ -12,13 +12,13 @@ interface WorkspaceThreePaneProps {
   onMobileArtifactOpenChange: (open: boolean) => void;
 }
 
-export function WorkspaceThreePane({
+export function SessionWorkspaceLayout({
   artifactCollapsed,
   mobileArtifactOpen,
   chat,
   artifact,
   onMobileArtifactOpenChange,
-}: WorkspaceThreePaneProps) {
+}: SessionWorkspaceLayoutProps) {
   return (
     <>
       <div className="hidden h-full lg:block">

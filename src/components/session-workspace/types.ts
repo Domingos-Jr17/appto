@@ -1,4 +1,4 @@
-import type { WorkspaceSidebarConversationItem } from "@/components/workspace/workspaceSidebarTypes";
+import type { WorkspaceSidebarConversationItem } from "@/components/session-workspace/session-activity-types";
 import type { AssistantMessage, Project, Section } from "@/types/editor";
 
 export type WorkspaceConversationItem = WorkspaceSidebarConversationItem;

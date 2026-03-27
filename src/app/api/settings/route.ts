@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { normalizeSettings, DEFAULT_USER_SETTINGS } from "@/lib/user-settings";
 
 // GET /api/settings - Get user settings
 export async function GET() {
@@ -16,23 +17,22 @@ export async function GET() {
       where: { userId: session.user.id },
     });
 
-    // Create default settings if not exists
     if (!settings) {
       settings = await db.userSettings.create({
         data: {
           userId: session.user.id,
-          language: "pt-MZ",
-          citationStyle: "ABNT",
-          fontSize: 14,
-          autoSave: true,
+          language: DEFAULT_USER_SETTINGS.language,
+          citationStyle: DEFAULT_USER_SETTINGS.citationStyle,
+          fontSize: DEFAULT_USER_SETTINGS.fontSize,
+          autoSave: DEFAULT_USER_SETTINGS.autoSave,
           aiSuggestionsEnabled: true,
-          emailNotifications: true,
+          emailNotifications: DEFAULT_USER_SETTINGS.emailNotifications,
           marketingEmails: false,
         },
       });
     }
 
-    return NextResponse.json(settings);
+    return NextResponse.json(normalizeSettings(settings));
   } catch (error) {
     console.error("Get settings error:", error);
     return NextResponse.json(
@@ -62,7 +62,6 @@ export async function PATCH(request: NextRequest) {
       marketingEmails,
     } = body;
 
-    // Upsert settings
     const settings = await db.userSettings.upsert({
       where: { userId: session.user.id },
       update: {
@@ -76,17 +75,17 @@ export async function PATCH(request: NextRequest) {
       },
       create: {
         userId: session.user.id,
-        language: language || "pt-MZ",
-        citationStyle: citationStyle || "ABNT",
-        fontSize: fontSize || 14,
-        autoSave: autoSave ?? true,
+        language: language || DEFAULT_USER_SETTINGS.language,
+        citationStyle: citationStyle || DEFAULT_USER_SETTINGS.citationStyle,
+        fontSize: fontSize || DEFAULT_USER_SETTINGS.fontSize,
+        autoSave: autoSave ?? DEFAULT_USER_SETTINGS.autoSave,
         aiSuggestionsEnabled: aiSuggestionsEnabled ?? true,
-        emailNotifications: emailNotifications ?? true,
+        emailNotifications: emailNotifications ?? DEFAULT_USER_SETTINGS.emailNotifications,
         marketingEmails: marketingEmails ?? false,
       },
     });
 
-    return NextResponse.json(settings);
+    return NextResponse.json(normalizeSettings(settings));
   } catch (error) {
     console.error("Update settings error:", error);
     return NextResponse.json(

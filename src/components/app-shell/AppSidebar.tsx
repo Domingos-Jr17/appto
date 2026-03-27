@@ -20,7 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { isWorkspaceNavActive, workspaceNavItems } from "./workspaceNav";
+import { isAppNavActive, appNavItems } from "./app-nav";
 
 export interface SidebarProject {
   id: string;
@@ -43,7 +43,7 @@ export interface SidebarProject {
   };
 }
 
-interface ProjectSidebarProps {
+interface AppSidebarProps {
   collapsed: boolean;
   currentPath: string;
   credits: number;
@@ -73,7 +73,7 @@ function SidebarNavLink({
   badge?: string;
   onNavigate?: () => void;
 }) {
-  const active = isWorkspaceNavActive(currentPath, href);
+  const active = isAppNavActive(currentPath, href);
 
   const link = (
     <Link
@@ -108,14 +108,14 @@ function SidebarNavLink({
   );
 }
 
-export function ProjectSidebar({
+export function AppSidebar({
   collapsed,
   currentPath,
   credits,
   projects,
   onToggleCollapse,
   onNavigate,
-}: ProjectSidebarProps) {
+}: AppSidebarProps) {
   const [projectSearch, setProjectSearch] = useState("");
 
   const filteredProjects = useMemo(() => {
@@ -180,14 +180,6 @@ export function ProjectSidebar({
               {collapsed ? <TooltipContent side="right">Nova sessão</TooltipContent> : null}
             </Tooltip>
 
-            {!collapsed ? (
-              <div className="surface-muted rounded-xl px-3 py-3">
-                <div className="flex items-center justify-between gap-2 text-xs font-medium text-sidebar-foreground/70">
-                  <span>Saldo disponível</span>
-                  <span>{credits.toLocaleString("pt-MZ")} créditos</span>
-                </div>
-              </div>
-            ) : null}
           </div>
         </div>
 
@@ -196,7 +188,7 @@ export function ProjectSidebar({
             {!collapsed ? <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/60">Navegação</p> : null}
 
             <div className="space-y-1.5">
-              {workspaceNavItems.map((item) => (
+              {appNavItems.map((item) => (
                 <SidebarNavLink
                   key={item.href}
                   href={item.href}

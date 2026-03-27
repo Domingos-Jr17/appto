@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { parseBody, handleApiError, apiSuccess, apiError } from "@/lib/api";
 import { registerSchema } from "@/lib/validators";
 import { CreditLedgerService } from "@/lib/credit-ledger";
+import { CREDIT_DEFAULTS } from "@/lib/credits";
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
       const scopedLedger = new CreditLedgerService(tx);
       await scopedLedger.grant(
         createdUser.id,
-        150,
+        CREDIT_DEFAULTS.initialBalance,
         "BONUS",
         "Créditos iniciais de boas-vindas"
       );
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
           userId: createdUser.id,
           plan: "FREE",
           status: "ACTIVE",
-          creditsPerMonth: 150,
+          creditsPerMonth: CREDIT_DEFAULTS.initialBalance,
         },
       });
 

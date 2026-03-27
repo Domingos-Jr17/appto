@@ -4,7 +4,10 @@ import {
   registerSchema,
   forgotPasswordSchema,
   createProjectSchema,
+  paymentCheckoutSchema,
 } from "@/lib/validators";
+import { userSettingsSchema, DEFAULT_USER_SETTINGS } from "@/lib/user-settings";
+import { CREDIT_PACKAGES, CREDIT_PACKAGES_DISPLAY, CREDIT_DEFAULTS } from "@/lib/credits";
 
 describe("registerSchema", () => {
   const valid = {
@@ -92,5 +95,86 @@ describe("createProjectSchema", () => {
       title: "Projeto",
     });
     expect(result.type).toBe("MONOGRAPHY");
+  });
+});
+
+describe("userSettingsSchema", () => {
+  test("accepts valid settings", () => {
+    expect(() =>
+      userSettingsSchema.parse({
+        language: "pt-MZ",
+        citationStyle: "ABNT",
+        fontSize: 16,
+        autoSave: true,
+        aiTone: "formal",
+        emailNotifications: true,
+        pushNotifications: false,
+      })
+    ).not.toThrow();
+  });
+
+  test("provides defaults for empty input", () => {
+    const result = userSettingsSchema.parse({});
+    expect(result.language).toBe("pt-MZ");
+    expect(result.citationStyle).toBe("ABNT");
+    expect(result.fontSize).toBe(16);
+    expect(result.autoSave).toBe(true);
+  });
+
+  test("rejects invalid language", () => {
+    expect(() =>
+      userSettingsSchema.parse({ language: "fr" })
+    ).toThrow();
+  });
+
+  test("rejects invalid citation style", () => {
+    expect(() =>
+      userSettingsSchema.parse({ citationStyle: "INVALID" })
+    ).toThrow();
+  });
+
+  test("defaults match DEFAULT_USER_SETTINGS", () => {
+    const result = userSettingsSchema.parse({});
+    expect(result).toEqual(DEFAULT_USER_SETTINGS);
+  });
+});
+
+describe("paymentCheckoutSchema", () => {
+  test("accepts valid package key", () => {
+    expect(() =>
+      paymentCheckoutSchema.parse({ packageKey: "starter" })
+    ).not.toThrow();
+  });
+
+  test("rejects invalid package key", () => {
+    expect(() =>
+      paymentCheckoutSchema.parse({ packageKey: "invalid" })
+    ).toThrow();
+  });
+});
+
+describe("credit packages consistency", () => {
+  test("display catalog matches API catalog keys", () => {
+    const apiKeys: string[] = Object.keys(CREDIT_PACKAGES);
+    const displayKeys: string[] = CREDIT_PACKAGES_DISPLAY.map((pkg) => pkg.key);
+    expect(displayKeys.sort()).toEqual(apiKeys.sort());
+  });
+
+  test("display catalog prices match API catalog", () => {
+    for (const pkg of CREDIT_PACKAGES_DISPLAY) {
+      const apiPkg = CREDIT_PACKAGES[pkg.key];
+      expect(pkg.price).toBe(apiPkg.price);
+      expect(pkg.credits).toBe(apiPkg.credits);
+      expect(pkg.currency).toBe(apiPkg.currency);
+    }
+  });
+
+  test("initial balance is defined", () => {
+    expect(CREDIT_DEFAULTS.initialBalance).toBeGreaterThan(0);
+  });
+
+  test("export costs are positive", () => {
+    expect(CREDIT_DEFAULTS.exportDocx).toBeGreaterThan(0);
+    expect(CREDIT_DEFAULTS.exportPdf).toBeGreaterThan(0);
   });
 });

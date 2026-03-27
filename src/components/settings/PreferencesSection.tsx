@@ -24,7 +24,6 @@ import {
   Type,
   Save,
   FileText,
-  FileDown,
   Sun,
   Moon,
   Monitor,
@@ -47,17 +46,6 @@ const citationStyles = [
   { value: "ABNT", label: "ABNT" },
   { value: "APA", label: "APA" },
   { value: "VANCOUVER", label: "Vancouver" },
-  { value: "CHICAGO", label: "Chicago" },
-  { value: "MLA", label: "MLA" },
-  { value: "HARVARD", label: "Harvard" },
-];
-
-const exportFormats = [
-  { value: "pdf", label: "PDF" },
-  { value: "docx", label: "Word (.docx)" },
-  { value: "md", label: "Markdown (.md)" },
-  { value: "txt", label: "Texto (.txt)" },
-  { value: "html", label: "HTML" },
 ];
 
 interface SettingsData {
@@ -75,7 +63,6 @@ export function PreferencesSection() {
   const { theme, setTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
-  const [exportFormat, setExportFormat] = useState("docx");
   const [preferences, setPreferences] = useState<SettingsData>({
     language: "pt-MZ",
     citationStyle: "ABNT",
@@ -313,36 +300,6 @@ export function PreferencesSection() {
             {citationStyles.map((style) => (
               <SelectItem key={style.value} value={style.value}>
                 {style.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <Separator />
-
-      {/* Export Format */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-0.5">
-          <Label className="flex items-center gap-2 text-base">
-            <FileDown className="h-4 w-4 text-muted-foreground" />
-            Formato de Exportação Padrão
-          </Label>
-          <p className="text-sm text-muted-foreground">
-            Formato padrão ao exportar seus trabalhos
-          </p>
-        </div>
-        <Select
-          value={exportFormat}
-          onValueChange={setExportFormat}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {exportFormats.map((format) => (
-              <SelectItem key={format.value} value={format.value}>
-                {format.label}
               </SelectItem>
             ))}
           </SelectContent>

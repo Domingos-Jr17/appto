@@ -12,9 +12,8 @@ import {
 import { ProfileSection } from "@/components/settings/ProfileSection";
 import { PreferencesSection } from "@/components/settings/PreferencesSection";
 import { SecuritySection } from "@/components/settings/SecuritySection";
-import { NotificationsSection } from "@/components/settings/NotificationsSection";
 import { AccountSection } from "@/components/settings/AccountSection";
-import { getActiveSettingsTab, SETTINGS_TABS } from "@/lib/workspace-ui";
+import { getActiveSettingsTab, SETTINGS_TABS } from "@/lib/user-settings";
 
 export default function SettingsPage() {
   const pathname = usePathname();
@@ -26,8 +25,8 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div className="surface-panel rounded-xl px-5 py-4">
         <p className="text-sm text-muted-foreground">
-          Gira preferências, segurança, notificações e dados da conta num fluxo
-          mais consistente com o resto do produto.
+          Gira preferências, segurança e dados da conta num fluxo
+          consistente com o resto do produto.
         </p>
       </div>
 
@@ -67,7 +66,6 @@ export default function SettingsPage() {
                 {tab.value === "perfil" && <ProfileSection />}
                 {tab.value === "preferencias" && <PreferencesSection />}
                 {tab.value === "seguranca" && <SecuritySection />}
-                {tab.value === "notificacoes" && <NotificationsSection />}
                 {tab.value === "conta" && <AccountSection />}
               </CardContent>
             </Card>

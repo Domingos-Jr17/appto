@@ -42,10 +42,10 @@ export function Header() {
       >
         <div
           className={cn(
-            "relative rounded-2xl md:rounded-3xl transition-all duration-500",
+            "glass-header relative border border-border/60 rounded-2xl md:rounded-3xl transition-all duration-500",
             isScrolled
-              ? "bg-white/80 dark:bg-white/10 backdrop-blur-2xl shadow-2xl shadow-primary/10 border border-white/20"
-              : "bg-white/80 dark:bg-white/10 backdrop-blur-xl shadow-xl shadow-primary/5 border border-white/20"
+              ? "bg-background/88 shadow-lg shadow-black/10"
+              : "bg-background/76 shadow-md shadow-black/5"
           )}
         >
           <div className="flex items-center justify-between px-4 py-3 md:px-6">
@@ -72,10 +72,10 @@ export function Header() {
                 <button
                   key={link.href}
                   onClick={() => scrollToSection(link.href)}
-                  className="relative px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all duration-300 rounded-xl group overflow-hidden"
+                  className="relative overflow-hidden rounded-2xl px-4 py-2 text-sm font-medium text-muted-foreground transition-all duration-300 hover:text-foreground group"
                 >
                   <span className="relative z-10">{link.label}</span>
-                  <div className="absolute inset-0 bg-white/50 dark:bg-white/5 backdrop-blur-xl rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 border border-white/20 group-hover:border-primary/20 shadow-lg group-hover:shadow-primary/5" />
+                  <div className="absolute inset-0 rounded-2xl border border-transparent bg-accent/40 opacity-0 transition-all duration-300 group-hover:border-primary/15 group-hover:opacity-100" />
                   <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/50 rounded-full group-hover:w-3/4 transition-all duration-300" />
                 </button>
               ))}
@@ -84,11 +84,11 @@ export function Header() {
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center gap-3">
               <ThemeToggle />
-              <Button variant="ghost" className="rounded-xl font-medium" asChild>
+              <Button variant="ghost" className="rounded-2xl font-medium" asChild>
                 <Link href="/login">Entrar</Link>
               </Button>
               <Button
-                className="rounded-xl font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20"
+                className="rounded-2xl font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm shadow-primary/20"
                 asChild
               >
                 <Link href="/register">Começar Grátis</Link>
@@ -102,7 +102,7 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="rounded-xl"
+                className="rounded-2xl"
               >
                 {isMobileMenuOpen ? (
                   <X className="w-5 h-5" />

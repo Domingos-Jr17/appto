@@ -52,55 +52,50 @@ export function ProjectFilters({
 }: ProjectFiltersProps) {
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Filter Tabs */}
       <Tabs value={status} onValueChange={(v) => onStatusChange(v as ProjectStatus)}>
-        <TabsList className="bg-muted/50 p-1">
+        <TabsList className="surface-muted h-auto rounded-2xl p-1">
           <TabsTrigger
             value="all"
-            className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
             Todos
           </TabsTrigger>
           <TabsTrigger
             value="in_progress"
-            className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
             Em progresso
           </TabsTrigger>
           <TabsTrigger
             value="completed"
-            className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
             Completos
           </TabsTrigger>
           <TabsTrigger
             value="archived"
-            className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
             Arquivados
           </TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {/* Search and Controls */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Search */}
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Pesquisar projectos..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10 bg-muted/30 border-border/50"
+            className="h-11 rounded-2xl border-border/60 bg-muted/30 pl-10"
           />
         </div>
 
-        {/* Controls */}
         <div className="flex items-center gap-2">
-          {/* Sort Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 bg-muted/30 border-border/50">
+              <Button variant="outline" size="sm" className="h-10 gap-2 rounded-2xl border-border/60 bg-muted/30">
                 <ArrowUpDown className="h-4 w-4" />
                 <span className="hidden sm:inline">{sortLabels[sortBy]}</span>
               </Button>
@@ -120,13 +115,12 @@ export function ProjectFilters({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* View Mode Toggle */}
-          <div className="flex items-center rounded-lg border border-border/50 bg-muted/30 p-1">
+          <div className="surface-muted flex items-center rounded-2xl p-1">
             <Button
               variant="ghost"
               size="icon"
               className={cn(
-                "h-7 w-7",
+                "h-8 w-8 rounded-xl",
                 viewMode === "grid" && "bg-background shadow-sm"
               )}
               onClick={() => onViewModeChange("grid")}
@@ -137,7 +131,7 @@ export function ProjectFilters({
               variant="ghost"
               size="icon"
               className={cn(
-                "h-7 w-7",
+                "h-8 w-8 rounded-xl",
                 viewMode === "list" && "bg-background shadow-sm"
               )}
               onClick={() => onViewModeChange("list")}

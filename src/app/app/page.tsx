@@ -47,13 +47,13 @@ const templates = [
     icon: BookOpen,
   },
   {
-    title: "Artigo academico",
-    description: "Fluxo curto para estrutura compacta, iteracao rapida e exportacao frequente.",
+    title: "Artigo académico",
+    description: "Fluxo curto para estrutura compacta, iteração rápida e exportação frequente.",
     icon: LayoutTemplate,
   },
   {
     title: "Estrutura livre",
-    description: "Monte o plano manualmente e use a IA apenas como apoio tactico por secao.",
+    description: "Monte o plano manualmente e use a IA apenas como apoio táctico por secção.",
     icon: FilePenLine,
   },
 ];
@@ -115,17 +115,17 @@ export default function WorkspaceHomePage() {
               </Badge>
               <div className="space-y-3">
                 <h2 className="text-3xl font-semibold tracking-tight text-foreground lg:text-4xl">
-                  {firstName}, entre directamente no proximo passo.
+                  {firstName}, entre directamente no próximo passo.
                 </h2>
                 <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                  A area autenticada agora privilegia continuidade: retomar o ultimo projecto,
-                  abrir a ultima secao ou iniciar um novo trabalho sem passar por um dashboard pesado.
+                  A área autenticada agora privilegia continuidade: retomar o último projecto,
+                  abrir a última secção ou iniciar um novo trabalho sem passar por um dashboard pesado.
                 </p>
               </div>
             </div>
 
             {leadProject ? (
-              <div className="rounded-[32px] border border-border/60 bg-muted/25 p-5 lg:p-6">
+              <div className="surface-muted rounded-3xl p-5 lg:p-6">
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
@@ -139,7 +139,7 @@ export default function WorkspaceHomePage() {
                     <div>
                       <h3 className="text-2xl font-semibold tracking-tight">{leadProject.title}</h3>
                       <p className="mt-2 text-sm text-muted-foreground">
-                        {leadProject.description || "Sem descricao."}
+                        {leadProject.description || "Sem descrição."}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -149,7 +149,7 @@ export default function WorkspaceHomePage() {
                       {leadProject.lastEditedSection ? (
                         <>
                           <span>·</span>
-                          <span>Ultima secao: {leadProject.lastEditedSection.title}</span>
+                          <span>Última secção: {leadProject.lastEditedSection.title}</span>
                         </>
                       ) : null}
                     </div>
@@ -172,9 +172,9 @@ export default function WorkspaceHomePage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-[32px] border border-dashed border-border/60 bg-muted/20 p-6 lg:p-8">
+              <div className="rounded-3xl border border-dashed border-border/60 bg-muted/20 p-6 lg:p-8">
                 <div className="max-w-2xl space-y-4">
-                  <h3 className="text-2xl font-semibold tracking-tight">Ainda nao ha projectos</h3>
+                  <h3 className="text-2xl font-semibold tracking-tight">Ainda não há projectos</h3>
                   <p className="text-sm leading-6 text-muted-foreground">
                     Crie o primeiro trabalho e o fluxo principal abre logo em conversa, estrutura ou documento conforme o estado do projecto.
                   </p>
@@ -191,28 +191,28 @@ export default function WorkspaceHomePage() {
         </Card>
 
         {/* Stats sidebar */}
-        <Card className="border-border/60 bg-background/80 shadow-sm">
+        <Card className="surface-panel rounded-3xl border-border/60 bg-background/80 shadow-sm">
           <CardHeader className="pb-4">
-            <CardTitle className="text-base font-medium">Contexto rapido</CardTitle>
+            <CardTitle className="text-base font-medium">Contexto rápido</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="rounded-2xl bg-muted/45 p-4">
+            <div className="surface-muted rounded-2xl p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Em curso</p>
               <p className="mt-2 text-2xl font-semibold">{activeProjects}</p>
               <p className="mt-1 text-sm text-muted-foreground">trabalhos activos</p>
             </div>
-            <div className="rounded-2xl bg-muted/45 p-4">
+            <div className="surface-muted rounded-2xl p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Palavras</p>
               <p className="mt-2 text-2xl font-semibold">{totalWords.toLocaleString("pt-MZ")}</p>
               <p className="mt-1 text-sm text-muted-foreground">acumuladas</p>
             </div>
-            <div className="rounded-2xl bg-muted/45 p-4">
+            <div className="surface-muted rounded-2xl p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Prontas</p>
               <p className="mt-2 text-2xl font-semibold">{reviewReady}</p>
-              <p className="mt-1 text-sm text-muted-foreground">seccoes em revisao final</p>
+              <p className="mt-1 text-sm text-muted-foreground">secções em revisão final</p>
             </div>
             <div className="rounded-2xl bg-foreground px-4 py-4 text-background">
-              <p className="text-xs uppercase tracking-[0.16em] text-background/70">Proxima accao</p>
+              <p className="text-xs uppercase tracking-[0.16em] text-background/70">Próxima acção</p>
               <p className="mt-2 text-sm font-medium">
                 {leadProject ? getNextAction(leadProject) : "Criar o primeiro projecto e gerar um outline base."}
               </p>
@@ -225,7 +225,7 @@ export default function WorkspaceHomePage() {
       <section className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-5">
           {/* Recent projects */}
-          <Card className="border-border/60 bg-background/80 shadow-sm">
+          <Card className="surface-panel rounded-3xl border-border/60 bg-background/80 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
                 <CardTitle className="text-lg">Projectos recentes</CardTitle>
@@ -245,12 +245,12 @@ export default function WorkspaceHomePage() {
                 projects.slice(0, 5).map((project, index) => (
                   <div
                     key={project.id}
-                    className="flex flex-col gap-4 rounded-3xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55 lg:flex-row lg:items-center lg:justify-between"
+                    className="flex flex-col gap-4 rounded-2xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55 lg:flex-row lg:items-center lg:justify-between"
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          {index === 0 ? "Ultimo aberto" : RESUME_COPY}
+                          {index === 0 ? "Último aberto" : RESUME_COPY}
                         </span>
                         <Badge variant="secondary" className="rounded-full">
                           {formatProjectType(project.type)}
@@ -259,8 +259,8 @@ export default function WorkspaceHomePage() {
                       <h3 className="mt-2 truncate text-base font-semibold">{project.title}</h3>
                       <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                         {project.lastEditedSection
-                          ? `Ultima secao: ${project.lastEditedSection.title}`
-                          : "Sem secao iniciada ainda."}
+                          ? `Última secção: ${project.lastEditedSection.title}`
+                          : "Sem secção iniciada ainda."}
                       </p>
                     </div>
 
@@ -290,7 +290,7 @@ export default function WorkspaceHomePage() {
                   <FolderKanban className="mx-auto h-10 w-10 text-muted-foreground/40" />
                   <h3 className="mt-4 text-lg font-medium">Sem projectos ainda</h3>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    O workspace fica mais util quando ha um projecto para continuar.
+                    O workspace fica mais útil quando há um projecto para continuar.
                   </p>
                   <Button asChild className="mt-5 rounded-full">
                     <Link href="/app/projects?new=1">Criar primeiro trabalho</Link>
@@ -301,7 +301,7 @@ export default function WorkspaceHomePage() {
           </Card>
 
           {/* Fluxo principal - below projectos */}
-          <Card className="border-border/60 bg-background/80 shadow-sm">
+          <Card className="surface-panel rounded-3xl border-border/60 bg-background/80 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">Fluxo principal</CardTitle>
             </CardHeader>
@@ -310,20 +310,20 @@ export default function WorkspaceHomePage() {
                 {
                   icon: LayoutTemplate,
                   title: "Conversar",
-                  description: "Use o chat como ponto de partida para outline, ideias e decisoes.",
+                  description: "Use o chat como ponto de partida para outline, ideias e decisões.",
                 },
                 {
                   icon: Network,
                   title: "Estruturar",
-                  description: "Reordene capitulos, subtitulos e acompanhe o estado editorial.",
+                  description: "Reordene capítulos, subtítulos e acompanhe o estado editorial.",
                 },
                 {
                   icon: FilePenLine,
                   title: "Escrever",
-                  description: "Passe ao documento quando houver uma secao clara para desenvolver.",
+                  description: "Passe ao documento quando houver uma secção clara para desenvolver.",
                 },
               ].map((item) => (
-                <div key={item.title} className="rounded-3xl bg-muted/35 p-4">
+                <div key={item.title} className="surface-muted rounded-2xl p-4">
                   <div className="w-fit rounded-2xl bg-primary/10 p-2.5">
                     <item.icon className="h-4 w-4 text-primary" />
                   </div>
@@ -337,7 +337,7 @@ export default function WorkspaceHomePage() {
 
         {/* Templates */}
         <div className="space-y-5">
-          <Card className="border-border/60 bg-background/80 shadow-sm">
+          <Card className="surface-panel rounded-3xl border-border/60 bg-background/80 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">Templates e atalhos</CardTitle>
             </CardHeader>
@@ -346,7 +346,7 @@ export default function WorkspaceHomePage() {
                 <Link
                   key={template.title}
                   href="/app/projects?new=1"
-                  className="block rounded-3xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55"
+                  className="block rounded-2xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-fit rounded-2xl bg-primary/10 p-2.5">
@@ -397,8 +397,8 @@ function getProgress(project: Project): number {
 
 function getNextAction(project: Project) {
   if (project.wordCount === 0) return "Gerar outline e aprovar a estrutura inicial.";
-  if (project.lastEditedSection) return `Retomar a secao "${project.lastEditedSection.title}".`;
-  if (project.sectionSummary.review > 0) return "Rever secoes prontas e preparar exportacao.";
+  if (project.lastEditedSection) return `Retomar a secção "${project.lastEditedSection.title}".`;
+  if (project.sectionSummary.review > 0) return "Rever secções prontas e preparar exportação.";
   return "Abrir o projecto e continuar a escrita.";
 }
 
@@ -417,8 +417,8 @@ function formatRelativeTime(date: Date): string {
   const diffDays = Math.floor(diffMs / 86400000);
 
   if (diffMins < 1) return "agora";
-  if (diffMins < 60) return `ha ${diffMins} min`;
-  if (diffHours < 24) return `ha ${diffHours}h`;
-  if (diffDays < 7) return `ha ${diffDays} dias`;
+  if (diffMins < 60) return `há ${diffMins} min`;
+  if (diffHours < 24) return `há ${diffHours}h`;
+  if (diffDays < 7) return `há ${diffDays} dias`;
   return date.toLocaleDateString("pt-MZ");
 }

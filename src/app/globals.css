@@ -198,9 +198,9 @@
 /* ===== GLASSMORPHISM ===== */
 @layer utilities {
   .glass {
-    background: var(--card);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: color-mix(in oklch, var(--card) 88%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
   
   .dark .glass {
@@ -212,8 +212,8 @@
   }
   
   .glass-header {
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
   
   .dark .glass-header {
@@ -230,6 +230,33 @@
     background: var(--muted);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+  }
+
+  .app-shell-sidebar {
+    background: color-mix(in oklch, var(--sidebar) 96%, var(--background));
+  }
+
+  .app-shell-header {
+    background: color-mix(in oklch, var(--background) 86%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .surface-panel {
+    background: color-mix(in oklch, var(--card) 92%, transparent);
+    border: 1px solid color-mix(in oklch, var(--border) 72%, transparent);
+    box-shadow: 0 10px 30px oklch(0 0 0 / 0.06);
+  }
+
+  .surface-muted {
+    background: color-mix(in oklch, var(--muted) 70%, transparent);
+    border: 1px solid color-mix(in oklch, var(--border) 65%, transparent);
+  }
+
+  .surface-strong {
+    background: color-mix(in oklch, var(--card) 98%, transparent);
+    border: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
+    box-shadow: 0 14px 36px oklch(0 0 0 / 0.1);
   }
   
   .glass-border {

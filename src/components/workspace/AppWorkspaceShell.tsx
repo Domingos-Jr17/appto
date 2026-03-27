@@ -3,9 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { ProjectSidebar, type SidebarProject } from "./ProjectSidebar";
 import { WorkspaceHeader } from "./WorkspaceHeader";
@@ -92,7 +90,6 @@ export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
 
   return (
     <div className="h-svh w-screen flex overflow-hidden bg-background">
-      {/* Desktop sidebar */}
       <div className="hidden lg:block">
         <ProjectSidebar
           collapsed={collapsed}
@@ -104,40 +101,21 @@ export function AppWorkspaceShell({ children }: AppWorkspaceShellProps) {
         />
       </div>
 
-      {/* Main content */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        {/* Mobile header */}
-        <div className="shrink-0 border-b border-border/50 bg-background/85 backdrop-blur lg:hidden">
-          <div className="flex items-center justify-between px-4 py-3">
-            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[340px] max-w-[90vw] border-none p-0">
-                {mobileSidebar}
-              </SheetContent>
-            </Sheet>
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetContent side="left" className="w-[340px] max-w-[92vw] border-none bg-transparent p-0 shadow-none">
+            {mobileSidebar}
+          </SheetContent>
+        </Sheet>
 
-            <p className="text-sm font-semibold tracking-tight">appto</p>
+        <WorkspaceHeader credits={credits} onOpenMobileNav={() => setMobileOpen(true)} />
 
-            <div className="rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs font-medium">
-              {credits.toLocaleString("pt-MZ")} creditos
-            </div>
-          </div>
-        </div>
-
-        {/* Workspace header - hidden on editor/project pages */}
-        <WorkspaceHeader credits={credits} />
-
-        {/* Scrollable content root */}
         <div
           className={cn(
             "min-w-0 min-h-0 flex-1",
             pathname.startsWith("/app/editor") || pathname.startsWith("/app/projects/")
               ? "flex flex-col overflow-hidden"
-              : "overflow-y-auto px-4 py-5 lg:px-8 lg:py-8"
+              : "overflow-y-auto px-4 py-5 lg:px-8 lg:py-7"
           )}
         >
           {children}

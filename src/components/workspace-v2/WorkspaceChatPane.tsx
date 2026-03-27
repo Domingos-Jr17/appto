@@ -90,7 +90,7 @@ export function WorkspaceChatPane({
     <section className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
       <div className="pointer-events-none absolute inset-0 grid-pattern-subtle opacity-60" />
 
-      <div className="glass-header relative z-10 border-b border-border/60 px-4 py-3 lg:px-6">
+      <div className="app-shell-header relative z-10 border-b border-border/60 px-4 py-3 lg:px-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-2">
             {sidebarCollapsed ? (
@@ -106,11 +106,11 @@ export function WorkspaceChatPane({
                   Assistente
                 </Badge>
               </div>
-              <p className="truncate text-xs text-muted-foreground">
-                {activeSection
-                  ? `Secção activa: ${activeSection.title}`
-                  : activeConversation?.title || "Orientação académica do projecto"}
-              </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {activeSection
+                    ? `Secção activa: ${activeSection.title}`
+                    : activeConversation?.title || "Orientação académica do projecto"}
+                </p>
             </div>
           </div>
 
@@ -168,7 +168,7 @@ export function WorkspaceChatPane({
                 O teu assistente para construir o trabalho.
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
-                Peça ajuda para estruturar capítulos, rever argumentos, abrir novas secções e transformar ideias em documento académico real.
+                Peça ajuda para estruturar capítulos, rever argumentos, abrir novas secções e transformar ideias num documento académico real.
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-2.5">
                 {emptySuggestions.map((suggestion) => (
@@ -191,7 +191,7 @@ export function WorkspaceChatPane({
               <article
                 key={message.id}
                 className={cn(
-                  "max-w-[92%] rounded-[1.75rem] border px-5 py-4 shadow-sm transition-colors",
+                  "max-w-[92%] rounded-3xl border px-5 py-4 shadow-sm transition-colors",
                   message.role === "user"
                     ? "ml-auto border-primary/20 bg-primary/10"
                     : "mr-auto glass glass-border bg-card/90"
@@ -233,9 +233,9 @@ export function WorkspaceChatPane({
         </div>
       </div>
 
-      <div className="glass-header relative z-10 border-t border-border/60 px-4 py-4 lg:px-6">
+      <div className="app-shell-header relative z-10 border-t border-border/60 px-4 py-4 lg:px-6">
         <div className="mx-auto max-w-3xl">
-          <div className="glass glass-border rounded-[1.5rem] p-3 shadow-sm">
+          <div className="glass glass-border rounded-3xl p-3 shadow-sm">
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Select value={chatAction} onValueChange={(value) => onChatActionChange(value as ChatAction)}>
@@ -256,7 +256,7 @@ export function WorkspaceChatPane({
                     onChange={(event) => onChatPromptChange(event.target.value)}
                     placeholder="Peça ajuda para orientar o trabalho, melhorar a secção activa ou planear a próxima parte..."
                     rows={2}
-                    className="min-h-[88px] flex-1 resize-none rounded-[1.25rem] border-border/70 bg-background/40 px-4 py-3 text-sm shadow-none"
+                    className="min-h-[88px] flex-1 resize-none rounded-2xl border-border/70 bg-background/40 px-4 py-3 text-sm shadow-none"
                     onKeyDown={(event) => {
                       if (event.key === "Enter" && !event.shiftKey) {
                         event.preventDefault();
@@ -267,7 +267,7 @@ export function WorkspaceChatPane({
                   <Button
                     type="button"
                     size="icon"
-                    className="gradient-primary h-auto min-h-[88px] w-12 rounded-[1.25rem] text-primary-foreground hover:opacity-90"
+                    className="gradient-primary h-auto min-h-[88px] w-12 rounded-2xl text-primary-foreground hover:opacity-90"
                     onClick={onChatSubmit}
                     disabled={!chatPrompt.trim() || isChatLoading}
                   >

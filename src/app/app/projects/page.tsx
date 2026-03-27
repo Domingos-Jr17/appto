@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { Plus, FolderKanban, Loader2, Sparkles, FileText, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Plus, Loader2, Sparkles, FileText, Trash2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -22,7 +22,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -80,6 +79,7 @@ const projectTypeLabels: Record<string, string> = {
 
 export default function ProjectsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,6 +97,7 @@ export default function ProjectsPage() {
   const [generateContent, setGenerateContent] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [openedFromUrl, setOpenedFromUrl] = useState(false);
 
   // Fetch projects and credits
   useEffect(() => {
@@ -104,12 +105,31 @@ export default function ProjectsPage() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("new") === "1") {
+    const shouldOpenFromUrl = searchParams.get("new") === "1";
+
+    if (shouldOpenFromUrl) {
+      setOpenedFromUrl(true);
       setDialogOpen(true);
+      return;
     }
-  }, []);
+
+    if (openedFromUrl) {
+      setDialogOpen(false);
+      setOpenedFromUrl(false);
+    }
+  }, [openedFromUrl, searchParams]);
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+
+    if (!open && searchParams.get("new") === "1") {
+      router.replace("/app/projects");
+    }
+
+    if (!open) {
+      setOpenedFromUrl(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -314,154 +334,135 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 rounded-[28px] border border-border/60 bg-background/75 p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-            <FolderKanban className="h-5 w-5 text-primary" />
+      <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Criar novo projecto
+            </DialogTitle>
+            <DialogDescription>
+              Gere um trabalho académico completo com IA ou apenas a estrutura inicial.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Título do Trabalho *</Label>
+              <Input
+                id="title"
+                placeholder="Ex.: Impacto das Tecnologias no Ensino Superior"
+                value={newTitle}
+                onChange={(event) => setNewTitle(event.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="type">Tipo de Trabalho</Label>
+              <Select value={newType} onValueChange={setNewType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROJECT_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição (opcional)</Label>
+              <Textarea
+                id="description"
+                placeholder="Breve descrição do tema ou área de estudo..."
+                value={newDescription}
+                onChange={(event) => setNewDescription(event.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <div className="surface-muted flex items-center justify-between rounded-2xl p-4">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <Label className="text-base font-medium">Gerar conteúdo com IA</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Gera automaticamente introdução, revisão de literatura, metodologia e secções base.
+                </p>
+              </div>
+              <Switch checked={generateContent} onCheckedChange={setGenerateContent} />
+            </div>
+
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Custo previsto</span>
+              <div className="flex items-center gap-2">
+                <Badge variant={credits >= calculateCost() ? "default" : "destructive"}>
+                  {calculateCost()} créditos
+                </Badge>
+                <span className="text-muted-foreground">({credits.toLocaleString("pt-MZ")} disponíveis)</span>
+              </div>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Projectos</h1>
-            <p className="text-sm text-muted-foreground">
-              {projectCounts.all} projectos no total
-            </p>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => handleDialogOpenChange(false)} disabled={isCreating}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleCreateProject}
+              disabled={isCreating || credits < calculateCost()}
+              className="gap-2"
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  A gerar...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  {generateContent ? "Gerar trabalho completo" : "Criar estrutura"}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div className="surface-panel flex flex-col gap-4 rounded-3xl p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-foreground">{projectCounts.all} projectos no total</p>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span>{projectCounts.in_progress} em curso</span>
+            <span>·</span>
+            <span>{projectCounts.completed} concluídos</span>
+            <span>·</span>
+            <span>{projectCounts.archived} arquivados</span>
           </div>
         </div>
 
-        {/* New Project Dialog */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-fit gap-2 gradient-primary text-primary-foreground hover:opacity-90">
-              <Plus className="h-4 w-4" />
-              Novo Projecto
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                Criar Novo Projecto
-              </DialogTitle>
-              <DialogDescription>
-                Gere um trabalho académico completo com IA ou apenas a estrutura.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-4">
-              {/* Title */}
-              <div className="space-y-2">
-                <Label htmlFor="title">Título do Trabalho *</Label>
-                <Input
-                  id="title"
-                  placeholder="Ex: Impacto das Tecnologias no Ensino Superior"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                />
-              </div>
-
-              {/* Type */}
-              <div className="space-y-2">
-                <Label htmlFor="type">Tipo de Trabalho</Label>
-                <Select value={newType} onValueChange={setNewType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PROJECT_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição (opcional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Breve descrição do tema ou área de estudo..."
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  rows={3}
-                />
-              </div>
-
-              {/* Generate Content Toggle */}
-              <div className="flex items-center justify-between rounded-lg border border-border/50 p-4 bg-muted/30">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <Label className="text-base font-medium">
-                      Gerar conteúdo com IA
-                    </Label>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Gera todo o conteúdo automaticamente: introdução, revisão de literatura, metodologia, etc.
-                  </p>
-                </div>
-                <Switch
-                  checked={generateContent}
-                  onCheckedChange={setGenerateContent}
-                />
-              </div>
-
-              {/* Cost Display */}
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Custo:</span>
-                <div className="flex items-center gap-2">
-                  <Badge variant={credits >= calculateCost() ? "default" : "destructive"}>
-                    {calculateCost()} créditos
-                  </Badge>
-                  <span className="text-muted-foreground">
-                    (Você tem {credits.toLocaleString()})
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setDialogOpen(false)}
-                disabled={isCreating}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleCreateProject}
-                disabled={isCreating || credits < calculateCost()}
-                className="gap-2"
-              >
-                {isCreating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    A gerar...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    {generateContent ? "Gerar Trabalho Completo" : "Criar Estrutura"}
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setDialogOpen(true)} className="gap-2 lg:hidden">
+          <Plus className="h-4 w-4" />
+          Novo projecto
+        </Button>
       </div>
 
-      {/* Filters */}
-      <ProjectFilters
-        status={status}
-        onStatusChange={setStatus}
-        search={search}
-        onSearchChange={setSearch}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-      />
+      <div className="surface-panel rounded-3xl p-4 lg:p-5">
+        <ProjectFilters
+          status={status}
+          onStatusChange={setStatus}
+          search={search}
+          onSearchChange={setSearch}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+        />
+      </div>
 
       {/* Projects Grid */}
       {filteredProjects.length > 0 ? (
@@ -483,7 +484,7 @@ export default function ProjectsPage() {
           {!search && (
             <Button onClick={() => setDialogOpen(true)} className="gap-2">
               <Plus className="h-4 w-4" />
-              Criar Projecto
+              Criar projecto
             </Button>
           )}
         </div>
@@ -493,13 +494,13 @@ export default function ProjectsPage() {
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-destructive" />
-              Eliminar projecto?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acção não pode ser desfeita. Todos os dados do projecto serão permanentemente removidos.
-            </AlertDialogDescription>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-destructive" />
+                Eliminar projecto?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta acção não pode ser desfeita. Todos os dados do projecto serão removidos permanentemente.
+              </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteTarget(null)}>Cancelar</AlertDialogCancel>

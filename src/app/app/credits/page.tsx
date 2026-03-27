@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import {
-  Coins,
   History,
   HelpCircle,
   Sparkles,
@@ -201,16 +200,40 @@ export default function CreditsPage() {
     });
   }, [creditData.transactions]);
 
+  const handleScrollToPackages = React.useCallback(() => {
+    document.getElementById("credit-packages")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
   const getTypeInfo = (type: string) => {
     switch (type) {
       case "PURCHASE":
-        return { icon: ArrowUpRight, color: "success", label: "Compra" };
+        return {
+          icon: ArrowUpRight,
+          label: "Compra",
+          iconClass: "text-success",
+          surfaceClass: "bg-success/10 border border-success/15",
+        };
       case "BONUS":
-        return { icon: Sparkles, color: "warning", label: "Bónus" };
+        return {
+          icon: Sparkles,
+          label: "Bónus",
+          iconClass: "text-warning",
+          surfaceClass: "bg-warning/10 border border-warning/15",
+        };
       case "REFUND":
-        return { icon: ArrowUpRight, color: "info", label: "Reembolso" };
+        return {
+          icon: ArrowUpRight,
+          label: "Reembolso",
+          iconClass: "text-info",
+          surfaceClass: "bg-info/10 border border-info/15",
+        };
       default:
-        return { icon: ArrowDownRight, color: "info", label: "Uso" };
+        return {
+          icon: ArrowDownRight,
+          label: "Uso",
+          iconClass: "text-info",
+          surfaceClass: "bg-info/10 border border-info/15",
+        };
     }
   };
 
@@ -233,26 +256,24 @@ export default function CreditsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 rounded-[28px] border border-border/60 bg-background/75 p-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-          <Coins className="h-5 w-5 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Créditos</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie o saldo, o histórico e o checkout sandbox.
-          </p>
-        </div>
+      <div className="surface-panel rounded-3xl px-5 py-4">
+        <p className="text-sm leading-6 text-muted-foreground">
+          Gira o saldo, acompanha o consumo mensal e recarrega a conta sem sair do fluxo principal do produto.
+        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-1">
-          <BalanceCard balance={creditData.balance} usageThisMonth={creditData.used} />
+          <BalanceCard
+            balance={creditData.balance}
+            usageThisMonth={creditData.used}
+            onRechargeClick={handleScrollToPackages}
+          />
           <UsageChart data={usageData} />
         </div>
 
         <div className="lg:col-span-2">
-          <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
+          <Card id="credit-packages" className="surface-panel rounded-3xl border-border/50 bg-card/80">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base font-medium">
                 <Sparkles className="h-5 w-5 text-primary" />
@@ -264,14 +285,14 @@ export default function CreditsPage() {
                 {plans.map((plan) => (
                   <div
                     key={plan.packageKey}
-                    className={`relative rounded-xl border-2 p-5 ${
+                    className={`relative rounded-3xl border p-5 ${
                       plan.popular
-                        ? "border-primary bg-primary/5"
+                        ? "border-primary/35 bg-primary/8 surface-strong"
                         : "border-border/50 bg-muted/30"
                     }`}
                   >
                     {plan.popular ? (
-                      <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 gradient-primary text-primary-foreground">
+                      <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full gradient-primary text-primary-foreground">
                         Mais Popular
                       </Badge>
                     ) : null}
@@ -320,7 +341,7 @@ export default function CreditsPage() {
         </div>
       </div>
 
-      <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
+      <Card className="surface-panel rounded-3xl border-border/50 bg-card/80">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base font-medium">
@@ -355,12 +376,8 @@ export default function CreditsPage() {
                       <TableRow key={tx.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <div
-                              className={`flex h-8 w-8 items-center justify-center rounded-lg bg-${typeInfo.color}/10`}
-                            >
-                              <Icon
-                                className={`h-4 w-4 text-${typeInfo.color}`}
-                              />
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-2xl ${typeInfo.surfaceClass}`}>
+                              <Icon className={`h-4 w-4 ${typeInfo.iconClass}`} />
                             </div>
                             <div>
                               <span className="font-medium">{tx.description}</span>
@@ -399,7 +416,7 @@ export default function CreditsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
+      <Card className="surface-panel rounded-3xl border-border/50 bg-card/80">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-medium">
             <HelpCircle className="h-5 w-5 text-primary" />

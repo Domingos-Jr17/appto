@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import {
   BookCopy,
-  Coins,
   FilePlus2,
-  FolderKanban,
+  LogOut,
   MoreHorizontal,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
-  Settings,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { isWorkspaceNavActive, workspaceNavItems } from "@/components/workspace/workspaceNav";
 import type {
   WorkspaceConversationItem,
   WorkspaceProjectLinkItem,
@@ -117,12 +118,14 @@ export function ConversationSidebar({
   onDeleteConversation,
   onToggleCollapsed,
 }: ConversationSidebarProps) {
+  const pathname = usePathname();
   const initials = getInitials(user.name);
   const [renameTarget, setRenameTarget] = useState<WorkspaceConversationItem | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
 
   const renameOpen = Boolean(renameTarget);
   const renameDisabled = useMemo(() => !draftTitle.trim(), [draftTitle]);
+  const [, projectsNav] = workspaceNavItems;
 
   const openRenameDialog = (conversation: WorkspaceConversationItem) => {
     setRenameTarget(conversation);
@@ -141,8 +144,8 @@ export function ConversationSidebar({
   };
 
   return (
-    <aside className="flex h-full flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground theme-transition">
-      <div className="glass-header border-b border-sidebar-border px-4 pb-4 pt-5">
+    <aside className="app-shell-sidebar flex h-full flex-col border-r border-sidebar-border text-sidebar-foreground theme-transition">
+      <div className="app-shell-header border-b border-sidebar-border px-4 pb-4 pt-5">
         <div className="flex items-center justify-between gap-3">
           <Link href="/app" className="flex items-center gap-3">
             <div className="gradient-primary gradient-glow-subtle flex h-10 w-10 items-center justify-center rounded-2xl text-primary-foreground shadow-sm">
@@ -178,14 +181,14 @@ export function ConversationSidebar({
               </Button>
               <Button asChild variant="outline" className="rounded-2xl border-sidebar-border bg-transparent">
                 <Link href="/app/projects">
-                  <FolderKanban className="mr-2 h-4 w-4" /> Projetos
+                  <projectsNav.icon className="mr-2 h-4 w-4" /> Projectos
                 </Link>
               </Button>
             </div>
 
             <div className="glass glass-border rounded-3xl p-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/60">
-                Projeto actual
+                Projecto actual
               </p>
               <Link
                 href={`/app/projects/${projectId}`}
@@ -207,21 +210,26 @@ export function ConversationSidebar({
                 <FilePlus2 className="h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild variant="ghost" size="icon" className="h-10 w-full rounded-2xl hover:bg-sidebar-accent">
-              <Link href="/app/projects" aria-label="Projetos">
-                <FolderKanban className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="icon" className="h-10 w-full rounded-2xl hover:bg-sidebar-accent">
-              <Link href="/app/credits" aria-label="Créditos">
-                <Coins className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="icon" className="h-10 w-full rounded-2xl hover:bg-sidebar-accent">
-              <Link href="/app/settings" aria-label="Configurações">
-                <Settings className="h-4 w-4" />
-              </Link>
-            </Button>
+            {workspaceNavItems.map((item) => {
+              const active = isWorkspaceNavActive(pathname, item.href);
+
+              return (
+                <Button
+                  key={item.href}
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-10 w-full rounded-2xl hover:bg-sidebar-accent",
+                    active && "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+                  )}
+                >
+                  <Link href={item.href} aria-label={item.label} aria-current={active ? "page" : undefined}>
+                    <item.icon className="h-4 w-4" />
+                  </Link>
+                </Button>
+              );
+            })}
           </div>
         ) : (
           <div className="space-y-5">
@@ -230,24 +238,31 @@ export function ConversationSidebar({
                 Navegação
               </div>
               <div className="space-y-1.5">
-                <Link
-                  href="/app/credits"
-                  className="card-hover flex items-center gap-3 rounded-2xl border border-border/40 bg-card/70 px-3 py-3 text-sm text-foreground"
-                >
-                  <Coins className="h-4 w-4 text-primary" /> Créditos
-                </Link>
-                <Link
-                  href="/app/settings"
-                  className="card-hover flex items-center gap-3 rounded-2xl border border-border/40 bg-card/70 px-3 py-3 text-sm text-foreground"
-                >
-                  <Settings className="h-4 w-4 text-primary" /> Configurações
-                </Link>
+                {workspaceNavItems.map((item) => {
+                  const active = isWorkspaceNavActive(pathname, item.href);
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "card-hover flex items-center gap-3 rounded-2xl border px-3 py-3 text-sm transition-colors",
+                        active
+                          ? "border-primary/30 bg-primary/10 text-foreground"
+                          : "border-border/40 bg-card/70 text-foreground hover:bg-accent/60"
+                      )}
+                    >
+                      <item.icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
+                      {item.label}
+                    </Link>
+                  );
+                })}
               </div>
             </section>
 
             <section className="space-y-2">
               <div className="px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/60">
-                Projetos recentes
+                Projectos recentes
               </div>
               <div className="space-y-1.5">
                 {recentProjects.map((project) => (
@@ -386,20 +401,21 @@ export function ConversationSidebar({
               ) : null}
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" side="top" className="w-64">
-            <div className="px-2 py-1.5">
-              <p className="truncate text-sm font-medium">{user.name || "Utilizador"}</p>
-              <p className="truncate text-xs text-muted-foreground">{user.email || "Sem email"}</p>
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/app/settings">Configurações</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/app/credits">Upgrade e créditos</Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <DropdownMenuContent align="start" side="top" className="w-64">
+              <div className="px-2 py-1.5">
+                <p className="truncate text-sm font-medium">{user.name || "Utilizador"}</p>
+                <p className="truncate text-xs text-muted-foreground">{user.email || "Sem email"}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => void signOut({ callbackUrl: "/login" })}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Terminar sessão
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
       </div>
 
       <Dialog open={renameOpen} onOpenChange={(open) => !open && closeRenameDialog()}>

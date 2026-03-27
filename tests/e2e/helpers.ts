@@ -17,21 +17,4 @@ export async function loginAsSeedUser(page: Page) {
   await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 20000 });
 }
 
-export async function getFirstProjectId(page: Page): Promise<string> {
-  if (!page.url().includes("/app")) {
-    await page.goto("/app", { waitUntil: "domcontentloaded" });
-  }
-
-  const projects = await page.evaluate(async () => {
-    const res = await fetch("/api/projects?sortBy=updatedAt&sortOrder=desc");
-    if (!res.ok) throw new Error(`API returned ${res.status}`);
-    return res.json();
-  });
-
-  if (!Array.isArray(projects) || !projects.length) {
-    throw new Error("No projects found. Run the seed script first.");
-  }
-  return projects[0].id;
-}
-
 export { test, expect };

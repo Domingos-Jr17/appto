@@ -9,16 +9,22 @@ import { cn } from "@/lib/utils";
 interface BalanceCardProps {
   balance: number;
   usageThisMonth: number;
+  onRechargeClick?: () => void;
   className?: string;
 }
 
-export function BalanceCard({ balance, usageThisMonth, className }: BalanceCardProps) {
+export function BalanceCard({
+  balance,
+  usageThisMonth,
+  onRechargeClick,
+  className,
+}: BalanceCardProps) {
   const estimatedWork = Math.floor(balance / 50);
 
   return (
     <Card
       className={cn(
-        "relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card",
+        "surface-strong relative overflow-hidden rounded-3xl border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card",
         className
       )}
     >
@@ -47,9 +53,9 @@ export function BalanceCard({ balance, usageThisMonth, className }: BalanceCardP
         </div>
 
         {/* Stats Row */}
-        <div className="flex flex-wrap gap-4 pt-2 border-t border-border/50">
+        <div className="flex flex-wrap gap-4 border-t border-border/50 pt-2">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10 backdrop-blur-xl border border-success/10">
+            <div className="flex h-8 w-8 items-center justify-center rounded-2xl border border-success/10 bg-success/10">
               <TrendingUp className="h-4 w-4 text-success" />
             </div>
             <div>
@@ -58,7 +64,7 @@ export function BalanceCard({ balance, usageThisMonth, className }: BalanceCardP
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10 backdrop-blur-xl border border-info/10">
+            <div className="flex h-8 w-8 items-center justify-center rounded-2xl border border-info/10 bg-info/10">
               <Zap className="h-4 w-4 text-info" />
             </div>
             <div>
@@ -69,7 +75,7 @@ export function BalanceCard({ balance, usageThisMonth, className }: BalanceCardP
         </div>
 
         {/* CTA */}
-        <Button className="w-full gap-2 gradient-primary text-primary-foreground hover:opacity-90">
+        <Button className="w-full gap-2" onClick={onRechargeClick}>
           <Sparkles className="h-4 w-4" />
           Recarregar Créditos
         </Button>

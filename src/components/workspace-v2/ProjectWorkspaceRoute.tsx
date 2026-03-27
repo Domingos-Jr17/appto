@@ -199,7 +199,7 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
       toast({
         title: "Erro",
         description:
-          error instanceof Error ? error.message : "Nao foi possivel gerar a resposta.",
+          error instanceof Error ? error.message : "Não foi possível gerar a resposta.",
         variant: "destructive",
       });
     }
@@ -244,7 +244,7 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
             setDocumentTab("document");
           }
         } catch {
-          toast({ title: "Erro", description: "Nao foi possivel criar a nova secao.", variant: "destructive" });
+          toast({ title: "Erro", description: "Não foi possível criar a nova secção.", variant: "destructive" });
         }
         return;
       }
@@ -255,9 +255,9 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
           await createSection(projectId, { title: item });
         }
         setDocumentTab("structure");
-        toast({ title: "Outline aplicado", description: `${items.length} secoes adicionadas.` });
+        toast({ title: "Outline aplicado", description: `${items.length} secções adicionadas.` });
       } catch {
-        toast({ title: "Erro", description: "Nao foi possivel transformar a resposta em outline.", variant: "destructive" });
+        toast({ title: "Erro", description: "Não foi possível transformar a resposta em outline.", variant: "destructive" });
       }
     },
     [activeSectionId, appendContent, content, createSection, projectId, replaceContent, selectSection, toast, updateSectionTree]
@@ -314,7 +314,7 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
           setDocumentTab("document");
         }
       } catch {
-        toast({ title: "Erro", description: "Nao foi possivel criar a nova secção.", variant: "destructive" });
+        toast({ title: "Erro", description: "Não foi possível criar a nova secção.", variant: "destructive" });
       }
     },
     [createSection, projectId, selectSection, toast]
@@ -329,7 +329,7 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
           selectSection(updated);
         }
       } catch {
-        toast({ title: "Erro", description: "Nao foi possivel renomear a secção.", variant: "destructive" });
+        toast({ title: "Erro", description: "Não foi possível renomear a secção.", variant: "destructive" });
       }
     },
     [activeSectionId, renameSection, selectSection, toast]
@@ -351,7 +351,7 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
           }
         }
       } catch {
-        toast({ title: "Erro", description: "Nao foi possivel remover a secção.", variant: "destructive" });
+        toast({ title: "Erro", description: "Não foi possível remover a secção.", variant: "destructive" });
       }
     },
     [activeSectionId, deleteSection, resetEditor, sections, selectSection, toast]
@@ -362,7 +362,7 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
       try {
         await reorderSections(projectId, tree);
       } catch {
-        toast({ title: "Erro", description: "Nao foi possivel reordenar a estrutura.", variant: "destructive" });
+        toast({ title: "Erro", description: "Não foi possível reordenar a estrutura.", variant: "destructive" });
       }
     },
     [projectId, reorderSections, toast]
@@ -379,7 +379,7 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1400);
     } catch {
-      toast({ title: "Erro", description: "Nao foi possivel copiar o conteudo.", variant: "destructive" });
+      toast({ title: "Erro", description: "Não foi possível copiar o conteúdo.", variant: "destructive" });
     }
   }, [artifact?.content, documentContent, documentTab, documentTitle, toast]);
 
@@ -416,9 +416,9 @@ export function ProjectWorkspaceRoute({ projectId }: ProjectWorkspaceRouteProps)
         <Card className="w-full max-w-xl border-border/60 bg-background/80 text-center shadow-sm">
           <CardContent className="space-y-4 p-10">
             <FolderTree className="mx-auto h-10 w-10 text-muted-foreground/40" />
-            <h2 className="text-2xl font-semibold">Projecto nao encontrado</h2>
+            <h2 className="text-2xl font-semibold">Projecto não encontrado</h2>
             <p className="text-sm leading-6 text-muted-foreground">
-              Nao foi possivel abrir este workspace. Volte a lista de projectos e tente novamente.
+              Não foi possível abrir este workspace. Volte à lista de projectos e tente novamente.
             </p>
             <Button asChild className="rounded-full">
               <Link href="/app/projects">Ver projectos</Link>

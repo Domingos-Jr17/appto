@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { FolderTree } from "lucide-react";
 import { useAppShellData } from "@/components/app-shell/AppShellDataContext";
@@ -14,19 +14,13 @@ import { WorkspaceLoadingSkeleton } from "@/components/skeletons/WorkspaceLoadin
 import { useToast } from "@/hooks/use-toast";
 import { countWordsInMarkdown } from "@/lib/content";
 import {
-  extractOutlineTitles,
-  flattenSections,
   findSectionById,
-  inferSectionTitle,
 } from "@/lib/editor-helpers";
 import {
   useAssistantStore,
-  getChatSuggestions,
 } from "@/stores/assistant-store";
 import { useEditorStore } from "@/stores/editor-store";
 import { useProjectStore } from "@/stores/project-store";
-import type { ChatAction, Section } from "@/types/editor";
-import type { WorkspaceDocumentTab } from "./types";
 import {
   buildArtifactSource,
   getPreferredSectionId,
@@ -42,11 +36,6 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
   const { setCredits: setAppCredits } = useAppShellData();
   const initializedProjectId = useRef<string | null>(null);
 
-  const [artifactCollapsed, setArtifactCollapsed] = useState(false);
-  const [documentTab, setDocumentTab] = useState<WorkspaceDocumentTab>("document");
-  const [mobileArtifactOpen, setMobileArtifactOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
-
   const project = useProjectStore((state) => state.project);
   const sections = useProjectStore((state) => state.sections);
   const credits = useProjectStore((state) => state.credits);
@@ -54,13 +43,9 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
   const activeProjectStoreId = useProjectStore((state) => state.activeProjectId);
   const fetchProject = useProjectStore((state) => state.fetchProject);
   const createSection = useProjectStore((state) => state.createSection);
-  const renameSection = useProjectStore((state) => state.renameSection);
-  const deleteSection = useProjectStore((state) => state.deleteSection);
-  const reorderSections = useProjectStore((state) => state.reorderSections);
   const updateSectionTree = useProjectStore((state) => state.updateSectionTree);
   const setCredits = useProjectStore((state) => state.setCredits);
   const exportDocument = useProjectStore((state) => state.exportDocument);
-  const saveExport = useProjectStore((state) => state.saveExport);
   const isSavingExport = useProjectStore((state) => state.isSavingExport);
 
   const activeSectionId = useEditorStore((state) => state.activeSectionId);
@@ -73,15 +58,12 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
   const updateTitle = useEditorStore((state) => state.updateTitle);
   const updateContent = useEditorStore((state) => state.updateContent);
   const replaceContent = useEditorStore((state) => state.replaceContent);
-  const appendContent = useEditorStore((state) => state.appendContent);
   const resetEditor = useEditorStore((state) => state.resetEditor);
 
   const chatMessages = useAssistantStore((state) => state.chatMessages);
   const chatPrompt = useAssistantStore((state) => state.chatPrompt);
-  const chatAction = useAssistantStore((state) => state.chatAction);
   const isChatLoading = useAssistantStore((state) => state.isChatLoading);
   const setChatPrompt = useAssistantStore((state) => state.setChatPrompt);
-  const setChatAction = useAssistantStore((state) => state.setChatAction);
   const sendMessage = useAssistantStore((state) => state.sendMessage);
   const clearChat = useAssistantStore((state) => state.clearChat);
 
@@ -97,15 +79,6 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
     clearChat(projectId);
     resetEditor();
     initializedProjectId.current = null;
-
-    const frame = window.requestAnimationFrame(() => {
-      setArtifactCollapsed(false);
-      setDocumentTab("document");
-      setMobileArtifactOpen(false);
-      setCopied(false);
-    });
-
-    return () => window.cancelAnimationFrame(frame);
   }, [projectId, clearChat, resetEditor]);
 
   useEffect(() => {
@@ -127,14 +100,9 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
     [activeSectionId, sections]
   );
 
-  const chatSuggestions = useMemo(
-    () => getChatSuggestions(project, activeSection, sectionTitle),
-    [activeSection, project, sectionTitle]
-  );
-
   const artifact = useMemo(() => {
     if (!project) return null;
-    return buildArtifactSource(project, activeSection, null, chatMessages);
+    return buildArtifactSource(project, activeSection, chatMessages);
   }, [activeSection, chatMessages, project]);
 
   const documentTitle = activeSection ? sectionTitle : artifact?.title || project?.title || "";
@@ -144,17 +112,7 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
   const handleChatSubmit = useCallback(async () => {
     if (!chatPrompt.trim() || isChatLoading || !project) return;
     try {
-      await sendMessage(
-        chatPrompt,
-        chatAction as ChatAction,
-        project.title,
-        sectionTitle,
-        projectId,
-        credits,
-        setCredits
-      );
-      setDocumentTab("document");
-      setMobileArtifactOpen(true);
+      await sendMessage(chatPrompt, projectId, credits, setCredits);
     } catch (error) {
       toast({
         title: "Erro",
@@ -163,64 +121,33 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
         variant: "destructive",
       });
     }
-  }, [chatAction, chatPrompt, credits, isChatLoading, project, projectId, sectionTitle, sendMessage, setCredits, toast]);
+  }, [chatPrompt, credits, isChatLoading, project, projectId, sendMessage, setCredits, toast]);
 
-  const applyAssistantContent = useCallback(
-    async (messageContent: string, action: "insert" | "replace" | "append" | "outline") => {
-      if (action === "insert") {
-        appendContent(messageContent, projectId);
-        if (activeSectionId) {
-          const nextContent = content.trim() ? `${content}\n\n${messageContent}` : messageContent;
-          updateSectionTree(activeSectionId, (section) => ({
-            ...section,
-            content: nextContent,
-            wordCount: countWordsInMarkdown(nextContent),
-          }));
-        }
-        setDocumentTab("document");
-        return;
-      }
-      if (action === "replace") {
+  const handleApplyContent = useCallback(
+    async (messageContent: string) => {
+      if (activeSectionId) {
         replaceContent(messageContent, projectId);
-        if (activeSectionId) {
-          updateSectionTree(activeSectionId, (section) => ({
-            ...section,
-            content: messageContent,
-            wordCount: countWordsInMarkdown(messageContent),
-          }));
-        }
-        setDocumentTab("document");
-        return;
-      }
-      if (action === "append") {
+        updateSectionTree(activeSectionId, (section) => ({
+          ...section,
+          content: messageContent,
+          wordCount: countWordsInMarkdown(messageContent),
+        }));
+      } else {
         try {
           const newSection = await createSection(projectId, {
-            title: inferSectionTitle(messageContent),
+            title: sectionTitle || "Nova secção",
             content: messageContent,
             selectAfterCreate: true,
           });
           if (newSection) {
             selectSection(newSection);
-            setDocumentTab("document");
           }
         } catch {
           toast({ title: "Erro", description: "Não foi possível criar a nova secção.", variant: "destructive" });
         }
-        return;
-      }
-      try {
-        const outlineItems = extractOutlineTitles(messageContent);
-        const items = outlineItems.length ? outlineItems : ["Introducao", "Desenvolvimento", "Conclusao"];
-        for (const item of items) {
-          await createSection(projectId, { title: item });
-        }
-        setDocumentTab("structure");
-        toast({ title: "Outline aplicado", description: `${items.length} secções adicionadas.` });
-      } catch {
-        toast({ title: "Erro", description: "Não foi possível transformar a resposta em outline.", variant: "destructive" });
       }
     },
-    [activeSectionId, appendContent, content, createSection, projectId, replaceContent, selectSection, toast, updateSectionTree]
+    [activeSectionId, createSection, projectId, replaceContent, sectionTitle, selectSection, toast, updateSectionTree]
   );
 
   const handleDocumentTitleChange = useCallback(
@@ -245,103 +172,13 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
     [activeSectionId, projectId, updateContent, updateSectionTree]
   );
 
-  const handleSectionAdd = useCallback(
-    async (parentId?: string) => {
-      try {
-        const newSection = await createSection(projectId, {
-          parentId,
-          title: parentId ? "Nova secção" : "Novo capítulo",
-          selectAfterCreate: true,
-        });
-        if (newSection) {
-          selectSection(newSection);
-          setDocumentTab("document");
-        }
-      } catch {
-        toast({ title: "Erro", description: "Não foi possível criar a nova secção.", variant: "destructive" });
-      }
-    },
-    [createSection, projectId, selectSection, toast]
-  );
-
-  const handleSectionRename = useCallback(
-    async (sectionId: string, title: string) => {
-      try {
-        await renameSection(sectionId, title);
-        const updated = useProjectStore.getState().findSection(sectionId);
-        if (updated && activeSectionId === sectionId) {
-          selectSection(updated);
-        }
-      } catch {
-        toast({ title: "Erro", description: "Não foi possível renomear a secção.", variant: "destructive" });
-      }
-    },
-    [activeSectionId, renameSection, selectSection, toast]
-  );
-
-  const handleSectionDelete = useCallback(
-    async (sectionId: string) => {
-      try {
-        const flatBeforeDelete = flattenSections(sections).filter((section) => section.id !== sectionId);
-        await deleteSection(sectionId);
-
-        if (activeSectionId === sectionId) {
-          const fallbackId = flatBeforeDelete[0]?.id;
-          if (fallbackId) {
-            const fallback = useProjectStore.getState().findSection(fallbackId);
-            if (fallback) selectSection(fallback);
-          } else {
-            resetEditor();
-          }
-        }
-      } catch {
-        toast({ title: "Erro", description: "Não foi possível remover a secção.", variant: "destructive" });
-      }
-    },
-    [activeSectionId, deleteSection, resetEditor, sections, selectSection, toast]
-  );
-
-  const handleSectionReorder = useCallback(
-    async (tree: Section[]) => {
-      try {
-        await reorderSections(projectId, tree);
-      } catch {
-        toast({ title: "Erro", description: "Não foi possível reordenar a estrutura.", variant: "destructive" });
-      }
-    },
-    [projectId, reorderSections, toast]
-  );
-
-  const handleCopy = useCallback(async () => {
-    const copyTarget =
-      documentTab === "document"
-        ? `${documentTitle}\n\n${documentContent}`.trim()
-        : artifact?.content || "";
-    if (!copyTarget) return;
+  const handleExport = useCallback(() => {
     try {
-      await navigator.clipboard.writeText(copyTarget);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1400);
-    } catch {
-      toast({ title: "Erro", description: "Não foi possível copiar o conteúdo.", variant: "destructive" });
-    }
-  }, [artifact?.content, documentContent, documentTab, documentTitle, toast]);
-
-  const handleExport = useCallback((format: "docx" | "pdf") => {
-    try {
-      exportDocument(projectId, format);
+      exportDocument(projectId, "docx");
     } catch {
       toast({ title: "Erro", description: "Não foi possível exportar o documento.", variant: "destructive" });
     }
   }, [exportDocument, projectId, toast]);
-
-  const handleSaveExport = useCallback((format: "docx" | "pdf") => {
-    try {
-      saveExport(projectId, format);
-    } catch {
-      toast({ title: "Erro", description: "Não foi possível guardar o documento.", variant: "destructive" });
-    }
-  }, [saveExport, projectId, toast]);
 
   if (isLoading || activeProjectStoreId !== projectId || (project && project.id !== projectId)) {
     return <WorkspaceLoadingSkeleton />;
@@ -368,76 +205,38 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
     );
   }
 
-  const chat = (
-    <SessionWorkspaceErrorBoundary label="chat">
-      <ChatPane
-        project={project}
-        activeSection={activeSection}
-        chatMessages={chatMessages}
-        chatPrompt={chatPrompt}
-        chatAction={chatAction}
-        isChatLoading={isChatLoading}
-        suggestions={chatSuggestions}
-        credits={credits}
-        artifactCollapsed={artifactCollapsed}
-        isSavingExport={isSavingExport}
-        onOpenArtifact={() => {
-          setArtifactCollapsed(false);
-          setMobileArtifactOpen(true);
-        }}
-        onChatPromptChange={setChatPrompt}
-        onChatActionChange={(action) => setChatAction(action)}
-        onChatSubmit={handleChatSubmit}
-        onApplyContent={applyAssistantContent}
-        onExport={handleExport}
-        onSaveExport={handleSaveExport}
-      />
-    </SessionWorkspaceErrorBoundary>
-  );
-
-  const artifactPanel = (
-    <SessionWorkspaceErrorBoundary label="document">
-      <DocumentPane
-        project={project}
-        sections={sections}
-        activeSection={activeSection}
-        documentTitle={documentTitle}
-        documentContent={documentContent}
-        documentWordCount={documentWordCount}
-        artifact={artifact}
-        tab={documentTab}
-        copied={copied}
-        collapsed={artifactCollapsed}
-        saveStatus={autoSaveStatus}
-        lastSaved={lastSaved}
-        onTabChange={setDocumentTab}
-        onCopy={handleCopy}
-        onDocumentTitleChange={handleDocumentTitleChange}
-        onDocumentContentChange={handleDocumentContentChange}
-        onSectionSelect={(sectionId) => {
-          const targetSection = findSectionById(sectionId, sections);
-          if (targetSection) {
-            selectSection(targetSection);
-            setDocumentTab("document");
-          }
-        }}
-        onSectionAdd={handleSectionAdd}
-        onSectionRename={handleSectionRename}
-        onSectionDelete={handleSectionDelete}
-        onSectionReorder={handleSectionReorder}
-        onToggleCollapsed={() => setArtifactCollapsed((value) => !value)}
-      />
-    </SessionWorkspaceErrorBoundary>
-  );
-
   return (
     <div className="min-h-0 flex-1 overflow-hidden">
       <SessionWorkspaceLayout
-        artifactCollapsed={artifactCollapsed}
-        mobileArtifactOpen={mobileArtifactOpen}
-        chat={chat}
-        artifact={artifactPanel}
-        onMobileArtifactOpenChange={setMobileArtifactOpen}
+        chat={
+          <SessionWorkspaceErrorBoundary label="chat">
+            <ChatPane
+              activeSection={activeSection}
+              chatMessages={chatMessages}
+              chatPrompt={chatPrompt}
+              isChatLoading={isChatLoading}
+              isSavingExport={isSavingExport}
+              onChatPromptChange={setChatPrompt}
+              onChatSubmit={handleChatSubmit}
+              onApplyContent={handleApplyContent}
+              onExport={handleExport}
+            />
+          </SessionWorkspaceErrorBoundary>
+        }
+        document={
+          <SessionWorkspaceErrorBoundary label="document">
+            <DocumentPane
+              activeSection={activeSection}
+              documentTitle={documentTitle}
+              documentContent={documentContent}
+              documentWordCount={documentWordCount}
+              saveStatus={autoSaveStatus}
+              lastSaved={lastSaved}
+              onDocumentTitleChange={handleDocumentTitleChange}
+              onDocumentContentChange={handleDocumentContentChange}
+            />
+          </SessionWorkspaceErrorBoundary>
+        }
       />
     </div>
   );

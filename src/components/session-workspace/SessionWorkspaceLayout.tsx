@@ -1,51 +1,20 @@
 "use client";
 
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import type { ReactNode } from "react";
 
 interface SessionWorkspaceLayoutProps {
-  artifactCollapsed: boolean;
-  mobileArtifactOpen: boolean;
   chat: ReactNode;
-  artifact: ReactNode;
-  onMobileArtifactOpenChange: (open: boolean) => void;
+  document: ReactNode;
 }
 
-export function SessionWorkspaceLayout({
-  artifactCollapsed,
-  mobileArtifactOpen,
-  chat,
-  artifact,
-  onMobileArtifactOpenChange,
-}: SessionWorkspaceLayoutProps) {
+export function SessionWorkspaceLayout({ chat, document }: SessionWorkspaceLayoutProps) {
   return (
     <>
-      <div className="hidden h-full lg:block">
-        <ResizablePanelGroup direction="horizontal" className="h-full w-full">
-          <ResizablePanel defaultSize={artifactCollapsed ? 100 : 62} minSize={40}>
-            {chat}
-          </ResizablePanel>
-
-          {!artifactCollapsed ? (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={38} minSize={28} maxSize={50}>
-                {artifact}
-              </ResizablePanel>
-            </>
-          ) : null}
-        </ResizablePanelGroup>
+      <div className="hidden h-full lg:flex">
+        <div className="flex min-w-0 flex-1 flex-col">{chat}</div>
+        <div className="w-[380px] shrink-0 border-l border-border/60 xl:w-[420px]">{document}</div>
       </div>
-
       <div className="flex h-full flex-col lg:hidden">{chat}</div>
-
-      <Sheet open={mobileArtifactOpen} onOpenChange={onMobileArtifactOpenChange}>
-        <SheetContent side="right" className="w-[380px] max-w-[96vw] p-0">
-          <SheetTitle className="sr-only">Painel do documento</SheetTitle>
-          {artifact}
-        </SheetContent>
-      </Sheet>
     </>
   );
 }

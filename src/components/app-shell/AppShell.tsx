@@ -1,15 +1,19 @@
 "use client";
 
-import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { AppSidebar, type SidebarProject } from "./AppSidebar";
+import { AppSidebar } from "./AppSidebar";
 import { AppShellDataProvider, useAppShellData } from "./AppShellDataContext";
 import { AppHeader } from "./AppHeader";
 
-const SIDEBAR_COLLAPSE_EVENT = "appto:sidebar-collapse";
-const SIDEBAR_COLLAPSE_KEY = "appto:sidebar-collapsed";
+const PAGE_TITLES: Record<string, string> = {
+  "/app": "Início",
+  "/app/sessoes": "Sessões",
+  "/app/credits": "Créditos",
+  "/app/settings": "Definições",
+};
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -25,73 +29,38 @@ function AppShellChrome({ children, user }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { projects, credits } = useAppShellData();
 
-  const subscribeToCollapse = useCallback((onStoreChange: () => void) => {
-    if (typeof window === "undefined") {
-      return () => undefined;
+  const title = useMemo(() => {
+    const staticTitle = PAGE_TITLES[pathname];
+    if (staticTitle) return staticTitle;
+
+    const sessionMatch = pathname.match(/^\/app\/sessoes\/([^/]+)/);
+    if (sessionMatch) {
+      const project = projects.find((p) => p.id === sessionMatch[1]);
+      if (project) return project.title;
     }
 
-    window.addEventListener("storage", onStoreChange);
-    window.addEventListener(SIDEBAR_COLLAPSE_EVENT, onStoreChange);
-
-    return () => {
-      window.removeEventListener("storage", onStoreChange);
-      window.removeEventListener(SIDEBAR_COLLAPSE_EVENT, onStoreChange);
-    };
-  }, []);
-
-  const collapsed = useSyncExternalStore(
-    subscribeToCollapse,
-    () => (typeof window !== "undefined" ? window.localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === "1" : false),
-    () => false
-  );
-
-  const toggleSidebarCollapse = useCallback(() => {
-    if (typeof window === "undefined") return;
-    const nextValue = !collapsed;
-    window.localStorage.setItem(SIDEBAR_COLLAPSE_KEY, nextValue ? "1" : "0");
-    window.dispatchEvent(new Event(SIDEBAR_COLLAPSE_EVENT));
-  }, [collapsed]);
-
-  const mobileSidebar = useMemo(
-    () => (
-      <AppSidebar
-        collapsed={false}
-        currentPath={pathname}
-        credits={credits}
-        projects={projects as SidebarProject[]}
-        onToggleCollapse={() => undefined}
-        onNavigate={() => setMobileOpen(false)}
-      />
-    ),
-    [credits, pathname, projects]
-  );
+    return "appto";
+  }, [pathname, projects]);
 
   return (
     <div className="h-svh w-screen flex overflow-hidden bg-background">
       <div className="hidden lg:block">
-        <AppSidebar
-          collapsed={collapsed}
-          currentPath={pathname}
-          credits={credits}
-          projects={projects as SidebarProject[]}
-          onToggleCollapse={toggleSidebarCollapse}
-        />
+        <AppSidebar currentPath={pathname} credits={credits} />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetContent side="left" className="w-[340px] max-w-[92vw] border-none bg-transparent p-0 shadow-none">
+          <SheetContent side="left" className="w-[300px] max-w-[92vw] border-none bg-transparent p-0 shadow-none">
             <SheetTitle className="sr-only">Navegação principal</SheetTitle>
-            {mobileSidebar}
+            <AppSidebar
+              currentPath={pathname}
+              credits={credits}
+              onNavigate={() => setMobileOpen(false)}
+            />
           </SheetContent>
         </Sheet>
 
-        <AppHeader
-          credits={credits}
-          projects={projects as SidebarProject[]}
-          user={user}
-          onOpenMobileNav={() => setMobileOpen(true)}
-        />
+        <AppHeader title={title} user={user} onOpenMobileNav={() => setMobileOpen(true)} />
 
         <div
           className={cn(

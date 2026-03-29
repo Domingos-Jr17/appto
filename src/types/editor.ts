@@ -86,15 +86,7 @@ export interface CreateSectionOptions {
   selectAfterCreate?: boolean;
 }
 
-export interface ChatSuggestion {
-  label: string;
-  prompt: string;
-  action: string;
-}
-
 export type AutoSaveStatus = "saving" | "saved" | "error" | "idle";
-
-export type ChatAction = "brainstorm" | "outline" | "section" | "rewrite";
 
 export type WorkspaceMode = "chat" | "document" | "structure";
 

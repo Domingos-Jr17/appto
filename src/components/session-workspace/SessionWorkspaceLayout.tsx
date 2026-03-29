@@ -23,14 +23,14 @@ export function SessionWorkspaceLayout({
     <>
       <div className="hidden h-full lg:block">
         <ResizablePanelGroup direction="horizontal" className="h-full w-full">
-          <ResizablePanel defaultSize={artifactCollapsed ? 100 : 56} minSize={38}>
+          <ResizablePanel defaultSize={artifactCollapsed ? 100 : 62} minSize={40}>
             {chat}
           </ResizablePanel>
 
           {!artifactCollapsed ? (
             <>
               <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={44} minSize={28} maxSize={52}>
+              <ResizablePanel defaultSize={38} minSize={28} maxSize={50}>
                 {artifact}
               </ResizablePanel>
             </>

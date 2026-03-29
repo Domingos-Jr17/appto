@@ -9,11 +9,12 @@ test.describe("Workspace chrome", () => {
 
     await expect(page.getByRole("heading", { name: "Início", exact: true })).toBeVisible({ timeout: 15000 });
     await expect(
-      page.getByText("Abra rapidamente a sessão certa sem percorrer um dashboard pesado.")
+      page.getByText(
+        "O dashboard fica reduzido ao essencial: continuar a sessão principal, perceber o estado actual e abrir rapidamente o trabalho recente."
+      )
     ).toBeVisible();
     await expect(page.getByText("Visão rápida")).toBeVisible();
-    await expect(page.getByText("Fluxo principal")).toHaveCount(0);
-    await expect(page.getByText("Templates e atalhos")).toHaveCount(0);
+    await expect(page.getByText("Sessões recentes")).toBeVisible();
   });
 
   test("uses the compact settings tabs and keeps navigation in sync", async ({ page }) => {

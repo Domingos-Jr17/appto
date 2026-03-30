@@ -83,7 +83,7 @@ export function NotificationsSection() {
   };
 
   if (isFetching) {
-    return <SettingsSectionSkeleton />;
+    return <SettingsSectionSkeleton variant="preferences" />;
   }
 
   return (

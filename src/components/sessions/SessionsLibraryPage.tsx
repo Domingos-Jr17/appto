@@ -403,7 +403,7 @@ export function SessionsLibraryPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="glass glass-border shadow-soft rounded-2xl p-4 lg:p-5">
+      <div className=" glass glass-border rounded-2xl p-4 lg:p-5">
         <div className="space-y-2">
           <p className="text-sm font-medium text-foreground">{sessionCounts.all} sessões no total</p>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -416,7 +416,7 @@ export function SessionsLibraryPage() {
         </div>
       </div>
 
-      <div className="glass glass-border shadow-soft rounded-2xl p-4 lg:p-5">
+      <div className=" glass glass-border rounded-2xl p-4 lg:p-5">
         <ProjectFilters
           status={status}
           onStatusChange={setStatus}

@@ -34,7 +34,7 @@ export function UsageChart({ data, className }: UsageChartProps) {
   const avgCredits = Math.round(totalCredits / data.length);
 
   return (
-    <Card className={cn("glass glass-border shadow-soft rounded-2xl bg-card/80", className)}>
+    <Card className={cn(" glass glass-border rounded-2xl bg-card/80", className)}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base font-medium">
@@ -79,7 +79,7 @@ export function UsageChart({ data, className }: UsageChartProps) {
         </ChartContainer>
 
         {/* Summary */}
-        <div className="mt-4 border-t border-border/50 pt-4">
+        <div className="mt-4 border-t border-border/60 pt-4">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Total utilizado (6 meses)</span>
             <span className="font-semibold">{totalCredits.toLocaleString("pt-MZ")} créditos</span>

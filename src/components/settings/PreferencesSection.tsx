@@ -141,7 +141,7 @@ export function PreferencesSection() {
   };
 
   if (isFetching) {
-    return <SettingsSectionSkeleton />;
+    return <SettingsSectionSkeleton variant="preferences" />;
   }
 
   return (

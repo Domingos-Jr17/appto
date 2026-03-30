@@ -234,7 +234,7 @@ export default function CreditsPage() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card id="credit-packages" className="glass glass-border shadow-soft rounded-2xl bg-card/80">
+          <Card id="credit-packages" className=" glass glass-border rounded-2xl bg-card/80">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base font-medium">
                 <Sparkles className="h-5 w-5 text-primary" />
@@ -249,7 +249,7 @@ export default function CreditsPage() {
                     className={`relative rounded-xl border p-5 transition-all duration-200 ${
                       plan.popular
                         ? "border-primary/35 bg-primary/8 surface-strong hover:border-primary/50 hover:shadow-md"
-                        : "border-border/50 bg-muted/30 hover:border-primary/30 hover:bg-muted/40 hover:shadow-sm"
+                        : "border-border/60 bg-muted/30 hover:border-primary/30 hover:bg-muted/40 hover:shadow-sm"
                     }`}
                   >
                     {plan.popular ? (
@@ -302,7 +302,7 @@ export default function CreditsPage() {
         </div>
       </div>
 
-      <Card className="glass glass-border shadow-soft rounded-2xl bg-card/80">
+      <Card className=" glass glass-border rounded-2xl bg-card/80">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base font-medium">
@@ -332,7 +332,7 @@ export default function CreditsPage() {
         <CardContent>
           {creditData.transactions.length > 0 ? (
             <div className="space-y-3">
-              <div id="credit-history-table" className="overflow-hidden rounded-xl border border-border/50">
+              <div id="credit-history-table" className="overflow-hidden rounded-xl border border-border/60">
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
@@ -400,7 +400,7 @@ export default function CreditsPage() {
         </CardContent>
       </Card>
 
-      <Card className="glass glass-border shadow-soft rounded-2xl bg-card/80">
+      <Card className=" glass glass-border rounded-2xl bg-card/80">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-medium">
             <HelpCircle className="h-5 w-5 text-primary" />
@@ -413,7 +413,7 @@ export default function CreditsPage() {
               <AccordionItem
                 key={item.question}
                 value={`item-${index}`}
-                className="border-border/50"
+                className="border-border/60"
               >
                 <AccordionTrigger className="text-left hover:no-underline hover:text-primary">
                   {item.question}

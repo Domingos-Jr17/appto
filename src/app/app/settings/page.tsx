@@ -23,7 +23,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="glass glass-border shadow-soft rounded-2xl px-5 py-4">
+      <div className=" glass glass-border rounded-2xl px-5 py-4">
         <p className="text-sm text-muted-foreground">
           Gira preferências, segurança e dados da conta num fluxo
           consistente com o resto do produto.
@@ -39,7 +39,7 @@ export default function SettingsPage() {
         }}
         className="w-full"
       >
-        <TabsList className="glass glass-border shadow-soft flex h-auto w-full flex-wrap justify-start gap-2 rounded-2xl p-2">
+        <TabsList className=" glass glass-border flex h-auto w-full flex-wrap justify-start gap-2 rounded-2xl p-2">
           {SETTINGS_TABS.map((tab) => (
             <TabsTrigger
               key={tab.value}
@@ -57,8 +57,8 @@ export default function SettingsPage() {
             value={tab.value}
             className="mt-6 focus-visible:outline-none"
           >
-            <Card className="glass glass-border shadow-soft rounded-2xl bg-card">
-              <CardHeader className="border-b border-border/50">
+            <Card className=" glass glass-border rounded-2xl bg-card">
+              <CardHeader className="border-b border-border/60">
                 <CardTitle className="text-xl">{tab.label}</CardTitle>
                 <CardDescription>{tab.description}</CardDescription>
               </CardHeader>

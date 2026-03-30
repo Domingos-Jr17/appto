@@ -452,7 +452,7 @@ export function SecuritySection() {
         </div>
 
         {!twoFactorEnabled ? (
-          <div className="space-y-4 rounded-xl border border-border/50 bg-accent/40 p-4 shadow-lg">
+          <div className="space-y-4 rounded-xl border border-border/60 bg-accent/40 p-4 shadow-lg">
             <div className="flex items-start gap-3">
               <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />
               <div className="space-y-1">
@@ -477,7 +477,7 @@ export function SecuritySection() {
 
             {setupPayload ? (
               <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
-                <div className="rounded-xl border border-border/50 bg-background p-3">
+                <div className="rounded-xl border border-border/60 bg-background p-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={setupPayload.qrCodeDataUrl}
@@ -516,7 +516,7 @@ export function SecuritySection() {
             ) : null}
           </div>
         ) : (
-          <div className="space-y-4 rounded-xl border border-border/50 bg-accent/40 p-4 shadow-lg">
+          <div className="space-y-4 rounded-xl border border-border/60 bg-accent/40 p-4 shadow-lg">
             <div className="flex items-start gap-3">
               <KeyRound className="mt-0.5 h-5 w-5 text-primary" />
               <div className="space-y-1">
@@ -577,7 +577,7 @@ export function SecuritySection() {
               {recoveryCodes.map((code) => (
                 <div
                   key={code}
-                  className="rounded-md border border-border/50 bg-background px-3 py-2 font-mono text-sm"
+                  className="rounded-md border border-border/60 bg-background px-3 py-2 font-mono text-sm"
                 >
                   {code}
                 </div>
@@ -601,7 +601,7 @@ export function SecuritySection() {
         </div>
 
         {isSessionsLoading ? (
-          <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-card/50 p-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/50 p-4 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             A carregar sessões...
           </div>
@@ -610,7 +610,7 @@ export function SecuritySection() {
             {sessions.map((session) => (
               <div
                 key={session.id}
-                className="flex items-center justify-between gap-4 rounded-xl border border-border/50 bg-card/50 p-4 backdrop-blur-xl transition-all hover:bg-card/60"
+                className="flex items-center justify-between gap-4 rounded-xl border border-border/60 bg-card/50 p-4 backdrop-blur-xl transition-all hover:bg-card/60"
               >
                 <div className="flex items-center gap-4">
                   <div className="rounded-lg bg-primary/10 p-2">
@@ -680,7 +680,7 @@ export function SecuritySection() {
 
       <Separator />
 
-      <div className="rounded-xl border border-border/50 bg-accent/50 p-4 shadow-lg">
+      <div className="rounded-xl border border-border/60 bg-accent/50 p-4 shadow-lg">
         <div className="flex gap-3">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
           <div className="text-sm">

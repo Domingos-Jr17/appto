@@ -273,11 +273,11 @@ export function ProfileSection() {
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Informações da Conta</h3>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl border border-border/50 bg-muted/30 p-4">
+          <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
             <p className="text-sm text-muted-foreground">Tipo de Conta</p>
             <p className="font-medium capitalize">{user?.role || "Estudante"}</p>
           </div>
-          <div className="rounded-xl border border-border/50 bg-muted/30 p-4">
+          <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
             <p className="text-sm text-muted-foreground">Créditos Disponíveis</p>
             <p className="font-medium">
               {user?.credits?.toLocaleString("pt-MZ") || 0} créditos

@@ -19,7 +19,7 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
   return (
     <div className={cn("space-y-6", className)}>
       {/* Payment Method Selection */}
-      <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
+      <Card className="border-border/60 bg-card/80 backdrop-blur-xl">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-medium">Método de Pagamento</CardTitle>
         </CardHeader>
@@ -33,7 +33,7 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
                 "relative flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all",
                 selectedMethod === "mpesa"
                   ? "border-primary bg-primary/5"
-                  : "border-border/50 hover:border-border bg-muted/30"
+                  : "border-border/60 hover:border-border bg-muted/30"
               )}
             >
               {selectedMethod === "mpesa" && (
@@ -56,7 +56,7 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
                 "relative flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all",
                 selectedMethod === "emola"
                   ? "border-primary bg-primary/5"
-                  : "border-border/50 hover:border-border bg-muted/30"
+                  : "border-border/60 hover:border-border bg-muted/30"
               )}
             >
               {selectedMethod === "emola" && (
@@ -75,7 +75,7 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
       </Card>
 
       {/* Package Selection */}
-      <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
+      <Card className="border-border/60 bg-card/80 backdrop-blur-xl">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-medium">Escolha um Pacote</CardTitle>
         </CardHeader>
@@ -90,7 +90,7 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
                   "relative flex items-center justify-between rounded-xl border-2 p-4 transition-all text-left",
                   selectedPackage === pkg.key
                     ? "border-primary bg-primary/5"
-                    : "border-border/50 hover:border-border bg-muted/30"
+                    : "border-border/60 hover:border-border bg-muted/30"
                 )}
               >
                 {pkg.popular && (

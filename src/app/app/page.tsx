@@ -52,7 +52,7 @@ export default function WorkspaceHomePage() {
 
   return (
     <div className="space-y-6">
-      <Card className="glass glass-border shadow-soft overflow-hidden rounded-2xl bg-background/80">
+      <Card className=" glass glass-border overflow-hidden rounded-2xl bg-background/80">
         <CardContent className="flex flex-col gap-8 p-6 lg:p-8">
           <div className="max-w-2xl space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -123,7 +123,7 @@ export default function WorkspaceHomePage() {
         </CardContent>
       </Card>
 
-      <Card className="glass glass-border shadow-soft rounded-2xl bg-background/80">
+      <Card className=" glass glass-border rounded-2xl bg-background/80">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-medium">Visão rápida</CardTitle>
         </CardHeader>
@@ -143,7 +143,7 @@ export default function WorkspaceHomePage() {
         </CardContent>
       </Card>
 
-      <Card className="glass glass-border shadow-soft rounded-2xl bg-background/80">
+      <Card className=" glass glass-border rounded-2xl bg-background/80">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div>
             <CardTitle className="text-lg">Sessões recentes</CardTitle>
@@ -166,7 +166,7 @@ export default function WorkspaceHomePage() {
               return (
                 <div
                   key={project.id}
-                  className="card-hover flex flex-col gap-4 rounded-xl border border-border/50 bg-muted/30 p-4 transition-colors hover:bg-muted/55 lg:flex-row lg:items-center lg:justify-between"
+                  className="card-hover flex flex-col gap-4 rounded-xl border border-border/60 bg-muted/30 p-4 transition-colors hover:bg-muted/55 lg:flex-row lg:items-center lg:justify-between"
                 >
                   <div className="min-w-0 space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">

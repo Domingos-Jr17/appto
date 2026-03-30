@@ -59,7 +59,7 @@ export function BalanceCard({
                 </div>
 
                 {/* Stats Row */}
-                <div className="flex flex-wrap gap-4 border-t border-border/50 pt-2">
+                <div className="flex flex-wrap gap-4 border-t border-border/60 pt-2">
                     <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-2xl border border-success/10 bg-success/10">
                             <TrendingUp className="h-4 w-4 text-success" />

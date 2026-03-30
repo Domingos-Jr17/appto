@@ -90,7 +90,7 @@ function ProjectCard({
   return (
     <Card
       className={cn(
-        "glass glass-border shadow-soft card-hover group relative cursor-pointer overflow-hidden rounded-2xl bg-card/80",
+        " glass glass-border card-hover group relative cursor-pointer overflow-hidden rounded-2xl bg-card/80",
         project.status === "archived" && "opacity-75"
       )}
     >
@@ -209,7 +209,7 @@ function ProjectListItem({
   return (
     <Card
       className={cn(
-        "glass glass-border shadow-soft card-hover group cursor-pointer rounded-2xl bg-card/80",
+        " glass glass-border card-hover group cursor-pointer rounded-2xl bg-card/80",
         project.status === "archived" && "opacity-75"
       )}
     >

@@ -73,7 +73,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
         </div>
       </div>
 
-      <nav className="fixed inset-x-4 bottom-4 z-50 flex items-center justify-around rounded-2xl border border-border/40 bg-foreground/95 px-3 py-3 shadow-lg backdrop-blur-lg lg:hidden">
+      <nav className="fixed inset-x-4 bottom-4 z-50 flex items-center justify-around rounded-2xl border border-border/60 bg-foreground/95 px-3 py-3 shadow-lg backdrop-blur-lg lg:hidden">
         {bottomNavItems.slice(0, 1).map((item) => {
           const active = isNavActive(pathname, item.href);
           const Icon = item.icon;

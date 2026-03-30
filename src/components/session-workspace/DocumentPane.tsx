@@ -60,7 +60,7 @@ export function DocumentPane({
 
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-4 p-4">
-          <div className="glass glass-border rounded-2xl p-4 shadow-soft">
+          <div className=" glass glass-border rounded-2xl p-4">
             <Input
               value={documentTitle}
               onChange={(event) => onDocumentTitleChange(event.target.value)}

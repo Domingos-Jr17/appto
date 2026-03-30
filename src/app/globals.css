@@ -52,7 +52,9 @@
 
 /* ===== DARK MODE (Default) ===== */
 :root {
-  --radius: 0.875rem;
+  --radius: 1rem;
+  --accent-warm: oklch(0.72 0.15 75);
+  --shadow-soft: 0 20px 60px oklch(0.65 0.15 255 / 0.06);
 
   /* Background */
   --background: oklch(0.12 0.01 260);
@@ -114,6 +116,9 @@
 
 /* ===== LIGHT MODE ===== */
 .light {
+  --accent-warm: oklch(0.65 0.16 70);
+  --shadow-soft: 0 20px 60px rgba(30, 58, 95, 0.08);
+
   --background: oklch(0.99 0.003 260);
   --foreground: oklch(0.14 0.015 260);
 
@@ -197,6 +202,10 @@
 
 /* ===== GLASSMORPHISM ===== */
 @layer utilities {
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
   .glass {
     background: color-mix(in oklch, var(--card) 88%, transparent);
     backdrop-filter: blur(10px);

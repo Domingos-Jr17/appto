@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { Coins, FilePlus2, FolderKanban, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppSidebar } from "./AppSidebar";
 import { AppShellDataProvider, useAppShellData } from "./AppShellDataContext";
@@ -15,6 +16,16 @@ const PAGE_TITLES: Record<string, string> = {
   "/app/settings": "Definições",
 };
 
+const bottomNavItems = [
+  { href: "/app/sessoes", label: "Sessões", icon: FolderKanban },
+  { href: "/app/credits", label: "Créditos", icon: Coins },
+  { href: "/app/settings", label: "Definições", icon: Settings },
+] as const;
+
+function isNavActive(currentPath: string, href: string) {
+  return currentPath === href || currentPath.startsWith(`${href}/`);
+}
+
 interface AppShellProps {
   children: React.ReactNode;
   user: {
@@ -26,7 +37,6 @@ interface AppShellProps {
 
 function AppShellChrome({ children, user }: AppShellProps) {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const { projects, credits } = useAppShellData();
 
   const title = useMemo(() => {
@@ -49,30 +59,65 @@ function AppShellChrome({ children, user }: AppShellProps) {
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetContent side="left" className="w-[300px] max-w-[92vw] border-none bg-transparent p-0 shadow-none">
-            <SheetTitle className="sr-only">Navegação principal</SheetTitle>
-            <AppSidebar
-              currentPath={pathname}
-              credits={credits}
-              onNavigate={() => setMobileOpen(false)}
-            />
-          </SheetContent>
-        </Sheet>
-
-        <AppHeader title={title} user={user} onOpenMobileNav={() => setMobileOpen(true)} />
+        <AppHeader title={title} user={user} />
 
         <div
           className={cn(
             "min-w-0 min-h-0 flex-1",
             pathname.startsWith("/app/sessoes/")
               ? "flex flex-col overflow-hidden"
-              : "overflow-y-auto px-4 py-5 lg:px-8 lg:py-7"
+              : "overflow-y-auto px-4 pb-24 pt-5 lg:px-8 lg:pb-7 lg:py-7"
           )}
         >
           {children}
         </div>
       </div>
+
+      <nav className="fixed inset-x-4 bottom-4 z-50 flex items-center justify-around rounded-2xl border border-border/40 bg-foreground/95 px-3 py-3 shadow-lg backdrop-blur-lg lg:hidden">
+        {bottomNavItems.slice(0, 1).map((item) => {
+          const active = isNavActive(pathname, item.href);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-xs transition-colors",
+                active ? "text-background" : "text-background/60"
+              )}
+            >
+              <Icon className="h-5 w-5" />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+
+        <Link
+          href="/app/sessoes?new=1"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-warm)] text-white shadow-md transition-transform hover:scale-105"
+          aria-label="Nova sessão"
+        >
+          <FilePlus2 className="h-5 w-5" />
+        </Link>
+
+        {bottomNavItems.slice(1).map((item) => {
+          const active = isNavActive(pathname, item.href);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-xs transition-colors",
+                active ? "text-background" : "text-background/60"
+              )}
+            >
+              <Icon className="h-5 w-5" />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }

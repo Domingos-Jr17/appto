@@ -234,7 +234,7 @@ export default function CreditsPage() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card id="credit-packages" className="surface-panel rounded-xl bg-card/80">
+          <Card id="credit-packages" className="glass glass-border shadow-soft rounded-2xl bg-card/80">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base font-medium">
                 <Sparkles className="h-5 w-5 text-primary" />
@@ -302,7 +302,7 @@ export default function CreditsPage() {
         </div>
       </div>
 
-      <Card className="surface-panel rounded-xl bg-card/80">
+      <Card className="glass glass-border shadow-soft rounded-2xl bg-card/80">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base font-medium">
@@ -400,7 +400,7 @@ export default function CreditsPage() {
         </CardContent>
       </Card>
 
-      <Card className="surface-panel rounded-xl bg-card/80">
+      <Card className="glass glass-border shadow-soft rounded-2xl bg-card/80">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base font-medium">
             <HelpCircle className="h-5 w-5 text-primary" />

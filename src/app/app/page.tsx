@@ -52,7 +52,7 @@ export default function WorkspaceHomePage() {
 
   return (
     <div className="space-y-6">
-      <Card className="surface-panel overflow-hidden rounded-xl bg-background/80">
+      <Card className="glass glass-border shadow-soft overflow-hidden rounded-2xl bg-background/80">
         <CardContent className="flex flex-col gap-8 p-6 lg:p-8">
           <div className="max-w-2xl space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -123,7 +123,7 @@ export default function WorkspaceHomePage() {
         </CardContent>
       </Card>
 
-      <Card className="surface-panel rounded-xl bg-background/80">
+      <Card className="glass glass-border shadow-soft rounded-2xl bg-background/80">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-medium">Visão rápida</CardTitle>
         </CardHeader>
@@ -143,7 +143,7 @@ export default function WorkspaceHomePage() {
         </CardContent>
       </Card>
 
-      <Card className="surface-panel rounded-xl bg-background/80">
+      <Card className="glass glass-border shadow-soft rounded-2xl bg-background/80">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div>
             <CardTitle className="text-lg">Sessões recentes</CardTitle>

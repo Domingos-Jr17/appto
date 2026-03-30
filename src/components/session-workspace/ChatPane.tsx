@@ -78,7 +78,7 @@ export function ChatPane({
               <article
                 key={message.id}
                 className={cn(
-                  "max-w-[92%] rounded-xl border px-5 py-4 shadow-sm transition-colors",
+                  "max-w-[92%] rounded-2xl border px-5 py-4 shadow-soft transition-colors",
                   message.role === "user"
                     ? "ml-auto border-primary/20 bg-primary/10"
                     : "mr-auto glass glass-border bg-card/90"
@@ -115,7 +115,7 @@ export function ChatPane({
 
       <div className="app-shell-header relative z-10 border-t border-border/60 px-4 py-4 lg:px-6">
         <div className="mx-auto max-w-3xl">
-          <div className="glass glass-border rounded-xl p-3 shadow-sm">
+          <div className="glass glass-border rounded-2xl p-3 shadow-soft">
             <div className="flex gap-2">
               <Textarea
                 value={chatPrompt}

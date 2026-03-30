@@ -4,7 +4,7 @@ export function DashboardSkeleton() {
   return (
     <div className="space-y-8">
       <section className="grid gap-5 xl:grid-cols-[1.6fr_1fr]">
-        <div className="surface-panel rounded-xl p-6 lg:p-8">
+        <div className="glass glass-border shadow-soft rounded-2xl p-6 lg:p-8">
           <div className="space-y-4">
             <Skeleton className="h-6 w-28 rounded-full" />
             <Skeleton className="h-10 w-3/4 rounded-xl" />
@@ -22,7 +22,7 @@ export function DashboardSkeleton() {
           </div>
         </div>
 
-        <div className="surface-panel rounded-xl p-6">
+        <div className="glass glass-border shadow-soft rounded-2xl p-6">
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, index) => (
               <div key={index} className="surface-muted rounded-xl p-4">
@@ -37,7 +37,7 @@ export function DashboardSkeleton() {
 
       <section className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-5">
-          <div className="surface-panel rounded-xl p-5">
+          <div className="glass glass-border shadow-soft rounded-2xl p-5">
             <Skeleton className="h-7 w-44 rounded-lg" />
             <div className="mt-4 space-y-3">
               {Array.from({ length: 3 }).map((_, index) => (
@@ -51,7 +51,7 @@ export function DashboardSkeleton() {
           </div>
         </div>
 
-        <div className="surface-panel rounded-xl p-5">
+        <div className="glass glass-border shadow-soft rounded-2xl p-5">
           <Skeleton className="h-7 w-36 rounded-lg" />
           <div className="mt-4 space-y-3">
             {Array.from({ length: 3 }).map((_, index) => (

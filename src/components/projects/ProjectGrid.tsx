@@ -129,7 +129,7 @@ function ProjectCard({
                 <DropdownMenuItem asChild>
                 <Link href={`/app/sessoes/${project.id}`}>
                   <FileText className="mr-2 h-4 w-4" />
-                  Abrir sessão
+                  Abrir trabalho
                 </Link>
               </DropdownMenuItem>
               {onEdit && (
@@ -270,7 +270,7 @@ function ProjectListItem({
             <DropdownMenuItem asChild>
                   <Link href={`/app/sessoes/${project.id}`}>
                     <FileText className="mr-2 h-4 w-4" />
-                    Abrir sessão
+                    Abrir trabalho
                   </Link>
                 </DropdownMenuItem>
             {onEdit && (
@@ -317,8 +317,8 @@ export function ProjectGrid({
     return (
        <EmptyState
          icon={FileText}
-         title="Nenhuma sessão encontrada"
-         description="Não tem sessões nesta categoria. Crie uma nova sessão para começar."
+         title="Nenhum trabalho encontrado"
+         description="Nao tem trabalhos nesta categoria. Crie um novo trabalho para comecar."
          className={cn("py-16", className)}
        />
     );

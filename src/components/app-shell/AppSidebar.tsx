@@ -41,7 +41,7 @@ export function AppSidebar({
                             appto
                         </p>
                         <p className="truncate text-xs text-sidebar-foreground/70">
-                            Workspace académico
+                            Gerador académico
                         </p>
                     </div>
                 </Link>
@@ -50,10 +50,10 @@ export function AppSidebar({
                     <Link
                         href="/app/sessoes?new=1"
                         onClick={onNavigate}
-                        aria-label="Nova sessão"
+                        aria-label="Novo trabalho"
                     >
                         <FilePlus2 className="h-4 w-4" />
-                        <span>Nova sessão</span>
+                        <span>Novo trabalho</span>
                     </Link>
                 </Button>
             </div>

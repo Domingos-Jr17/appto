@@ -60,10 +60,10 @@ export function buildArtifactSource(
 
   return {
     title: project.title,
-    subtitle: "Resumo inicial da sessão",
+    subtitle: "Resumo inicial do trabalho",
     content:
       project.description?.trim() ||
-      "Esta sessão ainda não tem documento em desenvolvimento. Comece pelo assistente ou seleccione uma secção para visualizar aqui.",
+      "Este trabalho ainda nao tem documento em desenvolvimento. Comece pelo briefing ou seleccione uma secao para visualizar aqui.",
     empty: !(project.description?.trim()),
     source: "project",
   };

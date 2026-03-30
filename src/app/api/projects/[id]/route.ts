@@ -1,10 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { ZodError } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { deleteStoredObject } from "@/lib/storage";
 import { normalizeStoredContent } from "@/lib/content";
 import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
+import { createProjectSchema, projectStatusSchema, projectTypeSchema } from "@/lib/validators";
+
+function serializeBrief(
+  brief:
+    | {
+        workType: string;
+        generationStatus: string;
+        institutionName: string | null;
+        courseName: string | null;
+        subjectName: string | null;
+        educationLevel: string | null;
+        advisorName: string | null;
+        studentName: string | null;
+        city: string | null;
+        academicYear: number | null;
+        dueDate: Date | null;
+        theme: string | null;
+        subtitle: string | null;
+        objective: string | null;
+        researchQuestion: string | null;
+        methodology: string | null;
+        keywords: string | null;
+        referencesSeed: string | null;
+        citationStyle: string;
+        language: string;
+        additionalInstructions: string | null;
+      }
+    | null
+) {
+  if (!brief) {
+    return null;
+  }
+
+  return {
+    ...brief,
+    dueDate: brief.dueDate?.toISOString() ?? null,
+  };
+}
 
 function serializeProject(project: {
   id: string;
@@ -24,6 +63,29 @@ function serializeProject(project: {
     parentId: string | null;
     updatedAt: Date;
   }[];
+  brief: {
+    workType: string;
+    generationStatus: string;
+    institutionName: string | null;
+    courseName: string | null;
+    subjectName: string | null;
+    educationLevel: string | null;
+    advisorName: string | null;
+    studentName: string | null;
+    city: string | null;
+    academicYear: number | null;
+    dueDate: Date | null;
+    theme: string | null;
+    subtitle: string | null;
+    objective: string | null;
+    researchQuestion: string | null;
+    methodology: string | null;
+    keywords: string | null;
+    referencesSeed: string | null;
+    citationStyle: string;
+    language: string;
+    additionalInstructions: string | null;
+  } | null;
 }) {
   const sections = project.sections.map((section) => ({
     ...section,
@@ -35,6 +97,7 @@ function serializeProject(project: {
   return {
     ...project,
     sections,
+    brief: serializeBrief(project.brief),
     resumeMode: getResumeMode(project, lastEditedSection),
     lastEditedSection,
     sectionSummary,
@@ -71,6 +134,7 @@ export async function GET(
           },
           orderBy: { order: "asc" },
         },
+        brief: true,
       },
     });
 
@@ -97,8 +161,15 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = await request.json();
-    const { title, description, status, type } = body;
+    const rawBody = (await request.json()) as Record<string, unknown>;
+    const title = typeof rawBody.title === "string" ? createProjectSchema.shape.title.parse(rawBody.title) : undefined;
+    const description = rawBody.description === undefined
+      ? undefined
+      : rawBody.description === null
+        ? null
+        : createProjectSchema.shape.description.parse(rawBody.description);
+    const status = typeof rawBody.status === "string" ? projectStatusSchema.parse(rawBody.status) : undefined;
+    const type = typeof rawBody.type === "string" ? projectTypeSchema.parse(rawBody.type) : undefined;
 
     const existingProject = await db.project.findFirst({
       where: { id, userId: session.user.id },
@@ -115,6 +186,14 @@ export async function PUT(
         ...(description !== undefined && { description }),
         ...(status && { status }),
         ...(type && { type }),
+        ...(type && {
+          brief: {
+            upsert: {
+              create: { workType: type },
+              update: { workType: type },
+            },
+          },
+        }),
       },
       include: {
         sections: {
@@ -129,11 +208,16 @@ export async function PUT(
           },
           orderBy: { order: "asc" },
         },
+        brief: true,
       },
     });
 
     return NextResponse.json(serializeProject(project));
   } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json({ error: "Payload inválido", details: error.flatten() }, { status: 400 });
+    }
+
     console.error("Update project error:", error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }

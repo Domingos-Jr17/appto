@@ -1,3 +1,5 @@
+import type { ProjectBrief } from "@/types/editor";
+
 export interface AppProjectRecord {
   id: string;
   title: string;
@@ -20,6 +22,7 @@ export interface AppProjectRecord {
     review: number;
     stale: number;
   };
+  brief?: ProjectBrief | null;
 }
 
 export interface CreditTransaction {

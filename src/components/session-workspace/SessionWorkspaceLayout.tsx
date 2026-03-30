@@ -16,8 +16,8 @@ export function SessionWorkspaceLayout({ chat, document }: SessionWorkspaceLayou
   return (
     <>
       <div className="hidden h-full lg:flex">
-        <div className="flex min-w-0 flex-1 flex-col border-l border-border/60 order-2">{document}</div>
-        <div className="flex min-w-0 flex-1 flex-col order-1">{chat}</div>
+        <div className="flex min-w-0 flex-[1.35] flex-col">{document}</div>
+        <div className="flex min-w-0 flex-[0.85] flex-col border-l border-border/60">{chat}</div>
       </div>
 
       <div className="flex h-full flex-col lg:hidden">

@@ -1,33 +1,27 @@
 "use client";
 
-import { Bot, Download, Loader2, Send, Wand2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Bot, Send, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { AI_ACTION_CREDIT_COSTS } from "@/lib/credits";
 import type { AssistantMessage } from "@/types/editor";
 
 interface ChatPaneProps {
   chatMessages: AssistantMessage[];
   chatPrompt: string;
   isChatLoading: boolean;
-  isSavingExport: "docx" | "pdf" | null;
   onChatPromptChange: (prompt: string) => void;
   onChatSubmit: () => void;
   onApplyContent: (content: string) => void;
-  onExport: (format: "docx") => void;
 }
 
 export function ChatPane({
   chatMessages,
   chatPrompt,
   isChatLoading,
-  isSavingExport,
   onChatPromptChange,
   onChatSubmit,
   onApplyContent,
-  onExport,
 }: ChatPaneProps) {
   return (
     <section className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
@@ -36,7 +30,7 @@ export function ChatPane({
           {chatMessages.length === 0 ? (
             <div className="flex min-h-full flex-1 flex-col items-center justify-center py-12 text-center">
               <p className="text-sm text-muted-foreground">
-                Escreva o que precisa. O assistente responde com conteúdo pronto a aplicar.
+                O trabalho ja foi gerado. Use este painel apenas para pedir ajustes, expandir ideias ou rever trechos.
               </p>
             </div>
           ) : (
@@ -86,7 +80,7 @@ export function ChatPane({
               <Textarea
                 value={chatPrompt}
                 onChange={(event) => onChatPromptChange(event.target.value)}
-                placeholder="Peça ajuda para estruturar, escrever ou rever..."
+                placeholder="Peça para melhorar uma secção, expandir um argumento ou reescrever um trecho..."
                 rows={2}
                 className="min-h-[88px] flex-1 resize-none rounded-2xl border-border/70 bg-background/40 px-4 py-3 text-sm shadow-none"
                 onKeyDown={(event) => {
@@ -104,25 +98,6 @@ export function ChatPane({
                 disabled={!chatPrompt.trim() || isChatLoading}
               >
                 <Send className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="mt-2 flex items-center justify-between">
-              <Badge variant="outline" className="rounded-full">
-                {AI_ACTION_CREDIT_COSTS.generate} créditos
-              </Badge>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full"
-                onClick={() => onExport("docx")}
-                disabled={isSavingExport !== null}
-              >
-                {isSavingExport ? (
-                  <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Download className="mr-1 h-3.5 w-3.5" />
-                )}
-                <span>DOCX</span>
               </Button>
             </div>
           </div>

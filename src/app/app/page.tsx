@@ -12,7 +12,7 @@ import type { AppProjectRecord } from "@/lib/app-data";
 import { calculateProjectProgress } from "@/lib/progress";
 import { buildDashboardSummary } from "@/lib/workspace-ui";
 
-const RESUME_COPY = "Abrir sessão";
+const RESUME_COPY = "Abrir trabalho";
 
 export default function WorkspaceHomePage() {
   const { data: session, status } = useSession();
@@ -30,7 +30,7 @@ export default function WorkspaceHomePage() {
     {
       label: "Em curso",
       value: summary.activeProjects.toLocaleString("pt-MZ"),
-      detail: "sessões activas",
+      detail: "trabalhos activos",
     },
     {
       label: "Palavras",
@@ -45,7 +45,7 @@ export default function WorkspaceHomePage() {
     {
       label: "Próximo passo",
       value: summary.nextAction,
-      detail: leadProject ? leadProject.title : "Primeira sessão",
+      detail: leadProject ? leadProject.title : "Primeiro trabalho",
       isText: true,
     },
   ];
@@ -56,17 +56,17 @@ export default function WorkspaceHomePage() {
         <CardContent className="flex flex-col gap-8 p-6 lg:p-8">
           <div className="max-w-2xl space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {leadProject ? "Retomar trabalho" : "Começar uma sessão"}
+              {leadProject ? "Retomar trabalho" : "Criar trabalho"}
             </p>
             <h2 className="text-3xl font-semibold tracking-tight text-foreground lg:text-4xl">
               {leadProject
                 ? `${firstName}, volte ao que estava em progresso.`
-                : `${firstName}, inicie a primeira sessão com um fluxo simples.`}
+                : `${firstName}, inicie o primeiro trabalho com um briefing academico simples.`}
             </h2>
             <p className="text-sm leading-6 text-muted-foreground">
               {leadProject
                 ? "O dashboard fica reduzido ao essencial: continuar a sessão principal, perceber o estado actual e abrir rapidamente o trabalho recente."
-                : "Crie a primeira sessão para abrir imediatamente o chat, a estrutura e o documento no mesmo fluxo de trabalho."}
+                : "Crie o primeiro trabalho, preencha o contexto academico e receba a capa, a estrutura e o conteudo inicial automaticamente."}
             </p>
           </div>
 
@@ -107,14 +107,14 @@ export default function WorkspaceHomePage() {
           ) : (
             <EmptyState
               icon={FolderKanban}
-              title="Ainda não há sessões"
-              description="Crie a primeira sessão e o workspace abre logo no ponto certo para começar a trabalhar."
+              title="Ainda não há trabalhos"
+              description="Crie o primeiro trabalho e a plataforma abre logo no ponto certo para gerar e revisar o conteudo."
               className="items-start text-left"
               action={
                 <Button asChild className="rounded-full px-5">
                   <Link href="/app/sessoes?new=1">
                     <Plus className="mr-2 h-4 w-4" />
-                    Criar primeira sessão
+                    Criar primeiro trabalho
                   </Link>
                 </Button>
               }
@@ -146,9 +146,9 @@ export default function WorkspaceHomePage() {
       <Card className=" glass glass-border rounded-2xl bg-background/80">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div>
-            <CardTitle className="text-lg">Sessões recentes</CardTitle>
+            <CardTitle className="text-lg">Trabalhos recentes</CardTitle>
 <p className="mt-1 text-sm text-muted-foreground">
-              Aceda directamente às sessões mais recentes para continuar o trabalho.
+              Aceda directamente aos trabalhos mais recentes para continuar a revisao final.
             </p>
           </div>
           <Button variant="ghost" size="sm" asChild className="rounded-full">
@@ -205,11 +205,11 @@ export default function WorkspaceHomePage() {
           ) : (
             <EmptyState
               icon={FolderKanban}
-              title="Sem sessões ainda"
-              description="O workspace fica mais útil quando há uma sessão para continuar."
+              title="Sem trabalhos ainda"
+              description="A aptto fica mais util quando existe um trabalho gerado para revisar."
               action={
                 <Button asChild className="rounded-full">
-                  <Link href="/app/sessoes?new=1">Criar primeira sessão</Link>
+                  <Link href="/app/sessoes?new=1">Criar primeiro trabalho</Link>
                 </Button>
               }
             />

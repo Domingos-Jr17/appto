@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { ZodError } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { createWorkSchema } from "@/lib/validators";
 import { createZAIChatCompletion, getFriendlyZAIErrorMessage } from "@/lib/zai";
+import type { WorkBriefInput } from "@/types/editor";
 
-const SYSTEM_PROMPT = `Você é um especialista em escrita académica para estudantes universitários moçambicanos.
+const SYSTEM_PROMPT = `Você é um especialista em escrita académica para estudantes moçambicanos.
 Gere conteúdo académico de alta qualidade em Português de Moçambique.
-Siga rigorosamente as normas ABNT.
-Seja preciso, formal e académico.
-Inclua referências bibliográficas relevantes quando apropriado.`;
+Siga a norma de citação pedida no briefing.
+Seja formal, estruturado e academicamente plausível.
+Nunca invente metadados da capa sem base no briefing.`;
 
 interface SectionTemplate {
   title: string;
@@ -25,14 +28,80 @@ interface GeneratedWorkContent {
   sections: GeneratedSection[];
 }
 
-const DEFAULT_SECTIONS: SectionTemplate[] = [
-  { title: "1. Introdução", order: 6 },
-  { title: "2. Revisão da Literatura", order: 7 },
-  { title: "3. Metodologia", order: 8 },
-  { title: "4. Resultados", order: 9 },
-  { title: "5. Discussão", order: 10 },
-  { title: "6. Conclusão", order: 11 },
-];
+const SECTION_TEMPLATES: Record<string, SectionTemplate[]> = {
+  MONOGRAPHY: [
+    { title: "1. Introdução", order: 3 },
+    { title: "2. Revisão da Literatura", order: 4 },
+    { title: "3. Metodologia", order: 5 },
+    { title: "4. Desenvolvimento", order: 6 },
+    { title: "5. Conclusão", order: 7 },
+  ],
+  DISSERTATION: [
+    { title: "1. Introdução", order: 3 },
+    { title: "2. Fundamentação Teórica", order: 4 },
+    { title: "3. Metodologia", order: 5 },
+    { title: "4. Análise e Discussão", order: 6 },
+    { title: "5. Conclusão", order: 7 },
+  ],
+  THESIS: [
+    { title: "1. Introdução", order: 3 },
+    { title: "2. Revisão da Literatura", order: 4 },
+    { title: "3. Metodologia", order: 5 },
+    { title: "4. Resultados", order: 6 },
+    { title: "5. Discussão", order: 7 },
+    { title: "6. Conclusão", order: 8 },
+  ],
+  ARTICLE: [
+    { title: "1. Introdução", order: 4 },
+    { title: "2. Metodologia", order: 5 },
+    { title: "3. Resultados e Discussão", order: 6 },
+    { title: "4. Conclusão", order: 7 },
+  ],
+  ESSAY: [
+    { title: "1. Introdução", order: 3 },
+    { title: "2. Desenvolvimento", order: 4 },
+    { title: "3. Conclusão", order: 5 },
+  ],
+  REPORT: [
+    { title: "1. Introdução", order: 3 },
+    { title: "2. Enquadramento", order: 4 },
+    { title: "3. Desenvolvimento", order: 5 },
+    { title: "4. Resultados", order: 6 },
+    { title: "5. Conclusão", order: 7 },
+  ],
+  SCHOOL_WORK: [
+    { title: "1. Introdução", order: 3 },
+    { title: "2. Desenvolvimento", order: 4 },
+    { title: "3. Conclusão", order: 5 },
+  ],
+  RESEARCH_PROJECT: [
+    { title: "1. Introdução", order: 3 },
+    { title: "2. Revisão da Literatura", order: 4 },
+    { title: "3. Metodologia", order: 5 },
+    { title: "4. Resultados", order: 6 },
+    { title: "5. Conclusão", order: 7 },
+  ],
+  INTERNSHIP_REPORT: [
+    { title: "1. Introdução", order: 3 },
+    { title: "2. Contexto do Estágio", order: 4 },
+    { title: "3. Actividades Desenvolvidas", order: 5 },
+    { title: "4. Resultados e Aprendizagens", order: 6 },
+    { title: "5. Conclusão", order: 7 },
+  ],
+  PRACTICAL_WORK: [
+    { title: "1. Introdução", order: 3 },
+    { title: "2. Procedimentos", order: 4 },
+    { title: "3. Resultados", order: 5 },
+    { title: "4. Conclusão", order: 6 },
+  ],
+  TCC: [
+    { title: "1. Introdução", order: 3 },
+    { title: "2. Fundamentação Teórica", order: 4 },
+    { title: "3. Metodologia", order: 5 },
+    { title: "4. Desenvolvimento", order: 6 },
+    { title: "5. Conclusão", order: 7 },
+  ],
+};
 
 function extractJSONObject(rawContent: string) {
   const trimmed = rawContent.trim();
@@ -42,13 +111,13 @@ function extractJSONObject(rawContent: string) {
   const lastBrace = candidate.lastIndexOf("}");
 
   if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
-    throw new Error("A IA não devolveu JSON válido para o trabalho completo.");
+    throw new Error("A IA não devolveu JSON válido para o trabalho.");
   }
 
   return candidate.slice(firstBrace, lastBrace + 1);
 }
 
-function parseGeneratedWorkContent(rawContent: string) {
+function parseGeneratedWorkContent(rawContent: string, templates: SectionTemplate[]) {
   const parsed = JSON.parse(extractJSONObject(rawContent)) as Partial<GeneratedWorkContent>;
 
   if (!parsed.abstract || typeof parsed.abstract !== "string") {
@@ -63,26 +132,19 @@ function parseGeneratedWorkContent(rawContent: string) {
     parsed.sections
       .filter(
         (section): section is GeneratedSection =>
-          Boolean(
-            section &&
-              typeof section.title === "string" &&
-              typeof section.content === "string"
-          )
+          Boolean(section && typeof section.title === "string" && typeof section.content === "string")
       )
       .map((section) => [section.title.trim(), section.content.trim()])
   );
 
-  const sections = DEFAULT_SECTIONS.map((section) => {
+  const sections = templates.map((section) => {
     const content = sectionsByTitle.get(section.title);
 
     if (!content) {
       throw new Error(`A IA não devolveu conteúdo para a secção "${section.title}".`);
     }
 
-    return {
-      title: section.title,
-      content,
-    };
+    return { title: section.title, content };
   });
 
   return {
@@ -91,35 +153,67 @@ function parseGeneratedWorkContent(rawContent: string) {
   };
 }
 
-async function generateCompleteWorkContent(title: string, type: string, author: string) {
-  const orderedTitles = DEFAULT_SECTIONS.map((section) => section.title).join(", ");
-  const prompt = `Gere um trabalho académico completo sobre "${title}".
+function getSectionTemplates(type: string) {
+  return SECTION_TEMPLATES[type] || SECTION_TEMPLATES.MONOGRAPHY;
+}
+
+function buildBriefContext(brief: WorkBriefInput) {
+  return [
+    ["Instituição", brief.institutionName],
+    ["Curso", brief.courseName],
+    ["Disciplina", brief.subjectName],
+    ["Nível académico", brief.educationLevel],
+    ["Professor/Orientador", brief.advisorName],
+    ["Estudante", brief.studentName],
+    ["Cidade", brief.city],
+    ["Ano académico", brief.academicYear?.toString()],
+    ["Prazo", brief.dueDate],
+    ["Tema", brief.theme],
+    ["Subtítulo", brief.subtitle],
+    ["Objetivo", brief.objective],
+    ["Pergunta de investigação", brief.researchQuestion],
+    ["Metodologia", brief.methodology],
+    ["Palavras-chave", brief.keywords],
+    ["Referências iniciais", brief.referencesSeed],
+    ["Norma de citação", brief.citationStyle],
+    ["Idioma", brief.language],
+    ["Instruções adicionais", brief.additionalInstructions],
+  ]
+    .filter(([, value]) => Boolean(value))
+    .map(([label, value]) => `- ${label}: ${value}`)
+    .join("\n");
+}
+
+async function generateCompleteWorkContent(
+  title: string,
+  type: string,
+  brief: WorkBriefInput,
+  templates: SectionTemplate[]
+) {
+  const orderedTitles = templates.map((section) => section.title).join(", ");
+  const prompt = `Gere um trabalho académico sobre "${title}".
 
 Tipo de trabalho: ${formatProjectType(type)}
-Autor: ${author}
+Contexto do briefing:
+${buildBriefContext(brief)}
 
-Responda exclusivamente com JSON válido, sem markdown, sem comentários, sem texto antes ou depois.
+Responda exclusivamente com JSON válido, sem markdown.
 
 Use exactamente este formato:
 {
   "abstract": "resumo académico",
   "sections": [
-    { "title": "1. Introdução", "content": "..." },
-    { "title": "2. Revisão da Literatura", "content": "..." },
-    { "title": "3. Metodologia", "content": "..." },
-    { "title": "4. Resultados", "content": "..." },
-    { "title": "5. Discussão", "content": "..." },
-    { "title": "6. Conclusão", "content": "..." }
+    ${templates.map((section) => `{ "title": "${section.title}", "content": "..." }`).join(",\n    ")}
   ]
 }
 
 Requisitos obrigatórios:
 - Mantenha exactamente estes títulos e esta ordem: ${orderedTitles}
-- "abstract" deve ter entre 150 e 220 palavras
-- Cada secção deve ter entre 220 e 320 palavras
+- O resumo deve ter entre 140 e 220 palavras
+- Cada secção deve ter entre 220 e 380 palavras
 - Use Português académico de Moçambique
-- Siga normas ABNT
-- Use linguagem formal, precisa e académica
+- Respeite a norma ${brief.citationStyle || "ABNT"}
+- Use os dados do briefing para tornar o conteúdo específico e plausível
 - Não deixe nenhuma secção vazia
 - Produza JSON estritamente válido`;
 
@@ -130,7 +224,7 @@ Requisitos obrigatórios:
       { role: "user", content: prompt },
     ],
     thinking: { type: "disabled" },
-    max_tokens: 7000,
+    max_tokens: 8000,
   });
 
   const rawContent = completion.choices[0]?.message?.content || "";
@@ -139,10 +233,67 @@ Requisitos obrigatórios:
     throw new Error("A IA não devolveu conteúdo para o trabalho completo.");
   }
 
-  return parseGeneratedWorkContent(rawContent);
+  return parseGeneratedWorkContent(rawContent, templates);
 }
 
-// POST /api/generate/work - Generate complete academic work
+function generateCover(title: string, type: string, brief: WorkBriefInput) {
+  const kind = formatProjectType(type).toUpperCase();
+  const institution = brief.institutionName || "INSTITUIÇÃO DE ENSINO";
+  const student = brief.studentName || "Nome do estudante";
+  const advisor = brief.advisorName ? `Orientador: ${brief.advisorName}` : null;
+  const city = brief.city || "Cidade";
+  const year = brief.academicYear || new Date().getFullYear();
+  const subtitle = brief.subtitle ? `\n${brief.subtitle}` : "";
+
+  return [
+    institution,
+    brief.courseName || null,
+    brief.subjectName || null,
+    "",
+    kind,
+    "",
+    `${title.toUpperCase()}${subtitle ? subtitle.toUpperCase() : ""}`,
+    "",
+    `Autor: ${student}`,
+    advisor,
+    "",
+    `${city}`,
+    `${year}`,
+  ]
+    .filter((line) => line !== null)
+    .join("\n")
+    .trim();
+}
+
+function serializeBrief(brief: {
+  workType: string;
+  generationStatus: string;
+  institutionName: string | null;
+  courseName: string | null;
+  subjectName: string | null;
+  educationLevel: string | null;
+  advisorName: string | null;
+  studentName: string | null;
+  city: string | null;
+  academicYear: number | null;
+  dueDate: Date | null;
+  theme: string | null;
+  subtitle: string | null;
+  objective: string | null;
+  researchQuestion: string | null;
+  methodology: string | null;
+  keywords: string | null;
+  referencesSeed: string | null;
+  citationStyle: string;
+  language: string;
+  additionalInstructions: string | null;
+}) {
+  return {
+    ...brief,
+    dueDate: brief.dueDate?.toISOString() ?? null,
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -151,20 +302,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const {
-      title,
-      type = "MONOGRAPHY",
-      description,
-      generateContent = true,
-    } = body;
-
-    if (!title) {
-      return NextResponse.json(
-        { error: "Título é obrigatório" },
-        { status: 400 }
-      );
-    }
+    const body = createWorkSchema.parse(await request.json());
+    const { title, type, description, generateContent, brief } = body;
+    const templates = getSectionTemplates(type);
 
     let shouldGenerateContent = Boolean(generateContent);
     let fallbackWarning: string | null = null;
@@ -173,35 +313,22 @@ export async function POST(request: NextRequest) {
 
     if (shouldGenerateContent) {
       try {
-        const generatedContent = await generateCompleteWorkContent(
-          title,
-          type,
-          session.user.name || "Estudante"
-        );
-
+        const generatedContent = await generateCompleteWorkContent(title, type, brief, templates);
         for (const section of generatedContent.sections) {
           sectionContents.set(section.title, section.content);
         }
-
         abstractContent = generatedContent.abstract;
       } catch (error) {
-        console.warn(
-          "ZAI unavailable for project generation, falling back to structure-only mode:",
-          error
-        );
         shouldGenerateContent = false;
-        fallbackWarning =
-          `Estrutura do trabalho criada com sucesso. ${getFriendlyZAIErrorMessage(error)}`;
+        fallbackWarning = `Estrutura do trabalho criada com sucesso. ${getFriendlyZAIErrorMessage(error)}`;
       }
     }
 
     const baseCost = 20;
-    const contentCost = shouldGenerateContent ? DEFAULT_SECTIONS.length * 15 : 0;
+    const contentCost = shouldGenerateContent ? templates.length * 15 : 0;
     const totalCost = baseCost + contentCost;
 
-    const userCredits = await db.credit.findUnique({
-      where: { userId: session.user.id },
-    });
+    const userCredits = await db.credit.findUnique({ where: { userId: session.user.id } });
 
     if (!userCredits || userCredits.balance < totalCost) {
       return NextResponse.json(
@@ -216,19 +343,40 @@ export async function POST(request: NextRequest) {
           title,
           description,
           type,
+          educationLevel: brief.educationLevel,
           userId: session.user.id,
           status: "IN_PROGRESS",
+          brief: {
+            create: {
+              workType: type,
+              generationStatus: shouldGenerateContent ? "READY" : "BRIEFING",
+              institutionName: brief.institutionName,
+              courseName: brief.courseName,
+              subjectName: brief.subjectName,
+              advisorName: brief.advisorName,
+              studentName: brief.studentName,
+              city: brief.city,
+              academicYear: brief.academicYear,
+              dueDate: brief.dueDate ? new Date(brief.dueDate) : undefined,
+              theme: brief.theme || title,
+              subtitle: brief.subtitle,
+              objective: brief.objective,
+              researchQuestion: brief.researchQuestion,
+              methodology: brief.methodology,
+              keywords: brief.keywords,
+              referencesSeed: brief.referencesSeed,
+              citationStyle: brief.citationStyle,
+              language: brief.language,
+              additionalInstructions: brief.additionalInstructions,
+            },
+          },
         },
       });
 
       const staticSections = [
-        { title: "Capa", order: 1, content: generateCover(title, session.user.name || "Autor", type) },
-        { title: "Resumo", order: 2 },
-        { title: "Abstract", order: 3 },
-        { title: "Agradecimentos", order: 4 },
-        { title: "Índice", order: 5 },
-        { title: "Referências", order: 12 },
-        { title: "Anexos", order: 13 },
+        { title: "Capa", order: 1, content: generateCover(title, type, brief) },
+        { title: "Resumo", order: 2, content: abstractContent },
+        { title: "Referências", order: templates.length + 3, content: brief.referencesSeed || "" },
       ];
 
       for (const section of staticSections) {
@@ -237,28 +385,19 @@ export async function POST(request: NextRequest) {
             projectId: project.id,
             title: section.title,
             order: section.order,
-            content: section.content || "",
+            content: section.content,
           },
         });
       }
 
-      for (const section of DEFAULT_SECTIONS) {
+      for (const section of templates) {
         await tx.documentSection.create({
           data: {
             projectId: project.id,
             title: section.title,
             order: section.order,
-            content: shouldGenerateContent
-              ? sectionContents.get(section.title) || ""
-              : "",
+            content: shouldGenerateContent ? sectionContents.get(section.title) || "" : "",
           },
-        });
-      }
-
-      if (shouldGenerateContent && abstractContent) {
-        await tx.documentSection.updateMany({
-          where: { projectId: project.id, title: "Resumo" },
-          data: { content: abstractContent },
         });
       }
 
@@ -278,7 +417,7 @@ export async function POST(request: NextRequest) {
           description: `Geração de trabalho: ${title}`,
           metadata: JSON.stringify({
             projectId: project.id,
-            type: shouldGenerateContent ? "complete" : "structure",
+            generationStatus: shouldGenerateContent ? "READY" : "BRIEFING",
           }),
         },
       });
@@ -289,58 +428,75 @@ export async function POST(request: NextRequest) {
     const completeProject = await db.project.findUnique({
       where: { id: result.id },
       include: {
-        sections: {
-          orderBy: { order: "asc" },
-        },
+        sections: { orderBy: { order: "asc" } },
+        brief: true,
       },
     });
 
     return NextResponse.json({
       success: true,
-      project: completeProject,
+      project: completeProject
+        ? {
+            ...completeProject,
+            brief: completeProject.brief ? serializeBrief(completeProject.brief) : null,
+          }
+        : completeProject,
       creditsUsed: totalCost,
       message: shouldGenerateContent
-        ? "Trabalho completo gerado com sucesso!"
-        : fallbackWarning || "Estrutura do trabalho criada com sucesso!",
+        ? "Trabalho gerado com sucesso."
+        : fallbackWarning || "Briefing guardado e estrutura criada com sucesso.",
       contentGenerated: shouldGenerateContent,
     });
   } catch (error) {
-    console.error("Generate work error:", error);
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { error: "Payload inválido", details: error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const isNetworkError =
+      error instanceof Error &&
+      (error.message.includes("fetch failed") ||
+        error.message.includes("ETIMEDOUT") ||
+        error.message.includes("ECONNREFUSED") ||
+        error.message.includes("timeout") ||
+        error.message.includes("network") ||
+        error.message.includes("connection"));
+
     const message =
       process.env.NODE_ENV === "production"
-        ? "Erro ao gerar trabalho"
+        ? isNetworkError
+          ? "Servidor de IA não está acessível. Verifique a conectividade de rede."
+          : "Erro ao gerar trabalho"
         : error instanceof Error
           ? error.message
           : "Erro ao gerar trabalho";
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+
+    console.error("[Work Generation Error]", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      isNetworkError,
+    });
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-}
-
-function generateCover(title: string, author: string, type: string): string {
-  const year = new Date().getFullYear();
-  return `
-UNIVERSIDADE
-
-${type === "MONOGRAPHY" ? "MONOGRAFIA" : type === "DISSERTATION" ? "DISSERTAÇÃO" : type === "THESIS" ? "TESE" : "TRABALHO ACADÉMICO"}
-
-${title.toUpperCase()}
-
-Autor: ${author}
-Ano: ${year}
-`.trim();
 }
 
 function formatProjectType(type: string): string {
   const types: Record<string, string> = {
     MONOGRAPHY: "Monografia",
-    DISSERTATION: "Dissertação de Mestrado",
-    THESIS: "Tese de Doutoramento",
+    DISSERTATION: "Dissertação",
+    THESIS: "Tese",
     ARTICLE: "Artigo Científico",
     ESSAY: "Ensaio",
     REPORT: "Relatório",
+    SCHOOL_WORK: "Trabalho Escolar",
+    RESEARCH_PROJECT: "Trabalho de Pesquisa",
+    INTERNSHIP_REPORT: "Relatório de Estágio",
+    PRACTICAL_WORK: "Trabalho Prático",
+    TCC: "Trabalho de Conclusão de Curso",
   };
+
   return types[type] || "Trabalho Académico";
 }

@@ -45,8 +45,6 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
   const createSection = useProjectStore((state) => state.createSection);
   const updateSectionTree = useProjectStore((state) => state.updateSectionTree);
   const setCredits = useProjectStore((state) => state.setCredits);
-  const exportDocument = useProjectStore((state) => state.exportDocument);
-  const isSavingExport = useProjectStore((state) => state.isSavingExport);
 
   const activeSectionId = useEditorStore((state) => state.activeSectionId);
   const sectionTitle = useEditorStore((state) => state.sectionTitle);
@@ -168,14 +166,6 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
     [activeSectionId, projectId, updateContent, updateSectionTree]
   );
 
-  const handleExport = useCallback(() => {
-    try {
-      exportDocument(projectId, "docx");
-    } catch {
-      toast({ title: "Erro", description: "Não foi possível exportar o documento.", variant: "destructive" });
-    }
-  }, [exportDocument, projectId, toast]);
-
   if (isLoading || activeProjectStoreId !== projectId || (project && project.id !== projectId)) {
     return <WorkspaceLoadingSkeleton />;
   }
@@ -187,11 +177,11 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
           <CardContent className="p-10">
             <EmptyState
               icon={FolderTree}
-              title="Sessão não encontrada"
-              description="Não foi possível abrir esta sessão. Volte à biblioteca e tente novamente."
+              title="Trabalho não encontrado"
+              description="Nao foi possivel abrir este trabalho. Volte a biblioteca e tente novamente."
               action={
                 <Button asChild className="rounded-full">
-                  <Link href="/app/sessoes">Ver sessões</Link>
+                  <Link href="/app/sessoes">Ver trabalhos</Link>
                 </Button>
               }
             />
@@ -210,11 +200,9 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
               chatMessages={chatMessages}
               chatPrompt={chatPrompt}
               isChatLoading={isChatLoading}
-              isSavingExport={isSavingExport}
               onChatPromptChange={setChatPrompt}
               onChatSubmit={handleChatSubmit}
               onApplyContent={handleApplyContent}
-              onExport={handleExport}
             />
           </SessionWorkspaceErrorBoundary>
         }

@@ -1,10 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { ZodError } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
 import { DEFAULT_PROJECT_SECTIONS } from "@/lib/project-templates";
 import { CREDIT_DEFAULTS } from "@/lib/credits";
+import { createProjectSchema } from "@/lib/validators";
+
+function serializeBrief(
+  brief:
+    | {
+        workType: string;
+        generationStatus: string;
+        institutionName: string | null;
+        courseName: string | null;
+        subjectName: string | null;
+        educationLevel: string | null;
+        advisorName: string | null;
+        studentName: string | null;
+        city: string | null;
+        academicYear: number | null;
+        dueDate: Date | null;
+        theme: string | null;
+        subtitle: string | null;
+        objective: string | null;
+        researchQuestion: string | null;
+        methodology: string | null;
+        keywords: string | null;
+        referencesSeed: string | null;
+        citationStyle: string;
+        language: string;
+        additionalInstructions: string | null;
+      }
+    | null
+) {
+  if (!brief) {
+    return null;
+  }
+
+  return {
+    ...brief,
+    dueDate: brief.dueDate?.toISOString() ?? null,
+  };
+}
 
 function serializeProject(project: {
   id: string;
@@ -23,12 +62,36 @@ function serializeProject(project: {
     wordCount: number;
     updatedAt: Date;
   }[];
+  brief: {
+    workType: string;
+    generationStatus: string;
+    institutionName: string | null;
+    courseName: string | null;
+    subjectName: string | null;
+    educationLevel: string | null;
+    advisorName: string | null;
+    studentName: string | null;
+    city: string | null;
+    academicYear: number | null;
+    dueDate: Date | null;
+    theme: string | null;
+    subtitle: string | null;
+    objective: string | null;
+    researchQuestion: string | null;
+    methodology: string | null;
+    keywords: string | null;
+    referencesSeed: string | null;
+    citationStyle: string;
+    language: string;
+    additionalInstructions: string | null;
+  } | null;
 }) {
   const lastEditedSection = getLastEditedSection(project.sections);
   const sectionSummary = getSectionSummary(project.sections);
 
   return {
     ...project,
+    brief: serializeBrief(project.brief),
     resumeMode: getResumeMode(project, lastEditedSection),
     lastEditedSection,
     sectionSummary,
@@ -84,6 +147,7 @@ export async function GET(request: NextRequest) {
           },
           orderBy: { order: "asc" },
         },
+        brief: true,
         _count: {
           select: { sections: true },
         },
@@ -112,15 +176,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = createProjectSchema.parse(await request.json());
     const { title, description, type = "MONOGRAPHY" } = body;
-
-    if (!title) {
-      return NextResponse.json(
-        { error: "Título é obrigatório" },
-        { status: 400 }
-      );
-    }
 
     // Check user credits
     const userCredits = await db.credit.findUnique({
@@ -180,23 +237,28 @@ export async function POST(request: NextRequest) {
     // Fetch the complete project with sections
     const completeProject = await db.project.findUnique({
       where: { id: project.id },
-      include: {
-        sections: {
-          select: {
+        include: {
+          sections: {
+            select: {
             id: true,
             title: true,
             parentId: true,
             order: true,
             wordCount: true,
             updatedAt: true,
+            },
+            orderBy: { order: "asc" },
           },
-          orderBy: { order: "asc" },
+          brief: true,
         },
-      },
-    });
+      });
 
     return NextResponse.json(completeProject ? serializeProject(completeProject) : completeProject, { status: 201 });
   } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json({ error: "Payload inválido", details: error.flatten() }, { status: 400 });
+    }
+
     console.error("Create project error:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },

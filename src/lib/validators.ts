@@ -56,6 +56,46 @@ export const createProjectSchema = z.object({
   type: projectTypeSchema.default("MONOGRAPHY"),
 });
 
+export const citationStyleSchema = z.enum(["ABNT", "APA", "Vancouver"]);
+
+export const workGenerationStatusSchema = z.enum([
+  "BRIEFING",
+  "GENERATING",
+  "READY",
+  "NEEDS_REVIEW",
+  "FAILED",
+]);
+
+export const workBriefSchema = z.object({
+  institutionName: z.string().trim().max(180).optional(),
+  courseName: z.string().trim().max(180).optional(),
+  subjectName: z.string().trim().max(180).optional(),
+  educationLevel: z.enum(["SECONDARY", "TECHNICAL", "HIGHER_EDUCATION"]).optional(),
+  advisorName: z.string().trim().max(180).optional(),
+  studentName: z.string().trim().max(180).optional(),
+  city: z.string().trim().max(120).optional(),
+  academicYear: z.number().int().min(2000).max(2100).optional(),
+  dueDate: z.string().date().optional(),
+  theme: z.string().trim().max(240).optional(),
+  subtitle: z.string().trim().max(240).optional(),
+  objective: z.string().trim().max(5000).optional(),
+  researchQuestion: z.string().trim().max(5000).optional(),
+  methodology: z.string().trim().max(5000).optional(),
+  keywords: z.string().trim().max(500).optional(),
+  referencesSeed: z.string().trim().max(10000).optional(),
+  citationStyle: citationStyleSchema.default("ABNT"),
+  language: z.string().trim().min(2).max(20).default("pt-MZ"),
+  additionalInstructions: z.string().trim().max(10000).optional(),
+});
+
+export const createWorkSchema = z.object({
+  title: z.string().trim().min(1).max(180),
+  description: z.string().trim().max(5000).optional(),
+  type: projectTypeSchema.default("MONOGRAPHY"),
+  brief: workBriefSchema.default({ language: "pt-MZ", citationStyle: "ABNT" }),
+  generateContent: z.boolean().default(true),
+});
+
 
 
 export const createDocumentSchema = z.object({

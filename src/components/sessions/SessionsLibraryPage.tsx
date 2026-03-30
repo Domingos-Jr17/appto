@@ -63,17 +63,82 @@ const SESSION_TYPES = [
 ];
 
 const sessionTypeLabels: Record<string, Project["type"]> = {
-  SCHOOL_WORK: "monografia",
-  RESEARCH_PROJECT: "monografia",
+  SCHOOL_WORK: "trabalho escolar",
+  RESEARCH_PROJECT: "trabalho de pesquisa",
   INTERNSHIP_REPORT: "relatório",
-  PRACTICAL_WORK: "relatório",
-  TCC: "monografia",
+  PRACTICAL_WORK: "trabalho prático",
+  TCC: "tcc",
   MONOGRAPHY: "monografia",
   DISSERTATION: "dissertação",
   THESIS: "tese",
   ARTICLE: "artigo",
   ESSAY: "ensaio",
   REPORT: "relatório",
+};
+
+const BRIEF_STEPS = [
+  "Tipo e tema",
+  "Contexto académico",
+  "Capa e autoria",
+  "Geração",
+] as const;
+
+type WorkFormState = {
+  title: string;
+  type: string;
+  description: string;
+  institutionName: string;
+  courseName: string;
+  subjectName: string;
+  educationLevel: "SECONDARY" | "TECHNICAL" | "HIGHER_EDUCATION";
+  advisorName: string;
+  studentName: string;
+  city: string;
+  academicYear: string;
+  dueDate: string;
+  objective: string;
+  researchQuestion: string;
+  methodology: string;
+  citationStyle: "ABNT" | "APA" | "Vancouver";
+  referencesSeed: string;
+  additionalInstructions: string;
+  generateContent: boolean;
+};
+
+const INITIAL_WORK_FORM: WorkFormState = {
+  title: "",
+  type: "MONOGRAPHY",
+  description: "",
+  institutionName: "",
+  courseName: "",
+  subjectName: "",
+  educationLevel: "HIGHER_EDUCATION",
+  advisorName: "",
+  studentName: "",
+  city: "",
+  academicYear: new Date().getFullYear().toString(),
+  dueDate: "",
+  objective: "",
+  researchQuestion: "",
+  methodology: "",
+  citationStyle: "ABNT",
+  referencesSeed: "",
+  additionalInstructions: "",
+  generateContent: true,
+};
+
+const GENERATED_SECTION_COUNTS: Record<string, number> = {
+  MONOGRAPHY: 5,
+  DISSERTATION: 5,
+  THESIS: 6,
+  ARTICLE: 4,
+  ESSAY: 3,
+  REPORT: 5,
+  SCHOOL_WORK: 3,
+  RESEARCH_PROJECT: 5,
+  INTERNSHIP_REPORT: 5,
+  PRACTICAL_WORK: 4,
+  TCC: 5,
 };
 
 export function SessionsLibraryPage() {
@@ -86,10 +151,8 @@ export function SessionsLibraryPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [sortBy, setSortBy] = useState<SortOption>("updated");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newType, setNewType] = useState("MONOGRAPHY");
-  const [newDescription, setNewDescription] = useState("");
-  const [generateContent, setGenerateContent] = useState(true);
+  const [briefStep, setBriefStep] = useState(0);
+  const [workForm, setWorkForm] = useState({ ...INITIAL_WORK_FORM });
   const [isCreating, setIsCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [openedFromUrl, setOpenedFromUrl] = useState(false);
@@ -118,7 +181,23 @@ export function SessionsLibraryPage() {
 
     if (!open) {
       setOpenedFromUrl(false);
+      setBriefStep(0);
+      setWorkForm({ ...INITIAL_WORK_FORM });
     }
+  };
+
+  const updateWorkForm = <K extends keyof WorkFormState>(key: K, value: WorkFormState[K]) => {
+    setWorkForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const moveBriefStep = (direction: "next" | "previous") => {
+    setBriefStep((current) => {
+      if (direction === "previous") {
+        return Math.max(0, current - 1);
+      }
+
+      return Math.min(BRIEF_STEPS.length - 1, current + 1);
+    });
   };
 
   const sessions = React.useMemo<Project[]>(
@@ -127,8 +206,8 @@ export function SessionsLibraryPage() {
         id: session.id,
         title: session.title,
         type: sessionTypeLabels[session.type] || "monografia",
-        course: session.description || "Sem descrição",
-        institution: "aptto",
+        course: session.brief?.courseName || session.description || "Sem curso definido",
+        institution: session.brief?.institutionName || "Sem instituição definida",
         progress: calculateProjectProgress(session),
         status: mapStatus(session.status),
         lastUpdated: formatRelativeTime(new Date(session.updatedAt)),
@@ -138,10 +217,10 @@ export function SessionsLibraryPage() {
   );
 
   const handleCreateSession = async () => {
-    if (!newTitle.trim()) {
+    if (!workForm.title.trim()) {
       toast({
-        title: "Título obrigatório",
-        description: "Por favor, insira um título para a sessão.",
+        title: "Tema obrigatório",
+        description: "Por favor, indique o tema ou título do trabalho.",
         variant: "destructive",
       });
       return;
@@ -154,27 +233,46 @@ export function SessionsLibraryPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: newTitle,
-          type: newType,
-          description: newDescription,
-          generateContent,
+          title: workForm.title,
+          type: workForm.type,
+          description: workForm.description,
+          generateContent: workForm.generateContent,
+          brief: {
+            institutionName: workForm.institutionName || undefined,
+            courseName: workForm.courseName || undefined,
+            subjectName: workForm.subjectName || undefined,
+            educationLevel: workForm.educationLevel,
+            advisorName: workForm.advisorName || undefined,
+            studentName: workForm.studentName || undefined,
+            city: workForm.city || undefined,
+            academicYear: Number.parseInt(workForm.academicYear, 10) || undefined,
+            dueDate: workForm.dueDate || undefined,
+            theme: workForm.title,
+            objective: workForm.objective || undefined,
+            researchQuestion: workForm.researchQuestion || undefined,
+            methodology: workForm.methodology || undefined,
+            citationStyle: workForm.citationStyle,
+            referencesSeed: workForm.referencesSeed || undefined,
+            additionalInstructions: workForm.additionalInstructions || undefined,
+            language: "pt-MZ",
+          },
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao criar a sessão");
+        throw new Error(data.error || "Erro ao criar o trabalho");
       }
 
       toast({
-        title: "Sessão criada",
+        title: "Trabalho criado",
         description: data.message,
       });
 
       setDialogOpen(false);
-      setNewTitle("");
-      setNewDescription("");
+      setBriefStep(0);
+      setWorkForm({ ...INITIAL_WORK_FORM });
       router.push(`/app/sessoes/${data.project.id}`);
     } catch (error: any) {
       toast({
@@ -198,19 +296,19 @@ export function SessionsLibraryPage() {
       const response = await fetch(`/api/projects/${deleteTarget}`, { method: "DELETE" });
 
       if (!response.ok) {
-        throw new Error("Erro ao eliminar a sessão");
+        throw new Error("Erro ao eliminar o trabalho");
       }
 
       toast({
-        title: "Sessão eliminada",
-        description: "A sessão foi eliminada com sucesso",
+        title: "Trabalho eliminado",
+        description: "O trabalho foi eliminado com sucesso",
       });
 
       await refresh();
     } catch {
       toast({
         title: "Erro",
-        description: "Não foi possível eliminar a sessão",
+        description: "Não foi possível eliminar o trabalho",
         variant: "destructive",
       });
     } finally {
@@ -230,18 +328,18 @@ export function SessionsLibraryPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Erro ao arquivar a sessão");
+        throw new Error("Erro ao arquivar o trabalho");
       }
 
       toast({
-        title: newStatus === "ARCHIVED" ? "Sessão arquivada" : "Sessão restaurada",
+        title: newStatus === "ARCHIVED" ? "Trabalho arquivado" : "Trabalho restaurado",
       });
 
       await refresh();
     } catch {
       toast({
         title: "Erro",
-        description: "Não foi possível actualizar a sessão",
+        description: "Não foi possível actualizar o trabalho",
         variant: "destructive",
       });
     }
@@ -249,7 +347,7 @@ export function SessionsLibraryPage() {
 
   const calculateCost = () => {
     const baseCost = 20;
-    const contentCost = generateContent ? 6 * 15 : 0;
+    const contentCost = workForm.generateContent ? (GENERATED_SECTION_COUNTS[workForm.type] || 5) * 15 : 0;
     return baseCost + contentCost;
   };
 
@@ -309,103 +407,298 @@ export function SessionsLibraryPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              Criar nova sessão
+              Criar novo trabalho
             </DialogTitle>
             <DialogDescription>
-              Abra uma sessão de trabalho com chat, estrutura e documento prontos para evoluir no mesmo fluxo.
+              Preencha o briefing académico. A aptto gera a capa, a estrutura e o conteúdo inicial automaticamente.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Título da Sessão *</Label>
-              <Input
-                id="title"
-                placeholder="Ex.: Impacto das Tecnologias no Ensino Superior"
-                value={newTitle}
-                onChange={(event) => setNewTitle(event.target.value)}
-              />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              {BRIEF_STEPS.map((step, index) => (
+                <React.Fragment key={step}>
+                  <div className={index === briefStep ? "font-semibold text-foreground" : undefined}>
+                    {index + 1}. {step}
+                  </div>
+                  {index < BRIEF_STEPS.length - 1 ? <span>·</span> : null}
+                </React.Fragment>
+              ))}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="type">Tipo de Saída</Label>
-              <Select value={newType} onValueChange={setNewType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SESSION_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição (opcional)</Label>
-              <Textarea
-                id="description"
-                placeholder="Brief, contexto ou objectivo desta sessão..."
-                value={newDescription}
-                onChange={(event) => setNewDescription(event.target.value)}
-                rows={3}
-              />
-            </div>
-
-            <div className="glass glass-border flex items-center justify-between rounded-xl p-4">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <Label className="text-base font-medium">Gerar conteúdo com IA</Label>
+            {briefStep === 0 ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="type">Tipo de trabalho</Label>
+                  <Select value={workForm.type} onValueChange={(value) => updateWorkForm("type", value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SESSION_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Gera automaticamente introdução, revisão de literatura, metodologia e secções base.
-                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="title">Tema ou título *</Label>
+                  <Input
+                    id="title"
+                    placeholder="Ex.: Impacto das Tecnologias no Ensino Superior"
+                    value={workForm.title}
+                    onChange={(event) => updateWorkForm("title", event.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Briefing inicial</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Explique o que o trabalho deve abordar e o resultado esperado."
+                    value={workForm.description}
+                    onChange={(event) => updateWorkForm("description", event.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="objective">Objetivo do trabalho</Label>
+                  <Textarea
+                    id="objective"
+                    placeholder="Ex.: analisar o impacto das tecnologias digitais no rendimento académico."
+                    value={workForm.objective}
+                    onChange={(event) => updateWorkForm("objective", event.target.value)}
+                    rows={3}
+                  />
+                </div>
               </div>
-              <Switch checked={generateContent} onCheckedChange={setGenerateContent} />
-            </div>
+            ) : null}
 
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Custo previsto</span>
-              <div className="flex items-center gap-2">
-                <Badge variant={credits >= calculateCost() ? "default" : "destructive"}>
-                  {calculateCost()} créditos
-                </Badge>
-                <span className="text-muted-foreground">({credits.toLocaleString("pt-MZ")} disponíveis)</span>
+            {briefStep === 1 ? (
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="institution">Instituição</Label>
+                    <Input
+                      id="institution"
+                      placeholder="Ex.: Universidade Eduardo Mondlane"
+                      value={workForm.institutionName}
+                      onChange={(event) => updateWorkForm("institutionName", event.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="course">Curso</Label>
+                    <Input
+                      id="course"
+                      placeholder="Ex.: Informática"
+                      value={workForm.courseName}
+                      onChange={(event) => updateWorkForm("courseName", event.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="subject">Disciplina</Label>
+                    <Input
+                      id="subject"
+                      placeholder="Ex.: Metodologia de Investigação"
+                      value={workForm.subjectName}
+                      onChange={(event) => updateWorkForm("subjectName", event.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="education-level">Nível académico</Label>
+                    <Select value={workForm.educationLevel} onValueChange={(value) => updateWorkForm("educationLevel", value as WorkFormState["educationLevel"])}>
+                      <SelectTrigger id="education-level">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="SECONDARY">Secundário</SelectItem>
+                        <SelectItem value="TECHNICAL">Técnico Profissional</SelectItem>
+                        <SelectItem value="HIGHER_EDUCATION">Ensino Superior</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="advisor">Professor ou orientador</Label>
+                  <Input
+                    id="advisor"
+                    placeholder="Ex.: Prof. Doutor João Luís"
+                    value={workForm.advisorName}
+                    onChange={(event) => updateWorkForm("advisorName", event.target.value)}
+                  />
+                </div>
               </div>
-            </div>
+            ) : null}
+
+            {briefStep === 2 ? (
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="student">Nome do estudante</Label>
+                    <Input
+                      id="student"
+                      placeholder="Ex.: Maria João António"
+                      value={workForm.studentName}
+                      onChange={(event) => updateWorkForm("studentName", event.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city">Cidade</Label>
+                    <Input
+                      id="city"
+                      placeholder="Ex.: Maputo"
+                      value={workForm.city}
+                      onChange={(event) => updateWorkForm("city", event.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="year">Ano académico</Label>
+                    <Input
+                      id="year"
+                      inputMode="numeric"
+                      value={workForm.academicYear}
+                      onChange={(event) => updateWorkForm("academicYear", event.target.value.replace(/\D/g, "").slice(0, 4))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="due-date">Data de entrega</Label>
+                    <Input
+                      id="due-date"
+                      type="date"
+                      value={workForm.dueDate}
+                      onChange={(event) => updateWorkForm("dueDate", event.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {briefStep === 3 ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="research-question">Pergunta de investigação</Label>
+                  <Textarea
+                    id="research-question"
+                    placeholder="Qual é a questão central que o trabalho deve responder?"
+                    value={workForm.researchQuestion}
+                    onChange={(event) => updateWorkForm("researchQuestion", event.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="methodology">Metodologia</Label>
+                  <Textarea
+                    id="methodology"
+                    placeholder="Ex.: revisão bibliográfica, estudo de caso, abordagem qualitativa..."
+                    value={workForm.methodology}
+                    onChange={(event) => updateWorkForm("methodology", event.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="citation-style">Norma de citação</Label>
+                    <Select value={workForm.citationStyle} onValueChange={(value) => updateWorkForm("citationStyle", value as WorkFormState["citationStyle"])}>
+                      <SelectTrigger id="citation-style">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ABNT">ABNT</SelectItem>
+                        <SelectItem value="APA">APA</SelectItem>
+                        <SelectItem value="Vancouver">Vancouver</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="references-seed">Referências iniciais</Label>
+                  <Textarea
+                    id="references-seed"
+                    placeholder="Cole livros, artigos, links ou autores que devem orientar o trabalho."
+                    value={workForm.referencesSeed}
+                    onChange={(event) => updateWorkForm("referencesSeed", event.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="additional-instructions">Instruções adicionais</Label>
+                  <Textarea
+                    id="additional-instructions"
+                    placeholder="Ex.: incluir exemplos de Moçambique, manter tom formal, evitar linguagem técnica excessiva."
+                    value={workForm.additionalInstructions}
+                    onChange={(event) => updateWorkForm("additionalInstructions", event.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <div className="glass glass-border flex items-center justify-between rounded-xl p-4">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <Label className="text-base font-medium">Gerar trabalho automaticamente</Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      A aptto gera capa, resumo, estrutura e secções iniciais com base no briefing.
+                    </p>
+                  </div>
+                  <Switch checked={workForm.generateContent} onCheckedChange={(value) => updateWorkForm("generateContent", value)} />
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Custo previsto</span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={credits >= calculateCost() ? "default" : "destructive"}>
+                      {calculateCost()} créditos
+                    </Badge>
+                    <span className="text-muted-foreground">({credits.toLocaleString("pt-MZ")} disponíveis)</span>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => handleDialogOpenChange(false)} disabled={isCreating}>
               Cancelar
             </Button>
-            <Button
-              onClick={handleCreateSession}
-              disabled={isCreating || credits < calculateCost()}
-              className="gap-2"
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  A gerar...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  {generateContent ? "Gerar sessão completa" : "Criar sessão"}
-                </>
-              )}
-            </Button>
+            {briefStep > 0 ? (
+              <Button variant="outline" onClick={() => moveBriefStep("previous")} disabled={isCreating}>
+                Voltar
+              </Button>
+            ) : null}
+            {briefStep < BRIEF_STEPS.length - 1 ? (
+              <Button onClick={() => moveBriefStep("next")} disabled={isCreating || (briefStep === 0 && !workForm.title.trim())}>
+                Continuar
+              </Button>
+            ) : (
+              <Button
+                onClick={handleCreateSession}
+                disabled={isCreating || credits < calculateCost()}
+                className="gap-2"
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    A gerar...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    {workForm.generateContent ? "Gerar trabalho" : "Criar briefing"}
+                  </>
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <div className=" glass glass-border rounded-2xl p-4 lg:p-5">
         <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground">{sessionCounts.all} sessões no total</p>
+          <p className="text-sm font-medium text-foreground">{sessionCounts.all} trabalhos no total</p>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>{sessionCounts.in_progress} activas</span>
             <span>·</span>
@@ -439,8 +732,8 @@ export function SessionsLibraryPage() {
       ) : (
         <EmptyState
           icon={FileText}
-          title="Nenhuma sessão encontrada"
-          description={hasFilteredResults ? "Não existem sessões compatíveis com estes filtros. Ajuste a pesquisa ou volte a ver todas as sessões." : "Crie a sua primeira sessão com IA."}
+          title="Nenhum trabalho encontrado"
+          description={hasFilteredResults ? "Nao existem trabalhos compativeis com estes filtros. Ajuste a pesquisa ou volte a ver todos os trabalhos." : "Crie o seu primeiro trabalho com briefing academico."}
           className="py-16"
           action={
             hasFilteredResults ? (
@@ -450,7 +743,7 @@ export function SessionsLibraryPage() {
             ) : (
               <Button onClick={() => setDialogOpen(true)} className="gap-2 rounded-full">
                 <Plus className="h-4 w-4" />
-                Criar sessão
+                Criar trabalho
               </Button>
             )
           }
@@ -462,10 +755,10 @@ export function SessionsLibraryPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Trash2 className="h-5 w-5 text-destructive" />
-              Eliminar sessão?
+              Eliminar trabalho?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acção não pode ser desfeita. Todos os dados da sessão serão removidos permanentemente.
+              Esta acção não pode ser desfeita. Todos os dados do trabalho serão removidos permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

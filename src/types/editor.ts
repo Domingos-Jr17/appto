@@ -47,6 +47,71 @@ export interface SectionSummary {
   stale: number;
 }
 
+export type CitationStyle = "ABNT" | "APA" | "Vancouver";
+
+export type WorkGenerationStatus =
+  | "BRIEFING"
+  | "GENERATING"
+  | "READY"
+  | "NEEDS_REVIEW"
+  | "FAILED";
+
+export type AcademicEducationLevel = "SECONDARY" | "TECHNICAL" | "HIGHER_EDUCATION";
+
+export interface ProjectBrief {
+  workType: string;
+  generationStatus: WorkGenerationStatus;
+  institutionName: string | null;
+  courseName: string | null;
+  subjectName: string | null;
+  educationLevel: AcademicEducationLevel | null;
+  advisorName: string | null;
+  studentName: string | null;
+  city: string | null;
+  academicYear: number | null;
+  dueDate: string | null;
+  theme: string | null;
+  subtitle: string | null;
+  objective: string | null;
+  researchQuestion: string | null;
+  methodology: string | null;
+  keywords: string | null;
+  referencesSeed: string | null;
+  citationStyle: CitationStyle;
+  language: string;
+  additionalInstructions: string | null;
+}
+
+export interface WorkBriefInput {
+  institutionName?: string;
+  courseName?: string;
+  subjectName?: string;
+  educationLevel?: AcademicEducationLevel;
+  advisorName?: string;
+  studentName?: string;
+  city?: string;
+  academicYear?: number;
+  dueDate?: string;
+  theme?: string;
+  subtitle?: string;
+  objective?: string;
+  researchQuestion?: string;
+  methodology?: string;
+  keywords?: string;
+  referencesSeed?: string;
+  citationStyle?: CitationStyle;
+  language?: string;
+  additionalInstructions?: string;
+}
+
+export interface CreateWorkPayload {
+  title: string;
+  type: string;
+  description?: string;
+  brief: WorkBriefInput;
+  generateContent: boolean;
+}
+
 export interface Project {
   id: string;
   title: string;
@@ -57,6 +122,7 @@ export interface Project {
   resumeMode: "chat" | "document" | "structure";
   lastEditedSection: LastEditedSection | null;
   sectionSummary: SectionSummary;
+  brief?: ProjectBrief | null;
   sections: ProjectSection[];
 }
 

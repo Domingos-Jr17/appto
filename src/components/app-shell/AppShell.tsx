@@ -14,7 +14,7 @@ import { UserMenu } from "./UserMenu";
 
 const PAGE_TITLES: Record<string, string> = {
     "/app": "Início",
-    "/app/sessoes": "Sessões",
+    "/app/sessoes": "Trabalhos",
     "/app/credits": "Créditos",
     "/app/settings": "Definições",
 };
@@ -211,14 +211,14 @@ function AppShellChrome({ children, user }: AppShellProps) {
                                         Navegação
                                     </p>
                                     <p id="app-mobile-menu-title" className="mt-2 text-2xl font-semibold tracking-tight text-white">
-                                        Explora o teu espaço
+                                        Explora os teus trabalhos
                                     </p>
                                 </div>
                                 <Link
                                     href="/app/sessoes?new=1"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className="flex h-12 w-12 items-center justify-center rounded-full bg-white/16 text-white backdrop-blur-md transition hover:bg-white/24"
-                                    aria-label="Nova sessão"
+                                    aria-label="Novo trabalho"
                                 >
                                     <FilePlus2 className="h-5 w-5" />
                                 </Link>

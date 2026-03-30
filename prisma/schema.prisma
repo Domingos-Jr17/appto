@@ -174,11 +174,44 @@ model Project {
 
   // Relations
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brief           ProjectBrief?
   sections        DocumentSection[]
   storedFiles     StoredFile[]
   exports         ProjectExport[]
 
   @@map("projects")
+}
+
+model ProjectBrief {
+  projectId               String               @id
+  workType                ProjectType
+  generationStatus        WorkGenerationStatus @default(BRIEFING)
+  institutionName         String?
+  courseName              String?
+  subjectName             String?
+  educationLevel          EducationLevel?
+  advisorName             String?
+  studentName             String?
+  city                    String?
+  academicYear            Int?
+  dueDate                 DateTime?            @db.Date
+  theme                   String?
+  subtitle                String?
+  objective               String?
+  researchQuestion        String?
+  methodology             String?
+  keywords                String?
+  referencesSeed          String?
+  citationStyle           CitationStyle        @default(ABNT)
+  language                String               @default("pt-MZ")
+  additionalInstructions  String?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+
+  project                 Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([generationStatus])
+  @@map("project_briefs")
 }
 
 model DocumentSection {
@@ -223,6 +256,20 @@ enum ProjectStatus {
   REVIEW
   COMPLETED
   ARCHIVED
+}
+
+enum WorkGenerationStatus {
+  BRIEFING
+  GENERATING
+  READY
+  NEEDS_REVIEW
+  FAILED
+}
+
+enum CitationStyle {
+  ABNT
+  APA
+  Vancouver
 }
 
 // ==================== CREDITS & SUBSCRIPTIONS ====================

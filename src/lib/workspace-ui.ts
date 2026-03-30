@@ -18,7 +18,7 @@ export function buildDashboardSummary(projects: AppProjectRecord[]): DashboardSu
     reviewReady: projects.reduce((total, project) => total + project.sectionSummary.review, 0),
     nextAction: leadProject
       ? getNextAction(leadProject)
-      : "Criar a primeira sessão e gerar um outline base.",
+      : "Criar o primeiro trabalho e gerar uma estrutura base.",
   };
 }
 
@@ -42,5 +42,5 @@ function getNextAction(project: AppProjectRecord) {
   if (project.wordCount === 0) return "Gerar outline e aprovar a estrutura inicial.";
   if (project.lastEditedSection) return `Retomar a secção "${project.lastEditedSection.title}".`;
   if (project.sectionSummary.review > 0) return "Rever secções prontas e preparar exportação.";
-  return "Abrir a sessão e continuar a escrita.";
+  return "Abrir o trabalho e continuar a revisão.";
 }

@@ -1,28 +1,17 @@
-export type ResumeMode = "chat" | "document" | "structure";
+import type {
+  EditorialStatus,
+  LastEditedSection,
+  SectionSummary,
+  WorkspaceMode,
+} from "@/types/editor";
 
-export type EditorialStatus = "empty" | "started" | "drafting" | "review" | "stale";
-
-export interface WorkspaceSectionLike {
+export type WorkspaceSectionLike = {
   id: string;
   title: string;
   wordCount: number;
   parentId: string | null;
   updatedAt: string | Date;
-}
-
-export interface SectionSummary {
-  empty: number;
-  started: number;
-  drafting: number;
-  review: number;
-  stale: number;
-}
-
-export interface LastEditedSection {
-  id: string;
-  title: string;
-  updatedAt: string;
-}
+};
 
 const STALE_DAYS = 14;
 
@@ -91,7 +80,7 @@ export function getResumeMode(
     sections: WorkspaceSectionLike[];
   },
   lastEditedSection: LastEditedSection | null
-): ResumeMode {
+): WorkspaceMode {
   if (project.wordCount <= 0) return "chat";
   if (lastEditedSection) return "document";
   return "structure";

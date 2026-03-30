@@ -1,8 +1,6 @@
 import { z } from "zod";
 
-export const idParamSchema = z.object({
-  id: z.string().min(1),
-});
+
 
 export const registerSchema = z.object({
   name: z.string().trim().min(1).max(120).optional().or(z.literal("")),
@@ -58,24 +56,7 @@ export const createProjectSchema = z.object({
   type: projectTypeSchema.default("MONOGRAPHY"),
 });
 
-export const updateProjectSchema = z
-  .object({
-    title: z.string().trim().min(1).max(180).optional(),
-    description: z.string().trim().max(5000).nullable().optional(),
-    status: projectStatusSchema.optional(),
-    type: projectTypeSchema.optional(),
-  })
-  .refine((value) => Object.keys(value).length > 0, {
-    message: "Nenhum campo válido enviado",
-  });
 
-export const projectQuerySchema = z.object({
-  status: projectStatusSchema.optional(),
-  type: projectTypeSchema.optional(),
-  search: z.string().trim().max(120).optional(),
-  sortBy: z.enum(["updatedAt", "createdAt", "title", "status", "type"]).default("updatedAt"),
-  sortOrder: z.enum(["asc", "desc"]).default("desc"),
-});
 
 export const createDocumentSchema = z.object({
   projectId: z.string().min(1),

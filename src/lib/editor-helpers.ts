@@ -3,7 +3,6 @@ import type {
   FlatSection,
   Project,
   Section,
-  WorkspaceMode,
 } from "@/types/editor";
 import { getEditorialStatus, getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
 
@@ -152,18 +151,7 @@ export function syncProjectWithTree(project: Project, tree: Section[]): Project 
   };
 }
 
-export function extractOutlineTitles(content: string): string[] {
-  return content
-    .split("\n")
-    .map((line) => line.replace(/^[-*]\s*/, "").replace(/^\d+[).]?\s*/, "").trim())
-    .filter((line) => line.length > 3)
-    .slice(0, 8);
-}
 
-export function inferSectionTitle(content: string): string {
-  const firstLine = content.split("\n").map((line) => line.trim()).find(Boolean);
-  return firstLine ? firstLine.replace(/^#+\s*/, "").slice(0, 72) : "Nova secao";
-}
 
 export function getSaveCopy(status: AutoSaveStatus, lastSaved?: Date): string {
   if (status === "saving") return "A guardar...";
@@ -172,69 +160,10 @@ export function getSaveCopy(status: AutoSaveStatus, lastSaved?: Date): string {
   return `Guardado ${lastSaved.toLocaleTimeString("pt-MZ", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-export function getModeDescription(mode: WorkspaceMode): string {
-  if (mode === "chat") return "Conversa principal com a IA para gerar, alinhar e decidir o proximo passo.";
-  if (mode === "document") return "Editor central em Markdown com foco na secao activa.";
-  return "Plano editorial do projecto com hierarquia, ordem e estado inferido.";
-}
 
-export function formatStatusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    DRAFT: "Rascunho",
-    IN_PROGRESS: "Em curso",
-    REVIEW: "Em revisao",
-    COMPLETED: "Concluido",
-    ARCHIVED: "Arquivado",
-  };
-
-  return labels[status] || status;
-}
-
-export function formatProjectType(type: string): string {
-  return type
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (character) => character.toUpperCase());
-}
 
 export function countTreeSections(sections: Section[]): number {
   return sections.reduce((total, section) => total + 1 + countTreeSections(section.children), 0);
 }
 
-export function formatRelativeDate(value?: string): string {
-  if (!value) return "sem actividade recente";
 
-  const date = new Date(value);
-  const diffMs = Date.now() - date.getTime();
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffHours < 1) return "agora mesmo";
-  if (diffHours < 24) return `ha ${diffHours}h`;
-  if (diffDays < 7) return `ha ${diffDays}d`;
-
-  return date.toLocaleDateString("pt-MZ", {
-    day: "2-digit",
-    month: "short",
-  });
-}
-
-export function getNextActionCopy(project: Project, activeSection: Section | null): string {
-  if (!project.sections.length) {
-    return "Gerar outline no chat e abrir a primeira secao.";
-  }
-
-  if (!project.wordCount) {
-    return "Aprovar a estrutura e iniciar a primeira secao.";
-  }
-
-  if (activeSection && activeSection.wordCount === 0) {
-    return `Escrever a secao "${activeSection.title}".`;
-  }
-
-  if (project.sectionSummary.review > 0) {
-    return "Rever secoes prontas e exportar uma nova versao.";
-  }
-
-  return "Continuar a secao activa ou pedir refinamento no chat.";
-}

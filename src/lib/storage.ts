@@ -340,11 +340,7 @@ export function buildFileContentUrl(fileId: string) {
   return `/api/files/${fileId}/content`;
 }
 
-export function buildDownloadFileName(file: Pick<StoredFile, "originalName" | "mimeType">) {
-  const extension = getFileExtension(file.originalName, file.mimeType);
-  const baseName = sanitizeFileName(file.originalName.replace(/\.[^.]+$/, "")) || "ficheiro";
-  return `${baseName}.${extension}`;
-}
+
 
 export function createChecksum(buffer: Buffer | Uint8Array) {
   return crypto.createHash("sha256").update(buffer).digest("hex");

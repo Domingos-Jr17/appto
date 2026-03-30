@@ -106,28 +106,4 @@ export const CREDIT_PACKAGES_DISPLAY: CreditPackageDisplay[] = [
   },
 ];
 
-export function getCreditPackageDisplay(key: CreditPackageKey): CreditPackageDisplay {
-  const pkg = CREDIT_PACKAGES_DISPLAY.find((item) => item.key === key);
-  if (!pkg) {
-    throw new Error(`Pacote de créditos não encontrado: ${key}`);
-  }
-  return pkg;
-}
 
-export const OPERATION_COSTS = [
-  { operation: "Gerar conteúdo", cost: 10, action: "generate" },
-  { operation: "Melhorar texto", cost: 5, action: "improve" },
-  { operation: "Gerar secção", cost: 8, action: "generate-section" },
-  { operation: "Sugestões", cost: 7, action: "suggest" },
-  { operation: "Referências ABNT", cost: 3, action: "references" },
-  { operation: "Gerar outline", cost: 5, action: "outline" },
-  { operation: "Chat", cost: 3, action: "chat" },
-  { operation: "Resumir", cost: 3, action: "summarize" },
-  { operation: "Traduzir", cost: 5, action: "translate" },
-  { operation: "Exportar DOCX", cost: 5, action: "export-docx" },
-] as const;
-
-export const CHARGE_POLICY = {
-  exportDownload: true,
-  exportSave: true,
-} as const;

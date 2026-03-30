@@ -34,7 +34,7 @@ export function AppSidebar({
     onNavigate,
 }: AppSidebarProps) {
     return (
-        <aside className="sticky top-0 flex h-screen w-[260px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+        <aside className="sticky top-0 flex h-full w-[260px] shrink-0 flex-col rounded-2xl border border-sidebar-border bg-sidebar text-sidebar-foreground">
             <div className="shrink-0 border-b border-sidebar-border px-4 pb-4 pt-5">
                 <Link
                     href="/app"

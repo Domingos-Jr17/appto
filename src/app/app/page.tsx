@@ -71,7 +71,7 @@ export default function WorkspaceHomePage() {
           </div>
 
           {leadProject ? (
-            <div className="surface-muted rounded-xl p-5 lg:p-6">
+            <div className="glass glass-border rounded-xl p-5 lg:p-6">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0 space-y-3">
                   <div>
@@ -131,7 +131,7 @@ export default function WorkspaceHomePage() {
           {overviewItems.map((item) => (
             <div
               key={item.label}
-              className="surface-muted rounded-xl p-4 transition-all duration-200 hover:bg-muted/70 hover:shadow-sm"
+              className="glass glass-border rounded-xl p-4 transition-all duration-200 hover:bg-muted/70 hover:shadow-sm"
             >
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{item.label}</p>
               <p className={item.isText ? "mt-3 text-sm font-medium leading-6" : "mt-3 text-2xl font-semibold"}>

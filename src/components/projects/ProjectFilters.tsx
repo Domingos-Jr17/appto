@@ -53,7 +53,7 @@ export function ProjectFilters({
   return (
     <div className={cn("space-y-4", className)}>
       <Tabs value={status} onValueChange={(v) => onStatusChange(v as ProjectStatus)}>
-        <TabsList className="surface-muted h-auto rounded-2xl p-1">
+        <TabsList className="glass glass-border h-auto rounded-2xl p-1">
           <TabsTrigger
             value="all"
             className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-sm"
@@ -115,7 +115,7 @@ export function ProjectFilters({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="surface-muted flex items-center rounded-2xl p-1">
+          <div className="glass glass-border flex items-center rounded-2xl p-1">
             <Button
               variant="ghost"
               size="icon"

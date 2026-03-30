@@ -1,41 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import {
-    BookCopy,
-    Coins,
-    FilePlus2,
-    FolderKanban,
-    Settings,
-} from "lucide-react";
+import { BookCopy, FilePlus2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-    { href: "/app/sessoes", label: "Sessões", icon: FolderKanban },
-    { href: "/app/credits", label: "Créditos", icon: Coins },
-    { href: "/app/settings", label: "Definições", icon: Settings },
-] as const;
-
-function isNavActive(currentPath: string, href: string) {
-    return currentPath === href || currentPath.startsWith(`${href}/`);
-}
+import { UserMenu } from "./UserMenu";
+import { appNavItems, isNavActive } from "./app-nav";
 
 interface AppSidebarProps {
     currentPath: string;
     credits: number;
     onNavigate?: () => void;
+    user: {
+        name?: string | null;
+        email?: string | null;
+        image?: string | null;
+    };
 }
 
 export function AppSidebar({
     currentPath,
     credits,
     onNavigate,
+    user,
 }: AppSidebarProps) {
     return (
-        <aside className="sticky top-0 flex h-full w-[260px] shrink-0 flex-col rounded-2xl border border-sidebar-border bg-sidebar text-sidebar-foreground">
-            <div className="shrink-0 border-b border-sidebar-border px-4 pb-4 pt-5">
+        <aside className="glass-premium sticky top-0 z-[var(--z-sidebar)] flex h-full w-[220px] shrink-0 flex-col rounded-[28px] text-sidebar-foreground">
+            <div className="shrink-0 border-b border-white/10 px-3 pb-3 pt-4">
                 <Link
                     href="/app"
                     onClick={onNavigate}
@@ -54,7 +46,7 @@ export function AppSidebar({
                     </div>
                 </Link>
 
-                <Button asChild className="mt-4 h-11 w-full rounded-2xl">
+                <Button asChild className="mt-3 h-10 w-full rounded-2xl">
                     <Link
                         href="/app/sessoes?new=1"
                         onClick={onNavigate}
@@ -66,9 +58,9 @@ export function AppSidebar({
                 </Button>
             </div>
 
-            <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 scrollbar-thin">
-                <div className="space-y-1.5">
-                    {navItems.map((item) => {
+            <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-3 scrollbar-thin">
+                <div className="space-y-1">
+                    {appNavItems.map((item) => {
                         const active = isNavActive(currentPath, item.href);
                         const Icon = item.icon;
                         return (
@@ -77,7 +69,7 @@ export function AppSidebar({
                                 href={item.href}
                                 onClick={onNavigate}
                                 className={cn(
-                                    "group flex items-center gap-3 rounded-2xl px-3 py-3 text-sm transition-colors",
+                                    "group flex items-center gap-2 rounded-2xl px-2.5 py-2 text-xs transition-colors",
                                     active
                                         ? "bg-sidebar-primary/12 text-foreground"
                                         : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
@@ -108,6 +100,15 @@ export function AppSidebar({
                     })}
                 </div>
             </nav>
+
+            <div className="shrink-0 border-t border-sidebar-border/80 px-2 pb-2 pt-2.5">
+                <UserMenu
+                    user={user}
+                    align="start"
+                    showIdentity={true}
+                    compact={true}
+                />
+            </div>
         </aside>
     );
 }

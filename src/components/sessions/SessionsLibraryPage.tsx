@@ -354,7 +354,7 @@ export function SessionsLibraryPage() {
               />
             </div>
 
-            <div className="surface-muted flex items-center justify-between rounded-xl p-4">
+            <div className="glass glass-border flex items-center justify-between rounded-xl p-4">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-primary" />

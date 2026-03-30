@@ -1,15 +1,14 @@
 "use client";
 
-import { Bot, Download, Loader2, Send, Sparkles, Wand2 } from "lucide-react";
+import { Bot, Download, Loader2, Send, Wand2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { AI_ACTION_CREDIT_COSTS } from "@/lib/credits";
-import type { AssistantMessage, Section } from "@/types/editor";
+import type { AssistantMessage } from "@/types/editor";
 
 interface ChatPaneProps {
-  activeSection: Section | null;
   chatMessages: AssistantMessage[];
   chatPrompt: string;
   isChatLoading: boolean;
@@ -21,7 +20,6 @@ interface ChatPaneProps {
 }
 
 export function ChatPane({
-  activeSection,
   chatMessages,
   chatPrompt,
   isChatLoading,
@@ -33,44 +31,12 @@ export function ChatPane({
 }: ChatPaneProps) {
   return (
     <section className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
-      <div className="pointer-events-none absolute inset-0 grid-pattern-subtle opacity-60" />
-
-      <div className="app-shell-header relative z-10 border-b border-border/60 px-4 py-3 lg:px-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold tracking-tight">
-              {activeSection ? activeSection.title : "Assistente"}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full"
-            onClick={() => onExport("docx")}
-            disabled={isSavingExport !== null}
-          >
-            {isSavingExport ? (
-              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Download className="mr-1 h-3.5 w-3.5" />
-            )}
-            <span className="hidden sm:inline">Exportar DOCX</span>
-          </Button>
-        </div>
-      </div>
-
       <div className="relative z-10 min-h-0 flex-1 overflow-y-auto px-4 py-6 lg:px-6">
         <div className="mx-auto flex max-w-3xl flex-col gap-4">
           {chatMessages.length === 0 ? (
             <div className="flex min-h-full flex-1 flex-col items-center justify-center py-12 text-center">
-              <div className="gradient-primary gradient-glow flex h-14 w-14 items-center justify-center rounded-[1.4rem] text-primary-foreground shadow-lg">
-                <Sparkles className="h-6 w-6" />
-              </div>
-              <h2 className="mt-6 text-2xl font-semibold tracking-tight lg:text-3xl">
-                O teu assistente académico.
-              </h2>
-              <p className="mt-3 max-w-lg text-sm leading-7 text-muted-foreground">
-                Escreva o que precisa — estruturar, escrever, rever ou expandir — e o assistente responde com conteúdo pronto a aplicar.
+              <p className="text-sm text-muted-foreground">
+                Escreva o que precisa. O assistente responde com conteúdo pronto a aplicar.
               </p>
             </div>
           ) : (
@@ -113,7 +79,7 @@ export function ChatPane({
         </div>
       </div>
 
-      <div className="app-shell-header relative z-10 border-t border-border/60 px-4 py-4 lg:px-6">
+      <div className="relative z-10 border-t border-border/60 px-4 py-4 lg:px-6">
         <div className="mx-auto max-w-3xl">
           <div className="glass glass-border rounded-2xl p-3">
             <div className="flex gap-2">
@@ -140,10 +106,24 @@ export function ChatPane({
                 <Send className="h-4 w-4" />
               </Button>
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <div className="mt-2 flex items-center justify-between">
               <Badge variant="outline" className="rounded-full">
                 {AI_ACTION_CREDIT_COSTS.generate} créditos
               </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+                onClick={() => onExport("docx")}
+                disabled={isSavingExport !== null}
+              >
+                {isSavingExport ? (
+                  <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="mr-1 h-3.5 w-3.5" />
+                )}
+                <span>DOCX</span>
+              </Button>
             </div>
           </div>
         </div>

@@ -248,7 +248,7 @@ export default function CreditsPage() {
                     key={plan.key}
                     className={`relative rounded-xl border p-5 transition-all duration-200 ${
                       plan.popular
-                        ? "border-primary/35 bg-primary/8 surface-strong hover:border-primary/50 hover:shadow-md"
+                        ? "border-primary/35 bg-primary/8 glass glass-border hover:border-primary/50 hover:shadow-md"
                         : "border-border/60 bg-muted/30 hover:border-primary/30 hover:bg-muted/40 hover:shadow-sm"
                     }`}
                   >

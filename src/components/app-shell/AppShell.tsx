@@ -1,13 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Coins, FilePlus2, FolderKanban, Settings } from "lucide-react";
+import { FilePlus2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { appNavItems, isNavActive } from "./app-nav";
 import { AppSidebar } from "./AppSidebar";
 import { AppShellDataProvider, useAppShellData } from "./AppShellDataContext";
 import { AppHeader } from "./AppHeader";
+import { UserMenu } from "./UserMenu";
 
 const PAGE_TITLES: Record<string, string> = {
     "/app": "Início",
@@ -15,16 +18,6 @@ const PAGE_TITLES: Record<string, string> = {
     "/app/credits": "Créditos",
     "/app/settings": "Definições",
 };
-
-const bottomNavItems = [
-    { href: "/app/sessoes", label: "Sessões", icon: FolderKanban },
-    { href: "/app/credits", label: "Créditos", icon: Coins },
-    { href: "/app/settings", label: "Definições", icon: Settings },
-] as const;
-
-function isNavActive(currentPath: string, href: string) {
-    return currentPath === href || currentPath.startsWith(`${href}/`);
-}
 
 interface AppShellProps {
     children: React.ReactNode;
@@ -38,6 +31,11 @@ interface AppShellProps {
 function AppShellChrome({ children, user }: AppShellProps) {
     const pathname = usePathname();
     const { projects, credits } = useAppShellData();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const prefersReducedMotion = useReducedMotion();
+    const appChromeRef = useRef<HTMLDivElement>(null);
+    const mobileMenuRef = useRef<HTMLDivElement>(null);
+    const previousFocusRef = useRef<HTMLElement | null>(null);
 
     const title = useMemo(() => {
         const staticTitle = PAGE_TITLES[pathname];
@@ -52,77 +50,242 @@ function AppShellChrome({ children, user }: AppShellProps) {
         return "appto";
     }, [pathname, projects]);
 
+    useEffect(() => {
+        if (!isMobileMenuOpen) return;
+
+        const originalOverflow = document.body.style.overflow;
+        previousFocusRef.current = document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
+        document.body.style.overflow = "hidden";
+
+        const focusFirstElement = window.setTimeout(() => {
+            const dialog = mobileMenuRef.current;
+            if (!dialog) return;
+
+            const firstFocusable = dialog.querySelector<HTMLElement>(
+                'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+            );
+
+            firstFocusable?.focus();
+        }, 0);
+
+        return () => {
+            window.clearTimeout(focusFirstElement);
+            document.body.style.overflow = originalOverflow;
+            previousFocusRef.current?.focus();
+        };
+    }, [isMobileMenuOpen]);
+
+    useEffect(() => {
+        if (!isMobileMenuOpen) return;
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                setIsMobileMenuOpen(false);
+                return;
+            }
+
+            if (event.key !== "Tab") {
+                return;
+            }
+
+            const dialog = mobileMenuRef.current;
+            if (!dialog) return;
+
+            const focusableElements = Array.from(
+                dialog.querySelectorAll<HTMLElement>(
+                    'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+                ),
+            );
+
+            if (focusableElements.length === 0) {
+                event.preventDefault();
+                return;
+            }
+
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+            const activeElement = document.activeElement;
+
+            if (event.shiftKey && activeElement === firstElement) {
+                event.preventDefault();
+                lastElement.focus();
+            } else if (!event.shiftKey && activeElement === lastElement) {
+                event.preventDefault();
+                firstElement.focus();
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [isMobileMenuOpen]);
+
+    useEffect(() => {
+        const appChrome = appChromeRef.current;
+        if (!appChrome) return;
+
+        if (isMobileMenuOpen) {
+            appChrome.setAttribute("inert", "");
+            appChrome.setAttribute("aria-hidden", "true");
+        } else {
+            appChrome.removeAttribute("inert");
+            appChrome.removeAttribute("aria-hidden");
+        }
+
+        return () => {
+            appChrome.removeAttribute("inert");
+            appChrome.removeAttribute("aria-hidden");
+        };
+    }, [isMobileMenuOpen]);
+
     return (
-        <div className="h-svh w-screen flex gap-2 overflow-hidden bg-background p-2 lg:gap-3 lg:p-3">
-            <div className="hidden lg:block">
-                <AppSidebar currentPath={pathname} credits={credits} />
-            </div>
+        <>
+            <div
+                ref={appChromeRef}
+                className="h-svh w-screen flex gap-2 overflow-hidden bg-background p-2 lg:gap-3 lg:p-3"
+            >
+                <div className="hidden lg:block">
+                    <AppSidebar currentPath={pathname} credits={credits} user={user} />
+                </div>
 
-            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-                <AppHeader title={title} user={user} />
+                <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+                    <AppHeader
+                        title={title}
+                        user={user}
+                        onMenuToggle={() => setIsMobileMenuOpen((open) => !open)}
+                        isMobileMenuOpen={isMobileMenuOpen}
+                    />
 
-                <div
-                    className={cn(
-                        "min-w-0 min-h-0 flex-1",
-                        pathname.startsWith("/app/sessoes/")
-                            ? "flex flex-col overflow-hidden"
-                            : "overflow-y-auto px-4 pb-24 pt-5 lg:px-8 lg:pb-7 lg:py-7",
-                    )}
-                >
-                    {children}
+                    <div
+                        className={cn(
+                            "min-w-0 min-h-0 flex-1",
+                            pathname.startsWith("/app/sessoes/")
+                                ? "flex flex-col overflow-hidden"
+                                : "overflow-y-auto px-4 pb-8 pt-5 lg:px-8 lg:pb-7 lg:py-7",
+                        )}
+                    >
+                        {children}
+                    </div>
                 </div>
             </div>
 
-            <nav className="fixed inset-x-4 bottom-4 z-50 flex items-center justify-around rounded-2xl border border-border/60 bg-foreground/95 px-3 py-3 shadow-lg backdrop-blur-lg lg:hidden">
-                {bottomNavItems.slice(0, 1).map((item) => {
-                    const active = isNavActive(pathname, item.href);
-                    const Icon = item.icon;
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={cn(
-                                "flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-xs transition-colors",
-                                active
-                                    ? "text-background"
-                                    : "text-background/60",
-                            )}
-                        >
-                            <Icon className="h-5 w-5" />
-                            <span>{item.label}</span>
-                        </Link>
-                    );
-                })}
+            <AnimatePresence>
+                {isMobileMenuOpen ? (
+                    <motion.div
+                        key="app-mobile-menu"
+                        initial={prefersReducedMotion ? false : { opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
+                        className="mobile-shell-menu fixed inset-0 z-[var(--z-mobile)] lg:hidden"
+                    >
+                        <div
+                            className="absolute inset-0 bg-background/14 backdrop-blur-[2px]"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                        />
 
-                <Link
-                    href="/app/sessoes?new=1"
-                    className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-warm)] text-white shadow-md transition-transform hover:scale-105"
-                    aria-label="Nova sessão"
-                >
-                    <FilePlus2 className="h-5 w-5" />
-                </Link>
+                        <div className="mobile-shell-menu__layers" aria-hidden="true">
+                            <div className="mobile-shell-menu__layer mobile-shell-menu__layer--soft" />
+                            <div className="mobile-shell-menu__layer mobile-shell-menu__layer--strong" />
+                        </div>
 
-                {bottomNavItems.slice(1).map((item) => {
-                    const active = isNavActive(pathname, item.href);
-                    const Icon = item.icon;
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={cn(
-                                "flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-xs transition-colors",
-                                active
-                                    ? "text-background"
-                                    : "text-background/60",
-                            )}
+                        <motion.div
+                            id="app-mobile-menu"
+                            ref={mobileMenuRef}
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="app-mobile-menu-title"
+                            initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
+                            className="relative z-10 flex h-full flex-col overflow-y-auto px-6 pb-[max(2rem,env(safe-area-inset-bottom))] pt-24"
                         >
-                            <Icon className="h-5 w-5" />
-                            <span>{item.label}</span>
-                        </Link>
-                    );
-                })}
-            </nav>
-        </div>
+                            <div className="mb-6 flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/60">
+                                        Navegação
+                                    </p>
+                                    <p id="app-mobile-menu-title" className="mt-2 text-2xl font-semibold tracking-tight text-white">
+                                        Explora o teu espaço
+                                    </p>
+                                </div>
+                                <Link
+                                    href="/app/sessoes?new=1"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="flex h-12 w-12 items-center justify-center rounded-full bg-white/16 text-white backdrop-blur-md transition hover:bg-white/24"
+                                    aria-label="Nova sessão"
+                                >
+                                    <FilePlus2 className="h-5 w-5" />
+                                </Link>
+                            </div>
+
+                            <nav className="flex flex-col gap-2">
+                                {appNavItems.map((item, index) => {
+                                    const active = isNavActive(pathname, item.href);
+                                    const Icon = item.icon;
+
+                                    return (
+                                        <motion.div
+                                            key={item.href}
+                                            initial={prefersReducedMotion ? false : { opacity: 0, x: 28 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: 28 }}
+                                            transition={{
+                                                duration: prefersReducedMotion ? 0 : 0.28,
+                                                delay: prefersReducedMotion ? 0 : 0.08 + index * 0.05,
+                                                ease: [0.22, 1, 0.36, 1],
+                                            }}
+                                        >
+                                            <Link
+                                                href={item.href}
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                                className={cn(
+                                                    "group flex items-center gap-4 rounded-[28px] px-5 py-4 text-[1.45rem] font-semibold tracking-tight text-white/78 transition duration-200",
+                                                    active
+                                                        ? "bg-white/14 text-white shadow-lg shadow-black/10"
+                                                        : "hover:bg-white/10 hover:text-white",
+                                                )}
+                                            >
+                                                <Icon className="h-6 w-6 shrink-0" />
+                                                <span className="flex-1">{item.label}</span>
+                                                {item.href === "/app/credits" ? (
+                                                    <span className="rounded-full border border-white/18 bg-white/10 px-3 py-1 text-xs font-medium tracking-normal text-white/80">
+                                                        {credits.toLocaleString("pt-MZ")}
+                                                    </span>
+                                                ) : null}
+                                            </Link>
+                                        </motion.div>
+                                    );
+                                })}
+                            </nav>
+
+                            <motion.div
+                                initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 20 }}
+                                transition={{
+                                    duration: prefersReducedMotion ? 0 : 0.28,
+                                    delay: prefersReducedMotion ? 0 : 0.3,
+                                    ease: [0.22, 1, 0.36, 1],
+                                }}
+                                className="mt-auto rounded-[28px] border border-white/12 bg-black/10 p-3 backdrop-blur-xl"
+                            >
+                                <UserMenu
+                                    user={user}
+                                    align="start"
+                                    className="w-full rounded-[24px] border-white/12 bg-white/10 text-white hover:bg-white/16"
+                                />
+                            </motion.div>
+                        </motion.div>
+                    </motion.div>
+                ) : null}
+            </AnimatePresence>
+        </>
     );
 }
 

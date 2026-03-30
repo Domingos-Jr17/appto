@@ -51,9 +51,6 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
   const activeSectionId = useEditorStore((state) => state.activeSectionId);
   const sectionTitle = useEditorStore((state) => state.sectionTitle);
   const content = useEditorStore((state) => state.content);
-  const wordCount = useEditorStore((state) => state.wordCount);
-  const autoSaveStatus = useEditorStore((state) => state.autoSaveStatus);
-  const lastSaved = useEditorStore((state) => state.lastSaved);
   const selectSection = useEditorStore((state) => state.selectSection);
   const updateTitle = useEditorStore((state) => state.updateTitle);
   const updateContent = useEditorStore((state) => state.updateContent);
@@ -107,7 +104,6 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
 
   const documentTitle = activeSection ? sectionTitle : artifact?.title || project?.title || "";
   const documentContent = activeSection ? content : artifact?.content || "";
-  const documentWordCount = activeSection ? wordCount : artifact?.content ? countWordsInMarkdown(artifact.content) : 0;
 
   const handleChatSubmit = useCallback(async () => {
     if (!chatPrompt.trim() || isChatLoading || !project) return;
@@ -211,7 +207,6 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
         chat={
           <SessionWorkspaceErrorBoundary label="chat">
             <ChatPane
-              activeSection={activeSection}
               chatMessages={chatMessages}
               chatPrompt={chatPrompt}
               isChatLoading={isChatLoading}
@@ -229,9 +224,6 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
               activeSection={activeSection}
               documentTitle={documentTitle}
               documentContent={documentContent}
-              documentWordCount={documentWordCount}
-              saveStatus={autoSaveStatus}
-              lastSaved={lastSaved}
               onDocumentTitleChange={handleDocumentTitleChange}
               onDocumentContentChange={handleDocumentContentChange}
             />

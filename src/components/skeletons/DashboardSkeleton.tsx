@@ -25,7 +25,7 @@ export function DashboardSkeleton() {
         <div className="glass glass-border rounded-2xl p-6">
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="surface-muted rounded-xl p-4">
+              <div key={index} className="glass glass-border rounded-xl p-4">
                 <Skeleton className="h-3 w-20 rounded-full" />
                 <Skeleton className="mt-3 h-8 w-16 rounded-lg" />
                 <Skeleton className="mt-2 h-3 w-24 rounded-lg" />

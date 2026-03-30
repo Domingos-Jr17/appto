@@ -23,6 +23,7 @@ interface UserMenuProps {
   align?: "start" | "center" | "end";
   className?: string;
   showIdentity?: boolean;
+  compact?: boolean;
 }
 
 export function UserMenu({
@@ -30,6 +31,7 @@ export function UserMenu({
   align = "end",
   className,
   showIdentity = true,
+  compact = false,
 }: UserMenuProps) {
   const initials = (user.name || "A")
     .split(" ")
@@ -44,21 +46,25 @@ export function UserMenu({
         <button
           type="button"
           className={cn(
-            "flex items-center gap-3 rounded-full border border-border/60 bg-card/70 px-2.5 py-2 text-left transition-colors hover:bg-accent/60",
+            compact
+              ? "flex w-full items-center gap-2 rounded-2xl border border-sidebar-border/80 bg-sidebar-accent/50 px-3 py-2.5 text-left transition-colors hover:bg-sidebar-accent"
+              : "flex items-center gap-3 rounded-full border border-border/60 bg-card/70 px-2.5 py-2 text-left transition-colors hover:bg-accent/60",
             className
           )}
           aria-label="Abrir menu da conta"
         >
-          <Avatar className="h-9 w-9 border border-border/80">
+          <Avatar className={cn(compact ? "h-8 w-8 border border-sidebar-border/80" : "h-9 w-9 border border-border/80")}>
             <AvatarImage src={user.image || undefined} alt={user.name || "Utilizador"} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           {showIdentity ? (
-            <div className="hidden min-w-0 sm:block">
-              <p className="truncate text-sm font-medium text-foreground">
+            <div className={cn("min-w-0", compact ? "block flex-1" : "hidden sm:block")}>
+              <p className={cn(compact ? "truncate text-xs font-medium text-sidebar-foreground" : "truncate text-sm font-medium text-foreground")}>
                 {user.name || "Utilizador"}
               </p>
-              <p className="truncate text-xs text-muted-foreground">{user.email || "Sem email"}</p>
+              <p className={cn(compact ? "truncate text-[11px] text-sidebar-foreground/60" : "truncate text-xs text-muted-foreground")}>
+                {user.email || "Sem email"}
+              </p>
             </div>
           ) : null}
         </button>

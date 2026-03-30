@@ -1,5 +1,5 @@
-import { SessionsLibraryPage } from "@/components/sessions/SessionsLibraryPage";
+import { redirect } from "next/navigation";
 
 export default function SessionsPage() {
-  return <SessionsLibraryPage />;
+  redirect("/app/trabalhos");
 }

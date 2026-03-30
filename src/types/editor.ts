@@ -118,6 +118,9 @@ export interface Project {
   description?: string | null;
   type: string;
   status: string;
+  generationStatus?: WorkGenerationStatus;
+  generationProgress?: number;
+  generationStep?: string | null;
   wordCount: number;
   resumeMode: "chat" | "document" | "structure";
   lastEditedSection: LastEditedSection | null;

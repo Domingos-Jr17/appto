@@ -14,9 +14,9 @@ import { UserMenu } from "./UserMenu";
 
 const PAGE_TITLES: Record<string, string> = {
     "/app": "Início",
-    "/app/sessoes": "Trabalhos",
+    "/app/trabalhos": "Trabalhos",
     "/app/credits": "Créditos",
-    "/app/settings": "Definições",
+    "/app/settings": "Perfil",
 };
 
 interface AppShellProps {
@@ -30,7 +30,7 @@ interface AppShellProps {
 
 function AppShellChrome({ children, user }: AppShellProps) {
     const pathname = usePathname();
-    const { projects, credits } = useAppShellData();
+    const { projects } = useAppShellData();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const prefersReducedMotion = useReducedMotion();
     const appChromeRef = useRef<HTMLDivElement>(null);
@@ -41,7 +41,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
         const staticTitle = PAGE_TITLES[pathname];
         if (staticTitle) return staticTitle;
 
-        const sessionMatch = pathname.match(/^\/app\/sessoes\/([^/]+)/);
+        const sessionMatch = pathname.match(/^\/app\/trabalhos\/([^/]+)/);
         if (sessionMatch) {
             const project = projects.find((p) => p.id === sessionMatch[1]);
             if (project) return project.title;
@@ -149,7 +149,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
                 className="h-svh w-screen flex gap-2 overflow-hidden bg-background p-2 lg:gap-3 lg:p-3"
             >
                 <div className="hidden lg:block">
-                    <AppSidebar currentPath={pathname} credits={credits} user={user} />
+                    <AppSidebar currentPath={pathname} user={user} />
                 </div>
 
                 <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -163,7 +163,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
                     <div
                         className={cn(
                             "min-w-0 min-h-0 flex-1",
-                            pathname.startsWith("/app/sessoes/")
+                            pathname.startsWith("/app/trabalhos/")
                                 ? "flex flex-col overflow-hidden"
                                 : "overflow-y-auto px-4 pb-8 pt-5 lg:px-8 lg:pb-7 lg:py-7",
                         )}
@@ -215,7 +215,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
                                     </p>
                                 </div>
                                 <Link
-                                    href="/app/sessoes?new=1"
+                                    href="/app/trabalhos?new=1"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className="flex h-12 w-12 items-center justify-center rounded-full bg-white/16 text-white backdrop-blur-md transition hover:bg-white/24"
                                     aria-label="Novo trabalho"
@@ -253,11 +253,6 @@ function AppShellChrome({ children, user }: AppShellProps) {
                                             >
                                                 <Icon className="h-6 w-6 shrink-0" />
                                                 <span className="flex-1">{item.label}</span>
-                                                {item.href === "/app/credits" ? (
-                                                    <span className="rounded-full border border-white/18 bg-white/10 px-3 py-1 text-xs font-medium tracking-normal text-white/80">
-                                                        {credits.toLocaleString("pt-MZ")}
-                                                    </span>
-                                                ) : null}
                                             </Link>
                                         </motion.div>
                                     );

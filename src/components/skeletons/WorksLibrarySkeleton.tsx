@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function SessionsLibrarySkeleton() {
+export function WorksLibrarySkeleton() {
   return (
     <div className="space-y-6">
       <div className="glass glass-border rounded-2xl p-5">

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { getPreferredSectionId } from "@/components/session-workspace/mappers";
+import { getPreferredSectionId } from "@/components/work-workspace/mappers";
 import type { Project, Section } from "@/types/editor";
 
 const now = new Date("2026-03-27T10:00:00.000Z");

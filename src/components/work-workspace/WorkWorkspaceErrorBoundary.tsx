@@ -2,23 +2,23 @@
 
 import { Component, type ReactNode } from "react";
 
-interface SessionWorkspaceErrorBoundaryProps {
+interface WorkWorkspaceErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
   label?: string;
 }
 
-interface SessionWorkspaceErrorBoundaryState {
+interface WorkWorkspaceErrorBoundaryState {
   hasError: boolean;
 }
 
-export class SessionWorkspaceErrorBoundary extends Component<
-  SessionWorkspaceErrorBoundaryProps,
-  SessionWorkspaceErrorBoundaryState
+export class WorkWorkspaceErrorBoundary extends Component<
+  WorkWorkspaceErrorBoundaryProps,
+  WorkWorkspaceErrorBoundaryState
 > {
-  state: SessionWorkspaceErrorBoundaryState = { hasError: false };
+  state: WorkWorkspaceErrorBoundaryState = { hasError: false };
 
-  static getDerivedStateFromError(): SessionWorkspaceErrorBoundaryState {
+  static getDerivedStateFromError(): WorkWorkspaceErrorBoundaryState {
     return { hasError: true };
   }
 

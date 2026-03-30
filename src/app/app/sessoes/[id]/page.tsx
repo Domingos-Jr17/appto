@@ -1,4 +1,4 @@
-import { SessionWorkspaceRoute } from "@/components/session-workspace/SessionWorkspaceRoute";
+import { redirect } from "next/navigation";
 
 interface SessionWorkspacePageProps {
   params: Promise<{ id: string }>;
@@ -7,5 +7,5 @@ interface SessionWorkspacePageProps {
 export default async function SessionWorkspacePage({ params }: SessionWorkspacePageProps) {
   const resolvedParams = await params;
 
-  return <SessionWorkspaceRoute key={resolvedParams.id} projectId={resolvedParams.id} />;
+  redirect(`/app/trabalhos/${resolvedParams.id}`);
 }

@@ -50,12 +50,6 @@ export const projectStatusSchema = z.enum([
   "ARCHIVED",
 ]);
 
-export const createProjectSchema = z.object({
-  title: z.string().trim().min(1).max(180),
-  description: z.string().trim().max(5000).optional(),
-  type: projectTypeSchema.default("MONOGRAPHY"),
-});
-
 export const citationStyleSchema = z.enum(["ABNT", "APA", "Vancouver"]);
 
 export const workGenerationStatusSchema = z.enum([
@@ -88,12 +82,29 @@ export const workBriefSchema = z.object({
   additionalInstructions: z.string().trim().max(10000).optional(),
 });
 
+export const updateWorkBriefSchema = workBriefSchema.partial();
+
+export const createProjectSchema = z.object({
+  title: z.string().trim().min(1).max(180),
+  description: z.string().trim().max(5000).optional(),
+  type: projectTypeSchema.default("MONOGRAPHY"),
+  brief: updateWorkBriefSchema.optional(),
+});
+
 export const createWorkSchema = z.object({
   title: z.string().trim().min(1).max(180),
   description: z.string().trim().max(5000).optional(),
   type: projectTypeSchema.default("MONOGRAPHY"),
   brief: workBriefSchema.default({ language: "pt-MZ", citationStyle: "ABNT" }),
   generateContent: z.boolean().default(true),
+});
+
+export const updateProjectSchema = z.object({
+  title: z.string().trim().min(1).max(180).optional(),
+  description: z.string().trim().max(5000).nullable().optional(),
+  type: projectTypeSchema.optional(),
+  status: projectStatusSchema.optional(),
+  brief: updateWorkBriefSchema.optional(),
 });
 
 

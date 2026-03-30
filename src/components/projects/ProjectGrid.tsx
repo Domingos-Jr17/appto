@@ -31,20 +31,25 @@ import {
 import type { ViewMode } from "./ProjectFilters";
 import { projectTypeStyles, type ProjectType } from "@/lib/project-type-styles";
 
-export interface Project {
+export interface ProjectCardData {
   id: string;
   title: string;
   type: ProjectType;
-  course: string;
-  institution: string;
+  course?: string | null;
+  institution?: string | null;
   progress: number;
-  status: "in_progress" | "completed" | "archived";
+  generationStatus?: "BRIEFING" | "GENERATING" | "READY" | "NEEDS_REVIEW" | "FAILED";
+  generationProgress?: number;
+  generationStep?: string | null;
+  status: "draft" | "in_progress" | "completed" | "archived";
   lastUpdated: string;
   createdAt: string;
 }
 
+export type Project = ProjectCardData;
+
 interface ProjectGridProps {
-  projects: Project[];
+  projects: ProjectCardData[];
   viewMode: ViewMode;
   className?: string;
   onDelete?: (id: string) => void;
@@ -54,14 +59,19 @@ interface ProjectGridProps {
 
 const typeStyles = projectTypeStyles;
 
-const statusStyles: Record<Project["status"], { label: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
+const statusStyles: Record<ProjectCardData["status"], { label: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
+  draft: {
+    label: "Rascunho",
+    icon: Pencil,
+    color: "text-warning",
+  },
   in_progress: {
-    label: "Em progresso",
+    label: "Em curso",
     icon: PlayCircle,
     color: "text-info",
   },
   completed: {
-    label: "Completo",
+    label: "Concluído",
     icon: CheckCircle2,
     color: "text-success",
   },
@@ -78,7 +88,7 @@ function ProjectCard({
   onArchive, 
   onEdit 
 }: { 
-  project: Project;
+  project: ProjectCardData;
   onDelete?: (id: string) => void;
   onArchive?: (id: string) => void;
   onEdit?: (id: string) => void;
@@ -86,6 +96,7 @@ function ProjectCard({
   const typeStyle = typeStyles[project.type] || typeStyles.monografia;
   const statusStyle = statusStyles[project.status];
   const StatusIcon = statusStyle.icon;
+  const generating = project.generationStatus === "GENERATING";
 
   return (
     <Card
@@ -108,8 +119,13 @@ function ProjectCard({
                 <StatusIcon className="h-3 w-3" />
                 <span>{statusStyle.label}</span>
               </div>
+              {generating ? (
+                <Badge variant="outline" className="text-[10px]">
+                  A gerar {project.generationProgress ?? project.progress}%
+                </Badge>
+              ) : null}
             </div>
-            <Link href={`/app/sessoes/${project.id}`}>
+            <Link href={`/app/trabalhos/${project.id}`}>
               <h4 className="line-clamp-2 text-base font-semibold leading-tight hover:text-primary transition-colors">
                 {project.title}
               </h4>
@@ -127,7 +143,7 @@ function ProjectCard({
             </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem asChild>
-                <Link href={`/app/sessoes/${project.id}`}>
+                <Link href={`/app/trabalhos/${project.id}`}>
                   <FileText className="mr-2 h-4 w-4" />
                   Abrir trabalho
                 </Link>
@@ -161,13 +177,23 @@ function ProjectCard({
           </DropdownMenu>
         </div>
 
-        <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-          <GraduationCap className="h-4 w-4" />
-          <span className="truncate">{project.course}</span>
-          <span className="text-border">•</span>
-          <Building2 className="h-4 w-4" />
-          <span className="truncate">{project.institution}</span>
-        </div>
+        {project.course || project.institution ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            {project.course ? (
+              <>
+                <GraduationCap className="h-4 w-4" />
+                <span className="truncate">{project.course}</span>
+              </>
+            ) : null}
+            {project.course && project.institution ? <span className="text-border">•</span> : null}
+            {project.institution ? (
+              <>
+                <Building2 className="h-4 w-4" />
+                <span className="truncate">{project.institution}</span>
+              </>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="mt-4 space-y-2">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -175,17 +201,20 @@ function ProjectCard({
             <span>Actualizado {project.lastUpdated}</span>
           </div>
 
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Progresso</span>
-              <span className="font-medium text-foreground">{project.progress}%</span>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">{generating ? "Geração" : "Progresso"}</span>
+                <span className="font-medium text-foreground">{generating ? (project.generationProgress ?? project.progress) : project.progress}%</span>
+              </div>
+              <Progress
+                value={generating ? (project.generationProgress ?? project.progress) : project.progress}
+                className="h-1.5 bg-primary/10"
+              />
+              {project.generationStep ? (
+                <p className="text-[11px] text-muted-foreground">{project.generationStep}</p>
+              ) : null}
             </div>
-            <Progress
-              value={project.progress}
-              className="h-1.5 bg-primary/10"
-            />
           </div>
-        </div>
       </CardContent>
     </Card>
   );
@@ -197,7 +226,7 @@ function ProjectListItem({
   onArchive, 
   onEdit 
 }: { 
-  project: Project;
+  project: ProjectCardData;
   onDelete?: (id: string) => void;
   onArchive?: (id: string) => void;
   onEdit?: (id: string) => void;
@@ -205,6 +234,7 @@ function ProjectListItem({
   const typeStyle = typeStyles[project.type] || typeStyles.monografia;
   const statusStyle = statusStyles[project.status];
   const StatusIcon = statusStyle.icon;
+  const generating = project.generationStatus === "GENERATING";
 
   return (
     <Card
@@ -226,28 +256,44 @@ function ProjectListItem({
               <StatusIcon className="h-3 w-3" />
               <span>{statusStyle.label}</span>
             </div>
+            {generating ? (
+              <Badge variant="outline" className="text-[10px]">
+                A gerar {project.generationProgress ?? project.progress}%
+              </Badge>
+            ) : null}
           </div>
-          <Link href={`/app/sessoes/${project.id}`}>
+          <Link href={`/app/trabalhos/${project.id}`}>
             <h4 className="font-semibold truncate hover:text-primary transition-colors">
               {project.title}
             </h4>
           </Link>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <GraduationCap className="h-4 w-4" />
-            <span className="truncate">{project.course}</span>
-            <span className="text-border">•</span>
-            <Building2 className="h-4 w-4" />
-            <span className="truncate">{project.institution}</span>
-          </div>
+          {project.course || project.institution ? (
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              {project.course ? (
+                <>
+                  <GraduationCap className="h-4 w-4" />
+                  <span className="truncate">{project.course}</span>
+                </>
+              ) : null}
+              {project.course && project.institution ? <span className="text-border">•</span> : null}
+              {project.institution ? (
+                <>
+                  <Building2 className="h-4 w-4" />
+                  <span className="truncate">{project.institution}</span>
+                </>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div className="hidden sm:block w-32">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Progresso</span>
-              <span className="font-medium">{project.progress}%</span>
+              <span className="text-muted-foreground">{generating ? "Geração" : "Progresso"}</span>
+              <span className="font-medium">{generating ? (project.generationProgress ?? project.progress) : project.progress}%</span>
             </div>
-            <Progress value={project.progress} className="h-1.5 bg-primary/10" />
+            <Progress value={generating ? (project.generationProgress ?? project.progress) : project.progress} className="h-1.5 bg-primary/10" />
+            {project.generationStep ? <p className="text-[11px] text-muted-foreground">{project.generationStep}</p> : null}
           </div>
         </div>
 
@@ -268,7 +314,7 @@ function ProjectListItem({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem asChild>
-                  <Link href={`/app/sessoes/${project.id}`}>
+                  <Link href={`/app/trabalhos/${project.id}`}>
                     <FileText className="mr-2 h-4 w-4" />
                     Abrir trabalho
                   </Link>

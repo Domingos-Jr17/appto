@@ -1,4 +1,4 @@
-export { ProjectGrid, type Project } from "./ProjectGrid";
+export { ProjectGrid, type ProjectCardData } from "./ProjectGrid";
 export {
   ProjectFilters,
   type ProjectStatus,

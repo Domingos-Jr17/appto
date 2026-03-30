@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { FolderTree } from "lucide-react";
 import { useAppShellData } from "@/components/app-shell/AppShellDataContext";
-import { DocumentPane } from "@/components/session-workspace/DocumentPane";
-import { ChatPane } from "@/components/session-workspace/ChatPane";
-import { SessionWorkspaceLayout } from "@/components/session-workspace/SessionWorkspaceLayout";
+import { DocumentPane } from "@/components/work-workspace/DocumentPane";
+import { ChatPane } from "@/components/work-workspace/ChatPane";
+import { WorkWorkspaceLayout } from "@/components/work-workspace/WorkWorkspaceLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -25,13 +25,13 @@ import {
   buildArtifactSource,
   getPreferredSectionId,
 } from "./mappers";
-import { SessionWorkspaceErrorBoundary } from "./SessionWorkspaceErrorBoundary";
+import { WorkWorkspaceErrorBoundary } from "./WorkWorkspaceErrorBoundary";
 
-interface SessionWorkspaceRouteProps {
+interface WorkWorkspaceRouteProps {
   projectId: string;
 }
 
-export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps) {
+export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
   const { toast } = useToast();
   const { setCredits: setAppCredits } = useAppShellData();
   const initializedProjectId = useRef<string | null>(null);
@@ -45,6 +45,8 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
   const createSection = useProjectStore((state) => state.createSection);
   const updateSectionTree = useProjectStore((state) => state.updateSectionTree);
   const setCredits = useProjectStore((state) => state.setCredits);
+  const exportDocument = useProjectStore((state) => state.exportDocument);
+  const isSavingExport = useProjectStore((state) => state.isSavingExport);
 
   const activeSectionId = useEditorStore((state) => state.activeSectionId);
   const sectionTitle = useEditorStore((state) => state.sectionTitle);
@@ -90,6 +92,16 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
     initializedProjectId.current = projectId;
   }, [project, projectId, sections, selectSection]);
 
+  useEffect(() => {
+    if (!project || project.generationStatus !== "GENERATING") return;
+
+    const intervalId = window.setInterval(() => {
+      void fetchProject(projectId);
+    }, 1800);
+
+    return () => window.clearInterval(intervalId);
+  }, [fetchProject, project, projectId]);
+
   const activeSection = useMemo(
     () => (activeSectionId ? findSectionById(activeSectionId, sections) : null),
     [activeSectionId, sections]
@@ -102,11 +114,28 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
 
   const documentTitle = activeSection ? sectionTitle : artifact?.title || project?.title || "";
   const documentContent = activeSection ? content : artifact?.content || "";
+  const chatContext = useMemo(() => {
+    if (!project) return undefined;
+
+    const brief = project.brief;
+    const contextParts = [
+      `Trabalho: ${project.title}`,
+      `Tipo: ${project.type}`,
+      brief?.institutionName ? `Instituição: ${brief.institutionName}` : null,
+      brief?.courseName ? `Curso: ${brief.courseName}` : null,
+      brief?.subjectName ? `Disciplina: ${brief.subjectName}` : null,
+      brief?.advisorName ? `Orientador: ${brief.advisorName}` : null,
+      brief?.objective ? `Objetivo: ${brief.objective}` : null,
+      activeSection ? `Secção actual: ${activeSection.title}` : null,
+    ].filter(Boolean);
+
+    return contextParts.join("\n");
+  }, [activeSection, project]);
 
   const handleChatSubmit = useCallback(async () => {
     if (!chatPrompt.trim() || isChatLoading || !project) return;
     try {
-      await sendMessage(chatPrompt, projectId, credits, setCredits);
+      await sendMessage(chatPrompt, projectId, credits, setCredits, chatContext);
     } catch (error) {
       toast({
         title: "Erro",
@@ -115,7 +144,19 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
         variant: "destructive",
       });
     }
-  }, [chatPrompt, credits, isChatLoading, project, projectId, sendMessage, setCredits, toast]);
+  }, [chatContext, chatPrompt, credits, isChatLoading, project, projectId, sendMessage, setCredits, toast]);
+
+  const handleExport = useCallback(async () => {
+    try {
+      await exportDocument(projectId, "docx");
+    } catch {
+      toast({
+        title: "Erro",
+        description: "Não foi possível descarregar o trabalho.",
+        variant: "destructive",
+      });
+    }
+  }, [exportDocument, projectId, toast]);
 
   const handleApplyContent = useCallback(
     async (messageContent: string) => {
@@ -166,6 +207,97 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
     [activeSectionId, projectId, updateContent, updateSectionTree]
   );
 
+  const handleBriefSave = useCallback(
+    async (briefPayload: {
+      institutionName?: string;
+      courseName?: string;
+      subjectName?: string;
+      advisorName?: string;
+      studentName?: string;
+      city?: string;
+      academicYear?: number;
+      educationLevel?: "SECONDARY" | "TECHNICAL" | "HIGHER_EDUCATION";
+      objective?: string;
+      methodology?: string;
+      citationStyle?: "ABNT" | "APA" | "Vancouver";
+    }) => {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brief: briefPayload }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Não foi possível actualizar o briefing.");
+      }
+
+      await fetchProject(projectId);
+      toast({
+        title: "Briefing actualizado",
+        description: "Os dados da capa e do contexto académico foram actualizados.",
+      });
+    },
+    [fetchProject, projectId, toast]
+  );
+
+  const handleRegenerateWork = useCallback(async () => {
+    const response = await fetch(`/api/projects/${projectId}/regenerate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "work" }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      toast({
+        title: "Erro",
+        description: data.error || "Não foi possível regenerar o trabalho.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Regeneração iniciada",
+      description: "A aptto está a reconstruir o trabalho com base no briefing actualizado.",
+    });
+
+    await fetchProject(projectId);
+  }, [fetchProject, projectId, toast]);
+
+  const handleRegenerateSection = useCallback(async () => {
+    if (!activeSection) return;
+
+    const response = await fetch(`/api/projects/${projectId}/regenerate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "section", sectionId: activeSection.id }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      toast({
+        title: "Erro",
+        description: data.error || "Não foi possível regenerar a secção.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    replaceContent(data.content, projectId);
+    updateSectionTree(activeSection.id, (section) => ({
+      ...section,
+      content: data.content,
+      wordCount: countWordsInMarkdown(data.content),
+    }));
+
+    toast({
+      title: "Secção regenerada",
+      description: "A secção activa foi reescrita com base no briefing actual.",
+    });
+  }, [activeSection, projectId, replaceContent, toast, updateSectionTree]);
+
   if (isLoading || activeProjectStoreId !== projectId || (project && project.id !== projectId)) {
     return <WorkspaceLoadingSkeleton />;
   }
@@ -181,7 +313,7 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
               description="Nao foi possivel abrir este trabalho. Volte a biblioteca e tente novamente."
               action={
                 <Button asChild className="rounded-full">
-                  <Link href="/app/sessoes">Ver trabalhos</Link>
+                  <Link href="/app/trabalhos">Ver trabalhos</Link>
                 </Button>
               }
             />
@@ -193,9 +325,9 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
 
   return (
     <div className="min-h-0 flex-1 overflow-hidden">
-      <SessionWorkspaceLayout
+      <WorkWorkspaceLayout
         chat={
-          <SessionWorkspaceErrorBoundary label="chat">
+          <WorkWorkspaceErrorBoundary label="chat">
             <ChatPane
               chatMessages={chatMessages}
               chatPrompt={chatPrompt}
@@ -204,18 +336,27 @@ export function SessionWorkspaceRoute({ projectId }: SessionWorkspaceRouteProps)
               onChatSubmit={handleChatSubmit}
               onApplyContent={handleApplyContent}
             />
-          </SessionWorkspaceErrorBoundary>
+          </WorkWorkspaceErrorBoundary>
         }
         document={
-          <SessionWorkspaceErrorBoundary label="document">
+          <WorkWorkspaceErrorBoundary label="document">
             <DocumentPane
+              project={project}
+              sections={sections}
               activeSection={activeSection}
+              activeSectionId={activeSectionId}
               documentTitle={documentTitle}
               documentContent={documentContent}
+              isSavingExport={isSavingExport !== null}
+              onSectionSelect={selectSection}
               onDocumentTitleChange={handleDocumentTitleChange}
               onDocumentContentChange={handleDocumentContentChange}
+              onExport={handleExport}
+              onRegenerateWork={handleRegenerateWork}
+              onRegenerateSection={handleRegenerateSection}
+              onBriefSave={handleBriefSave}
             />
-          </SessionWorkspaceErrorBoundary>
+          </WorkWorkspaceErrorBoundary>
         }
       />
     </div>

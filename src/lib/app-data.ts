@@ -6,6 +6,9 @@ export interface AppProjectRecord {
   type: string;
   description: string | null;
   status: string;
+  generationStatus?: "BRIEFING" | "GENERATING" | "READY" | "NEEDS_REVIEW" | "FAILED";
+  generationProgress?: number;
+  generationStep?: string | null;
   wordCount: number;
   updatedAt: string;
   createdAt: string;

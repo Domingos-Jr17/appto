@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { BookCopy, FilePlus2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { UserMenu } from "./UserMenu";
@@ -10,7 +9,6 @@ import { appNavItems, isNavActive } from "./app-nav";
 
 interface AppSidebarProps {
     currentPath: string;
-    credits: number;
     onNavigate?: () => void;
     user: {
         name?: string | null;
@@ -21,7 +19,6 @@ interface AppSidebarProps {
 
 export function AppSidebar({
     currentPath,
-    credits,
     onNavigate,
     user,
 }: AppSidebarProps) {
@@ -46,14 +43,18 @@ export function AppSidebar({
                     </div>
                 </Link>
 
-                <Button asChild className="mt-3 h-10 w-full rounded-2xl">
+                <p className="mt-3 text-xs leading-relaxed text-sidebar-foreground/60">
+                    Entra, descreve o trabalho e deixa a plataforma montar a capa, a estrutura e o conteúdo inicial.
+                </p>
+
+                <Button asChild className="mt-4 h-10 w-full rounded-2xl">
                     <Link
-                        href="/app/sessoes?new=1"
+                        href="/app/trabalhos?new=1"
                         onClick={onNavigate}
-                        aria-label="Novo trabalho"
+                        aria-label="Criar trabalho académico"
                     >
                         <FilePlus2 className="h-4 w-4" />
-                        <span>Novo trabalho</span>
+                        <span>Criar trabalho</span>
                     </Link>
                 </Button>
             </div>
@@ -87,14 +88,6 @@ export function AppSidebar({
                                 <span className="min-w-0 flex-1 truncate font-medium">
                                     {item.label}
                                 </span>
-                                {item.href === "/app/credits" ? (
-                                    <Badge
-                                        variant="outline"
-                                        className="rounded-full px-2 py-0 text-[10px]"
-                                    >
-                                        {credits.toLocaleString("pt-MZ")}
-                                    </Badge>
-                                ) : null}
                             </Link>
                         );
                     })}

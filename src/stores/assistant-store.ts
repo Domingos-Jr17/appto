@@ -15,7 +15,8 @@ interface AssistantStoreState {
     prompt: string,
     projectId: string | null,
     credits: number,
-    onCreditsUpdate: (balance: number) => void
+    onCreditsUpdate: (balance: number) => void,
+    context?: string
   ) => Promise<string>;
 }
 
@@ -35,7 +36,7 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
       activeProjectId: projectId,
     }),
 
-  sendMessage: async (prompt, projectId, credits, onCreditsUpdate) => {
+  sendMessage: async (prompt, projectId, credits, onCreditsUpdate, context) => {
     if (!prompt.trim() || get().isChatLoading) return "";
 
     if (credits < AI_ACTION_CREDIT_COSTS.generate) return "";
@@ -60,6 +61,7 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
         body: JSON.stringify({
           action: "generate",
           text: prompt,
+          context,
           projectId,
         }),
       });

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { ZodError } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getWorkGenerationStatus } from "@/lib/work-generation-jobs";
 import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
 import { DEFAULT_PROJECT_SECTIONS } from "@/lib/project-templates";
 import { CREDIT_DEFAULTS } from "@/lib/credits";
@@ -88,10 +89,14 @@ function serializeProject(project: {
 }) {
   const lastEditedSection = getLastEditedSection(project.sections);
   const sectionSummary = getSectionSummary(project.sections);
+  const liveGeneration = getWorkGenerationStatus(project.id);
 
   return {
     ...project,
     brief: serializeBrief(project.brief),
+    generationStatus: liveGeneration?.status || project.brief?.generationStatus || "BRIEFING",
+    generationProgress: liveGeneration?.progress || (project.brief?.generationStatus === "READY" ? 100 : 0),
+    generationStep: liveGeneration?.step || null,
     resumeMode: getResumeMode(project, lastEditedSection),
     lastEditedSection,
     sectionSummary,
@@ -177,7 +182,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = createProjectSchema.parse(await request.json());
-    const { title, description, type = "MONOGRAPHY" } = body;
+    const { title, description, type = "MONOGRAPHY", brief } = body;
 
     // Check user credits
     const userCredits = await db.credit.findUnique({
@@ -218,7 +223,37 @@ export async function POST(request: NextRequest) {
           title,
           description,
           type,
+          educationLevel: brief?.educationLevel,
           userId: session.user.id,
+          ...(brief
+            ? {
+                brief: {
+                  create: {
+                    workType: type,
+                    generationStatus: "BRIEFING",
+                    institutionName: brief.institutionName,
+                    courseName: brief.courseName,
+                    subjectName: brief.subjectName,
+                    educationLevel: brief.educationLevel,
+                    advisorName: brief.advisorName,
+                    studentName: brief.studentName,
+                    city: brief.city,
+                    academicYear: brief.academicYear,
+                    dueDate: brief.dueDate ? new Date(brief.dueDate) : undefined,
+                    theme: brief.theme || title,
+                    subtitle: brief.subtitle,
+                    objective: brief.objective,
+                    researchQuestion: brief.researchQuestion,
+                    methodology: brief.methodology,
+                    keywords: brief.keywords,
+                    referencesSeed: brief.referencesSeed,
+                    citationStyle: brief.citationStyle || "ABNT",
+                    language: brief.language || "pt-MZ",
+                    additionalInstructions: brief.additionalInstructions,
+                  },
+                },
+              }
+            : {}),
         },
       });
 

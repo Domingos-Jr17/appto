@@ -1,6 +1,14 @@
 import type { AppProjectRecord } from "@/lib/app-data";
 
 export function calculateProjectProgress(project: AppProjectRecord): number {
+  if (project.generationStatus === "GENERATING" && typeof project.generationProgress === "number") {
+    return Math.max(project.generationProgress, 12);
+  }
+
+  if (project.generationStatus === "READY") {
+    return Math.max(18, project.wordCount > 0 ? 24 : 18);
+  }
+
   if (project.status === "COMPLETED") return 100;
 
   const totalSections =

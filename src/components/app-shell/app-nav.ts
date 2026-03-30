@@ -1,10 +1,9 @@
-import { Coins, FolderKanban, Home, Settings } from "lucide-react";
+import { FolderKanban, Home, UserRound } from "lucide-react";
 
 export const appNavItems = [
   { href: "/app", label: "Início", icon: Home },
-  { href: "/app/sessoes", label: "Trabalhos", icon: FolderKanban },
-  { href: "/app/credits", label: "Créditos", icon: Coins },
-  { href: "/app/settings", label: "Definições", icon: Settings },
+  { href: "/app/trabalhos", label: "Trabalhos", icon: FolderKanban },
+  { href: "/app/settings", label: "Perfil", icon: UserRound },
 ] as const;
 
 export function isNavActive(currentPath: string, href: string) {

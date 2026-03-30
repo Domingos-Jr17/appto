@@ -5,8 +5,9 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { deleteStoredObject } from "@/lib/storage";
 import { normalizeStoredContent } from "@/lib/content";
+import { getWorkGenerationStatus } from "@/lib/work-generation-jobs";
 import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
-import { createProjectSchema, projectStatusSchema, projectTypeSchema } from "@/lib/validators";
+import { updateProjectSchema } from "@/lib/validators";
 
 function serializeBrief(
   brief:
@@ -93,11 +94,15 @@ function serializeProject(project: {
   }));
   const lastEditedSection = getLastEditedSection(sections);
   const sectionSummary = getSectionSummary(sections);
+  const liveGeneration = getWorkGenerationStatus(project.id);
 
   return {
     ...project,
     sections,
     brief: serializeBrief(project.brief),
+    generationStatus: liveGeneration?.status || project.brief?.generationStatus || "BRIEFING",
+    generationProgress: liveGeneration?.progress || (project.brief?.generationStatus === "READY" ? 100 : 0),
+    generationStep: liveGeneration?.step || null,
     resumeMode: getResumeMode(project, lastEditedSection),
     lastEditedSection,
     sectionSummary,
@@ -161,15 +166,7 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const rawBody = (await request.json()) as Record<string, unknown>;
-    const title = typeof rawBody.title === "string" ? createProjectSchema.shape.title.parse(rawBody.title) : undefined;
-    const description = rawBody.description === undefined
-      ? undefined
-      : rawBody.description === null
-        ? null
-        : createProjectSchema.shape.description.parse(rawBody.description);
-    const status = typeof rawBody.status === "string" ? projectStatusSchema.parse(rawBody.status) : undefined;
-    const type = typeof rawBody.type === "string" ? projectTypeSchema.parse(rawBody.type) : undefined;
+    const { title, description, status, type, brief } = updateProjectSchema.parse(await request.json());
 
     const existingProject = await db.project.findFirst({
       where: { id, userId: session.user.id },
@@ -186,14 +183,59 @@ export async function PUT(
         ...(description !== undefined && { description }),
         ...(status && { status }),
         ...(type && { type }),
-        ...(type && {
+        ...((type || brief) && {
           brief: {
             upsert: {
-              create: { workType: type },
-              update: { workType: type },
+              create: {
+                workType: type || existingProject.type,
+                generationStatus: "NEEDS_REVIEW",
+                institutionName: brief?.institutionName,
+                courseName: brief?.courseName,
+                subjectName: brief?.subjectName,
+                educationLevel: brief?.educationLevel,
+                advisorName: brief?.advisorName,
+                studentName: brief?.studentName,
+                city: brief?.city,
+                academicYear: brief?.academicYear,
+                dueDate: brief?.dueDate ? new Date(brief.dueDate) : undefined,
+                theme: brief?.theme || title || existingProject.title,
+                subtitle: brief?.subtitle,
+                objective: brief?.objective,
+                researchQuestion: brief?.researchQuestion,
+                methodology: brief?.methodology,
+                keywords: brief?.keywords,
+                referencesSeed: brief?.referencesSeed,
+                citationStyle: brief?.citationStyle || "ABNT",
+                language: brief?.language || "pt-MZ",
+                additionalInstructions: brief?.additionalInstructions,
+              },
+              update: {
+                ...(type ? { workType: type } : {}),
+                ...(brief?.institutionName !== undefined ? { institutionName: brief.institutionName } : {}),
+                ...(brief?.courseName !== undefined ? { courseName: brief.courseName } : {}),
+                ...(brief?.subjectName !== undefined ? { subjectName: brief.subjectName } : {}),
+                ...(brief?.educationLevel !== undefined ? { educationLevel: brief.educationLevel } : {}),
+                ...(brief?.advisorName !== undefined ? { advisorName: brief.advisorName } : {}),
+                ...(brief?.studentName !== undefined ? { studentName: brief.studentName } : {}),
+                ...(brief?.city !== undefined ? { city: brief.city } : {}),
+                ...(brief?.academicYear !== undefined ? { academicYear: brief.academicYear } : {}),
+                ...(brief?.dueDate !== undefined ? { dueDate: brief.dueDate ? new Date(brief.dueDate) : null } : {}),
+                ...(brief?.theme !== undefined ? { theme: brief.theme } : {}),
+                ...(brief?.subtitle !== undefined ? { subtitle: brief.subtitle } : {}),
+                ...(brief?.objective !== undefined ? { objective: brief.objective } : {}),
+                ...(brief?.researchQuestion !== undefined ? { researchQuestion: brief.researchQuestion } : {}),
+                ...(brief?.methodology !== undefined ? { methodology: brief.methodology } : {}),
+                ...(brief?.keywords !== undefined ? { keywords: brief.keywords } : {}),
+                ...(brief?.referencesSeed !== undefined ? { referencesSeed: brief.referencesSeed } : {}),
+                ...(brief?.citationStyle !== undefined ? { citationStyle: brief.citationStyle } : {}),
+                ...(brief?.language !== undefined ? { language: brief.language } : {}),
+                ...(brief?.additionalInstructions !== undefined ? { additionalInstructions: brief.additionalInstructions } : {}),
+                generationStatus: "NEEDS_REVIEW",
+              },
             },
           },
         }),
+        ...(brief?.educationLevel !== undefined ? { educationLevel: brief.educationLevel } : {}),
       },
       include: {
         sections: {

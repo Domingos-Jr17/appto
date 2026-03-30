@@ -81,7 +81,7 @@ export function getResumeMode(
   },
   lastEditedSection: LastEditedSection | null
 ): WorkspaceMode {
-  if (project.wordCount <= 0) return "chat";
+  if (project.sections.length > 0 && project.wordCount <= 0) return "document";
   if (lastEditedSection) return "document";
   return "structure";
 }

@@ -23,15 +23,35 @@ export function ChatPane({
   onChatSubmit,
   onApplyContent,
 }: ChatPaneProps) {
+  const quickActions = [
+    "Melhorar a introdução",
+    "Adicionar referências",
+    "Verificar formatação",
+  ];
+
   return (
     <section className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
       <div className="relative z-10 min-h-0 flex-1 overflow-y-auto px-4 py-6 lg:px-6">
         <div className="mx-auto flex max-w-3xl flex-col gap-4">
           {chatMessages.length === 0 ? (
             <div className="flex min-h-full flex-1 flex-col items-center justify-center py-12 text-center">
-              <p className="text-sm text-muted-foreground">
+              <p className="max-w-md text-sm text-muted-foreground">
                 O trabalho ja foi gerado. Use este painel apenas para pedir ajustes, expandir ideias ou rever trechos.
               </p>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                {quickActions.map((action) => (
+                  <Button
+                    key={action}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => onChatPromptChange(action)}
+                  >
+                    {action}
+                  </Button>
+                ))}
+              </div>
             </div>
           ) : (
             chatMessages.map((message) => (

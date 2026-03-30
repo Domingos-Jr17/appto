@@ -109,6 +109,40 @@ function getSystemPrompt(plan: string, educationLevel?: string): string {
   return PLAN_PROMPTS[plan as keyof typeof PLAN_PROMPTS] || PLAN_PROMPTS.STUDENT;
 }
 
+function buildProjectContext(project: {
+  title: string;
+  type: string;
+  brief: {
+    institutionName: string | null;
+    courseName: string | null;
+    subjectName: string | null;
+    advisorName: string | null;
+    studentName: string | null;
+    objective: string | null;
+    methodology: string | null;
+    citationStyle: string;
+    additionalInstructions: string | null;
+  } | null;
+}) {
+  const brief = project.brief;
+
+  return [
+    `Título do trabalho: ${project.title}`,
+    `Tipo: ${project.type}`,
+    brief?.institutionName ? `Instituição: ${brief.institutionName}` : null,
+    brief?.courseName ? `Curso: ${brief.courseName}` : null,
+    brief?.subjectName ? `Disciplina: ${brief.subjectName}` : null,
+    brief?.advisorName ? `Orientador: ${brief.advisorName}` : null,
+    brief?.studentName ? `Estudante: ${brief.studentName}` : null,
+    brief?.objective ? `Objetivo: ${brief.objective}` : null,
+    brief?.methodology ? `Metodologia: ${brief.methodology}` : null,
+    brief?.citationStyle ? `Norma de citação: ${brief.citationStyle}` : null,
+    brief?.additionalInstructions ? `Instruções adicionais: ${brief.additionalInstructions}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -156,8 +190,35 @@ export async function POST(request: NextRequest) {
     const userPlan = subscription?.plan || "STUDENT";
     const educationLevel = user?.educationLevel || undefined;
 
+    const projectContext = projectId
+      ? await db.project.findFirst({
+          where: { id: projectId, userId: session.user.id },
+          select: {
+            title: true,
+            type: true,
+            brief: {
+              select: {
+                institutionName: true,
+                courseName: true,
+                subjectName: true,
+                advisorName: true,
+                studentName: true,
+                objective: true,
+                methodology: true,
+                citationStyle: true,
+                additionalInstructions: true,
+              },
+            },
+          },
+        })
+      : null;
+
+    const mergedContext = [projectContext ? buildProjectContext(projectContext) : null, context]
+      .filter(Boolean)
+      .join("\n\n");
+
     // Check cache first (if enabled)
-    const cacheKey = generateCacheKey(action, text || context || "");
+    const cacheKey = generateCacheKey(action, [text, mergedContext, projectId].filter(Boolean).join("::"));
     if (useCache) {
       const cachedResponse = getCachedResponse(cacheKey);
       if (cachedResponse) {
@@ -179,13 +240,13 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case "generate":
         prompt = `Gere conteúdo académico sobre: ${text}\n\nContexto adicional: ${
-          context || "Nenhum"
+          mergedContext || "Nenhum"
         }\n\nEscreva em Português académico de Moçambique, com cerca de 200-300 palavras. Inclua estrutura clara e argumentos fundamentados.`;
         break;
 
       case "improve":
         prompt = `Melhore o seguinte texto académico, mantendo o significado original mas tornando-o mais formal, claro e bem estruturado:\n\n"${text}"\n\nContexto: ${
-          context || "Trabalho académico"
+          mergedContext || "Trabalho académico"
         }\n\nForneça apenas o texto melhorado, sem explicações adicionais.`;
         break;
 
@@ -199,7 +260,7 @@ export async function POST(request: NextRequest) {
 
       case "outline":
         prompt = `Crie um esboço estruturado e detalhado para um trabalho académico sobre: "${text}"\n\nTipo de documento: ${
-          context || "Monografia"
+          mergedContext || "Monografia"
         }\n\nInclua seções principais, subseções e breve descrição do conteúdo de cada uma.`;
         break;
 
@@ -221,17 +282,17 @@ export async function POST(request: NextRequest) {
 
       case "generate-section":
         prompt = `Gere o conteúdo completo para a seguinte secção de um trabalho académico:\n\nSecção: ${text}\n\nContexto do trabalho: ${
-          context || "Trabalho académico"
+          mergedContext || "Trabalho académico"
         }\n\nEscreva em Português académico, com 400-600 palavras, incluindo:\n- Introdução ao tema\n- Desenvolvimento argumentativo\n- Conclusão parcial\n- Transição para próxima secção`;
         break;
 
       case "generate-complete":
-        prompt = `Crie um plano completo para um trabalho académico sobre: "${text}"\n\nTipo: ${context || "Monografia"}\n\nForneça:\n1. Título sugerido\n2. Resumo (150 palavras)\n3. Estrutura completa com todas as secções\n4. Para cada secção: objetivo, pontos principais, referências sugeridas\n5. Conclusão geral\n\nFormate de forma clara e estruturada.`;
+        prompt = `Crie um plano completo para um trabalho académico sobre: "${text}"\n\nTipo: ${mergedContext || "Monografia"}\n\nForneça:\n1. Título sugerido\n2. Resumo (150 palavras)\n3. Estrutura completa com todas as secções\n4. Para cada secção: objetivo, pontos principais, referências sugeridas\n5. Conclusão geral\n\nFormate de forma clara e estruturada.`;
         break;
 
       case "chat":
       default:
-        prompt = text;
+        prompt = mergedContext ? `${text}\n\nContexto do trabalho:\n${mergedContext}` : text;
         break;
     }
 

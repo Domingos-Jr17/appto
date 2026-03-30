@@ -2,17 +2,19 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { ArrowRight, FolderKanban, Plus } from "lucide-react";
+import { ArrowRight, FilePlus2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { useAppShellData } from "@/components/app-shell/AppShellDataContext";
-import type { AppProjectRecord } from "@/lib/app-data";
-import { calculateProjectProgress } from "@/lib/progress";
-import { buildDashboardSummary } from "@/lib/workspace-ui";
 
-const RESUME_COPY = "Abrir trabalho";
+const QUICK_TYPES = [
+  { label: "Monografia", href: "/app/trabalhos?new=1&type=MONOGRAPHY", tone: "success" },
+  { label: "Relatório", href: "/app/trabalhos?new=1&type=REPORT", tone: "neutral" },
+  { label: "Artigo científico", href: "/app/trabalhos?new=1&type=ARTICLE", tone: "neutral" },
+  { label: "Proposta", href: "/app/trabalhos?new=1&type=RESEARCH_PROJECT", tone: "neutral" },
+] as const;
 
 export default function WorkspaceHomePage() {
   const { data: session, status } = useSession();
@@ -24,204 +26,106 @@ export default function WorkspaceHomePage() {
 
   const firstName = session?.user?.name?.split(" ")[0] || "Estudante";
   const leadProject = projects[0] || null;
-  const summary = buildDashboardSummary(projects);
-
-  const overviewItems = [
-    {
-      label: "Em curso",
-      value: summary.activeProjects.toLocaleString("pt-MZ"),
-      detail: "trabalhos activos",
-    },
-    {
-      label: "Palavras",
-      value: summary.totalWords.toLocaleString("pt-MZ"),
-      detail: "no workspace",
-    },
-    {
-      label: "Revisão final",
-      value: summary.reviewReady.toLocaleString("pt-MZ"),
-      detail: "secções prontas",
-    },
-    {
-      label: "Próximo passo",
-      value: summary.nextAction,
-      detail: leadProject ? leadProject.title : "Primeiro trabalho",
-      isText: true,
-    },
-  ];
+  const recentProjects = projects.slice(0, 2);
 
   return (
     <div className="space-y-6">
-      <Card className=" glass glass-border overflow-hidden rounded-2xl bg-background/80">
-        <CardContent className="flex flex-col gap-8 p-6 lg:p-8">
-          <div className="max-w-2xl space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {leadProject ? "Retomar trabalho" : "Criar trabalho"}
-            </p>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground lg:text-4xl">
-              {leadProject
-                ? `${firstName}, volte ao que estava em progresso.`
-                : `${firstName}, inicie o primeiro trabalho com um briefing academico simples.`}
+      <Card className="glass glass-border overflow-hidden rounded-[28px] bg-background/80">
+        <CardContent className="space-y-5 p-6 lg:p-8">
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">Olá, {firstName}</p>
+            <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-foreground lg:text-4xl">
+              O que queres criar hoje?
             </h2>
-            <p className="text-sm leading-6 text-muted-foreground">
-              {leadProject
-                ? "O dashboard fica reduzido ao essencial: continuar a sessão principal, perceber o estado actual e abrir rapidamente o trabalho recente."
-                : "Crie o primeiro trabalho, preencha o contexto academico e receba a capa, a estrutura e o conteudo inicial automaticamente."}
+            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+              Escolhe o tipo de trabalho, diz o tema e deixa a aptto montar a capa, a estrutura e o conteúdo inicial.
             </p>
           </div>
 
-          {leadProject ? (
-            <div className="glass glass-border rounded-xl p-5 lg:p-6">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                <div className="min-w-0 space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      {formatProjectType(leadProject.type)}
-                    </p>
-                    <h3 className="mt-2 text-2xl font-semibold tracking-tight">{leadProject.title}</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {leadProject.description || "Sem descrição."}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    <span>{leadProject.wordCount.toLocaleString("pt-MZ")} palavras</span>
-                    <span>·</span>
-                    <span>{formatRelativeTime(new Date(leadProject.updatedAt))}</span>
-                    {leadProject.lastEditedSection ? (
-                      <>
-                        <span>·</span>
-                        <span>Última secção: {leadProject.lastEditedSection.title}</span>
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-
-                <Button asChild className="rounded-full px-5">
-                  <Link href={getProjectHref(leadProject)}>
-                    <ArrowRight className="mr-2 h-4 w-4" />
-                    {RESUME_COPY}
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <EmptyState
-              icon={FolderKanban}
-              title="Ainda não há trabalhos"
-              description="Crie o primeiro trabalho e a plataforma abre logo no ponto certo para gerar e revisar o conteudo."
-              className="items-start text-left"
-              action={
-                <Button asChild className="rounded-full px-5">
-                  <Link href="/app/sessoes?new=1">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Criar primeiro trabalho
-                  </Link>
-                </Button>
-              }
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className=" glass glass-border rounded-2xl bg-background/80">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium">Visão rápida</CardTitle>
-        </CardHeader>
-<CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {overviewItems.map((item) => (
-            <div
-              key={item.label}
-              className="glass glass-border rounded-xl p-4 transition-all duration-200 hover:bg-muted/70 hover:shadow-sm"
-            >
-              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{item.label}</p>
-              <p className={item.isText ? "mt-3 text-sm font-medium leading-6" : "mt-3 text-2xl font-semibold"}>
-                {item.value}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card className=" glass glass-border rounded-2xl bg-background/80">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <div>
-            <CardTitle className="text-lg">Trabalhos recentes</CardTitle>
-<p className="mt-1 text-sm text-muted-foreground">
-              Aceda directamente aos trabalhos mais recentes para continuar a revisao final.
-            </p>
-          </div>
-          <Button variant="ghost" size="sm" asChild className="rounded-full">
-            <Link href="/app/sessoes">
-              Ver todos
-              <ArrowRight className="ml-2 h-4 w-4" />
+          <Button asChild size="lg" className="h-14 rounded-2xl px-6 text-base shadow-sm shadow-primary/20">
+            <Link href="/app/trabalhos?new=1">
+              <FilePlus2 className="mr-2 h-5 w-5" />
+              Criar trabalho académico
             </Link>
           </Button>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {QUICK_TYPES.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={item.tone === "success"
+                  ? "rounded-2xl border border-emerald-200/60 bg-emerald-50 px-4 py-3 transition-colors hover:bg-emerald-100/80 dark:border-emerald-500/20 dark:bg-emerald-500/12 dark:hover:bg-emerald-500/18"
+                  : "rounded-2xl border border-border/60 bg-muted/25 px-4 py-3 transition-colors hover:bg-muted/45"}
+              >
+                <p className={item.tone === "success"
+                  ? "text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300"
+                  : "text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground"}
+                >
+                  {item.tone === "success" ? "Mais usado" : "Criar rápido"}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-foreground">{item.label}</p>
+              </Link>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="glass glass-border rounded-[28px] bg-background/80">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Continuar onde paraste
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {projects.length > 0 ? (
-            projects.slice(0, 4).map((project, index) => {
-              const progress = calculateProjectProgress(project);
-
-              return (
-                <div
-                  key={project.id}
-                  className="card-hover flex flex-col gap-4 rounded-xl border border-border/60 bg-muted/30 p-4 transition-colors hover:bg-muted/55 lg:flex-row lg:items-center lg:justify-between"
-                >
-                  <div className="min-w-0 space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      {index === 0 ? "Última actividade" : formatProjectType(project.type)}
-                    </p>
-                    <div>
-                      <h3 className="truncate text-base font-semibold">{project.title}</h3>
-                      <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                        {project.lastEditedSection
-                          ? `Última secção: ${project.lastEditedSection.title}`
-                          : "Sem secção iniciada ainda."}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex min-w-[240px] items-center gap-4 lg:justify-end">
-                    <div className="min-w-[120px] text-sm">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="font-medium">{progress}%</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatRelativeTime(new Date(project.updatedAt))}
-                        </p>
-                      </div>
-                      <div className="mt-2 h-2 rounded-full bg-background/90">
-                        <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
-                      </div>
-                    </div>
-
-                    <Button asChild variant="outline" className="rounded-full px-4">
-                      <Link href={getProjectHref(project)}>{RESUME_COPY}</Link>
-                    </Button>
-                  </div>
+          {recentProjects.length > 0 ? (
+            recentProjects.map((project) => (
+              <Link
+                key={project.id}
+                href={`/app/trabalhos/${project.id}`}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-background/55 px-4 py-4 transition-colors hover:bg-background/80"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-foreground">{project.title}</p>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">
+                    {formatProjectType(project.type)}
+                    {project.brief?.institutionName ? ` · ${project.brief.institutionName}` : ""}
+                    {project.updatedAt ? ` · ${formatRelativeTime(new Date(project.updatedAt))}` : ""}
+                  </p>
                 </div>
-              );
-            })
+                <span className="shrink-0 text-sm font-medium text-primary">
+                  Abrir →
+                </span>
+              </Link>
+            ))
           ) : (
             <EmptyState
-              icon={FolderKanban}
-              title="Sem trabalhos ainda"
-              description="A aptto fica mais util quando existe um trabalho gerado para revisar."
+              icon={FileText}
+              title="Ainda não há trabalhos"
+              description="Crie o primeiro trabalho e a plataforma abre logo no ponto certo para rever o documento gerado."
+              className="items-start py-10 text-left"
               action={
-                <Button asChild className="rounded-full">
-                  <Link href="/app/sessoes?new=1">Criar primeiro trabalho</Link>
+                <Button asChild className="rounded-full px-5">
+                  <Link href="/app/trabalhos?new=1">Criar primeiro trabalho</Link>
                 </Button>
               }
             />
           )}
+
+          {leadProject ? (
+            <div className="flex justify-end pt-2">
+              <Button variant="ghost" asChild className="rounded-full px-4">
+                  <Link href="/app/trabalhos">
+                  Ver todos os trabalhos
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>
   );
-}
-
-function getProjectHref(project: AppProjectRecord) {
-  return `/app/sessoes/${project.id}`;
 }
 
 function formatProjectType(type: string) {
@@ -231,7 +135,7 @@ function formatProjectType(type: string) {
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-function formatRelativeTime(date: Date): string {
+function formatRelativeTime(date: Date) {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);

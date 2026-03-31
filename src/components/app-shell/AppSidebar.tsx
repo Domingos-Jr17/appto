@@ -5,23 +5,16 @@ import { BookCopy, FilePlus2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAppShellData } from "./AppShellDataContext";
-import { UserMenu } from "./UserMenu";
 import { appNavItems, isNavActive } from "./app-nav";
 
 interface AppSidebarProps {
     currentPath: string;
     onNavigate?: () => void;
-    user: {
-        name?: string | null;
-        email?: string | null;
-        image?: string | null;
-    };
 }
 
 export function AppSidebar({
     currentPath,
     onNavigate,
-    user,
 }: AppSidebarProps) {
     const { projects } = useAppShellData();
 
@@ -50,10 +43,6 @@ export function AppSidebar({
                         </p>
                     </div>
                 </Link>
-
-                <p className="mt-3 text-xs leading-relaxed text-sidebar-foreground/60">
-                    Entra, descreve o trabalho e deixa a plataforma montar a capa, a estrutura e o conteúdo inicial.
-                </p>
 
                 <Button asChild className="mt-4 h-10 w-full rounded-2xl">
                     <Link
@@ -125,15 +114,6 @@ export function AppSidebar({
                     </>
                 )}
             </nav>
-
-            <div className="shrink-0 border-t border-sidebar-border/80 px-2 pb-2 pt-2.5">
-                <UserMenu
-                    user={user}
-                    align="start"
-                    showIdentity={true}
-                    compact={true}
-                />
-            </div>
         </aside>
     );
 }

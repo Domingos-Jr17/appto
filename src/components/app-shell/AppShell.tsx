@@ -151,7 +151,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
                 className="h-svh w-screen flex gap-2 overflow-hidden bg-background p-2 lg:gap-3 lg:p-3"
             >
                 <div className="hidden lg:block">
-                    <AppSidebar currentPath={pathname} user={user} />
+                    <AppSidebar currentPath={pathname} />
                 </div>
 
                 <div className="flex min-w-0 flex-1 flex-col overflow-hidden">

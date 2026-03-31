@@ -124,9 +124,9 @@ const landingFeatures: LandingItem<{
     //   id: 11,
     //   icon: "RotateCcw",
     //   title: "Auto-save do editor",
-    //   description: "O conteúdo do editor é guardado automaticamente. Recuperação de sessão, 2FA e gestão de sessões continuam fora do produto público.",
+    //   description: "O conteúdo do editor é guardado automaticamente. Recuperação de trabalho, 2FA e gestão de sessões continuam fora do produto público.",
     //   highlight: false,
-    //   featureKey: "sessionRecovery",
+    //   featureKey: "workRecovery",
     // },
     {
         id: 12,

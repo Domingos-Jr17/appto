@@ -86,9 +86,9 @@ describe("workspace ui helpers", () => {
     });
   });
 
-  test("falls back to first session creation guidance when there is no lead project", () => {
+  test("falls back to first work creation guidance when there is no lead project", () => {
     expect(buildDashboardSummary([]).nextAction).toBe(
-      "Criar a primeira sessão e gerar um outline base."
+      "Criar o primeiro trabalho e gerar uma estrutura base."
     );
   });
 

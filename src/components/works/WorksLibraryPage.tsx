@@ -35,6 +35,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { EmptyState } from "@/components/ui/empty-state";
 import { WorksLibrarySkeleton } from "@/components/skeletons/WorksLibrarySkeleton";
 import { GenerateWorkProgress } from "@/components/work-creation/GenerateWorkProgress";
+import { CoverTemplateSelector } from "@/components/work-creation/CoverTemplateSelector";
 import { useToast } from "@/hooks/use-toast";
 import { ProjectGrid, type ProjectCardData } from "@/components/projects/ProjectGrid";
 import { useAppShellData } from "@/components/app-shell/AppShellDataContext";
@@ -45,7 +46,9 @@ import {
   type SortOption,
 } from "@/components/projects/ProjectFilters";
 import { calculateProjectProgress } from "@/lib/progress";
-import type { AcademicEducationLevel, CitationStyle } from "@/types/editor";
+import { formatRelativeTime } from "@/lib/utils";
+import { fetchWithRetry } from "@/lib/fetch-retry";
+import type { AcademicEducationLevel, CitationStyle, CoverTemplate } from "@/types/editor";
 
 const WORK_TYPES = [
   { value: "MONOGRAPHY", label: "Monografia" },
@@ -108,6 +111,7 @@ type WorkFormState = {
   citationStyle: CitationStyle;
   referencesSeed: string;
   additionalInstructions: string;
+  coverTemplate: CoverTemplate;
 };
 
 const INITIAL_WORK_FORM: WorkFormState = {
@@ -126,6 +130,7 @@ const INITIAL_WORK_FORM: WorkFormState = {
   citationStyle: "ABNT",
   referencesSeed: "",
   additionalInstructions: "",
+  coverTemplate: "UEM_STANDARD",
 };
 
 export function WorksLibraryPage() {
@@ -174,7 +179,11 @@ export function WorksLibraryPage() {
 
     const intervalId = window.setInterval(async () => {
       try {
-        const response = await fetch(`/api/generate/work/${generationProjectId}`);
+        const response = await fetchWithRetry(`/api/generate/work/${generationProjectId}`, {
+          retries: 1,
+          retryDelay: 800,
+          timeout: 8000,
+        });
         const data = await response.json();
 
         if (!response.ok) {
@@ -319,9 +328,12 @@ export function WorksLibraryPage() {
     setIsCreating(true);
 
     try {
-      const response = await fetch("/api/generate/work", {
+      const response = await fetchWithRetry("/api/generate/work", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        retries: 1,
+        retryDelay: 1000,
+        timeout: 20000,
         body: JSON.stringify({
           title: workForm.title,
           type: workForm.type,
@@ -342,6 +354,7 @@ export function WorksLibraryPage() {
             referencesSeed: workForm.referencesSeed || undefined,
             additionalInstructions: workForm.additionalInstructions || undefined,
             language: "pt-MZ",
+            coverTemplate: workForm.coverTemplate,
           },
         }),
       });
@@ -381,9 +394,10 @@ export function WorksLibraryPage() {
       const currentWork = works.find((item) => item.id === workId);
       const newStatus = currentWork?.status === "archived" ? "IN_PROGRESS" : "ARCHIVED";
 
-      const response = await fetch(`/api/projects/${workId}`, {
+      const response = await fetchWithRetry(`/api/projects/${workId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        retries: 1,
         body: JSON.stringify({ status: newStatus }),
       });
 
@@ -406,7 +420,10 @@ export function WorksLibraryPage() {
     if (!deleteTarget) return;
 
     try {
-      const response = await fetch(`/api/projects/${deleteTarget}`, { method: "DELETE" });
+      const response = await fetchWithRetry(`/api/projects/${deleteTarget}`, {
+        method: "DELETE",
+        retries: 1,
+      });
       if (!response.ok) {
         throw new Error("Erro ao eliminar o trabalho");
       }
@@ -577,6 +594,11 @@ export function WorksLibraryPage() {
                       <Label htmlFor="additional-instructions">Notas adicionais</Label>
                       <Textarea id="additional-instructions" value={workForm.additionalInstructions} onChange={(event) => updateWorkForm("additionalInstructions", event.target.value)} rows={3} placeholder="Ex.: incluir exemplos de Moçambique e manter linguagem formal." />
                     </div>
+
+                    <CoverTemplateSelector
+                      value={workForm.coverTemplate}
+                      onChange={(value) => updateWorkForm("coverTemplate", value)}
+                    />
                   </div>
                 )}
               </div>
@@ -650,8 +672,8 @@ export function WorksLibraryPage() {
           icon={FileText}
           title="Nenhum trabalho encontrado"
           description={hasFilteredResults
-            ? "Não existem trabalhos compatíveis com estes filtros. Ajuste a pesquisa ou volte a ver todos os trabalhos."
-            : "Crie o primeiro trabalho com um tema simples e deixe a aptto gerar o resto."}
+            ? "Não encontrámos nenhum trabalho com estes filtros. Ajusta a pesquisa ou volta a ver todos."
+            : "Ainda não criaste nenhum trabalho. Começa agora!"}
           className="py-16"
           action={
             hasFilteredResults ? (
@@ -675,7 +697,14 @@ export function WorksLibraryPage() {
               Eliminar trabalho?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acção não pode ser desfeita. Todos os dados do trabalho serão removidos permanentemente.
+              {deleteTarget ? (
+                <>
+                  Vais eliminar &ldquo;{works.find((w) => w.id === deleteTarget)?.title || "este trabalho"}&rdquo;.
+                  Esta acção não pode ser desfeita.
+                </>
+              ) : (
+                "Esta acção não pode ser desfeita. Todos os dados do trabalho serão removidos permanentemente."
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -700,18 +729,4 @@ function mapStatus(status: string): ProjectCardData["status"] {
   };
 
   return map[status] || "draft";
-}
-
-function formatRelativeTime(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return "agora";
-  if (diffMins < 60) return `há ${diffMins} min`;
-  if (diffHours < 24) return `há ${diffHours}h`;
-  if (diffDays < 7) return `há ${diffDays} dias`;
-  return date.toLocaleDateString("pt-MZ");
 }

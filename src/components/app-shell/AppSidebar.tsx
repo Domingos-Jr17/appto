@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BookCopy, FilePlus2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAppShellData } from "./AppShellDataContext";
 import { UserMenu } from "./UserMenu";
 import { appNavItems, isNavActive } from "./app-nav";
 
@@ -22,8 +23,15 @@ export function AppSidebar({
     onNavigate,
     user,
 }: AppSidebarProps) {
+    const { projects } = useAppShellData();
+
+    const recentProjects = projects
+        .slice()
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .slice(0, 4);
+
     return (
-        <aside className="glass-premium sticky top-0 z-[var(--z-sidebar)] flex h-full w-[220px] shrink-0 flex-col rounded-[28px] text-sidebar-foreground">
+        <aside className="glass-premium sticky top-0 z-[var(--z-sidebar)] flex h-full w-[240px] shrink-0 flex-col rounded-[28px] text-sidebar-foreground">
             <div className="shrink-0 border-b border-white/10 px-3 pb-3 pt-4">
                 <Link
                     href="/app"
@@ -92,6 +100,30 @@ export function AppSidebar({
                         );
                     })}
                 </div>
+
+                {recentProjects.length > 0 && (
+                    <>
+                        <div className="my-3 border-t border-sidebar-border/40" />
+                        <p className="mb-1.5 px-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-sidebar-foreground/50">
+                            Trabalhos recentes
+                        </p>
+                        <div className="space-y-0.5">
+                            {recentProjects.map((project) => (
+                                <Link
+                                    key={project.id}
+                                    href={`/app/trabalhos/${project.id}`}
+                                    onClick={onNavigate}
+                                    className="group flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-foreground"
+                                >
+                                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sidebar-foreground/30" />
+                                    <span className="min-w-0 flex-1 truncate">
+                                        {project.title}
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+                    </>
+                )}
             </nav>
 
             <div className="shrink-0 border-t border-sidebar-border/80 px-2 pb-2 pt-2.5">

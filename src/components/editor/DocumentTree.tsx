@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { cn, formatRelativeTime } from "@/lib/utils";
 
 interface Section {
   id: string;
@@ -130,20 +130,7 @@ function countAllSections(sections: Section[]): number {
 
 function formatRelativeUpdate(value?: string) {
   if (!value) return "Sem actividade";
-
-  const date = new Date(value);
-  const diffMs = Date.now() - date.getTime();
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffHours < 1) return "actualizada agora";
-  if (diffHours < 24) return `há ${diffHours}h`;
-  if (diffDays < 7) return `há ${diffDays}d`;
-
-  return date.toLocaleDateString("pt-MZ", {
-    day: "2-digit",
-    month: "short",
-  });
+  return formatRelativeTime(value);
 }
 
 export function DocumentTree({

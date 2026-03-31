@@ -4,7 +4,7 @@ export type FeatureKey =
   | "localRag"
   | "pdfExport"
   | "realTimeStreaming"
-  | "sessionRecovery"
+  | "workRecovery"
   | "twoFactorAuth"
   | "passwordReset"
   | "mobilePayments"
@@ -16,7 +16,7 @@ export const featureRegistry: Record<FeatureKey, FeatureStatus> = {
   localRag: "hidden",
   pdfExport: "beta",
   realTimeStreaming: "hidden",
-  sessionRecovery: "real",
+  workRecovery: "real",
   twoFactorAuth: "beta",
   passwordReset: "beta",
   mobilePayments: "beta",

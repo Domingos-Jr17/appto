@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
               citationStyle: brief.citationStyle,
               language: brief.language,
               additionalInstructions: brief.additionalInstructions,
+              coverTemplate: brief.coverTemplate,
             },
           },
         },

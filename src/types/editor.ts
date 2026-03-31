@@ -58,6 +58,14 @@ export type WorkGenerationStatus =
 
 export type AcademicEducationLevel = "SECONDARY" | "TECHNICAL" | "HIGHER_EDUCATION";
 
+export type CoverTemplate =
+  | "UEM_STANDARD"
+  | "UCM_STANDARD"
+  | "ISRI"
+  | "ABNT_GENERIC"
+  | "MODERNA"
+  | "CLASSICA";
+
 export interface ProjectBrief {
   workType: string;
   generationStatus: WorkGenerationStatus;
@@ -80,6 +88,7 @@ export interface ProjectBrief {
   citationStyle: CitationStyle;
   language: string;
   additionalInstructions: string | null;
+  coverTemplate: CoverTemplate;
 }
 
 export interface WorkBriefInput {
@@ -102,6 +111,7 @@ export interface WorkBriefInput {
   citationStyle?: CitationStyle;
   language?: string;
   additionalInstructions?: string;
+  coverTemplate?: CoverTemplate;
 }
 
 export interface CreateWorkPayload {
@@ -109,6 +119,7 @@ export interface CreateWorkPayload {
   type: string;
   description?: string;
   brief: WorkBriefInput;
+  coverTemplate?: CoverTemplate;
   generateContent: boolean;
 }
 

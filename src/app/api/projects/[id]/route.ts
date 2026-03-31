@@ -33,6 +33,7 @@ function serializeBrief(
         citationStyle: string;
         language: string;
         additionalInstructions: string | null;
+        coverTemplate?: string;
       }
     | null
 ) {
@@ -208,6 +209,7 @@ export async function PUT(
                 citationStyle: brief?.citationStyle || "ABNT",
                 language: brief?.language || "pt-MZ",
                 additionalInstructions: brief?.additionalInstructions,
+                coverTemplate: brief?.coverTemplate || "UEM_STANDARD",
               },
               update: {
                 ...(type ? { workType: type } : {}),
@@ -230,6 +232,7 @@ export async function PUT(
                 ...(brief?.citationStyle !== undefined ? { citationStyle: brief.citationStyle } : {}),
                 ...(brief?.language !== undefined ? { language: brief.language } : {}),
                 ...(brief?.additionalInstructions !== undefined ? { additionalInstructions: brief.additionalInstructions } : {}),
+                ...(brief?.coverTemplate !== undefined ? { coverTemplate: brief.coverTemplate } : {}),
                 generationStatus: "NEEDS_REVIEW",
               },
             },

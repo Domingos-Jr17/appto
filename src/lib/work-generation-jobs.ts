@@ -1,6 +1,7 @@
 import { createZAIChatCompletion, getFriendlyZAIErrorMessage } from "@/lib/zai";
+import { generateCoverHTML } from "@/lib/cover-templates";
 import { db } from "@/lib/db";
-import type { CitationStyle, WorkBriefInput } from "@/types/editor";
+import type { CitationStyle, CoverTemplate, WorkBriefInput } from "@/types/editor";
 
 type JobStatus = "GENERATING" | "READY" | "FAILED";
 
@@ -145,6 +146,7 @@ export function serializeBrief(brief: {
   citationStyle: CitationStyle | string;
   language: string;
   additionalInstructions: string | null;
+  coverTemplate?: string;
 }) {
   return {
     ...brief,
@@ -153,6 +155,23 @@ export function serializeBrief(brief: {
 }
 
 export function generateCover(title: string, type: string, brief: WorkBriefInput) {
+  const coverTemplate = brief.coverTemplate || "UEM_STANDARD";
+
+  if (coverTemplate) {
+    return generateCoverHTML(coverTemplate as CoverTemplate, {
+      title,
+      type: formatProjectType(type),
+      institutionName: brief.institutionName,
+      courseName: brief.courseName,
+      subjectName: brief.subjectName,
+      advisorName: brief.advisorName,
+      studentName: brief.studentName,
+      city: brief.city,
+      academicYear: brief.academicYear,
+      subtitle: brief.subtitle,
+    });
+  }
+
   const kind = formatProjectType(type).toUpperCase();
   const institution = brief.institutionName || "INSTITUIÇÃO DE ENSINO";
   const student = brief.studentName || "Nome do estudante";

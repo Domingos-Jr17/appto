@@ -33,6 +33,7 @@ function serializeBrief(
         citationStyle: string;
         language: string;
         additionalInstructions: string | null;
+        coverTemplate?: string;
       }
     | null
 ) {

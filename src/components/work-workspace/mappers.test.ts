@@ -60,7 +60,7 @@ const sections: Section[] = [
   },
 ];
 
-describe("session-workspace mappers", () => {
+describe("work-workspace mappers", () => {
   test("prefers last edited section when it still exists", () => {
     const projectWithExistingSection: Project = {
       ...project,

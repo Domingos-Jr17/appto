@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { WorkspaceLoadingSkeleton } from "@/components/skeletons/WorkspaceLoadingSkeleton";
 import { useToast } from "@/hooks/use-toast";
 import { countWordsInMarkdown } from "@/lib/content";
+import { fetchWithRetry } from "@/lib/fetch-retry";
 import {
   findSectionById,
 } from "@/lib/editor-helpers";
@@ -221,9 +222,10 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
       methodology?: string;
       citationStyle?: "ABNT" | "APA" | "Vancouver";
     }) => {
-      const response = await fetch(`/api/projects/${projectId}`, {
+      const response = await fetchWithRetry(`/api/projects/${projectId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        retries: 1,
         body: JSON.stringify({ brief: briefPayload }),
       });
 
@@ -242,9 +244,10 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
   );
 
   const handleRegenerateWork = useCallback(async () => {
-    const response = await fetch(`/api/projects/${projectId}/regenerate`, {
+    const response = await fetchWithRetry(`/api/projects/${projectId}/regenerate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      retries: 1,
       body: JSON.stringify({ mode: "work" }),
     });
 
@@ -269,9 +272,10 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
   const handleRegenerateSection = useCallback(async () => {
     if (!activeSection) return;
 
-    const response = await fetch(`/api/projects/${projectId}/regenerate`, {
+    const response = await fetchWithRetry(`/api/projects/${projectId}/regenerate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      retries: 1,
       body: JSON.stringify({ mode: "section", sectionId: activeSection.id }),
     });
 
@@ -326,6 +330,10 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
   return (
     <div className="min-h-0 flex-1 overflow-hidden">
       <WorkWorkspaceLayout
+        project={project}
+        sections={sections}
+        activeSectionId={activeSectionId}
+        onSectionSelect={selectSection}
         chat={
           <WorkWorkspaceErrorBoundary label="chat">
             <ChatPane
@@ -342,13 +350,10 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
           <WorkWorkspaceErrorBoundary label="document">
             <DocumentPane
               project={project}
-              sections={sections}
               activeSection={activeSection}
-              activeSectionId={activeSectionId}
               documentTitle={documentTitle}
               documentContent={documentContent}
               isSavingExport={isSavingExport !== null}
-              onSectionSelect={selectSection}
               onDocumentTitleChange={handleDocumentTitleChange}
               onDocumentContentChange={handleDocumentContentChange}
               onExport={handleExport}

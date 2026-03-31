@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FilePlus2 } from "lucide-react";
+import { OfflineBanner } from "@/components/ui/offline-banner";
 import { cn } from "@/lib/utils";
 import { appNavItems, isNavActive } from "./app-nav";
 import { AppSidebar } from "./AppSidebar";
@@ -41,9 +42,9 @@ function AppShellChrome({ children, user }: AppShellProps) {
         const staticTitle = PAGE_TITLES[pathname];
         if (staticTitle) return staticTitle;
 
-        const sessionMatch = pathname.match(/^\/app\/trabalhos\/([^/]+)/);
-        if (sessionMatch) {
-            const project = projects.find((p) => p.id === sessionMatch[1]);
+        const trabalhosMatch = pathname.match(/^\/app\/trabalhos\/([^/]+)/);
+        if (trabalhosMatch) {
+            const project = projects.find((p) => p.id === trabalhosMatch[1]);
             if (project) return project.title;
         }
 
@@ -144,6 +145,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
 
     return (
         <>
+            <OfflineBanner />
             <div
                 ref={appChromeRef}
                 className="h-svh w-screen flex gap-2 overflow-hidden bg-background p-2 lg:gap-3 lg:p-3"

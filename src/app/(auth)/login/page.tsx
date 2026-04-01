@@ -27,7 +27,7 @@ function getLoginErrorMessage(error?: string) {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: _session, status } = useSession();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -109,7 +109,7 @@ export default function LoginPage() {
 
   if (status === "loading") {
     return (
-      <div className="glass glass-border rounded-2xl p-8 shadow-2xl shadow-primary/5 gradient-glow-subtle animate-in fade-in-0 slide-in-from-bottom-4 duration-500 flex items-center justify-center min-h-[400px]">
+      <div className="glass glass-border rounded-[28px] p-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500 flex items-center justify-center min-h-[400px]">
         <div className="h-9 w-9 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
@@ -120,7 +120,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="glass glass-border rounded-2xl p-8 shadow-2xl shadow-primary/5 gradient-glow-subtle animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+    <div className="glass glass-border rounded-[28px] p-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold mb-2">Bem-vindo de volta</h1>

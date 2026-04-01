@@ -117,8 +117,12 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const type = searchParams.get("type");
     const search = searchParams.get("search");
-    const sortBy = searchParams.get("sortBy") || "updatedAt";
-    const sortOrder = searchParams.get("sortOrder") || "desc";
+    const sortByInput = searchParams.get("sortBy") || "updatedAt";
+    const sortOrderInput = searchParams.get("sortOrder") || "desc";
+
+    const ALLOWED_SORT_FIELDS = ['createdAt', 'updatedAt', 'title'];
+    const sortBy = ALLOWED_SORT_FIELDS.includes(sortByInput) ? sortByInput : 'updatedAt';
+    const sortOrder = sortOrderInput === 'asc' ? 'asc' : 'desc';
 
     const where: any = {
       userId: session.user.id,

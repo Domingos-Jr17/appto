@@ -86,7 +86,7 @@ Regras:
 - não incluir texto fora do JSON`;
 
     try {
-      const provider = getAIProvider();
+      const provider = await getAIProvider();
       const completion = await withTimeout(
         provider.chatCompletion({
           model: "", // Provider uses its default model

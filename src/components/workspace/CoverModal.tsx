@@ -47,10 +47,10 @@ export function CoverModal({
   );
 
   const [info, setInfo] = useState({
-    institution: brief.institution ?? "",
-    course: brief.course ?? "",
+    institutionName: brief.institutionName ?? "",
+    courseName: brief.courseName ?? "",
     studentName: brief.studentName ?? "",
-    advisor: brief.advisor ?? "",
+    advisorName: brief.advisorName ?? "",
     city: brief.city ?? "",
     year: brief.year ?? "",
   });
@@ -137,15 +137,15 @@ export function CoverModal({
           </TabsContent>
 
           <TabsContent value="info" className="mt-4">
-            <div className="space-y-3">
+              <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="cover-institution" className="text-xs">
                   Instituição
                 </Label>
                 <Input
                   id="cover-institution"
-                  value={info.institution}
-                  onChange={(e) => updateField("institution", e.target.value)}
+                  value={info.institutionName}
+                  onChange={(e) => updateField("institutionName", e.target.value)}
                   placeholder="Ex.: Universidade Eduardo Mondlane"
                   className="text-xs"
                 />
@@ -157,8 +157,8 @@ export function CoverModal({
                 </Label>
                 <Input
                   id="cover-course"
-                  value={info.course}
-                  onChange={(e) => updateField("course", e.target.value)}
+                  value={info.courseName}
+                  onChange={(e) => updateField("courseName", e.target.value)}
                   placeholder="Ex.: Gestão Bancária"
                   className="text-xs"
                 />
@@ -186,8 +186,8 @@ export function CoverModal({
                   </Label>
                   <Input
                     id="cover-advisor"
-                    value={info.advisor}
-                    onChange={(e) => updateField("advisor", e.target.value)}
+                    value={info.advisorName}
+                    onChange={(e) => updateField("advisorName", e.target.value)}
                     placeholder="Ex.: Prof. Doutor João"
                     className="text-xs"
                   />

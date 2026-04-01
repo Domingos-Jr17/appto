@@ -38,7 +38,9 @@ export function AppShellDataProvider({ children }: { children: React.ReactNode }
     setIsLoading(false);
   }, []);
 
-  refreshRef.current = refresh;
+  React.useEffect(() => {
+    refreshRef.current = refresh;
+  }, [refresh]);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {

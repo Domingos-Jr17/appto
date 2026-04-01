@@ -171,10 +171,10 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             brief: {
-              institutionName: updates.institution,
-              courseName: updates.course,
+              institutionName: updates.institutionName,
+              courseName: updates.courseName,
               studentName: updates.studentName,
-              advisorName: updates.advisor,
+              advisorName: updates.advisorName,
               city: updates.city,
               academicYear: updates.year ? parseInt(updates.year, 10) : undefined,
             },

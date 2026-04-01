@@ -11,10 +11,10 @@ export interface WorkSection {
 export interface WorkBrief {
   title: string;
   workType: string;
-  institution?: string;
-  course?: string;
-  subject?: string;
-  advisor?: string;
+  institutionName?: string;
+  courseName?: string;
+  subjectName?: string;
+  advisorName?: string;
   studentName?: string;
   city?: string;
   year?: string;

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FilePlus2, Menu, X } from "lucide-react";
+import { FilePlus2, X } from "lucide-react";
 import { OfflineBanner } from "@/components/ui/offline-banner";
 import { cn } from "@/lib/utils";
 import { appNavItems, isNavActive } from "./app-nav";
@@ -40,7 +40,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
     const mobileMenuRef = useRef<HTMLDivElement>(null);
     const previousFocusRef = useRef<HTMLElement | null>(null);
 
-    const title = useMemo(() => {
+    const _title = useMemo(() => {
         const staticTitle = PAGE_TITLES[pathname];
         if (staticTitle) return staticTitle;
 

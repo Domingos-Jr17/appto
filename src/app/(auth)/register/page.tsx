@@ -104,7 +104,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="glass glass-border rounded-2xl p-8 shadow-2xl shadow-primary/5 gradient-glow-subtle animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+    <div className="glass glass-border rounded-[28px] p-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold mb-2">Criar conta</h1>

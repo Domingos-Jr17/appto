@@ -18,17 +18,15 @@ export { AIRequestError };
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
 
-export function getAIProvider(): AIProvider {
+export async function getAIProvider(): Promise<AIProvider> {
   const provider = env.AI_PROVIDER?.toLowerCase()?.trim() || "openrouter";
 
   if (provider === "zai") {
-    // Dynamic import to avoid circular dependency
-    const { ZAIProvider } = require("@/lib/ai-providers/zai");
+    const { ZAIProvider } = await import("@/lib/ai-providers/zai");
     return new ZAIProvider();
   }
 
-  // Default: OpenRouter (Qwen 3.6 Plus Preview)
-  const { OpenRouterProvider } = require("@/lib/ai-providers/openrouter");
+  const { OpenRouterProvider } = await import("@/lib/ai-providers/openrouter");
   return new OpenRouterProvider();
 }
 

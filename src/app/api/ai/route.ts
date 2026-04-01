@@ -296,7 +296,7 @@ export async function POST(request: NextRequest) {
         break;
     }
 
-    const provider = getAIProvider();
+    const provider = await getAIProvider();
     const completion = await provider.chatCompletion({
       model: "", // Provider uses its default model
       messages: [

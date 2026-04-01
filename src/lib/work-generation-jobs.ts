@@ -310,7 +310,7 @@ Requisitos obrigatórios:
 - Não deixe nenhuma secção vazia
 - Produza JSON estritamente válido`;
 
-  const provider = getAIProvider();
+  const provider = await getAIProvider();
   const completion = await provider.chatCompletion({
     model: "", // Provider uses its default model
     messages: [
@@ -484,7 +484,7 @@ Requisitos obrigatórios:
 - Mantenha tom formal, coerente e plausível
 - Devolva apenas o conteúdo final da secção, sem markdown extra nem explicações`;
 
-  const provider = getAIProvider();
+  const provider = await getAIProvider();
   const completion = await provider.chatCompletion({
     model: "", // Provider uses its default model
     messages: [

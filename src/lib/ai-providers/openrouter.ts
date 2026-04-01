@@ -32,7 +32,7 @@ function getChatCompletionsUrl(baseUrl: string) {
   return `${normalized}/chat/completions`;
 }
 
-function parseStatusFromMessage(message: string) {
+function _parseStatusFromMessage(message: string) {
   const match = message.match(/status\s+(\d{3})/i);
   return match ? Number(match[1]) : null;
 }

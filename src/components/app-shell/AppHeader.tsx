@@ -4,7 +4,6 @@ import { Menu, X } from "lucide-react";
 import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "@/components/ui-aptto/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 interface AppHeaderProps {
     user: {

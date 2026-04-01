@@ -17,7 +17,7 @@ export function AppShellDataProvider({ children }: { children: React.ReactNode }
   const [projects, setProjects] = React.useState<AppProjectRecord[]>([]);
   const [credits, setCredits] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(true);
-  const refreshRef = React.useRef<() => Promise<void>>();
+  const refreshRef = React.useRef<(() => Promise<void>) | null>(null);
 
   const refresh = React.useCallback(async () => {
     setIsLoading(true);

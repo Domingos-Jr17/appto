@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Coins, TrendingUp, Zap, Sparkles } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TrendingUp, Zap, Sparkles } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -24,24 +24,16 @@ export function BalanceCard({
     return (
         <Card
             className={cn(
-                "glass glass-border relative overflow-hidden rounded-xl border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card",
+                "glass glass-border relative overflow-hidden rounded-[28px] border-primary/20 bg-gradient-to-br from-primary/10 via-background/80 to-background/80",
                 className,
             )}
         >
-            {/* Decorative elements - behind content */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-
-            <CardHeader className="relative z-10 pb-2">
-                <CardTitle className="flex items-center gap-2 text-base font-medium">
-                    <Coins className="h-5 w-5 text-primary" />
-                    Saldo de Créditos
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="relative z-10 space-y-6">
-                {/* Main Balance */}
+            <CardContent className="relative z-10 space-y-6 p-6">
                 <div className="space-y-1">
-                    <div className="flex items-baseline gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Saldo de Créditos
+                    </p>
+                    <div className="flex items-baseline gap-2 pt-2">
                         <span className="text-5xl font-bold tracking-tight">
                             {balance.toLocaleString("pt-MZ")}
                         </span>
@@ -58,8 +50,7 @@ export function BalanceCard({
                     </p>
                 </div>
 
-                {/* Stats Row */}
-                <div className="flex flex-wrap gap-4 border-t border-border/60 pt-2">
+                <div className="flex flex-wrap gap-4 border-t border-border/60 pt-4">
                     <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-2xl border border-success/10 bg-success/10">
                             <TrendingUp className="h-4 w-4 text-success" />
@@ -86,8 +77,7 @@ export function BalanceCard({
                     </div>
                 </div>
 
-                {/* CTA */}
-                <Button className="w-full gap-2" onClick={onRechargeClick}>
+                <Button className="h-14 w-full rounded-2xl text-base gap-2" onClick={onRechargeClick}>
                     <Sparkles className="h-4 w-4" />
                     Recarregar Créditos
                 </Button>

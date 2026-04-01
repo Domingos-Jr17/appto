@@ -124,44 +124,45 @@ export function AppSidebar({
                                                 {project.title}
                                             </span>
                                         </Link>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-6 w-6 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-                                                aria-label="Mais opções"
-                                            >
-                                                <MoreVertical className="h-3.5 w-3.5" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-40">
-                                            <DropdownMenuItem onClick={() => onEdit?.(project.id)}>
-                                                <Pencil className="mr-2 h-4 w-4" />
-                                                Renomear
-                                            </DropdownMenuItem>
-                                            {project.status === "archived" ? (
-                                                <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
-                                                    <Archive className="mr-2 h-4 w-4" />
-                                                    Restaurar
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-6 w-6 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                                                    aria-label="Mais opções"
+                                                >
+                                                    <MoreVertical className="h-3.5 w-3.5" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-40">
+                                                <DropdownMenuItem onClick={() => onEdit?.(project.id)}>
+                                                    <Pencil className="mr-2 h-4 w-4" />
+                                                    Renomear
                                                 </DropdownMenuItem>
-                                            ) : (
-                                                <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
-                                                    <Archive className="mr-2 h-4 w-4" />
-                                                    Arquivar
+                                                {project.status === "archived" ? (
+                                                    <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
+                                                        <Archive className="mr-2 h-4 w-4" />
+                                                        Restaurar
+                                                    </DropdownMenuItem>
+                                                ) : (
+                                                    <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
+                                                        <Archive className="mr-2 h-4 w-4" />
+                                                        Arquivar
+                                                    </DropdownMenuItem>
+                                                )}
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem 
+                                                    className="text-destructive focus:text-destructive"
+                                                    onClick={() => onDelete?.(project.id)}
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Eliminar
                                                 </DropdownMenuItem>
-                                            )}
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem 
-                                                className="text-destructive focus:text-destructive"
-                                                onClick={() => onDelete?.(project.id)}
-                                            >
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Eliminar
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>;
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                );
                             })}
                         </div>
                     </>

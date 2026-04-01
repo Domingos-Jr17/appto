@@ -25,8 +25,8 @@ export function GenerateButton({
       {isGenerating
         ? "A gerar..."
         : allDone
-          ? "Regenerar tudo"
-          : "Gerar tudo"}
+          ? "Regenerar trabalho"
+          : "Gerar trabalho"}
     </Button>
   );
 }

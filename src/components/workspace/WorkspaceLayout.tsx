@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import { DocumentPreview } from "./DocumentPreview";
-import { GeneratingBanner } from "./GeneratingBanner";
 import { CoverModal } from "./CoverModal";
 import { EditorLink } from "./EditorLink";
 import type { WorkspaceData } from "@/types/workspace";
@@ -19,12 +18,6 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
 
   return (
     <>
-      <GeneratingBanner
-        isGenerating={workspace.isGenerating}
-        progress={workspace.data.generationProgress}
-        generationStep={workspace.data.generationStep}
-      />
-
       {workspace.error && (
         <div className="border-b border-destructive/30 bg-destructive/5 px-4 py-2 text-xs text-destructive">
           {workspace.error}
@@ -36,6 +29,8 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
           title={workspace.data.brief.title}
           workType={workspace.data.brief.workType}
           progress={workspace.progress}
+          generationProgress={workspace.data.generationProgress}
+          generationStep={workspace.data.generationStep}
           isGenerating={workspace.isGenerating}
           allDone={workspace.allDone}
           onGenerate={workspace.generateAll}

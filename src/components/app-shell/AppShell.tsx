@@ -162,7 +162,6 @@ function AppShellChrome({ children, user }: AppShellProps) {
 
                 <main id="main-content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
                     <AppHeader
-                        title={title}
                         user={user}
                         onMenuToggle={() => setIsMobileMenuOpen((open) => !open)}
                         isMobileMenuOpen={isMobileMenuOpen}

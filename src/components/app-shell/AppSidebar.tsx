@@ -25,22 +25,14 @@ export function AppSidebar({
 
     return (
         <aside className="glass-premium sticky top-0 z-[var(--z-sidebar)] flex h-full w-[240px] shrink-0 flex-col rounded-[28px] text-sidebar-foreground">
-            <div className="shrink-0 border-b border-white/10 px-3 pb-3 pt-4">
+            <div className="shrink-0 flex flex-col items-center border-b border-white/10 px-3 pb-3 pt-4">
                 <Link
                     href="/app"
                     onClick={onNavigate}
-                    className="flex items-center gap-3"
+                    className="flex items-center justify-center"
                 >
                     <div className="gradient-primary flex h-10 w-10 items-center justify-center rounded-2xl text-primary-foreground shadow-sm">
                         <BookCopy className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold tracking-tight text-foreground">
-                            appto
-                        </p>
-                        <p className="truncate text-xs text-sidebar-foreground/70">
-                            Gerador académico
-                        </p>
                     </div>
                 </Link>
 

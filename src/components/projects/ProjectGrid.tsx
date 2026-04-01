@@ -136,7 +136,8 @@ function ProjectCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                className="h-8 w-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                aria-label="Mais opções"
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>

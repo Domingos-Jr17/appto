@@ -51,10 +51,10 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
 
   const activeSectionId = useEditorStore((state) => state.activeSectionId);
   const sectionTitle = useEditorStore((state) => state.sectionTitle);
-  const content = useEditorStore((state) => state.content);
+  const _content = useEditorStore((state) => state.content);
   const selectSection = useEditorStore((state) => state.selectSection);
-  const updateTitle = useEditorStore((state) => state.updateTitle);
-  const updateContent = useEditorStore((state) => state.updateContent);
+  const _updateTitle = useEditorStore((state) => state.updateTitle);
+  const _updateContent = useEditorStore((state) => state.updateContent);
   const replaceContent = useEditorStore((state) => state.replaceContent);
   const resetEditor = useEditorStore((state) => state.resetEditor);
 
@@ -96,11 +96,25 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
   useEffect(() => {
     if (!project || project.generationStatus !== "GENERATING") return;
 
+    // Stop polling after 2 minutes (generation should complete by then)
+    const timeoutId = window.setTimeout(() => {
+      void fetchProject(projectId);
+    }, 2000);
+
     const intervalId = window.setInterval(() => {
       void fetchProject(projectId);
-    }, 1800);
+    }, 3000);
 
-    return () => window.clearInterval(intervalId);
+    // Stop polling after 2 minutes if still generating
+    const maxPollingId = window.setTimeout(() => {
+      window.clearInterval(intervalId);
+    }, 120000);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(timeoutId);
+      window.clearTimeout(maxPollingId);
+    };
   }, [fetchProject, project, projectId]);
 
   const activeSection = useMemo(
@@ -113,8 +127,6 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
     return buildArtifactSource(project, activeSection, chatMessages);
   }, [activeSection, chatMessages, project]);
 
-  const _documentTitle = activeSection ? sectionTitle : artifact?.title || project?.title || "";
-  const _documentContent = activeSection ? content : artifact?.content || "";
   const chatContext = useMemo(() => {
     if (!project) return undefined;
 
@@ -186,26 +198,14 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
     [activeSectionId, createSection, projectId, replaceContent, sectionTitle, selectSection, toast, updateSectionTree]
   );
 
-  const _handleDocumentTitleChange = useCallback(
-    (title: string) => {
-      if (!activeSectionId) return;
-      updateTitle(title, projectId);
-      updateSectionTree(activeSectionId, (section) => ({ ...section, title }));
+  const handleGenerateSection = useCallback(
+    (sectionTitle: string) => {
+      const prompt = sectionTitle
+        ? `Escreve o conteúdo completo da secção "${sectionTitle}" para este trabalho académico.`
+        : "Gera a estrutura completa do trabalho com todas as secções necessárias.";
+      setChatPrompt(prompt);
     },
-    [activeSectionId, projectId, updateSectionTree, updateTitle]
-  );
-
-  const _handleDocumentContentChange = useCallback(
-    (nextContent: string) => {
-      if (!activeSectionId) return;
-      updateContent(nextContent, projectId);
-      updateSectionTree(activeSectionId, (section) => ({
-        ...section,
-        content: nextContent,
-        wordCount: countWordsInMarkdown(nextContent),
-      }));
-    },
-    [activeSectionId, projectId, updateContent, updateSectionTree]
+    [setChatPrompt]
   );
 
   const handleBriefSave = useCallback(
@@ -242,65 +242,6 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
     },
     [fetchProject, projectId, toast]
   );
-
-  const _handleRegenerateWork = useCallback(async () => {
-    const response = await fetchWithRetry(`/api/projects/${projectId}/regenerate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      retries: 1,
-      body: JSON.stringify({ mode: "work" }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      toast({
-        title: "Erro",
-        description: data.error || "Não foi possível regenerar o trabalho.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Regeneração iniciada",
-      description: "A aptto está a reconstruir o trabalho com base no briefing actualizado.",
-    });
-
-    await fetchProject(projectId);
-  }, [fetchProject, projectId, toast]);
-
-  const _handleRegenerateSection = useCallback(async () => {
-    if (!activeSection) return;
-
-    const response = await fetchWithRetry(`/api/projects/${projectId}/regenerate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      retries: 1,
-      body: JSON.stringify({ mode: "section", sectionId: activeSection.id }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      toast({
-        title: "Erro",
-        description: data.error || "Não foi possível regenerar a secção.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    replaceContent(data.content, projectId);
-    updateSectionTree(activeSection.id, (section) => ({
-      ...section,
-      content: data.content,
-      wordCount: countWordsInMarkdown(data.content),
-    }));
-
-    toast({
-      title: "Secção regenerada",
-      description: "A secção activa foi reescrita com base no briefing actual.",
-    });
-  }, [activeSection, projectId, replaceContent, toast, updateSectionTree]);
 
   if (isLoading || activeProjectStoreId !== projectId || (project && project.id !== projectId)) {
     return <WorkspaceLoadingSkeleton />;
@@ -340,6 +281,7 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
               chatMessages={chatMessages}
               chatPrompt={chatPrompt}
               isChatLoading={isChatLoading}
+              generationStatus={project.generationStatus}
               onChatPromptChange={setChatPrompt}
               onChatSubmit={handleChatSubmit}
               onApplyContent={handleApplyContent}
@@ -354,6 +296,7 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
               activeSection={activeSection}
               isSavingExport={isSavingExport !== null}
               onExport={handleExport}
+              onGenerateSection={handleGenerateSection}
               onBriefSave={handleBriefSave}
             />
           </WorkWorkspaceErrorBoundary>

@@ -58,6 +58,7 @@ export function ProjectFilters({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="h-11 rounded-2xl border-border/60 bg-muted/30 pl-10"
+          aria-label="Procurar trabalho"
         />
       </div>
     </div>

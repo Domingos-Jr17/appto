@@ -1,6 +1,6 @@
 import { env } from "@/lib/env";
-import type { AIProvider, AIChatRequest, AIChatResponse } from "@/lib/ai";
-import { AIRequestError } from "@/lib/ai";
+import type { AIProvider, AIChatRequest, AIChatResponse } from "@/lib/ai-types";
+import { AIRequestError } from "@/lib/ai-types";
 
 const RETRY_DELAYS_MS = [800, 1600, 3200];
 const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";

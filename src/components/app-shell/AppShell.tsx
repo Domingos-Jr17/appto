@@ -145,6 +145,12 @@ function AppShellChrome({ children, user }: AppShellProps) {
 
     return (
         <>
+            <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[var(--z-overlay)] focus:rounded-xl focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:text-primary-foreground"
+            >
+                Saltar para o conteúdo
+            </a>
             <OfflineBanner />
             <div
                 ref={appChromeRef}
@@ -154,7 +160,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
                     <AppSidebar currentPath={pathname} />
                 </div>
 
-                <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+                <main id="main-content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
                     <AppHeader
                         title={title}
                         user={user}
@@ -172,7 +178,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
                     >
                         {children}
                     </div>
-                </div>
+                </main>
             </div>
 
             <AnimatePresence>
@@ -209,7 +215,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
                         >
                             <div className="mb-6 flex items-center justify-between">
                                 <div>
-                                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/60">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/80">
                                         Navegação
                                     </p>
                                     <p id="app-mobile-menu-title" className="mt-2 text-2xl font-semibold tracking-tight text-white">
@@ -247,7 +253,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
                                                 href={item.href}
                                                 onClick={() => setIsMobileMenuOpen(false)}
                                                 className={cn(
-                                                    "group flex items-center gap-4 rounded-[28px] px-5 py-4 text-[1.45rem] font-semibold tracking-tight text-white/78 transition duration-200",
+                                                    "group flex items-center gap-4 rounded-[28px] px-5 py-4 text-[1.45rem] font-semibold tracking-tight text-white/90 transition duration-200",
                                                     active
                                                         ? "bg-white/14 text-white shadow-lg shadow-black/10"
                                                         : "hover:bg-white/10 hover:text-white",

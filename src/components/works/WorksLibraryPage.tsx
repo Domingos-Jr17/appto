@@ -32,6 +32,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { EmptyState } from "@/components/ui/empty-state";
 import { WorksLibrarySkeleton } from "@/components/skeletons/WorksLibrarySkeleton";
 import { GenerateWorkProgress } from "@/components/work-creation/GenerateWorkProgress";
@@ -198,6 +199,10 @@ export function WorksLibraryPage() {
 
         if (data.status === "READY") {
           window.clearInterval(intervalId);
+          toast({
+            title: "O teu trabalho está pronto!",
+            description: "Explora as secções geradas e usa a IA para fazer ajustes. Boa escrita!",
+          });
           setDialogOpen(false);
           resetWorkForm();
           router.push(`/app/trabalhos/${generationProjectId}`);
@@ -268,8 +273,10 @@ export function WorksLibraryPage() {
           return right.progress - left.progress;
         case "created":
           return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+        case "updated":
+          return new Date(right.lastUpdated).getTime() - new Date(left.lastUpdated).getTime();
         default:
-          return 0;
+          return new Date(right.lastUpdated).getTime() - new Date(left.lastUpdated).getTime();
       }
     });
 
@@ -509,6 +516,7 @@ export function WorksLibraryPage() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="institution">Instituição</Label>
+                        <p className="text-xs text-muted-foreground">Usada na capa e na formatação do trabalho.</p>
                         <Input id="institution" value={workForm.institutionName} onChange={(event) => updateWorkForm("institutionName", event.target.value)} placeholder="Ex.: UEM" />
                       </div>
                       <div className="space-y-2">
@@ -517,88 +525,100 @@ export function WorksLibraryPage() {
                       </div>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="subject">Disciplina</Label>
-                        <Input id="subject" value={workForm.subjectName} onChange={(event) => updateWorkForm("subjectName", event.target.value)} placeholder="Ex.: Metodologia de Investigação" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="year">Ano lectivo</Label>
-                        <Input id="year" value={workForm.academicYear} onChange={(event) => updateWorkForm("academicYear", event.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="2026" />
-                      </div>
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="advisor">Professor ou orientador</Label>
-                        <Input id="advisor" value={workForm.advisorName} onChange={(event) => updateWorkForm("advisorName", event.target.value)} placeholder="Ex.: Prof. Doutor João Luís" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="student">Nome do estudante</Label>
-                        <Input id="student" value={workForm.studentName} onChange={(event) => updateWorkForm("studentName", event.target.value)} placeholder="Ex.: Maria João António" />
-                      </div>
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="city">Cidade</Label>
-                        <Input id="city" value={workForm.city} onChange={(event) => updateWorkForm("city", event.target.value)} placeholder="Ex.: Maputo" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="education-level">Nível académico</Label>
-                        <Select value={workForm.educationLevel} onValueChange={(value) => updateWorkForm("educationLevel", value as AcademicEducationLevel)}>
-                          <SelectTrigger id="education-level">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="SECONDARY">Secundário</SelectItem>
-                            <SelectItem value="TECHNICAL">Técnico Profissional</SelectItem>
-                            <SelectItem value="HIGHER_EDUCATION">Ensino Superior</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
                     <div className="space-y-2">
-                      <Label htmlFor="objective">Objetivo</Label>
-                      <Textarea id="objective" value={workForm.objective} onChange={(event) => updateWorkForm("objective", event.target.value)} rows={3} placeholder="Ex.: analisar o impacto da digitalização no sector bancário moçambicano." />
+                      <Label htmlFor="education-level">Nível académico</Label>
+                      <p className="text-xs text-muted-foreground">Ajusta o tom e a complexidade do conteúdo gerado.</p>
+                      <Select value={workForm.educationLevel} onValueChange={(value) => updateWorkForm("educationLevel", value as AcademicEducationLevel)}>
+                        <SelectTrigger id="education-level">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="SECONDARY">Secundário</SelectItem>
+                          <SelectItem value="TECHNICAL">Técnico Profissional</SelectItem>
+                          <SelectItem value="HIGHER_EDUCATION">Ensino Superior</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="methodology">Metodologia ou orientação</Label>
-                      <Textarea id="methodology" value={workForm.methodology} onChange={(event) => updateWorkForm("methodology", event.target.value)} rows={3} placeholder="Ex.: revisão bibliográfica e estudo comparativo." />
-                    </div>
+                    <Accordion type="single" collapsible>
+                      <AccordionItem value="advanced-fields" className="border-border/60">
+                        <AccordionTrigger className="text-xs font-medium text-muted-foreground hover:text-foreground">
+                          Mais opções
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-4 pt-2">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              <div className="space-y-2">
+                                <Label htmlFor="subject">Disciplina</Label>
+                                <Input id="subject" value={workForm.subjectName} onChange={(event) => updateWorkForm("subjectName", event.target.value)} placeholder="Ex.: Metodologia de Investigação" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="year">Ano lectivo</Label>
+                                <Input id="year" value={workForm.academicYear} onChange={(event) => updateWorkForm("academicYear", event.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="2026" />
+                              </div>
+                            </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="references-seed">Referências iniciais</Label>
-                      <Textarea id="references-seed" value={workForm.referencesSeed} onChange={(event) => updateWorkForm("referencesSeed", event.target.value)} rows={3} placeholder="Autores, livros, artigos ou links que devem orientar o trabalho." />
-                    </div>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              <div className="space-y-2">
+                                <Label htmlFor="advisor">Professor ou orientador</Label>
+                                <Input id="advisor" value={workForm.advisorName} onChange={(event) => updateWorkForm("advisorName", event.target.value)} placeholder="Ex.: Prof. Doutor João Luís" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="student">Nome do estudante</Label>
+                                <Input id="student" value={workForm.studentName} onChange={(event) => updateWorkForm("studentName", event.target.value)} placeholder="Ex.: Maria João António" />
+                              </div>
+                            </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="citation-style">Norma de citação</Label>
-                        <Select value={workForm.citationStyle} onValueChange={(value) => updateWorkForm("citationStyle", value as CitationStyle)}>
-                          <SelectTrigger id="citation-style">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ABNT">ABNT</SelectItem>
-                            <SelectItem value="APA">APA</SelectItem>
-                            <SelectItem value="Vancouver">Vancouver</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="city">Cidade</Label>
+                              <Input id="city" value={workForm.city} onChange={(event) => updateWorkForm("city", event.target.value)} placeholder="Ex.: Maputo" />
+                            </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="additional-instructions">Notas adicionais</Label>
-                      <Textarea id="additional-instructions" value={workForm.additionalInstructions} onChange={(event) => updateWorkForm("additionalInstructions", event.target.value)} rows={3} placeholder="Ex.: incluir exemplos de Moçambique e manter linguagem formal." />
-                    </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="objective">Objetivo</Label>
+                              <p className="text-xs text-muted-foreground">Ajuda a IA a manter o foco ao gerar o conteúdo.</p>
+                              <Textarea id="objective" value={workForm.objective} onChange={(event) => updateWorkForm("objective", event.target.value)} rows={3} placeholder="Ex.: analisar o impacto da digitalização no sector bancário moçambicano." />
+                            </div>
 
-                    <CoverTemplateSelector
-                      value={workForm.coverTemplate}
-                      onChange={(value) => updateWorkForm("coverTemplate", value)}
-                    />
+                            <div className="space-y-2">
+                              <Label htmlFor="methodology">Metodologia ou orientação</Label>
+                              <Textarea id="methodology" value={workForm.methodology} onChange={(event) => updateWorkForm("methodology", event.target.value)} rows={3} placeholder="Ex.: revisão bibliográfica e estudo comparativo." />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="references-seed">Referências iniciais</Label>
+                              <Textarea id="references-seed" value={workForm.referencesSeed} onChange={(event) => updateWorkForm("referencesSeed", event.target.value)} rows={3} placeholder="Autores, livros, artigos ou links que devem orientar o trabalho." />
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              <div className="space-y-2">
+                                <Label htmlFor="citation-style">Norma de citação</Label>
+                                <Select value={workForm.citationStyle} onValueChange={(value) => updateWorkForm("citationStyle", value as CitationStyle)}>
+                                  <SelectTrigger id="citation-style">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="ABNT">ABNT</SelectItem>
+                                    <SelectItem value="APA">APA</SelectItem>
+                                    <SelectItem value="Vancouver">Vancouver</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="additional-instructions">Notas adicionais</Label>
+                              <Textarea id="additional-instructions" value={workForm.additionalInstructions} onChange={(event) => updateWorkForm("additionalInstructions", event.target.value)} rows={3} placeholder="Ex.: incluir exemplos de Moçambique e manter linguagem formal." />
+                            </div>
+
+                            <CoverTemplateSelector
+                              value={workForm.coverTemplate}
+                              onChange={(value) => updateWorkForm("coverTemplate", value)}
+                            />
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
                   </div>
                 )}
               </div>

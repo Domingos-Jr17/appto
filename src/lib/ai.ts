@@ -1,59 +1,20 @@
 import { env } from "@/lib/env";
-import { ZAIProvider } from "@/lib/ai-providers/zai";
-import { OpenRouterProvider } from "@/lib/ai-providers/openrouter";
 
-// ─── Interfaces ──────────────────────────────────────────────────────────────
+// Import types from separate file to avoid circular dependency
+import type {
+  AIProvider,
+  AIChatRequest,
+  AIChatResponse,
+  AIMessage,
+} from "@/lib/ai-types";
+import { AIRequestError } from "@/lib/ai-types";
 
-export interface AIMessage {
-  role: "system" | "user" | "assistant" | "tool";
-  content: string;
-}
+// Re-export types for backward compatibility
+export type { AIProvider, AIChatRequest, AIChatResponse, AIMessage };
+export { AIRequestError };
 
-export interface AIChatRequest {
-  model: string;
-  messages: AIMessage[];
-  stream?: boolean;
-  temperature?: number;
-  max_tokens?: number;
-  top_p?: number;
-  thinking?: unknown;
-}
-
-export interface AIChatResponse {
-  id?: string;
-  choices: Array<{
-    index?: number;
-    message?: {
-      role?: string;
-      content?: string;
-    };
-    finish_reason?: string | null;
-  }>;
-  usage?: {
-    prompt_tokens?: number;
-    completion_tokens?: number;
-    total_tokens?: number;
-  };
-}
-
-export interface AIProvider {
-  name: string;
-  chatCompletion(request: AIChatRequest): Promise<AIChatResponse>;
-}
-
-// ─── Error Classes ───────────────────────────────────────────────────────────
-
-export class AIRequestError extends Error {
-  status: number | null;
-  provider: string;
-
-  constructor(message: string, provider: string, status: number | null = null) {
-    super(message);
-    this.name = "AIRequestError";
-    this.provider = provider;
-    this.status = status;
-  }
-}
+// ─── Provider imports (lazy) ──────────────────────────────────────────────
+// Note: Providers are imported dynamically to avoid circular dependency at module load time
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
 
@@ -61,10 +22,13 @@ export function getAIProvider(): AIProvider {
   const provider = env.AI_PROVIDER?.toLowerCase()?.trim() || "openrouter";
 
   if (provider === "zai") {
+    // Dynamic import to avoid circular dependency
+    const { ZAIProvider } = require("@/lib/ai-providers/zai");
     return new ZAIProvider();
   }
 
   // Default: OpenRouter (Qwen 3.6 Plus Preview)
+  const { OpenRouterProvider } = require("@/lib/ai-providers/openrouter");
   return new OpenRouterProvider();
 }
 

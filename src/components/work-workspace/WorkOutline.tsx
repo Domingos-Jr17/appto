@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, ChevronDown, ChevronRight, Circle, FileText, FolderOpen, PencilLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Section } from "@/types/editor";
@@ -31,7 +32,7 @@ export function WorkOutline({ sections, activeSectionId, onSelectSection }: Work
 
   return (
     <div className="space-y-1.5">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         Estrutura do trabalho
       </p>
       <div className="space-y-1">
@@ -95,6 +96,8 @@ function OutlineRow({
             type="button"
             onClick={() => onToggleExpand(section.id)}
             className="shrink-0 rounded-full p-0.5 hover:bg-muted/50"
+            aria-label={isExpanded ? "Recolher secção" : "Expandir secção"}
+            aria-expanded={isExpanded}
           >
             {isExpanded ? (
               <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -116,7 +119,7 @@ function OutlineRow({
           ) : (
             <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           )}
-          <span className={cn("flex-1 truncate text-[12px]", active ? "font-semibold text-foreground" : "text-foreground/90")}>
+          <span className={cn("flex-1 truncate text-xs", active ? "font-semibold text-foreground" : "text-foreground/90")}>
             {section.title}
           </span>
         </button>
@@ -124,30 +127,49 @@ function OutlineRow({
         <StatusIcon className={cn("h-3.5 w-3.5 shrink-0", status.iconClass)} />
       </div>
 
-      {isExpanded && hasContent && (
-        <div
-          className="mx-2 mt-0.5 rounded-lg border border-border/30 bg-muted/10 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground"
-          style={{ marginLeft: depth * 10 + 16 }}
-        >
-          <p className="line-clamp-6 whitespace-pre-wrap">{section.content.slice(0, 600)}{section.content.length > 600 ? "…" : ""}</p>
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {isExpanded && hasContent && (
+          <motion.div
+            key="preview"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            style={{ marginLeft: depth * 10 + 16 }}
+            className="overflow-hidden"
+          >
+            <div className="mx-2 mt-0.5 rounded-lg border border-border/30 bg-muted/10 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+              <p className="line-clamp-6 whitespace-pre-wrap">{section.content.slice(0, 600)}{section.content.length > 600 ? "…" : ""}</p>
+            </div>
+          </motion.div>
+        )}
 
-      {isExpanded && hasChildren && (
-        <div className="mt-0.5 space-y-1" style={{ marginLeft: depth * 10 + 8 }}>
-          {section.children.map((child) => (
-            <OutlineRow
-              key={child.id}
-              section={child}
-              depth={depth + 1}
-              activeSectionId={activeSectionId}
-              expanded={expanded}
-              onToggleExpand={onToggleExpand}
-              onSelectSection={onSelectSection}
-            />
-          ))}
-        </div>
-      )}
+        {isExpanded && hasChildren && (
+          <motion.div
+            key="children"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            style={{ marginLeft: depth * 10 + 8 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-0.5 space-y-1">
+              {section.children.map((child) => (
+                <OutlineRow
+                  key={child.id}
+                  section={child}
+                  depth={depth + 1}
+                  activeSectionId={activeSectionId}
+                  expanded={expanded}
+                  onToggleExpand={onToggleExpand}
+                  onSelectSection={onSelectSection}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

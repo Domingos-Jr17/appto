@@ -1,6 +1,7 @@
 "use client";
 
 import { Bot, Send, Wand2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,7 @@ interface ChatPaneProps {
   chatMessages: AssistantMessage[];
   chatPrompt: string;
   isChatLoading: boolean;
+  generationStatus?: string;
   onChatPromptChange: (prompt: string) => void;
   onChatSubmit: () => void;
   onApplyContent: (content: string) => void;
@@ -19,15 +21,28 @@ export function ChatPane({
   chatMessages,
   chatPrompt,
   isChatLoading,
+  generationStatus,
   onChatPromptChange,
   onChatSubmit,
   onApplyContent,
 }: ChatPaneProps) {
-  const quickActions = [
-    "Melhorar a introdução",
-    "Adicionar referências",
-    "Verificar formatação",
-  ];
+  const isGenerating = generationStatus === "GENERATING";
+
+  const quickActions = isGenerating
+    ? [
+        "Gerar conteúdo do capítulo actual",
+        "Escrever a introdução",
+        "Adicionar referências",
+      ]
+    : [
+        "Melhorar a introdução",
+        "Adicionar referências",
+        "Verificar formatação",
+      ];
+
+  const emptyMessage = isGenerating
+    ? "O trabalho está a ser gerado. Podes começar a pedir melhorias ou gerar conteúdo adicional enquanto esperas."
+    : "Começa a conversar com a IA para gerar, melhorar ou expandir o conteúdo do trabalho.";
 
   return (
     <section className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
@@ -36,7 +51,7 @@ export function ChatPane({
           {chatMessages.length === 0 ? (
             <div className="flex min-h-full flex-1 flex-col items-center justify-center py-12 text-center">
               <p className="max-w-md text-sm text-muted-foreground">
-                O trabalho ja foi gerado. Use este painel apenas para pedir ajustes, expandir ideias ou rever trechos.
+                {emptyMessage}
               </p>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                 {quickActions.map((action) => (
@@ -54,16 +69,20 @@ export function ChatPane({
               </div>
             </div>
           ) : (
-            chatMessages.map((message) => (
-              <article
-                key={message.id}
-                className={cn(
-                  "max-w-[92%] rounded-2xl border px-5 py-4 shadow-sm transition-colors",
-                  message.role === "user"
-                    ? "ml-auto border-primary/20 bg-primary/10"
-                    : "mr-auto glass glass-border bg-card/90"
-                )}
-              >
+            <AnimatePresence initial={false}>
+              {chatMessages.map((message) => (
+                <motion.article
+                  key={message.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  className={cn(
+                    "max-w-[92%] rounded-2xl border px-5 py-4 shadow-sm",
+                    message.role === "user"
+                      ? "ml-auto border-primary/20 bg-primary/10"
+                      : "mr-auto glass glass-border bg-card/90"
+                  )}
+                >
                 <div className="flex items-center gap-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                     {message.role === "assistant" ? <Bot className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
@@ -87,8 +106,9 @@ export function ChatPane({
                     </Button>
                   </div>
                 ) : null}
-              </article>
-            ))
+                </motion.article>
+              ))}
+             </AnimatePresence>
           )}
         </div>
       </div>
@@ -116,6 +136,7 @@ export function ChatPane({
                 className="gradient-primary h-auto min-h-[88px] w-12 rounded-2xl text-primary-foreground hover:opacity-90"
                 onClick={onChatSubmit}
                 disabled={!chatPrompt.trim() || isChatLoading}
+                aria-label="Enviar mensagem"
               >
                 <Send className="h-4 w-4" />
               </Button>

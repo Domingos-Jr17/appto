@@ -1,4 +1,4 @@
-import { createZAIChatCompletion, getFriendlyZAIErrorMessage } from "@/lib/zai";
+import { getAIProvider, getFriendlyAIErrorMessage } from "@/lib/ai";
 import { generateCoverHTML } from "@/lib/cover-templates";
 import { db } from "@/lib/db";
 import type { CitationStyle, CoverTemplate, WorkBriefInput } from "@/types/editor";
@@ -310,13 +310,13 @@ Requisitos obrigatórios:
 - Não deixe nenhuma secção vazia
 - Produza JSON estritamente válido`;
 
-  const completion = await createZAIChatCompletion({
-    model: "glm-4.7-flash",
+  const provider = getAIProvider();
+  const completion = await provider.chatCompletion({
+    model: "", // Provider uses its default model
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: prompt },
     ],
-    thinking: { type: "disabled" },
     max_tokens: 8000,
   });
 
@@ -422,7 +422,7 @@ export async function startWorkGenerationJob(input: {
         step: "Trabalho pronto para revisão",
       });
     } catch (error) {
-      const friendlyMessage = getFriendlyZAIErrorMessage(error);
+      const friendlyMessage = getFriendlyAIErrorMessage(error);
 
       await db.$transaction(async (tx) => {
         await tx.projectBrief.update({
@@ -484,13 +484,13 @@ Requisitos obrigatórios:
 - Mantenha tom formal, coerente e plausível
 - Devolva apenas o conteúdo final da secção, sem markdown extra nem explicações`;
 
-  const completion = await createZAIChatCompletion({
-    model: "glm-4.7-flash",
+  const provider = getAIProvider();
+  const completion = await provider.chatCompletion({
+    model: "", // Provider uses its default model
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: prompt },
     ],
-    thinking: { type: "disabled" },
     max_tokens: 2500,
   });
 

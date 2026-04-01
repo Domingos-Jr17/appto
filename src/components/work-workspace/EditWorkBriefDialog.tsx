@@ -122,7 +122,7 @@ export function EditWorkBriefDialog({ brief, onSave }: EditWorkBriefDialogProps)
       <DialogTrigger asChild>
         <Button variant="outline" className="rounded-2xl px-4">
           <PencilLine className="mr-2 h-4 w-4" />
-          Editar briefing
+          Editar capa
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[620px]">
@@ -204,7 +204,7 @@ export function EditWorkBriefDialog({ brief, onSave }: EditWorkBriefDialogProps)
           </Button>
           <Button onClick={() => void handleSave()} disabled={isSaving} className="gap-2">
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Guardar briefing
+            Guardar capa
           </Button>
         </DialogFooter>
       </DialogContent>

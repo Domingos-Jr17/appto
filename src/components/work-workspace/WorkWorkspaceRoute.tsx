@@ -113,8 +113,8 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
     return buildArtifactSource(project, activeSection, chatMessages);
   }, [activeSection, chatMessages, project]);
 
-  const documentTitle = activeSection ? sectionTitle : artifact?.title || project?.title || "";
-  const documentContent = activeSection ? content : artifact?.content || "";
+  const _documentTitle = activeSection ? sectionTitle : artifact?.title || project?.title || "";
+  const _documentContent = activeSection ? content : artifact?.content || "";
   const chatContext = useMemo(() => {
     if (!project) return undefined;
 
@@ -186,7 +186,7 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
     [activeSectionId, createSection, projectId, replaceContent, sectionTitle, selectSection, toast, updateSectionTree]
   );
 
-  const handleDocumentTitleChange = useCallback(
+  const _handleDocumentTitleChange = useCallback(
     (title: string) => {
       if (!activeSectionId) return;
       updateTitle(title, projectId);
@@ -195,7 +195,7 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
     [activeSectionId, projectId, updateSectionTree, updateTitle]
   );
 
-  const handleDocumentContentChange = useCallback(
+  const _handleDocumentContentChange = useCallback(
     (nextContent: string) => {
       if (!activeSectionId) return;
       updateContent(nextContent, projectId);
@@ -243,7 +243,7 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
     [fetchProject, projectId, toast]
   );
 
-  const handleRegenerateWork = useCallback(async () => {
+  const _handleRegenerateWork = useCallback(async () => {
     const response = await fetchWithRetry(`/api/projects/${projectId}/regenerate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -269,7 +269,7 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
     await fetchProject(projectId);
   }, [fetchProject, projectId, toast]);
 
-  const handleRegenerateSection = useCallback(async () => {
+  const _handleRegenerateSection = useCallback(async () => {
     if (!activeSection) return;
 
     const response = await fetchWithRetry(`/api/projects/${projectId}/regenerate`, {
@@ -350,15 +350,10 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
           <WorkWorkspaceErrorBoundary label="document">
             <DocumentPane
               project={project}
+              sections={sections}
               activeSection={activeSection}
-              documentTitle={documentTitle}
-              documentContent={documentContent}
               isSavingExport={isSavingExport !== null}
-              onDocumentTitleChange={handleDocumentTitleChange}
-              onDocumentContentChange={handleDocumentContentChange}
               onExport={handleExport}
-              onRegenerateWork={handleRegenerateWork}
-              onRegenerateSection={handleRegenerateSection}
               onBriefSave={handleBriefSave}
             />
           </WorkWorkspaceErrorBoundary>

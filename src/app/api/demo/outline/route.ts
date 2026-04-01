@@ -3,10 +3,10 @@ import { apiError, apiSuccess, parseBody } from "@/lib/api";
 import { demoOutlineSchema } from "@/lib/validators";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import {
-  createZAIChatCompletion,
-  getFriendlyZAIErrorStatus,
-  isZAIConfigError,
-} from "@/lib/zai";
+  getAIProvider,
+  getFriendlyAIErrorStatus,
+  isAIConfigError,
+} from "@/lib/ai";
 import {
   buildFallbackOutline,
   parseDemoOutlineResponse,
@@ -86,9 +86,10 @@ Regras:
 - não incluir texto fora do JSON`;
 
     try {
+      const provider = getAIProvider();
       const completion = await withTimeout(
-        createZAIChatCompletion({
-          model: "glm-4.7-flash",
+        provider.chatCompletion({
+          model: "", // Provider uses its default model
           messages: [
             {
               role: "system",
@@ -97,7 +98,6 @@ Regras:
             },
             { role: "user", content: prompt },
           ],
-          thinking: { type: "disabled" },
         }),
         12000
       );
@@ -119,11 +119,11 @@ Regras:
         source: "real" as const,
       });
     } catch (error) {
-      const status = getFriendlyZAIErrorStatus(error);
+      const status = getFriendlyAIErrorStatus(error);
       const shouldFallback =
         error instanceof Error &&
         (error.message === "DemoTimeout" ||
-          isZAIConfigError(error) ||
+          isAIConfigError(error) ||
           status === 429 ||
           status >= 500);
 

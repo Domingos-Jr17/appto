@@ -3,10 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
-  createZAIChatCompletion,
-  getFriendlyZAIErrorMessage,
-  getFriendlyZAIErrorStatus,
-} from "@/lib/zai";
+  getAIProvider,
+  getFriendlyAIErrorMessage,
+  getFriendlyAIErrorStatus,
+} from "@/lib/ai";
 import {
   generateCacheKey,
   getCachedResponse,
@@ -296,13 +296,13 @@ export async function POST(request: NextRequest) {
         break;
     }
 
-    const completion = await createZAIChatCompletion({
-      model: "glm-4.7-flash",
+    const provider = getAIProvider();
+    const completion = await provider.chatCompletion({
+      model: "", // Provider uses its default model
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: prompt },
       ],
-      thinking: { type: "disabled" },
     });
 
     const response = completion.choices[0]?.message?.content || "";
@@ -347,8 +347,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     logger.error("AI generation error", { error: String(error) });
     return NextResponse.json(
-      { error: getFriendlyZAIErrorMessage(error) },
-      { status: getFriendlyZAIErrorStatus(error) }
+      { error: getFriendlyAIErrorMessage(error) },
+      { status: getFriendlyAIErrorStatus(error) }
     );
   }
 }

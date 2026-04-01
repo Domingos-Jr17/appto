@@ -101,107 +101,106 @@ function ProjectCard({
   return (
     <Card
       className={cn(
-        " glass glass-border card-hover group relative cursor-pointer overflow-hidden rounded-2xl bg-card/80",
+        "glass glass-border card-hover group relative cursor-pointer overflow-hidden rounded-2xl bg-card/80",
         project.status === "archived" && "opacity-75"
       )}
     >
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant="outline"
-                className={cn("text-xs font-medium", typeStyle.className)}
-              >
-                {typeStyle.label}
-              </Badge>
-              <div className={cn("flex items-center gap-1 text-xs", statusStyle.color)}>
-                <StatusIcon className="h-3 w-3" />
-                <span>{statusStyle.label}</span>
-              </div>
-              {generating ? (
-                <Badge variant="outline" className="text-[10px]">
-                  A gerar {project.generationProgress ?? project.progress}%
+      <Link href={`/app/trabalhos/${project.id}`} className="block">
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className={cn("text-xs font-medium", typeStyle.className)}
+                >
+                  {typeStyle.label}
                 </Badge>
-              ) : null}
-            </div>
-            <Link href={`/app/trabalhos/${project.id}`}>
+                <div className={cn("flex items-center gap-1 text-xs", statusStyle.color)}>
+                  <StatusIcon className="h-3 w-3" />
+                  <span>{statusStyle.label}</span>
+                </div>
+                {generating ? (
+                  <Badge variant="outline" className="text-[10px]">
+                    A gerar {project.generationProgress ?? project.progress}%
+                  </Badge>
+                ) : null}
+              </div>
               <h4 className="line-clamp-2 text-base font-semibold leading-tight hover:text-primary transition-colors">
                 {project.title}
               </h4>
-            </Link>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-                aria-label="Mais opções"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                  aria-label="Mais opções"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem asChild>
-                <Link href={`/app/trabalhos/${project.id}`}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  Abrir trabalho
-                </Link>
-              </DropdownMenuItem>
-              {onEdit && (
-                <DropdownMenuItem onClick={() => onEdit(project.id)}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Editar
+                  <Link href={`/app/trabalhos/${project.id}`}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Abrir trabalho
+                  </Link>
                 </DropdownMenuItem>
-              )}
-              {project.status === "archived" ? (
-                <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
-                  <ArchiveRestore className="mr-2 h-4 w-4" />
-                  Restaurar
+                {onEdit && (
+                  <DropdownMenuItem onClick={() => onEdit(project.id)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Editar
+                  </DropdownMenuItem>
+                )}
+                {project.status === "archived" ? (
+                  <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
+                    <ArchiveRestore className="mr-2 h-4 w-4" />
+                    Restaurar
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
+                    <Archive className="mr-2 h-4 w-4" />
+                    Arquivar
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => onDelete?.(project.id)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Eliminar
                 </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
-                  <Archive className="mr-2 h-4 w-4" />
-                  Arquivar
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="text-destructive focus:text-destructive"
-                onClick={() => onDelete?.(project.id)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Eliminar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {project.course || project.institution ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            {project.course ? (
-              <>
-                <GraduationCap className="h-4 w-4" />
-                <span className="truncate">{project.course}</span>
-              </>
-            ) : null}
-            {project.course && project.institution ? <span className="text-border">•</span> : null}
-            {project.institution ? (
-              <>
-                <Building2 className="h-4 w-4" />
-                <span className="truncate">{project.institution}</span>
-              </>
-            ) : null}
-          </div>
-        ) : null}
-
-        <div className="mt-4 space-y-2">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            <span>Actualizado {project.lastUpdated}</span>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
+          {project.course || project.institution ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              {project.course ? (
+                <>
+                  <GraduationCap className="h-4 w-4" />
+                  <span className="truncate">{project.course}</span>
+                </>
+              ) : null}
+              {project.course && project.institution ? <span className="text-border">•</span> : null}
+              {project.institution ? (
+                <>
+                  <Building2 className="h-4 w-4" />
+                  <span className="truncate">{project.institution}</span>
+                </>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              <span>Actualizado {project.lastUpdated}</span>
+            </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">{generating ? "Geração" : "Progresso"}</span>
@@ -216,7 +215,8 @@ function ProjectCard({
               ) : null}
             </div>
           </div>
-      </CardContent>
+        </CardContent>
+      </Link>
     </Card>
   );
 }
@@ -240,12 +240,13 @@ function ProjectListItem({
   return (
     <Card
       className={cn(
-        " glass glass-border card-hover group cursor-pointer rounded-2xl bg-card/80",
+        "glass glass-border card-hover group cursor-pointer rounded-2xl bg-card/80",
         project.status === "archived" && "opacity-75"
       )}
     >
-      <CardContent className="flex items-center gap-4 p-4">
-        <div className="flex-1 min-w-0 space-y-1">
+      <Link href={`/app/trabalhos/${project.id}`} className="block">
+        <CardContent className="flex items-center gap-4 p-4">
+          <div className="flex-1 min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <Badge
               variant="outline"
@@ -345,14 +346,15 @@ function ProjectListItem({
               <Trash2 className="mr-2 h-4 w-4" />
               Eliminar
             </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </CardContent>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardContent>
+      </Link>
     </Card>
   );
 }
 
-export function ProjectGrid({ 
+export function ProjectGrid({
   projects, 
   viewMode, 
   className,

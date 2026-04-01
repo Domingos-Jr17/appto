@@ -1,20 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { BookCopy, FilePlus2 } from "lucide-react";
+import { BookCopy, FilePlus2, MoreVertical, Trash2, Archive, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAppShellData } from "./AppShellDataContext";
 import { appNavItems, isNavActive } from "./app-nav";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AppSidebarProps {
     currentPath: string;
     onNavigate?: () => void;
+    onDelete?: (id: string) => void;
+    onArchive?: (id: string) => void;
+    onEdit?: (id: string) => void;
 }
 
 export function AppSidebar({
     currentPath,
     onNavigate,
+    onDelete,
+    onArchive,
+    onEdit,
 }: AppSidebarProps) {
     const { projects } = useAppShellData();
 
@@ -89,19 +102,67 @@ export function AppSidebar({
                             Trabalhos recentes
                         </p>
                         <div className="space-y-0.5">
-                            {recentProjects.map((project) => (
-                                <Link
-                                    key={project.id}
-                                    href={`/app/trabalhos/${project.id}`}
-                                    onClick={onNavigate}
-                                    className="group flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-foreground"
-                                >
-                                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sidebar-foreground/30" />
-                                    <span className="min-w-0 flex-1 truncate">
-                                        {project.title}
-                                    </span>
-                                </Link>
-                            ))}
+                            {recentProjects.map((project) => {
+                                const isActive = currentPath === `/app/trabalhos/${project.id}`;
+                                return (
+                                    <div key={project.id} className={cn(
+                                        "group flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs transition-colors",
+                                        isActive
+                                            ? "bg-sidebar-primary/12 text-foreground"
+                                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-foreground"
+                                    )}>
+                                        <Link
+                                            href={`/app/trabalhos/${project.id}`}
+                                            onClick={onNavigate}
+                                            className="flex min-w-0 flex-1 items-center gap-2"
+                                        >
+                                            <span className={cn(
+                                                "h-1.5 w-1.5 shrink-0 rounded-full",
+                                                isActive ? "bg-primary" : "bg-sidebar-foreground/30"
+                                            )} />
+                                            <span className="min-w-0 flex-1 truncate font-medium">
+                                                {project.title}
+                                            </span>
+                                        </Link>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                                                aria-label="Mais opções"
+                                            >
+                                                <MoreVertical className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-40">
+                                            <DropdownMenuItem onClick={() => onEdit?.(project.id)}>
+                                                <Pencil className="mr-2 h-4 w-4" />
+                                                Renomear
+                                            </DropdownMenuItem>
+                                            {project.status === "archived" ? (
+                                                <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
+                                                    <Archive className="mr-2 h-4 w-4" />
+                                                    Restaurar
+                                                </DropdownMenuItem>
+                                            ) : (
+                                                <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
+                                                    <Archive className="mr-2 h-4 w-4" />
+                                                    Arquivar
+                                                </DropdownMenuItem>
+                                            )}
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem 
+                                                className="text-destructive focus:text-destructive"
+                                                onClick={() => onDelete?.(project.id)}
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Eliminar
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>;
+                            })}
                         </div>
                     </>
                 )}

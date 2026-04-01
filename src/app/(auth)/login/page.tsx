@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getProviders, signIn } from "next-auth/react";
+import { getProviders, signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,7 @@ function getLoginErrorMessage(error?: string) {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -35,6 +36,15 @@ export default function LoginPage() {
   const [otpCode, setOtpCode] = useState("");
   const [otpRequired, setOtpRequired] = useState(false);
   const [hasGoogleProvider, setHasGoogleProvider] = useState(false);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      const timer = setTimeout(() => {
+        window.location.href = "/app";
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [status]);
 
   useEffect(() => {
     let active = true;
@@ -96,6 +106,18 @@ export default function LoginPage() {
     setIsLoading(true);
     await signIn("google", { callbackUrl: "/app" });
   };
+
+  if (status === "loading") {
+    return (
+      <div className="glass glass-border rounded-2xl p-8 shadow-2xl shadow-primary/5 gradient-glow-subtle animate-in fade-in-0 slide-in-from-bottom-4 duration-500 flex items-center justify-center min-h-[400px]">
+        <div className="h-9 w-9 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (status === "authenticated") {
+    return null;
+  }
 
   return (
     <div className="glass glass-border rounded-2xl p-8 shadow-2xl shadow-primary/5 gradient-glow-subtle animate-in fade-in-0 slide-in-from-bottom-4 duration-500">

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FilePlus2 } from "lucide-react";
+import { FilePlus2, Menu, X } from "lucide-react";
 import { OfflineBanner } from "@/components/ui/offline-banner";
 import { cn } from "@/lib/utils";
 import { appNavItems, isNavActive } from "./app-nav";
@@ -12,6 +12,8 @@ import { AppSidebar } from "./AppSidebar";
 import { AppShellDataProvider, useAppShellData } from "./AppShellDataContext";
 import { AppHeader } from "./AppHeader";
 import { UserMenu } from "./UserMenu";
+import { ThemeToggle } from "@/components/ui-aptto/ThemeToggle";
+import { Button } from "@/components/ui/button";
 
 const PAGE_TITLES: Record<string, string> = {
     "/app": "Início",
@@ -161,11 +163,13 @@ function AppShellChrome({ children, user }: AppShellProps) {
                 </div>
 
                 <main id="main-content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
-                    <AppHeader
-                        user={user}
-                        onMenuToggle={() => setIsMobileMenuOpen((open) => !open)}
-                        isMobileMenuOpen={isMobileMenuOpen}
-                    />
+                    <div className={cn(isMobileMenuOpen && "lg:hidden")}>
+                        <AppHeader
+                            user={user}
+                            onMenuToggle={() => setIsMobileMenuOpen((open) => !open)}
+                            isMobileMenuOpen={isMobileMenuOpen}
+                        />
+                    </div>
 
                     <div
                         className={cn(
@@ -179,6 +183,33 @@ function AppShellChrome({ children, user }: AppShellProps) {
                     </div>
                 </main>
             </div>
+
+            <AnimatePresence>
+                {isMobileMenuOpen ? (
+                    <motion.div
+                        key="app-mobile-menu-header"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed top-0 left-0 right-0 z-[70] flex items-center gap-2 bg-background/95 backdrop-blur-sm px-4 py-3 lg:hidden"
+                    >
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 rounded-2xl border border-white/10 bg-background/20 text-foreground hover:bg-background/35"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            aria-label="Fechar menu"
+                        >
+                            <X className="h-5 w-5" />
+                        </Button>
+                        <p className="flex-1 truncate text-base font-semibold text-foreground">
+                            APPTO: Gerador de Trabalhos Académicos
+                        </p>
+                        <ThemeToggle variant="button" />
+                    </motion.div>
+                ) : null}
+            </AnimatePresence>
 
             <AnimatePresence>
                 {isMobileMenuOpen ? (

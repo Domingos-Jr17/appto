@@ -20,15 +20,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }
   }, [router, status]);
 
-  if (status === "loading") {
+  if (status === "loading" || !session?.user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-9 w-9 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }
-
-  if (!session?.user) return null;
 
   return <AppShell user={session.user}>{children}</AppShell>;
 }

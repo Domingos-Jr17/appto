@@ -1,11 +1,16 @@
-import { WorkWorkspaceRoute } from "@/components/work-workspace/WorkWorkspaceRoute";
+import { notFound } from "next/navigation";
+import { getWork } from "@/lib/works";
+import { WorkspaceLayout } from "@/components/workspace/WorkspaceLayout";
 
-interface WorkWorkspacePageProps {
+interface WorkspacePageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function WorkWorkspacePage({ params }: WorkWorkspacePageProps) {
-  const resolvedParams = await params;
+export default async function WorkspacePage({ params }: WorkspacePageProps) {
+  const { id } = await params;
+  const work = await getWork(id);
 
-  return <WorkWorkspaceRoute key={resolvedParams.id} projectId={resolvedParams.id} />;
+  if (!work) notFound();
+
+  return <WorkspaceLayout initialData={work} />;
 }

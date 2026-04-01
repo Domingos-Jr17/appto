@@ -1,0 +1,67 @@
+"use client";
+
+import { useState } from "react";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { WorkspaceHeader } from "./WorkspaceHeader";
+import { DocumentPreview } from "./DocumentPreview";
+import { GeneratingBanner } from "./GeneratingBanner";
+import { CoverModal } from "./CoverModal";
+import { EditorLink } from "./EditorLink";
+import type { WorkspaceData } from "@/types/workspace";
+
+interface WorkspaceLayoutProps {
+  initialData: WorkspaceData;
+}
+
+export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
+  const workspace = useWorkspace({ initialData });
+  const [coverModalOpen, setCoverModalOpen] = useState(false);
+
+  return (
+    <>
+      <GeneratingBanner
+        isGenerating={workspace.isGenerating}
+        progress={workspace.data.generationProgress}
+        generationStep={workspace.data.generationStep}
+      />
+
+      {workspace.error && (
+        <div className="border-b border-destructive/30 bg-destructive/5 px-4 py-2 text-xs text-destructive">
+          {workspace.error}
+        </div>
+      )}
+
+      <div className="flex h-[calc(100dvh)] flex-col">
+        <WorkspaceHeader
+          title={workspace.data.brief.title}
+          workType={workspace.data.brief.workType}
+          progress={workspace.progress}
+          isGenerating={workspace.isGenerating}
+          allDone={workspace.allDone}
+          onGenerate={workspace.generateAll}
+          onDownload={workspace.downloadDocx}
+          onEditCover={() => setCoverModalOpen(true)}
+        />
+
+        <div className="flex-1 overflow-y-auto">
+          <DocumentPreview
+            sections={workspace.data.sections}
+            isGenerating={workspace.isGenerating}
+            onGenerate={workspace.generateAll}
+          />
+        </div>
+
+        <EditorLink workId={workspace.data.id} />
+      </div>
+
+      <CoverModal
+        open={coverModalOpen}
+        brief={workspace.data.brief}
+        currentTemplate={workspace.data.brief.coverTemplate}
+        onSelect={workspace.setCoverTemplate}
+        onSaveBrief={workspace.saveBrief}
+        onClose={() => setCoverModalOpen(false)}
+      />
+    </>
+  );
+}

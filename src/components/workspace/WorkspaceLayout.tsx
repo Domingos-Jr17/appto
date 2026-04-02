@@ -8,6 +8,7 @@ import { DocumentPreview } from "./DocumentPreview";
 import { CoverModal } from "./CoverModal";
 import { EditorLink } from "./EditorLink";
 import type { WorkspaceData } from "@/types/workspace";
+import type { AcademicEducationLevel } from "@/types/editor";
 
 interface WorkspaceLayoutProps {
   initialData: WorkspaceData;
@@ -68,6 +69,7 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
             coverTemplate: 'default',
           }}
           currentTemplate={workspace.data?.brief?.coverTemplate ?? 'default'}
+          educationLevel={workspace.data?.brief?.educationLevel as AcademicEducationLevel | undefined}
           onSelect={workspace.setCoverTemplate}
           onSaveBrief={workspace.saveBrief}
           onClose={() => setCoverSheetOpen(false)}

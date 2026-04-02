@@ -1,32 +1,48 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { CoverTemplate } from "@/types/editor";
+import type { AcademicEducationLevel, CoverTemplate } from "@/types/editor";
 
 interface CoverTemplateOption {
   value: CoverTemplate;
   label: string;
   description: string;
+  recommended?: AcademicEducationLevel[];
 }
 
 const TEMPLATES: CoverTemplateOption[] = [
-  { value: "UEM_STANDARD", label: "UEM Standard", description: "Padrão universitário, layout centrado" },
-  { value: "UCM_STANDARD", label: "UCM Standard", description: "Padrão UCM, com nota de cumprimento" },
-  { value: "ISRI", label: "ISRI", description: "Estilo ISRI, com República de Moçambique" },
+  { value: "UEM_STANDARD", label: "UEM Standard", description: "Padrão universitário, layout centrado", recommended: ["HIGHER_EDUCATION"] },
+  { value: "UCM_STANDARD", label: "UCM Standard", description: "Padrão UCM, com nota de cumprimento", recommended: ["HIGHER_EDUCATION"] },
+  { value: "ISRI", label: "ISRI", description: "Estilo ISRI, com República de Moçambique", recommended: ["TECHNICAL", "HIGHER_EDUCATION"] },
   { value: "ABNT_GENERIC", label: "ABNT Genérica", description: "Norma ABNT pura, margens padrão" },
   { value: "MODERNA", label: "Moderna", description: "Linha verde de destaque, estilo contemporâneo" },
   { value: "CLASSICA", label: "Clássica", description: "Bordas decorativas duplas, estilo formal" },
-  { value: "SCHOOL_MOZ", label: "Escola Moçambique", description: "Capa para ensino secundário, com REP DE MOÇAMBIQUE" },
-  { value: "DISCIPLINARY_MOZ", label: "Disciplinar", description: "Capa universitária com faculdade e Nº de Estudante" },
+  { value: "SCHOOL_MOZ", label: "Escola Moçambique", description: "Capa para ensino secundário, com REP DE MOÇAMBIQUE", recommended: ["SECONDARY"] },
+  { value: "DISCIPLINARY_MOZ", label: "Disciplinar", description: "Capa universitária com faculdade e Nº de Estudante", recommended: ["TECHNICAL", "HIGHER_EDUCATION"] },
 ];
+
+function getFilteredTemplates(educationLevel?: AcademicEducationLevel): CoverTemplateOption[] {
+  if (!educationLevel) return TEMPLATES;
+
+  const hidden: Record<AcademicEducationLevel, CoverTemplate[]> = {
+    SECONDARY: ["UEM_STANDARD", "UCM_STANDARD", "ISRI", "DISCIPLINARY_MOZ"],
+    TECHNICAL: ["UEM_STANDARD", "UCM_STANDARD", "SCHOOL_MOZ"],
+    HIGHER_EDUCATION: ["SCHOOL_MOZ"],
+  };
+
+  const hiddenTemplates = hidden[educationLevel] ?? [];
+  return TEMPLATES.filter((t) => !hiddenTemplates.includes(t.value));
+}
 
 interface CoverTemplateSelectorProps {
   value: CoverTemplate;
   onChange: (value: CoverTemplate) => void;
+  educationLevel?: AcademicEducationLevel;
   className?: string;
 }
 
-export function CoverTemplateSelector({ value, onChange, className }: CoverTemplateSelectorProps) {
+export function CoverTemplateSelector({ value, onChange, educationLevel, className }: CoverTemplateSelectorProps) {
+  const templates = getFilteredTemplates(educationLevel);
   return (
     <div className={cn("space-y-2", className)}>
       <label className="text-sm font-medium leading-none">
@@ -36,7 +52,7 @@ export function CoverTemplateSelector({ value, onChange, className }: CoverTempl
         Escolhe o layout visual da capa do trabalho. Podes mudar depois.
       </p>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {TEMPLATES.map((template) => (
+        {templates.map((template) => (
           <button
             key={template.value}
             type="button"

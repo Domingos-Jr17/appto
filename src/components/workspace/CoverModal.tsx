@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Sheet,
   SheetContent,
@@ -15,20 +15,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import type { WorkBrief } from "@/types/workspace";
+import type { AcademicEducationLevel } from "@/types/editor";
 
 const TEMPLATES = [
-  { id: "UEM_STANDARD", name: "UEM", desc: "Universidade Eduardo Mondlane" },
-  { id: "UCM_STANDARD", name: "UCM", desc: "Universidade Católica" },
-  { id: "ISRI", name: "ISRI", desc: "Relações Internacionais" },
-  { id: "ABNT_GENERIC", name: "ABNT", desc: "Qualquer instituição" },
-  { id: "MODERNA", name: "Moderna", desc: "Relatórios e propostas" },
-  { id: "CLASSICA", name: "Clássica", desc: "Contextos formais" },
+  { id: "UEM_STANDARD", name: "UEM", desc: "Universidade Eduardo Mondlane", levels: ["HIGHER_EDUCATION"] as AcademicEducationLevel[] },
+  { id: "UCM_STANDARD", name: "UCM", desc: "Universidade Católica", levels: ["HIGHER_EDUCATION"] as AcademicEducationLevel[] },
+  { id: "ISRI", name: "ISRI", desc: "Relações Internacionais", levels: ["TECHNICAL", "HIGHER_EDUCATION"] as AcademicEducationLevel[] },
+  { id: "ABNT_GENERIC", name: "ABNT", desc: "Qualquer instituição", levels: ["SECONDARY", "TECHNICAL", "HIGHER_EDUCATION"] as AcademicEducationLevel[] },
+  { id: "MODERNA", name: "Moderna", desc: "Relatórios e propostas", levels: ["SECONDARY", "TECHNICAL", "HIGHER_EDUCATION"] as AcademicEducationLevel[] },
+  { id: "CLASSICA", name: "Clássica", desc: "Contextos formais", levels: ["SECONDARY", "TECHNICAL", "HIGHER_EDUCATION"] as AcademicEducationLevel[] },
+  { id: "SCHOOL_MOZ", name: "Escola Moçambique", desc: "Ensino secundário", levels: ["SECONDARY"] as AcademicEducationLevel[] },
+  { id: "DISCIPLINARY_MOZ", name: "Disciplinar", desc: "Faculdade e Nº de Estudante", levels: ["TECHNICAL", "HIGHER_EDUCATION"] as AcademicEducationLevel[] },
 ] as const;
 
 interface CoverModalProps {
   open: boolean;
   brief: WorkBrief;
   currentTemplate?: string;
+  educationLevel?: AcademicEducationLevel;
   onSelect: (template: string) => void;
   onSaveBrief: (data: Partial<WorkBrief>) => void;
   onClose: () => void;
@@ -38,6 +42,7 @@ export function CoverModal({
   open,
   brief,
   currentTemplate,
+  educationLevel,
   onSelect,
   onSaveBrief,
   onClose,
@@ -69,6 +74,13 @@ export function CoverModal({
     setInfo((prev) => ({ ...prev, [field]: value }));
   };
 
+  const filteredTemplates = useMemo(
+    () => (educationLevel
+      ? TEMPLATES.filter((t) => t.levels.includes(educationLevel))
+      : TEMPLATES),
+    [educationLevel],
+  );
+
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent
@@ -95,7 +107,7 @@ export function CoverModal({
 
             <TabsContent value="estilo" className="mt-4">
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2">
-                {TEMPLATES.map((tpl) => (
+                {filteredTemplates.map((tpl) => (
                   <button
                     type="button"
                     key={tpl.id}

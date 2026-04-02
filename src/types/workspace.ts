@@ -11,6 +11,7 @@ export interface WorkSection {
 export interface WorkBrief {
   title: string;
   workType: string;
+  educationLevel?: string;
   institutionName?: string;
   courseName?: string;
   subjectName?: string;

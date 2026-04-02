@@ -2,26 +2,26 @@ import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
-import { PLAN_DISPLAY, PLAN_PRICING, EXTRA_WORK_PRICE } from "@/lib/credits";
+import { apiError, apiSuccess, handleApiError, parseBody as _parseBody } from "@/lib/api";
+import { PLAN_DISPLAY, PLAN_PRICING as _PLAN_PRICING, EXTRA_WORK_PRICE } from "@/lib/credits";
 import { PaymentService } from "@/lib/payments";
 import { subscriptionService } from "@/lib/subscription";
 import { env } from "@/lib/env";
 import { PaymentProvider, PlanType } from "@prisma/client";
 import { z } from "zod";
 
-const upgradePlanSchema = z.object({
+const _upgradePlanSchema = z.object({
   plan: z.enum(["STARTER", "PRO"]),
   provider: z.enum(["SIMULATED", "MPESA", "EMOLA"]).optional(),
 });
 
-const purchaseExtraSchema = z.object({
+const _purchaseExtraSchema = z.object({
   quantity: z.number().min(1).max(10),
   provider: z.enum(["SIMULATED", "MPESA", "EMOLA"]).optional(),
 });
 
 // GET /api/subscription - Get user's subscription status
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
 }
 
 // DELETE /api/subscription - Cancel subscription
-export async function DELETE(request: NextRequest) {
+export async function DELETE(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 

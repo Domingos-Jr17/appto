@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { AssistantMessage } from "@/types/editor";
 import { AI_ACTION_CREDIT_COSTS } from "@/lib/credits";
+import type { AIAction } from "@/lib/subscription";
 
 interface AssistantStoreState {
   chatMessages: AssistantMessage[];
@@ -16,7 +17,8 @@ interface AssistantStoreState {
     projectId: string | null,
     credits: number,
     onCreditsUpdate: (balance: number) => void,
-    context?: string
+    context?: string,
+    action?: AIAction
   ) => Promise<string>;
 }
 
@@ -36,10 +38,13 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
       activeProjectId: projectId,
     }),
 
-  sendMessage: async (prompt, projectId, credits, onCreditsUpdate, context) => {
+  sendMessage: async (prompt, projectId, credits, onCreditsUpdate, context, action) => {
+    const resolvedAction: AIAction = action ?? "generate";
+
     if (!prompt.trim() || get().isChatLoading) return "";
 
-    if (credits < AI_ACTION_CREDIT_COSTS.generate) return "";
+    const cost = AI_ACTION_CREDIT_COSTS[resolvedAction] ?? AI_ACTION_CREDIT_COSTS.generate;
+    if (credits < cost) return "";
 
     const userMessage: AssistantMessage = {
       id: crypto.randomUUID(),
@@ -59,7 +64,7 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "generate",
+          action: resolvedAction,
           text: prompt,
           context,
           projectId,

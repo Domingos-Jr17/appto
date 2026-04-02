@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import { DocumentPreview } from "./DocumentPreview";
-import { CoverModal } from "./CoverModal";
+import { CoverSheet } from "./CoverSheet";
 import { EditorLink } from "./EditorLink";
 import type { WorkspaceData } from "@/types/workspace";
 
@@ -14,7 +14,7 @@ interface WorkspaceLayoutProps {
 
 export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
   const workspace = useWorkspace({ initialData });
-  const [coverModalOpen, setCoverModalOpen] = useState(false);
+  const [coverSheetOpen, setCoverSheetOpen] = useState(false);
 
   return (
     <>
@@ -35,7 +35,7 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
           allDone={workspace.allDone}
           onGenerate={workspace.generateAll}
           onDownload={workspace.downloadDocx}
-          onEditCover={() => setCoverModalOpen(true)}
+          onEditCover={() => setCoverSheetOpen(true)}
         />
 
         <div className="flex-1 overflow-y-auto">
@@ -48,8 +48,8 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
 
         <EditorLink workId={workspace.data?.id ?? ''} />
 
-        <CoverModal
-          open={coverModalOpen}
+        <CoverSheet
+          open={coverSheetOpen}
           brief={workspace.data?.brief ?? {
             title: '',
             workType: 'monografia',
@@ -60,7 +60,7 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
           currentTemplate={workspace.data?.brief?.coverTemplate ?? 'default'}
           onSelect={workspace.setCoverTemplate}
           onSaveBrief={workspace.saveBrief}
-          onClose={() => setCoverModalOpen(false)}
+          onClose={() => setCoverSheetOpen(false)}
         />
       </div>
     </>

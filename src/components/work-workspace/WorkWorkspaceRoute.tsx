@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { FolderTree } from "lucide-react";
 import { useAppShellData } from "@/components/app-shell/AppShellDataContext";
@@ -20,6 +20,7 @@ import {
 import {
   useAssistantStore,
 } from "@/stores/assistant-store";
+import type { AIAction } from "@/lib/subscription";
 import { useEditorStore } from "@/stores/editor-store";
 import { useProjectStore } from "@/stores/project-store";
 import {
@@ -72,6 +73,8 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
   const setChatPrompt = useAssistantStore((state) => state.setChatPrompt);
   const sendMessage = useAssistantStore((state) => state.sendMessage);
   const clearChat = useAssistantStore((state) => state.clearChat);
+
+  const [chatAction, setChatAction] = useState<AIAction>("generate");
 
   useEffect(() => {
     void fetchProject(projectId);
@@ -172,7 +175,7 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
   const handleChatSubmit = useCallback(async () => {
     if (!chatPrompt.trim() || isChatLoading || !project) return;
     try {
-      await sendMessage(chatPrompt, projectId, credits, setCredits, chatContext);
+      await sendMessage(chatPrompt, projectId, credits, setCredits, chatContext, chatAction);
     } catch (error) {
       toast({
         title: "Erro",
@@ -181,7 +184,7 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
         variant: "destructive",
       });
     }
-  }, [chatContext, chatPrompt, credits, isChatLoading, project, projectId, sendMessage, setCredits, toast]);
+  }, [chatAction, chatContext, chatPrompt, credits, isChatLoading, project, projectId, sendMessage, setCredits, toast]);
 
   const handleExport = useCallback(async () => {
     try {
@@ -228,6 +231,7 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
         ? `Escreve o conteúdo completo da secção "${sectionTitle}" para este trabalho académico.`
         : "Gera a estrutura completa do trabalho com todas as secções necessárias.";
       setChatPrompt(prompt);
+      setChatAction("generate-section");
     },
     [setChatPrompt]
   );
@@ -306,7 +310,10 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
               chatPrompt={chatPrompt}
               isChatLoading={isChatLoading}
               generationStatus={project.generationStatus}
-              onChatPromptChange={setChatPrompt}
+              onChatPromptChange={(prompt, action) => {
+                setChatPrompt(prompt);
+                if (action) setChatAction(action);
+              }}
               onChatSubmit={handleChatSubmit}
               onApplyContent={handleApplyContent}
             />

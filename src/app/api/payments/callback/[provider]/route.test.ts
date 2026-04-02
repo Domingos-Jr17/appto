@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, spyOn } from "bun:test";
-import { NextRequest, NextResponse } from "next/server";
+import { createHmac, randomUUID } from "crypto";
 
 describe("Payment Callback API - Unit Tests", () => {
   let consoleLogs: string[] = [];
@@ -14,8 +14,7 @@ describe("Payment Callback API - Unit Tests", () => {
     });
   });
 
-  function createValidSignature(payload: string, secret: string): string {
-    const { createHmac } = require("crypto");
+  function _createValidSignature(payload: string, secret: string): string {
     return createHmac("sha256", secret).update(payload).digest("hex");
   }
 
@@ -48,8 +47,6 @@ describe("Payment Callback API - Unit Tests", () => {
   });
 
   test("assinatura válida com HMAC SHA256", () => {
-    const { createHmac } = require("crypto");
-    
     const payload = '{"test":"data"}';
     const secret = "test-secret";
     
@@ -66,8 +63,6 @@ describe("Payment Callback API - Unit Tests", () => {
   });
 
   test("assinatura inválida não coincide", () => {
-    const { createHmac } = require("crypto");
-    
     const payload = '{"test":"data"}';
     const correctSecret = "correct-secret";
     const wrongSecret = "wrong-secret";
@@ -84,8 +79,6 @@ describe("Payment Callback API - Unit Tests", () => {
   });
 
   test("formato do log de audit", () => {
-    const { randomUUID } = require("crypto");
-    
     const entry = {
       id: randomUUID(),
       timestamp: new Date().toISOString(),

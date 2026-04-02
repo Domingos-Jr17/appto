@@ -62,9 +62,11 @@ export default function SubscriptionPage() {
       const data = await res.json();
       if (data.success) {
         setSubscriptionData(data.data);
+      } else if (data.subscription) {
+        setSubscriptionData(data);
       }
-    } catch (error) {
-      console.error("Fetch subscription error:", error);
+    } catch {
+      console.error("Fetch subscription error");
     } finally {
       setIsLoading(false);
     }
@@ -97,7 +99,7 @@ export default function SubscriptionPage() {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Erro ao processar pagamento",
@@ -132,7 +134,7 @@ export default function SubscriptionPage() {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Erro ao processar pagamento",

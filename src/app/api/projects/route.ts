@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
     const { title, description, type = "MONOGRAPHY", brief } = body;
 
     // Check user subscription
-    const { allowed, reason, remaining } = await subscriptionService.canGenerateWork(session.user.id);
+    const { allowed, reason } = await subscriptionService.canGenerateWork(session.user.id);
 
     if (!allowed) {
       return NextResponse.json(

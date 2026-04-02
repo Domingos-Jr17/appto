@@ -6,13 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { AssistantMessage } from "@/types/editor";
+import type { AIAction } from "@/lib/subscription";
+
+interface QuickAction {
+  label: string;
+  action: AIAction;
+}
 
 interface ChatPaneProps {
   chatMessages: AssistantMessage[];
   chatPrompt: string;
   isChatLoading: boolean;
   generationStatus?: string;
-  onChatPromptChange: (prompt: string) => void;
+  onChatPromptChange: (prompt: string, action?: AIAction) => void;
   onChatSubmit: () => void;
   onApplyContent: (content: string) => void;
 }
@@ -28,16 +34,16 @@ export function ChatPane({
 }: ChatPaneProps) {
   const isGenerating = generationStatus === "GENERATING";
 
-  const quickActions = isGenerating
+  const quickActions: QuickAction[] = isGenerating
     ? [
-        "Gerar conteúdo do capítulo actual",
-        "Escrever a introdução",
-        "Adicionar referências",
+        { label: "Gerar conteúdo do capítulo actual", action: "generate-section" },
+        { label: "Escrever a introdução", action: "generate" },
+        { label: "Adicionar referências", action: "references" },
       ]
     : [
-        "Melhorar a introdução",
-        "Adicionar referências",
-        "Verificar formatação",
+        { label: "Melhorar a introdução", action: "improve" },
+        { label: "Adicionar referências", action: "references" },
+        { label: "Verificar formatação", action: "citations" },
       ];
 
   const emptyMessage = isGenerating
@@ -54,16 +60,16 @@ export function ChatPane({
                 {emptyMessage}
               </p>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                {quickActions.map((action) => (
+                {quickActions.map((qa) => (
                   <Button
-                    key={action}
+                    key={qa.label}
                     type="button"
                     variant="outline"
                     size="sm"
                     className="rounded-full"
-                    onClick={() => onChatPromptChange(action)}
+                    onClick={() => onChatPromptChange(qa.label, qa.action)}
                   >
-                    {action}
+                    {qa.label}
                   </Button>
                 ))}
               </div>

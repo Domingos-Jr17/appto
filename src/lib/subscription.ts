@@ -65,10 +65,10 @@ export const PLAN_PRICES: Record<PlanType, Omit<PlanDetails, "key">> = {
   },
 };
 
-export type AIAction = "improve" | "suggest" | "references" | "outline" | "chat" | "summarize" | "translate" | "citations" | "plagiarism-check" | "generate-section";
+export type AIAction = "generate" | "improve" | "suggest" | "references" | "outline" | "chat" | "summarize" | "translate" | "citations" | "plagiarism-check" | "generate-section" | "generate-complete";
 
-export const BASIC_AI_ACTIONS: AIAction[] = ["improve", "suggest", "references", "outline", "chat", "summarize", "translate"];
-export const ADVANCED_AI_ACTIONS: AIAction[] = ["citations", "plagiarism-check", "generate-section"];
+export const BASIC_AI_ACTIONS: AIAction[] = ["generate", "improve", "suggest", "references", "outline", "chat", "summarize", "translate"];
+export const ADVANCED_AI_ACTIONS: AIAction[] = ["citations", "plagiarism-check", "generate-section", "generate-complete"];
 
 export const EXTRA_WORK_PRICE = 50;
 

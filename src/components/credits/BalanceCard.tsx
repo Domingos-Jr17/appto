@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { TrendingUp, Zap, Sparkles, FileText } from "lucide-react";
+import { Zap, Sparkles, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -17,7 +17,7 @@ interface BalanceCardProps {
 export function BalanceCard({
     worksUsed,
     worksLimit,
-    onRechargeClick,
+    onRechargeClick: _onRechargeClick,
     className,
 }: BalanceCardProps) {
     const router = useRouter();

@@ -12,7 +12,7 @@ import {
   getCachedResponse,
   setCachedResponse,
 } from "@/lib/ai-cache";
-import { AI_ACTION_CREDIT_COSTS, DEFAULT_AI_ACTION_COST } from "@/lib/credits";
+import { AI_ACTION_CREDIT_COSTS as _AI_ACTION_CREDIT_COSTS, DEFAULT_AI_ACTION_COST as _DEFAULT_AI_ACTION_COST } from "@/lib/credits";
 import { aiRequestSchema } from "@/lib/validators";
 import { logger } from "@/lib/logger";
 import { subscriptionService, type AIAction } from "@/lib/subscription";
@@ -119,8 +119,16 @@ function buildProjectContext(project: {
     subjectName: string | null;
     advisorName: string | null;
     studentName: string | null;
+    educationLevel: string | null;
+    city: string | null;
+    academicYear: number | null;
     objective: string | null;
+    researchQuestion: string | null;
     methodology: string | null;
+    keywords: string | null;
+    referencesSeed: string | null;
+    subtitle: string | null;
+    language: string;
     citationStyle: string;
     additionalInstructions: string | null;
   } | null;
@@ -130,14 +138,22 @@ function buildProjectContext(project: {
   return [
     `Título do trabalho: ${project.title}`,
     `Tipo: ${project.type}`,
+    brief?.subtitle ? `Subtítulo: ${brief.subtitle}` : null,
     brief?.institutionName ? `Instituição: ${brief.institutionName}` : null,
     brief?.courseName ? `Curso: ${brief.courseName}` : null,
     brief?.subjectName ? `Disciplina: ${brief.subjectName}` : null,
+    brief?.educationLevel ? `Nível académico: ${brief.educationLevel}` : null,
     brief?.advisorName ? `Orientador: ${brief.advisorName}` : null,
     brief?.studentName ? `Estudante: ${brief.studentName}` : null,
+    brief?.city ? `Cidade: ${brief.city}` : null,
+    brief?.academicYear ? `Ano académico: ${brief.academicYear}` : null,
     brief?.objective ? `Objetivo: ${brief.objective}` : null,
+    brief?.researchQuestion ? `Pergunta de investigação: ${brief.researchQuestion}` : null,
     brief?.methodology ? `Metodologia: ${brief.methodology}` : null,
+    brief?.keywords ? `Palavras-chave: ${brief.keywords}` : null,
+    brief?.referencesSeed ? `Referências sugeridas: ${brief.referencesSeed}` : null,
     brief?.citationStyle ? `Norma de citação: ${brief.citationStyle}` : null,
+    brief?.language ? `Idioma: ${brief.language}` : null,
     brief?.additionalInstructions ? `Instruções adicionais: ${brief.additionalInstructions}` : null,
   ]
     .filter(Boolean)
@@ -206,8 +222,16 @@ export async function POST(request: NextRequest) {
                 subjectName: true,
                 advisorName: true,
                 studentName: true,
+                educationLevel: true,
+                city: true,
+                academicYear: true,
                 objective: true,
+                researchQuestion: true,
                 methodology: true,
+                keywords: true,
+                referencesSeed: true,
+                subtitle: true,
+                language: true,
                 citationStyle: true,
                 additionalInstructions: true,
               },
@@ -238,6 +262,12 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = getSystemPrompt(userPlan, educationLevel);
 
+    const citationStyle = projectContext?.brief?.citationStyle || "ABNT";
+
+    const isStructuredAction = action === "generate" || action === "generate-section" || action === "generate-complete";
+    const temperature = isStructuredAction ? 0 : 0.3;
+    const maxTokens = action === "generate-complete" ? 8000 : action === "generate-section" ? 4000 : 2000;
+
     let prompt: string;
 
     switch (action) {
@@ -258,7 +288,7 @@ export async function POST(request: NextRequest) {
         break;
 
       case "references":
-        prompt = `Gere referências bibliográficas no formato ABNT para o seguinte tema ou fonte:\n\n"${text}"\n\nForneça pelo menos 5 referências relevantes e atuais, incluindo autores moçambicanos ou africanos quando possível.`;
+        prompt = `Gere referências bibliográficas no formato ${citationStyle} para o seguinte tema ou fonte:\n\n"${text}"\n\nForneça pelo menos 5 referências relevantes e atuais, incluindo autores moçambicanos ou africanos quando possível.`;
         break;
 
       case "outline":
@@ -276,7 +306,7 @@ export async function POST(request: NextRequest) {
         break;
 
       case "citations":
-        prompt = `Crie citações no formato ABNT para as seguintes informações:\n\n"${text}"\n\nForneça a citação no texto e a referência completa.`;
+        prompt = `Crie citações no formato ${citationStyle} para as seguintes informações:\n\n"${text}"\n\nForneça a citação no texto e a referência completa.`;
         break;
 
       case "plagiarism-check":
@@ -306,6 +336,8 @@ export async function POST(request: NextRequest) {
         { role: "system", content: systemPrompt },
         { role: "user", content: prompt },
       ],
+      temperature,
+      max_tokens: maxTokens,
     });
 
     const response = completion.choices[0]?.message?.content || "";

@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const templates = getSectionTemplates(type);
 
     // Check user subscription
-    const { allowed, reason, remaining } = await subscriptionService.canGenerateWork(session.user.id);
+    const { allowed, reason } = await subscriptionService.canGenerateWork(session.user.id);
 
     if (!allowed) {
       return NextResponse.json(

@@ -162,7 +162,7 @@ export function WorksLibraryPage() {
     const { toast } = useToast();
     const {
         projects: rawProjects,
-        credits,
+        credits: _credits,
         isLoading,
         refresh,
     } = useAppShellData();
@@ -385,7 +385,7 @@ export function WorksLibraryPage() {
 
     const hasFilteredResults = Boolean(search.trim()) || status !== "all";
 
-    const calculateCost = () =>
+    const _calculateCost = () =>
         20 + (GENERATED_SECTION_COUNTS[workForm.type] || 5) * 15;
 
     const updateWorkForm = <K extends keyof WorkFormState>(

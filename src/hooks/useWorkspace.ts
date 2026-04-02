@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { WorkspaceData, WorkBrief } from "@/types/workspace";
+import { toast } from "@/hooks/use-toast";
 
 interface UseWorkspaceOptions {
   initialData: WorkspaceData;
@@ -232,6 +233,43 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
     [data.id]
   );
 
+  const updateTitle = useCallback(
+    async (newTitle: string) => {
+      const trimmed = newTitle.trim();
+      if (!trimmed) return;
+      setError(null);
+
+      const previousTitle = data.brief.title;
+
+      setData((prev) => ({
+        ...prev,
+        brief: { ...prev.brief, title: trimmed },
+      }));
+
+      try {
+        const res = await fetch(`/api/projects/${data.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: trimmed }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || "Falhou ao actualizar título");
+        }
+        toast({ title: "Título actualizado" });
+      } catch (err) {
+        setData((prev) => ({
+          ...prev,
+          brief: { ...prev.brief, title: previousTitle },
+        }));
+        const msg = err instanceof Error ? err.message : "Erro ao actualizar";
+        setError(msg);
+        toast({ title: "Erro ao actualizar título", variant: "destructive" });
+      }
+    },
+    [data.id, data.brief.title]
+  );
+
   return {
     data,
     progress,
@@ -242,5 +280,6 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
     downloadDocx,
     setCoverTemplate,
     saveBrief,
+    updateTitle,
   };
 }

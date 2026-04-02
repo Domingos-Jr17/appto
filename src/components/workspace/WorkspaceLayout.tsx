@@ -34,9 +34,11 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
           generationStep={workspace.data?.generationStep ?? null}
           isGenerating={workspace.isGenerating}
           allDone={workspace.allDone}
+          sections={workspace.data?.sections ?? []}
           onGenerate={workspace.generateAll}
           onDownload={workspace.downloadDocx}
           onEditCover={() => setCoverSheetOpen(true)}
+          onSaveTitle={workspace.updateTitle}
         />
 
         <div className="flex-1 overflow-y-auto">

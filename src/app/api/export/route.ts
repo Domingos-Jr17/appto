@@ -6,6 +6,7 @@ import { apiError, handleApiError } from "@/lib/api";
 import { CreditLedgerService } from "@/lib/credit-ledger";
 import { CREDIT_DEFAULTS } from "@/lib/credits";
 import { DocumentExportService } from "@/lib/document-export";
+import { subscriptionService } from "@/lib/subscription";
 
 async function getExportModel(projectId: string, userId: string) {
   const project = await db.project.findFirst({

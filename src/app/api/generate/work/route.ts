@@ -11,6 +11,7 @@ import {
   serializeBrief,
   startWorkGenerationJob,
 } from "@/lib/work-generation-jobs";
+import { subscriptionService } from "@/lib/subscription";
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,28 +24,20 @@ export async function POST(request: NextRequest) {
     const body = createWorkSchema.parse(await request.json());
     const { title, type, description, generateContent, brief } = body;
     const templates = getSectionTemplates(type);
-    const baseCost = 20;
-    const contentCost = generateContent ? templates.length * 15 : 0;
-    const totalCost = baseCost + contentCost;
 
-    const userCredits = await db.credit.findUnique({ where: { userId: session.user.id } });
+    // Check user subscription
+    const { allowed, reason, remaining } = await subscriptionService.canGenerateWork(session.user.id);
 
-    if (!userCredits || userCredits.balance < totalCost) {
+    if (!allowed) {
       return NextResponse.json(
-        { error: `Créditos insuficientes. Necessário: ${totalCost} créditos.` },
-        { status: 400 }
+        { error: reason, code: "LIMIT_REACHED", remaining: 0 },
+        { status: 403 }
       );
     }
 
     const project = await db.$transaction(async (tx) => {
-      const currentCredits = await tx.credit.findUnique({
-        where: { userId: session.user.id },
-        select: { balance: true },
-      });
-
-      if (!currentCredits || currentCredits.balance < totalCost) {
-        throw new Error("Créditos insuficientes");
-      }
+      // Consume work from subscription
+      await subscriptionService.consumeWork(session.user.id);
 
       const createdProject = await tx.project.create({
         data: {
@@ -100,27 +93,6 @@ export async function POST(request: NextRequest) {
         })),
       });
 
-      await tx.credit.update({
-        where: { userId: session.user.id },
-        data: {
-          balance: { decrement: totalCost },
-          used: { increment: totalCost },
-        },
-      });
-
-      await tx.creditTransaction.create({
-        data: {
-          userId: session.user.id,
-          amount: -totalCost,
-          type: "USAGE",
-          description: `Geração de trabalho: ${title}`,
-          metadata: JSON.stringify({
-            projectId: createdProject.id,
-            mode: generateContent ? "async-generation" : "briefing-only",
-          }),
-        },
-      });
-
       return createdProject;
     });
 
@@ -143,8 +115,8 @@ export async function POST(request: NextRequest) {
         title,
         type,
         brief,
-        contentCost,
-        baseCost,
+        contentCost: 0,
+        baseCost: 0,
       });
     }
 
@@ -170,7 +142,7 @@ export async function POST(request: NextRequest) {
           projectId: project.id,
           step: generateContent ? "A validar o briefing" : "Briefing criado",
         },
-        creditsUsed: totalCost,
+        remainingWorks: await subscriptionService.canGenerateWork(session.user.id).then(r => r.remaining),
         message: generateContent
           ? `A geração de ${formatProjectType(type)} começou com sucesso.`
           : "Briefing guardado e estrutura criada com sucesso.",

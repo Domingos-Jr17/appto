@@ -42,6 +42,7 @@ model User {
   totpCredential  TotpCredential?
   recoveryCodes   RecoveryCode[]
   paymentTransactions PaymentTransaction[]
+  workPurchases       WorkPurchase[]
   knowledgeSources KnowledgeSource[]
   storedFiles     StoredFile[]
   createdExports  ProjectExport[]     @relation("ProjectExportCreator")
@@ -359,22 +360,37 @@ model Subscription {
   userId          String             @unique
   plan            PlanType           @default(FREE)
   status          SubscriptionStatus @default(ACTIVE)
-  creditsPerMonth Int                @default(0)
+  worksPerMonth   Int                @default(1)
+  worksUsed       Int                @default(0)
+  lastUsageReset  DateTime           @default(now())
   startDate       DateTime           @default(now())
   endDate         DateTime?
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
-  // Relations
   user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
 }
 
+model WorkPurchase {
+  id            String    @id @default(cuid())
+  userId        String
+  quantity      Int
+  pricePaid     Int
+  used          Int       @default(0)
+  createdAt     DateTime  @default(now())
+  expiresAt     DateTime?
+  
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("work_purchases")
+}
+
 enum PlanType {
   FREE
-  STUDENT
-  ACADEMIC
+  STARTER
+  PRO
 }
 
 enum SubscriptionStatus {

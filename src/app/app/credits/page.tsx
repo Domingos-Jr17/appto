@@ -62,12 +62,30 @@ export default function CreditsPage() {
         transactions: [],
         packages: {},
     });
+    const [subscriptionData, setSubscriptionData] = useState<{
+        worksUsed: number;
+        worksLimit: number;
+        plan: string;
+    } | null>(null);
 
     const fetchCredits = React.useCallback(async () => {
         try {
-            const data = await fetchCreditDetails();
-            setCreditData(data);
-            setCredits(data.balance);
+            const [creditRes, subRes] = await Promise.all([
+                fetchCreditDetails(),
+                fetch("/api/subscription").then(r => r.json())
+            ]);
+            
+            setCreditData(creditRes);
+            setCredits(creditData.balance);
+
+            if (subRes.success && subRes.data.subscription) {
+                const sub = subRes.data.subscription;
+                setSubscriptionData({
+                    worksUsed: sub.worksUsed,
+                    worksLimit: sub.worksPerMonth,
+                    plan: sub.plan,
+                });
+            }
         } catch (error) {
             toast({
                 title: "Erro",
@@ -244,11 +262,19 @@ export default function CreditsPage() {
 
             <div className="grid gap-6">
                 <div className="grid gap-6 sm:grid-cols-2">
-                    <BalanceCard
-                        balance={creditData.balance}
-                        usageThisMonth={creditData.used}
-                        onRechargeClick={handleScrollToPackages}
-                    />
+                    {subscriptionData ? (
+                        <BalanceCard
+                            worksUsed={subscriptionData.worksUsed}
+                            worksLimit={subscriptionData.worksLimit}
+                            onRechargeClick={handleScrollToPackages}
+                        />
+                    ) : (
+                        <BalanceCard
+                            worksUsed={0}
+                            worksLimit={1}
+                            onRechargeClick={handleScrollToPackages}
+                        />
+                    )}
                     <UsageChart data={usageData} />
                 </div>
 

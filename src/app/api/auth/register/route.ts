@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
           userId: createdUser.id,
           plan: "FREE",
           status: "ACTIVE",
-          creditsPerMonth: CREDIT_DEFAULTS.initialBalance,
+          worksPerMonth: 1,
         },
       });
 

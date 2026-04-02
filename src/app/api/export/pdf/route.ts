@@ -7,6 +7,7 @@ import { apiError, handleApiError } from "@/lib/api";
 import { CreditLedgerService } from "@/lib/credit-ledger";
 import { CREDIT_DEFAULTS } from "@/lib/credits";
 import { DocumentExportService } from "@/lib/document-export";
+import { subscriptionService } from "@/lib/subscription";
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,6 +22,13 @@ export async function GET(request: NextRequest) {
 
     if (!projectId) {
       return apiError("ID do projecto é obrigatório", 400);
+    }
+
+    // Check if user can export PDF (PRO only)
+    const { allowed: canExportPdf, reason } = await subscriptionService.canExportPdf(session.user.id);
+    
+    if (!canExportPdf) {
+      return apiError(reason || "Export PDF disponível apenas em PRO", 403);
     }
 
     const project = await db.project.findFirst({
@@ -40,14 +48,6 @@ export async function GET(request: NextRequest) {
     }
 
     const model = DocumentExportService.createModel(project);
-    const ledger = new CreditLedgerService(db);
-    await ledger.charge(
-      session.user.id,
-      CREDIT_DEFAULTS.exportPdf,
-      `Exportação PDF: ${model.title}`,
-      { projectId, format: "pdf" }
-    );
-
     const pdfBuffer = await renderToBuffer(DocumentExportService.createPdfComponent(model));
 
     return new NextResponse(new Uint8Array(pdfBuffer), {

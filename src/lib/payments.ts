@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
-import { PaymentProvider as PaymentProviderEnum, PaymentStatus, type Prisma, type PrismaClient } from "@prisma/client";
-import { CREDIT_PACKAGES, type CreditPackageKey } from "@/lib/credits";
+import { PaymentProvider as PaymentProviderEnum, PaymentStatus, PlanType, type Prisma, type PrismaClient } from "@prisma/client";
+import { CREDIT_PACKAGES, PLAN_PRICING, EXTRA_WORK_PRICE, type CreditPackageKey } from "@/lib/credits";
 import { CreditLedgerService } from "@/lib/credit-ledger";
+import { SubscriptionService } from "@/lib/subscription";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 
@@ -16,9 +17,14 @@ export interface CheckoutResult {
   checkoutUrl?: string;
 }
 
+export type PlanKey = "STARTER" | "PRO";
+export type PurchaseType = "subscription" | "extra_work";
+
 export interface PaymentProviderContract {
   provider: PaymentProviderEnum;
   createCheckout(input: { paymentId: string; packageKey: CreditPackageKey }): Promise<CheckoutResult>;
+  createPlanCheckout(input: { paymentId: string; plan: PlanKey }): Promise<CheckoutResult>;
+  createExtraWorkCheckout(input: { paymentId: string; quantity: number }): Promise<CheckoutResult>;
   parseCallback(payload: unknown): Promise<{ providerReference: string; status: PaymentStatus; providerPayload?: unknown }>;
 }
 
@@ -30,6 +36,23 @@ class SimulatedPaymentProvider implements PaymentProviderContract {
       providerReference: `sim-${input.paymentId}`,
       status: PaymentStatus.CONFIRMED,
       instructions: `Pagamento sandbox confirmado para o pacote ${input.packageKey}.`,
+    };
+  }
+
+  async createPlanCheckout(input: { paymentId: string; plan: PlanKey }): Promise<CheckoutResult> {
+    const planName = input.plan;
+    return {
+      providerReference: `sim-plan-${input.paymentId}`,
+      status: PaymentStatus.CONFIRMED,
+      instructions: `Pagamento sandbox confirmado para o plano ${planName}.`,
+    };
+  }
+
+  async createExtraWorkCheckout(input: { paymentId: string; quantity: number }): Promise<CheckoutResult> {
+    return {
+      providerReference: `sim-extra-${input.paymentId}`,
+      status: PaymentStatus.CONFIRMED,
+      instructions: `Pagamento sandbox confirmado para ${input.quantity} trabalho(s) extra(s).`,
     };
   }
 
@@ -52,6 +75,12 @@ export function getPaymentProvider(provider: PaymentProviderEnum): PaymentProvid
       return {
         provider,
         async createCheckout() {
+          throw new Error(`Provider ${provider} ainda não está configurado.`);
+        },
+        async createPlanCheckout() {
+          throw new Error(`Provider ${provider} ainda não está configurado.`);
+        },
+        async createExtraWorkCheckout() {
           throw new Error(`Provider ${provider} ainda não está configurado.`);
         },
         async parseCallback() {
@@ -106,6 +135,152 @@ export class PaymentService {
 
     return this.db.paymentTransaction.findUniqueOrThrow({
       where: { id: payment.id },
+    });
+  }
+
+  async createPlanCheckout(userId: string, provider: PaymentProviderEnum, plan: PlanKey) {
+    const planPricing = PLAN_PRICING[plan];
+    const payment = await this.db.paymentTransaction.create({
+      data: {
+        userId,
+        provider,
+        providerReference: crypto.randomUUID(),
+        status: PaymentStatus.PENDING,
+        creditsAmount: planPricing.works,
+        moneyAmount: planPricing.price,
+        currency: "MZN",
+        payloadJson: { purchaseType: "subscription", plan },
+      },
+    });
+
+    const checkout = await getPaymentProvider(provider).createPlanCheckout({
+      paymentId: payment.id,
+      plan,
+    });
+
+    await this.db.paymentTransaction.update({
+      where: { id: payment.id },
+      data: {
+        providerReference: checkout.providerReference,
+        status: checkout.status,
+        payloadJson: {
+          purchaseType: "subscription",
+          plan,
+          checkoutInstructions: checkout.instructions,
+        },
+      },
+    });
+
+    if (checkout.status === PaymentStatus.CONFIRMED) {
+      await this.confirmPlanPayment(payment.id, checkout.providerReference, plan);
+    }
+
+    return this.db.paymentTransaction.findUniqueOrThrow({
+      where: { id: payment.id },
+    });
+  }
+
+  async createExtraWorkCheckout(userId: string, provider: PaymentProviderEnum, quantity: number) {
+    const totalPrice = EXTRA_WORK_PRICE * quantity;
+    const payment = await this.db.paymentTransaction.create({
+      data: {
+        userId,
+        provider,
+        providerReference: crypto.randomUUID(),
+        status: PaymentStatus.PENDING,
+        creditsAmount: quantity,
+        moneyAmount: totalPrice,
+        currency: "MZN",
+        payloadJson: { purchaseType: "extra_work", quantity },
+      },
+    });
+
+    const checkout = await getPaymentProvider(provider).createExtraWorkCheckout({
+      paymentId: payment.id,
+      quantity,
+    });
+
+    await this.db.paymentTransaction.update({
+      where: { id: payment.id },
+      data: {
+        providerReference: checkout.providerReference,
+        status: checkout.status,
+        payloadJson: {
+          purchaseType: "extra_work",
+          quantity,
+          checkoutInstructions: checkout.instructions,
+        },
+      },
+    });
+
+    if (checkout.status === PaymentStatus.CONFIRMED) {
+      await this.confirmExtraWorkPayment(payment.id, checkout.providerReference, quantity);
+    }
+
+    return this.db.paymentTransaction.findUniqueOrThrow({
+      where: { id: payment.id },
+    });
+  }
+
+  async confirmPlanPayment(paymentId: string, providerReference: string, plan: PlanType) {
+    const payment = await this.db.paymentTransaction.findUnique({
+      where: { id: paymentId },
+    });
+
+    if (!payment) {
+      throw new Error("Pagamento não encontrado.");
+    }
+
+    if (payment.status === PaymentStatus.CONFIRMED) {
+      return payment;
+    }
+
+    const subscriptionService = new SubscriptionService();
+    await subscriptionService.upgradePlan(payment.userId, plan);
+
+    return this.db.paymentTransaction.update({
+      where: { id: paymentId },
+      data: {
+        status: PaymentStatus.CONFIRMED,
+        confirmedAt: new Date(),
+        payloadJson: { plan },
+      },
+    });
+  }
+
+  async confirmExtraWorkPayment(paymentId: string, providerReference: string, quantity: number) {
+    const payment = await this.db.paymentTransaction.findUnique({
+      where: { id: paymentId },
+    });
+
+    if (!payment) {
+      throw new Error("Pagamento não encontrado.");
+    }
+
+    if (payment.status === PaymentStatus.CONFIRMED) {
+      return payment;
+    }
+
+    const expiresAt = new Date();
+    expiresAt.setMonth(expiresAt.getMonth() + 3);
+
+    await this.db.workPurchase.create({
+      data: {
+        userId: payment.userId,
+        quantity,
+        pricePaid: payment.moneyAmount,
+        used: 0,
+        expiresAt,
+      },
+    });
+
+    return this.db.paymentTransaction.update({
+      where: { id: paymentId },
+      data: {
+        status: PaymentStatus.CONFIRMED,
+        confirmedAt: new Date(),
+        payloadJson: { quantity },
+      },
     });
   }
 

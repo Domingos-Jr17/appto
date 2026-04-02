@@ -96,20 +96,20 @@ async function main() {
   await prisma.subscription.upsert({
     where: { userId: testUser.id },
     update: {
-      plan: "STUDENT",
+      plan: "STARTER",
       status: "ACTIVE",
-      creditsPerMonth: 1000,
+      worksPerMonth: 4,
     },
     create: {
       userId: testUser.id,
-      plan: "STUDENT",
+      plan: "STARTER",
       status: "ACTIVE",
-      creditsPerMonth: 1000,
+      worksPerMonth: 4,
       startDate: new Date(),
     },
   });
 
-  console.log(`   ✅ Subscrição: STUDENT (Ativa)\n`);
+  console.log(`   ✅ Subscrição: STARTER (Ativa)\n`);
 
   // ============================================
   // 5. CRIAR CONFIGURAÇÕES DO UTILIZADOR

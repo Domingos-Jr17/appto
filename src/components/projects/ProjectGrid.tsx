@@ -14,6 +14,7 @@ import {
   Building2,
   GraduationCap,
   Pencil,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,7 +42,7 @@ export interface ProjectCardData {
   generationStatus?: "BRIEFING" | "GENERATING" | "READY" | "NEEDS_REVIEW" | "FAILED";
   generationProgress?: number;
   generationStep?: string | null;
-  status: "draft" | "in_progress" | "completed" | "archived";
+  status: "draft" | "in_progress" | "review" | "completed" | "archived";
   lastUpdated: string;
   createdAt: string;
 }
@@ -69,6 +70,11 @@ const statusStyles: Record<ProjectCardData["status"], { label: string; icon: Rea
     label: "Em curso",
     icon: PlayCircle,
     color: "text-info",
+  },
+  review: {
+    label: "Em revisão",
+    icon: Eye,
+    color: "text-purple-500",
   },
   completed: {
     label: "Concluído",

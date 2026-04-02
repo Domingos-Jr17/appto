@@ -15,6 +15,7 @@ import {
 import { AI_ACTION_CREDIT_COSTS, DEFAULT_AI_ACTION_COST } from "@/lib/credits";
 import { aiRequestSchema } from "@/lib/validators";
 import { logger } from "@/lib/logger";
+import { subscriptionService, type AIAction } from "@/lib/subscription";
 
 // System prompts for different education levels
 const EDUCATION_PROMPTS = {
@@ -163,20 +164,39 @@ export async function POST(request: NextRequest) {
 
     const { action, text, context, projectId, useCache = true } = parsed.data;
 
-    const creditsNeeded =
-      AI_ACTION_CREDIT_COSTS[action as keyof typeof AI_ACTION_CREDIT_COSTS] ??
-      DEFAULT_AI_ACTION_COST;
+    const actionKey = action as AIAction;
+    
+    // Check subscription for AI access
+    const { allowed: aiAllowed, reason: aiReason } = await subscriptionService.canUseAIAction(session.user.id, actionKey);
+    
+    if (!aiAllowed) {
+      return NextResponse.json(
+        { error: aiReason || "Ação não disponível no seu plano" },
+        { status: 403 }
+      );
+    }
 
-    // Check user credits
-    const userCredits = await db.credit.findUnique({
+    // If has advanced AI access, no credits needed
+    const subscription = await db.subscription.findUnique({
       where: { userId: session.user.id },
     });
+    const planFeatures = subscriptionService.getPlanFeatures(subscription?.plan || "FREE");
+    const needsCredits = !planFeatures.hasAdvancedAI && planFeatures.hasBasicAI === false;
 
-    if (!userCredits || userCredits.balance < creditsNeeded) {
-      return NextResponse.json(
-        { error: `Créditos insuficientes. Necessário: ${creditsNeeded} créditos.` },
-        { status: 400 }
-      );
+    // Get credits if needed
+    let userCredits = null;
+    let creditsNeeded = 0;
+    if (needsCredits) {
+      creditsNeeded = AI_ACTION_CREDIT_COSTS[action as keyof typeof AI_ACTION_CREDIT_COSTS] ?? DEFAULT_AI_ACTION_COST;
+      userCredits = await db.credit.findUnique({ where: { userId: session.user.id } });
+      if (!userCredits || userCredits.balance < creditsNeeded) {
+        return NextResponse.json(
+          { error: `Créditos insuficientes. Necessário: ${creditsNeeded} créditos.` },
+          { status: 400 }
+        );
+      }
+    } else {
+      userCredits = await db.credit.findUnique({ where: { userId: session.user.id } });
     }
 
     // Get user's plan and education level for appropriate system prompt
@@ -184,10 +204,7 @@ export async function POST(request: NextRequest) {
       where: { id: session.user.id },
       select: { educationLevel: true },
     });
-    const subscription = await db.subscription.findUnique({
-      where: { userId: session.user.id },
-    });
-    const userPlan = subscription?.plan || "STUDENT";
+    const userPlan = subscription?.plan || "FREE";
     const educationLevel = user?.educationLevel || undefined;
 
     const projectContext = projectId
@@ -227,7 +244,7 @@ export async function POST(request: NextRequest) {
           success: true,
           response: cachedResponse,
           creditsUsed: 0,
-          remainingCredits: userCredits.balance,
+          remainingCredits: userCredits?.balance || 0,
           cached: true,
         });
       }
@@ -317,31 +334,33 @@ export async function POST(request: NextRequest) {
     // Cache the response
     setCachedResponse(cacheKey, response);
 
-    // Deduct credits
-    await db.$transaction([
-      db.credit.update({
-        where: { userId: session.user.id },
-        data: {
-          balance: { decrement: creditsNeeded },
-          used: { increment: creditsNeeded },
-        },
-      }),
-      db.creditTransaction.create({
-        data: {
-          userId: session.user.id,
-          amount: -creditsNeeded,
-          type: "USAGE",
-          description: `IA: ${action}`,
-          metadata: JSON.stringify({ projectId, cached: false }),
-        },
-      }),
-    ]);
+    // Deduct credits only if needed (STARTER with basic AI, or no plan)
+    if (needsCredits && creditsNeeded > 0) {
+      await db.$transaction([
+        db.credit.update({
+          where: { userId: session.user.id },
+          data: {
+            balance: { decrement: creditsNeeded },
+            used: { increment: creditsNeeded },
+          },
+        }),
+        db.creditTransaction.create({
+          data: {
+            userId: session.user.id,
+            amount: -creditsNeeded,
+            type: "USAGE",
+            description: `IA: ${action}`,
+            metadata: JSON.stringify({ projectId, cached: false }),
+          },
+        }),
+      ]);
+    }
 
     return NextResponse.json({
       success: true,
       response,
       creditsUsed: creditsNeeded,
-      remainingCredits: userCredits.balance - creditsNeeded,
+      remainingCredits: userCredits?.balance || 0,
       plan: userPlan,
     });
   } catch (error) {

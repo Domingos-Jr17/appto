@@ -1,13 +1,11 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { CREDIT_DEFAULTS } from "@/lib/credits";
 
-type DbClient = PrismaClient | Prisma.TransactionClient;
-
 export class CreditLedgerService {
-  constructor(private readonly db: DbClient) {}
+  constructor(private readonly db: PrismaClient | any) {}
 
   async getOrCreate(userId: string) {
-    const credits = await this.db.credit.findUnique({
+    const credits = await this.db.credit?.findUnique({
       where: { userId },
     });
 
@@ -24,7 +22,7 @@ export class CreditLedgerService {
   }
 
   async charge(userId: string, amount: number, description: string, metadata?: Prisma.InputJsonValue) {
-    return await this.db.$transaction(async (tx) => {
+    return await this.db.$transaction(async (tx: any) => {
       const credits = await tx.credit.findUnique({
         where: { userId },
       });
@@ -67,7 +65,7 @@ export class CreditLedgerService {
     description: string,
     metadata?: Prisma.InputJsonValue
   ) {
-    return await this.db.$transaction(async (tx) => {
+    return await this.db.$transaction(async (tx: any) => {
       await tx.credit.upsert({
         where: { userId },
         create: {

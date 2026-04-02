@@ -176,28 +176,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If has advanced AI access, no credits needed
+    // Get user's plan features for logging/audit purposes
     const subscription = await db.subscription.findUnique({
       where: { userId: session.user.id },
     });
     const planFeatures = subscriptionService.getPlanFeatures(subscription?.plan || "FREE");
-    const needsCredits = !planFeatures.hasAdvancedAI && planFeatures.hasBasicAI === false;
 
-    // Get credits if needed
-    let userCredits = null;
-    let creditsNeeded = 0;
-    if (needsCredits) {
-      creditsNeeded = AI_ACTION_CREDIT_COSTS[action as keyof typeof AI_ACTION_CREDIT_COSTS] ?? DEFAULT_AI_ACTION_COST;
-      userCredits = await db.credit.findUnique({ where: { userId: session.user.id } });
-      if (!userCredits || userCredits.balance < creditsNeeded) {
-        return NextResponse.json(
-          { error: `Créditos insuficientes. Necessário: ${creditsNeeded} créditos.` },
-          { status: 400 }
-        );
-      }
-    } else {
-      userCredits = await db.credit.findUnique({ where: { userId: session.user.id } });
-    }
+    // Get user's credits for display (no deduction needed as all plans include AI)
+    const userCredits = await db.credit.findUnique({ where: { userId: session.user.id } });
 
     // Get user's plan and education level for appropriate system prompt
     const user = await db.user.findUnique({
@@ -334,34 +320,11 @@ export async function POST(request: NextRequest) {
     // Cache the response
     setCachedResponse(cacheKey, response);
 
-    // Deduct credits only if needed (STARTER with basic AI, or no plan)
-    if (needsCredits && creditsNeeded > 0) {
-      await db.$transaction([
-        db.credit.update({
-          where: { userId: session.user.id },
-          data: {
-            balance: { decrement: creditsNeeded },
-            used: { increment: creditsNeeded },
-          },
-        }),
-        db.creditTransaction.create({
-          data: {
-            userId: session.user.id,
-            amount: -creditsNeeded,
-            type: "USAGE",
-            description: `IA: ${action}`,
-            metadata: JSON.stringify({ projectId, cached: false }),
-          },
-        }),
-      ]);
-    }
-
     return NextResponse.json({
       success: true,
       response,
-      creditsUsed: creditsNeeded,
       remainingCredits: userCredits?.balance || 0,
-      plan: userPlan,
+      plan: planFeatures.key,
     });
   } catch (error) {
     logger.error("AI generation error", { error: String(error) });

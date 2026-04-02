@@ -1,6 +1,7 @@
 import { getAIProvider, getFriendlyAIErrorMessage } from "@/lib/ai";
 import { generateCoverHTML } from "@/lib/cover-templates";
 import { db } from "@/lib/db";
+import { subscriptionService } from "@/lib/subscription";
 import type { CitationStyle, CoverTemplate, WorkBriefInput } from "@/types/editor";
 
 type JobStatus = "GENERATING" | "READY" | "FAILED";
@@ -533,6 +534,10 @@ export async function startWorkGenerationJob(input: {
             },
           });
         }
+      });
+
+      await subscriptionService.refundWork(userId).catch((err) => {
+        console.error("[Work Generation] Failed to refund subscription work:", err);
       });
 
       setJob(projectId, {

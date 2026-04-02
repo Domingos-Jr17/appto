@@ -108,7 +108,7 @@ export const authOptions: NextAuthOptions = {
                 lockoutUntil: lockoutDuration,
               },
             });
-            throw new Error("Exceeded login attempts. Account locked for 15 minutes.");
+            throw new Error("Excedeu as tentativas de login. Conta bloqueada por 15 minutos.");
           }
 
           await db.user.update({

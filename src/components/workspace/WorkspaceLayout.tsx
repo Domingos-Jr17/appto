@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import { DocumentPreview } from "./DocumentPreview";
-import { CoverSheet } from "./CoverSheet";
+import { CoverModal } from "./CoverModal";
 import { EditorLink } from "./EditorLink";
 import type { WorkspaceData } from "@/types/workspace";
 
@@ -48,7 +48,7 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
 
         <EditorLink workId={workspace.data?.id ?? ''} />
 
-        <CoverSheet
+        <CoverModal
           open={coverSheetOpen}
           brief={workspace.data?.brief ?? {
             title: '',

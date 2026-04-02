@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,174 +70,173 @@ export function CoverModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle>Editar capa</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
+      <SheetContent side="right" className="sm:max-w-md flex flex-col">
+        <SheetHeader>
+          <SheetTitle>Editar capa</SheetTitle>
+          <SheetDescription>
             Altera o estilo e os dados que aparecem na capa do trabalho.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
-        <Tabs defaultValue="estilo" className="py-2">
-          <TabsList className="w-full">
-            <TabsTrigger value="estilo" className="flex-1 text-xs">
-              Estilo
-            </TabsTrigger>
-            <TabsTrigger value="info" className="flex-1 text-xs">
-              Dados da capa
-            </TabsTrigger>
-          </TabsList>
+        <div className="flex-1 overflow-y-auto">
+          <Tabs defaultValue="estilo" className="py-2">
+            <TabsList className="w-full">
+              <TabsTrigger value="estilo" className="flex-1 text-xs">
+                Estilo
+              </TabsTrigger>
+              <TabsTrigger value="info" className="flex-1 text-xs">
+                Dados da capa
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="estilo" className="mt-4">
-            <div className="grid grid-cols-3 gap-2.5">
-              {TEMPLATES.map((tpl) => (
-                <button
-                  type="button"
-                  key={tpl.id}
-                  onClick={() => setSelected(tpl.id)}
-                  className={cn(
-                    "overflow-hidden rounded-xl border text-left transition-all",
-                    selected === tpl.id
-                      ? "border-primary border-2"
-                      : "border-border/60 hover:border-border"
-                  )}
-                >
-                  <div className="flex h-16 items-center justify-center bg-muted/50">
-                    <div className="flex w-[70%] flex-col items-center gap-1">
-                      <div className="h-[3px] w-full rounded bg-foreground/15" />
-                      <div className="h-[5px] w-[60%] rounded bg-primary/30" />
-                      <div className="h-[3px] w-full rounded bg-foreground/15" />
+            <TabsContent value="estilo" className="mt-4">
+              <div className="grid grid-cols-2 gap-2.5">
+                {TEMPLATES.map((tpl) => (
+                  <button
+                    type="button"
+                    key={tpl.id}
+                    onClick={() => setSelected(tpl.id)}
+                    className={cn(
+                      "overflow-hidden rounded-xl border text-left transition-all",
+                      selected === tpl.id
+                        ? "border-primary border-2"
+                        : "border-border/60 hover:border-border"
+                    )}
+                  >
+                    <div className="flex h-16 items-center justify-center bg-muted/50">
+                      <div className="flex w-[70%] flex-col items-center gap-1">
+                        <div className="h-[3px] w-full rounded bg-foreground/15" />
+                        <div className="h-[5px] w-[60%] rounded bg-primary/30" />
+                        <div className="h-[3px] w-full rounded bg-foreground/15" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="border-t border-border/60 bg-background px-2 py-1.5">
-                    <p className="text-[11px] font-medium text-foreground">
-                      {tpl.name}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {tpl.desc}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
+                    <div className="border-t border-border/60 bg-background px-2 py-1.5">
+                      <p className="text-[11px] font-medium text-foreground">
+                        {tpl.name}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {tpl.desc}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </TabsContent>
 
-            <DialogFooter className="mt-4">
-              <Button
-                variant="outline"
-                onClick={onClose}
-                className="rounded-2xl"
-              >
-                Cancelar
-              </Button>
-              <Button onClick={handleApplyTemplate} className="rounded-2xl">
-                Aplicar template
-              </Button>
-            </DialogFooter>
-          </TabsContent>
-
-          <TabsContent value="info" className="mt-4">
+            <TabsContent value="info" className="mt-4">
               <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="cover-institution" className="text-xs">
-                  Instituição
-                </Label>
-                <Input
-                  id="cover-institution"
-                  value={info.institutionName}
-                  onChange={(e) => updateField("institutionName", e.target.value)}
-                  placeholder="Ex.: Universidade Eduardo Mondlane"
-                  className="text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="cover-course" className="text-xs">
-                  Curso
-                </Label>
-                <Input
-                  id="cover-course"
-                  value={info.courseName}
-                  onChange={(e) => updateField("courseName", e.target.value)}
-                  placeholder="Ex.: Gestão Bancária"
-                  className="text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="cover-student" className="text-xs">
-                    Estudante
+                  <Label htmlFor="cover-institution" className="text-xs">
+                    Instituição
                   </Label>
                   <Input
-                    id="cover-student"
-                    value={info.studentName}
-                    onChange={(e) =>
-                      updateField("studentName", e.target.value)
-                    }
-                    placeholder="Ex.: Maria João"
+                    id="cover-institution"
+                    value={info.institutionName}
+                    onChange={(e) => updateField("institutionName", e.target.value)}
+                    placeholder="Ex.: Universidade Eduardo Mondlane"
                     className="text-xs"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="cover-advisor" className="text-xs">
-                    Orientador
+                  <Label htmlFor="cover-course" className="text-xs">
+                    Curso
                   </Label>
                   <Input
-                    id="cover-advisor"
-                    value={info.advisorName}
-                    onChange={(e) => updateField("advisorName", e.target.value)}
-                    placeholder="Ex.: Prof. Doutor João"
+                    id="cover-course"
+                    value={info.courseName}
+                    onChange={(e) => updateField("courseName", e.target.value)}
+                    placeholder="Ex.: Gestão Bancária"
                     className="text-xs"
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cover-student" className="text-xs">
+                      Estudante
+                    </Label>
+                    <Input
+                      id="cover-student"
+                      value={info.studentName}
+                      onChange={(e) =>
+                        updateField("studentName", e.target.value)
+                      }
+                      placeholder="Ex.: Maria João"
+                      className="text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cover-advisor" className="text-xs">
+                      Orientador
+                    </Label>
+                    <Input
+                      id="cover-advisor"
+                      value={info.advisorName}
+                      onChange={(e) => updateField("advisorName", e.target.value)}
+                      placeholder="Ex.: Prof. Doutor João"
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cover-city" className="text-xs">
+                      Cidade
+                    </Label>
+                    <Input
+                      id="cover-city"
+                      value={info.city}
+                      onChange={(e) => updateField("city", e.target.value)}
+                      placeholder="Ex.: Maputo"
+                      className="text-xs"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cover-year" className="text-xs">
+                      Ano
+                    </Label>
+                    <Input
+                      id="cover-year"
+                      value={info.year}
+                      onChange={(e) => updateField("year", e.target.value)}
+                      placeholder="Ex.: 2026"
+                      className="text-xs"
+                    />
+                  </div>
                 </div>
               </div>
+            </TabsContent>
+          </Tabs>
+        </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="cover-city" className="text-xs">
-                    Cidade
-                  </Label>
-                  <Input
-                    id="cover-city"
-                    value={info.city}
-                    onChange={(e) => updateField("city", e.target.value)}
-                    placeholder="Ex.: Maputo"
-                    className="text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="cover-year" className="text-xs">
-                    Ano
-                  </Label>
-                  <Input
-                    id="cover-year"
-                    value={info.year}
-                    onChange={(e) => updateField("year", e.target.value)}
-                    placeholder="Ex.: 2026"
-                    className="text-xs"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter className="mt-4">
-              <Button
-                variant="outline"
-                onClick={onClose}
-                className="rounded-2xl"
-              >
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveInfo} className="rounded-2xl">
-                Guardar dados
-              </Button>
-            </DialogFooter>
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+        <SheetFooter className="flex-row gap-2">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="flex-1 rounded-2xl"
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => {
+              const activeTab = document.querySelector('[data-state="active"]');
+              if (activeTab?.textContent?.trim() === "Estilo") {
+                handleApplyTemplate();
+              } else {
+                handleSaveInfo();
+              }
+            }}
+            className="flex-1 rounded-2xl"
+          >
+            Aplicar
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

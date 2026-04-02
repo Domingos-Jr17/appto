@@ -66,9 +66,9 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
             workType: 'monografia',
             theme: '',
             educationLevel: 'HIGHER_EDUCATION',
-            coverTemplate: 'default',
+            coverTemplate: 'UEM_STANDARD',
           }}
-          currentTemplate={workspace.data?.brief?.coverTemplate ?? 'default'}
+          currentTemplate={workspace.data?.brief?.coverTemplate ?? 'UEM_STANDARD'}
           educationLevel={workspace.data?.brief?.educationLevel as AcademicEducationLevel | undefined}
           onSelect={workspace.setCoverTemplate}
           onSaveBrief={workspace.saveBrief}

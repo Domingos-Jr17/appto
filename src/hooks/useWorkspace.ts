@@ -88,9 +88,10 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
         pollingIntervalRef.current = POLLING_CONFIG.initial;
         setData((prev) => ({
           ...prev,
+          generationProgress: 100,
           sections: prev.sections.map((s) => ({
             ...s,
-            status: s.content ? "done" : "done",
+            status: s.content ? "done" : "pending",
           })),
         }));
       } else if (pollingRef.current) {

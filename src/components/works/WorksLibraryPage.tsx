@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FileText, Plus, Sparkles, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -59,10 +59,12 @@ import { calculateProjectProgress } from "@/lib/progress";
 import { formatRelativeTime } from "@/lib/utils";
 import { fetchWithRetry } from "@/lib/fetch-retry";
 import type {
-    AcademicEducationLevel,
     CitationStyle,
-    CoverTemplate,
 } from "@/types/editor";
+import {
+    useWorkCreation,
+    GENERATION_STEPS,
+} from "@/hooks/use-work-creation";
 
 const WORK_TYPES = [
     { value: "MONOGRAPHY", label: "Monografia" },
@@ -78,12 +80,6 @@ const WORK_TYPES = [
     { value: "PRACTICAL_WORK", label: "Trabalho prático" },
 ] as const;
 
-const EDUCATION_TO_TYPE: Record<AcademicEducationLevel, string> = {
-    SECONDARY: "SCHOOL_WORK",
-    TECHNICAL: "PRACTICAL_WORK",
-    HIGHER_EDUCATION: "MONOGRAPHY",
-};
-
 const PROJECT_TYPE_LABELS: Record<string, ProjectCardData["type"]> = {
     MONOGRAPHY: "monografia",
     DISSERTATION: "dissertação",
@@ -98,12 +94,7 @@ const PROJECT_TYPE_LABELS: Record<string, ProjectCardData["type"]> = {
     TCC: "tcc",
 };
 
-const GENERATION_STEPS = [
-    "A validar o briefing",
-    "A gerar capa e estrutura",
-    "A escrever as secções iniciais",
-    "A preparar o trabalho para revisão",
-] as const;
+// Imported from hooks/use-work-creation
 
 const GENERATED_SECTION_COUNTS: Record<string, number> = {
     MONOGRAPHY: 5,
@@ -119,63 +110,8 @@ const GENERATED_SECTION_COUNTS: Record<string, number> = {
     TCC: 5,
 };
 
-type WorkFormState = {
-    title: string;
-    type: string;
-    institutionName: string;
-    courseName: string;
-    subjectName: string;
-    academicYear: string;
-    advisorName: string;
-    studentName: string;
-    city: string;
-    educationLevel: AcademicEducationLevel;
-    objective: string;
-    methodology: string;
-    citationStyle: CitationStyle;
-    referencesSeed: string;
-    additionalInstructions: string;
-    coverTemplate: CoverTemplate;
-    researchQuestion: string;
-    keywords: string;
-    subtitle: string;
-    // Education-level specific fields
-    className: string;
-    turma: string;
-    facultyName: string;
-    departmentName: string;
-    studentNumber: string;
-    semester: string;
-};
-
-const INITIAL_WORK_FORM: WorkFormState = {
-    title: "",
-    type: "SCHOOL_WORK",
-    institutionName: "",
-    courseName: "",
-    subjectName: "",
-    academicYear: new Date().getFullYear().toString(),
-    advisorName: "",
-    studentName: "",
-    city: "",
-    educationLevel: "SECONDARY",
-    objective: "",
-    methodology: "",
-    citationStyle: "ABNT",
-    referencesSeed: "",
-    additionalInstructions: "",
-    coverTemplate: "SCHOOL_MOZ",
-    researchQuestion: "",
-    keywords: "",
-    subtitle: "",
-    // Education-level specific fields
-    className: "",
-    turma: "",
-    facultyName: "",
-    departmentName: "",
-    studentNumber: "",
-    semester: "",
-};
+// WorkFormState, INITIAL_WORK_FORM, EDUCATION_TO_TYPE, GENERATION_STEPS
+// are now imported from @/hooks/use-work-creation
 
 export function WorksLibraryPage() {
     const router = useRouter();
@@ -187,47 +123,28 @@ export function WorksLibraryPage() {
         isLoading,
         refresh,
     } = useAppShellData();
-    const [subscriptionStatus, setSubscriptionStatus] = useState<{
-        remaining: number;
-        worksPerMonth: number;
-        worksUsed: number;
-        canGenerate: boolean;
-    } | null>(null);
+
+    // Creation logic from hook
+    const {
+        workForm,
+        updateWorkForm,
+        handleEducationLevelChange,
+        createWork,
+        isCreating,
+        generationStep,
+        generationProjectId,
+        subscriptionStatus,
+    } = useWorkCreation();
+
+    // UI-specific state
     const [status, setStatus] = useState<ProjectStatus>("all");
     const [search, setSearch] = useState("");
     const [viewMode, _setViewMode] = useState<ViewMode>("grid");
     const [sortBy, _setSortBy] = useState<SortOption>("updated");
     const [dialogOpen, setDialogOpen] = useState(false);
     const [briefStep, setBriefStep] = useState(0);
-    const [workForm, setWorkForm] = useState({ ...INITIAL_WORK_FORM });
-    const [isCreating, setIsCreating] = useState(false);
-    const [generationStep, setGenerationStep] = useState(0);
-    const [generationProjectId, setGenerationProjectId] = useState<
-        string | null
-    >(null);
     const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
     const [openedFromUrl, setOpenedFromUrl] = useState(false);
-
-    useEffect(() => {
-        const fetchSubscription = async () => {
-            try {
-                const res = await fetch("/api/subscription");
-                const data = await res.json();
-                if (data.success && data.data.subscription) {
-                    const sub = data.data.subscription;
-                    setSubscriptionStatus({
-                        remaining: sub.remaining,
-                        worksPerMonth: sub.worksPerMonth,
-                        worksUsed: sub.worksUsed,
-                        canGenerate: sub.remaining > 0,
-                    });
-                }
-            } catch (error) {
-                console.error("Failed to fetch subscription:", error);
-            }
-        };
-        fetchSubscription();
-    }, []);
 
     useEffect(() => {
         const shouldOpenFromUrl = searchParams.get("new") === "1";
@@ -237,7 +154,7 @@ export function WorksLibraryPage() {
             requestedType &&
             WORK_TYPES.some((type) => type.value === requestedType)
         ) {
-            setWorkForm((current) => ({ ...current, type: requestedType }));
+            updateWorkForm("type", requestedType);
         }
 
         if (shouldOpenFromUrl) {
@@ -250,87 +167,7 @@ export function WorksLibraryPage() {
             setDialogOpen(false);
             setOpenedFromUrl(false);
         }
-    }, [openedFromUrl, searchParams]);
-
-    useEffect(() => {
-        if (!isCreating || !generationProjectId) {
-            setGenerationStep(0);
-            return;
-        }
-
-        const intervalId = window.setInterval(async () => {
-            try {
-                const response = await fetchWithRetry(
-                    `/api/generate/work/${generationProjectId}`,
-                    {
-                        retries: 1,
-                        retryDelay: 800,
-                        timeout: 8000,
-                    },
-                );
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(
-                        data.error ||
-                            "Não foi possível acompanhar a geração do trabalho.",
-                    );
-                }
-
-                const nextStep = Math.min(
-                    Math.max(
-                        Math.round(
-                            ((data.progress || 0) / 100) *
-                                (GENERATION_STEPS.length - 1),
-                        ),
-                        0,
-                    ),
-                    GENERATION_STEPS.length - 1,
-                );
-                setGenerationStep(nextStep);
-
-                if (data.status === "READY") {
-                    window.clearInterval(intervalId);
-                    toast({
-                        title: "O teu trabalho está pronto!",
-                        description:
-                            "Explora as secções geradas e usa a IA para fazer ajustes. Boa escrita!",
-                    });
-                    setDialogOpen(false);
-                    resetWorkForm();
-                    router.push(`/app/trabalhos/${generationProjectId}`);
-                }
-
-                if (data.status === "FAILED") {
-                    window.clearInterval(intervalId);
-                    toast({
-                        title: "Geração interrompida",
-                        description:
-                            data.error ||
-                            "A estrutura do trabalho foi criada, mas a geração automática falhou.",
-                        variant: "destructive",
-                    });
-                    setDialogOpen(false);
-                    resetWorkForm();
-                    router.push(`/app/trabalhos/${generationProjectId}`);
-                }
-            } catch (error) {
-                window.clearInterval(intervalId);
-                toast({
-                    title: "Erro",
-                    description:
-                        error instanceof Error
-                            ? error.message
-                            : "Não foi possível acompanhar a geração do trabalho.",
-                    variant: "destructive",
-                });
-                setIsCreating(false);
-                setGenerationProjectId(null);
-            }
-        }, 1200);
-
-        return () => window.clearInterval(intervalId);
-    }, [generationProjectId, isCreating, router, toast]);
+    }, [openedFromUrl, searchParams, updateWorkForm]);
 
     const works = useMemo<ProjectCardData[]>(
         () =>
@@ -409,153 +246,28 @@ export function WorksLibraryPage() {
     const _calculateCost = () =>
         20 + (GENERATED_SECTION_COUNTS[workForm.type] || 5) * 15;
 
-    const updateWorkForm = <K extends keyof WorkFormState>(
-        key: K,
-        value: WorkFormState[K],
-    ) => {
-        setWorkForm((current) => ({ ...current, [key]: value }));
-    };
-
-    const handleEducationLevelChange = (value: AcademicEducationLevel) => {
-        setWorkForm((current) => {
-            // Auto-default cover template based on education level
-            let coverTemplate = current.coverTemplate;
-            if (value === "SECONDARY" && current.coverTemplate !== "SCHOOL_MOZ") {
-                coverTemplate = "SCHOOL_MOZ";
-            } else if (value !== "SECONDARY" && current.coverTemplate === "SCHOOL_MOZ") {
-                coverTemplate = "DISCIPLINARY_MOZ";
-            }
-            return {
-                ...current,
-                educationLevel: value,
-                type: EDUCATION_TO_TYPE[value],
-                coverTemplate,
-            };
-        });
-    };
-
-    const resetWorkForm = () => {
-        setBriefStep(0);
-        setIsCreating(false);
-        setGenerationStep(0);
-        setGenerationProjectId(null);
-        setWorkForm({ ...INITIAL_WORK_FORM });
-    };
-
-    const handleDialogOpenChange = (open: boolean) => {
+    const handleDialogOpenChange = useCallback((open: boolean) => {
         setDialogOpen(open);
-
         if (!open && searchParams.get("new") === "1") {
             router.replace("/app/trabalhos");
         }
-
         if (!open) {
             setOpenedFromUrl(false);
-            resetWorkForm();
+            setBriefStep(0);
         }
-    };
+    }, [searchParams, router]);
 
-    const createWork = async () => {
-        if (!workForm.title.trim()) {
-            toast({
-                title: "Tema obrigatório",
-                description:
-                    "Indique o tema ou título do trabalho para continuar.",
-                variant: "destructive",
-            });
-            return;
+    const handleCreateWork = useCallback(async () => {
+        const projectId = await createWork();
+        if (projectId) {
+            // Only close dialog if synchronous (hook already redirects async)
+            // For async, hook handles polling then redirects
+            const isAsync = isCreating && generationProjectId;
+            if (!isAsync) {
+                setDialogOpen(false);
+            }
         }
-
-        setIsCreating(true);
-
-        try {
-            const response = await fetchWithRetry("/api/generate/work", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                retries: 1,
-                retryDelay: 1000,
-                timeout: 20000,
-                body: JSON.stringify({
-                    title: workForm.title,
-                    type: workForm.type,
-                    generateContent: true,
-                    brief: {
-                        institutionName: workForm.institutionName || undefined,
-                        courseName: workForm.courseName || undefined,
-                        subjectName: workForm.subjectName || undefined,
-                        academicYear:
-                            Number.parseInt(workForm.academicYear, 10) ||
-                            undefined,
-                        advisorName: workForm.advisorName || undefined,
-                        studentName: workForm.studentName || undefined,
-                        city: workForm.city || undefined,
-                        educationLevel: workForm.educationLevel,
-                        objective: workForm.objective || undefined,
-                        methodology: workForm.methodology || undefined,
-                        citationStyle: workForm.citationStyle,
-                        referencesSeed: workForm.referencesSeed || undefined,
-                        additionalInstructions:
-                            workForm.additionalInstructions || undefined,
-                        coverTemplate: workForm.coverTemplate,
-                        researchQuestion:
-                            workForm.researchQuestion || undefined,
-                        keywords: workForm.keywords || undefined,
-                        subtitle: workForm.subtitle || undefined,
-                        className: workForm.className || undefined,
-                        turma: workForm.turma || undefined,
-                        facultyName: workForm.facultyName || undefined,
-                        departmentName: workForm.departmentName || undefined,
-                        studentNumber: workForm.studentNumber || undefined,
-                        semester: workForm.semester || undefined,
-                    },
-                }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || "Erro ao criar o trabalho");
-            }
-
-            toast({
-                title: "Trabalho criado",
-                description:
-                    data.message || "O trabalho foi criado com sucesso.",
-            });
-
-            const subRes = await fetch("/api/subscription");
-            const subData = await subRes.json();
-            if (subData.success && subData.data.subscription) {
-                const sub = subData.data.subscription;
-                setSubscriptionStatus({
-                    remaining: sub.remaining,
-                    worksPerMonth: sub.worksPerMonth,
-                    worksUsed: sub.worksUsed,
-                    canGenerate: sub.remaining > 0,
-                });
-            }
-
-            if (data.generation?.asynchronous) {
-                setGenerationProjectId(data.project.id);
-                setGenerationStep(0);
-                return;
-            }
-
-            setDialogOpen(false);
-            resetWorkForm();
-            router.push(`/app/trabalhos/${data.project.id}`);
-        } catch (error) {
-            toast({
-                title: "Erro",
-                description:
-                    error instanceof Error
-                        ? error.message
-                        : "Não foi possível criar o trabalho.",
-                variant: "destructive",
-            });
-            setIsCreating(false);
-        }
-    };
+    }, [createWork, isCreating, generationProjectId]);
 
     const handleArchiveWork = async (workId: string) => {
         try {
@@ -1387,7 +1099,7 @@ export function WorksLibraryPage() {
                                             Adicionar contexto
                                         </Button>
                                         <Button
-                                            onClick={createWork}
+                                            onClick={() => void handleCreateWork()}
                                             disabled={
                                                 !workForm.title.trim() ||
                                                 (subscriptionStatus ? !subscriptionStatus.canGenerate : false)
@@ -1400,7 +1112,7 @@ export function WorksLibraryPage() {
                                     </>
                                 ) : (
                                     <Button
-                                        onClick={createWork}
+                                        onClick={() => void handleCreateWork()}
                                         disabled={
                                             !workForm.title.trim() ||
                                             (subscriptionStatus ? !subscriptionStatus.canGenerate : false)

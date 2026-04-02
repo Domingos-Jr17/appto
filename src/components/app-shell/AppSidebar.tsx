@@ -51,12 +51,12 @@ export function AppSidebar({
 
                 <Button asChild className="mt-4 h-10 w-full rounded-2xl">
                     <Link
-                        href="/app/trabalhos?new=1"
+                        href="/app"
                         onClick={onNavigate}
-                        aria-label="Criar trabalho académico"
+                        aria-label="Criar novo trabalho"
                     >
                         <FilePlus2 className="h-4 w-4" />
-                        <span>Criar trabalho</span>
+                        <span>Novo trabalho</span>
                     </Link>
                 </Button>
             </div>

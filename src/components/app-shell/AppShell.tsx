@@ -254,7 +254,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
                                     </p>
                                 </div>
                                 <Link
-                                    href="/app/trabalhos?new=1"
+                                    href="/app"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className="flex h-12 w-12 items-center justify-center rounded-full bg-white/16 text-white backdrop-blur-md transition hover:bg-white/24"
                                     aria-label="Novo trabalho"

@@ -74,6 +74,29 @@ export const EDUCATION_TO_TYPE: Record<AcademicEducationLevel, string> = {
   HIGHER_EDUCATION: "MONOGRAPHY",
 };
 
+function getSmartTemplate(
+  level: AcademicEducationLevel,
+  institution: string,
+): CoverTemplate {
+  const inst = institution.toLowerCase();
+
+  if (level === "HIGHER_EDUCATION") {
+    if (inst.includes("eduardo mondlan") || inst.includes("uem")) return "UEM_STANDARD";
+    if (inst.includes("católic") || inst.includes("ucm")) return "UCM_STANDARD";
+    if (inst.includes("isri")) return "ISRI";
+  }
+
+  if (level === "TECHNICAL") {
+    if (inst.includes("isri")) return "ISRI";
+  }
+
+  if (level === "SECONDARY") return "SCHOOL_MOZ";
+
+  if (level === "TECHNICAL" || level === "HIGHER_EDUCATION") return "DISCIPLINARY_MOZ";
+
+  return "SCHOOL_MOZ";
+}
+
 export const GENERATION_STEPS = [
   "A validar o briefing",
   "A estruturar o documento",
@@ -135,12 +158,7 @@ export function useWorkCreation() {
   const handleEducationLevelChange = useCallback(
     (value: AcademicEducationLevel) => {
       setWorkForm((current) => {
-        let coverTemplate = current.coverTemplate;
-        if (value === "SECONDARY" && current.coverTemplate !== "SCHOOL_MOZ") {
-          coverTemplate = "SCHOOL_MOZ";
-        } else if (value !== "SECONDARY" && current.coverTemplate === "SCHOOL_MOZ") {
-          coverTemplate = "DISCIPLINARY_MOZ";
-        }
+        const coverTemplate = getSmartTemplate(value, current.institutionName);
         return {
           ...current,
           educationLevel: value,
@@ -148,6 +166,17 @@ export function useWorkCreation() {
           coverTemplate,
         };
       });
+    },
+    [],
+  );
+
+  const handleInstitutionChange = useCallback(
+    (value: string) => {
+      setWorkForm((current) => ({
+        ...current,
+        institutionName: value,
+        coverTemplate: getSmartTemplate(current.educationLevel, value),
+      }));
     },
     [],
   );
@@ -342,6 +371,7 @@ export function useWorkCreation() {
     workForm,
     updateWorkForm,
     handleEducationLevelChange,
+    handleInstitutionChange,
     resetWorkForm,
     createWork,
     isCreating,

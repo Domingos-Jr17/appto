@@ -16,9 +16,10 @@ interface EducationFieldsProps {
   educationLevel: AcademicEducationLevel;
   form: WorkFormState;
   onUpdate: <K extends keyof WorkFormState>(key: K, value: WorkFormState[K]) => void;
+  onInstitutionChange?: (value: string) => void;
 }
 
-export function EducationFields({ educationLevel, form, onUpdate }: EducationFieldsProps) {
+export function EducationFields({ educationLevel, form, onUpdate, onInstitutionChange }: EducationFieldsProps) {
   if (educationLevel === "SECONDARY") {
     return (
       <div className="space-y-4">
@@ -28,7 +29,7 @@ export function EducationFields({ educationLevel, form, onUpdate }: EducationFie
             <Input
               id="institution"
               value={form.institutionName}
-              onChange={(e) => onUpdate("institutionName", e.target.value)}
+              onChange={(e) => onInstitutionChange?.(e.target.value) ?? onUpdate("institutionName", e.target.value)}
               placeholder="Ex.: Escola Secundária Josina Machel"
             />
           </div>
@@ -120,7 +121,7 @@ export function EducationFields({ educationLevel, form, onUpdate }: EducationFie
             <Input
               id="institution"
               value={form.institutionName}
-              onChange={(e) => onUpdate("institutionName", e.target.value)}
+              onChange={(e) => onInstitutionChange?.(e.target.value) ?? onUpdate("institutionName", e.target.value)}
               placeholder="Ex.: ISTEG"
             />
           </div>
@@ -196,7 +197,7 @@ export function EducationFields({ educationLevel, form, onUpdate }: EducationFie
           <Input
             id="institution"
             value={form.institutionName}
-            onChange={(e) => onUpdate("institutionName", e.target.value)}
+            onChange={(e) => onInstitutionChange?.(e.target.value) ?? onUpdate("institutionName", e.target.value)}
             placeholder="Ex.: Universidade Eduardo Mondlane"
           />
         </div>

@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getWorkGenerationStatus } from "@/lib/work-generation-jobs";
 import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
-import { DEFAULT_PROJECT_SECTIONS } from "@/lib/project-templates";
+import { getSectionsForEducationLevel } from "@/lib/project-templates";
 import { subscriptionService } from "@/lib/subscription";
 import { createProjectSchema } from "@/lib/validators";
 
@@ -220,40 +220,47 @@ export async function POST(request: NextRequest) {
           educationLevel: brief?.educationLevel,
           userId: session.user.id,
           ...(brief
-            ? {
-                brief: {
-                  create: {
-                    workType: type,
-                    generationStatus: "BRIEFING",
-                    institutionName: brief.institutionName,
-                    courseName: brief.courseName,
-                    subjectName: brief.subjectName,
-                    educationLevel: brief.educationLevel,
-                    advisorName: brief.advisorName,
-                    studentName: brief.studentName,
-                    city: brief.city,
-                    academicYear: brief.academicYear,
-                    dueDate: brief.dueDate ? new Date(brief.dueDate) : undefined,
-                    theme: brief.theme || title,
-                    subtitle: brief.subtitle,
-                    objective: brief.objective,
-                    researchQuestion: brief.researchQuestion,
-                    methodology: brief.methodology,
-                    keywords: brief.keywords,
-                    referencesSeed: brief.referencesSeed,
-                    citationStyle: brief.citationStyle || "ABNT",
-                    language: brief.language || "pt-MZ",
-                    additionalInstructions: brief.additionalInstructions,
+              ? {
+                  brief: {
+                    create: {
+                      workType: type,
+                      generationStatus: "BRIEFING",
+                      institutionName: brief.institutionName,
+                      courseName: brief.courseName,
+                      subjectName: brief.subjectName,
+                      educationLevel: brief.educationLevel,
+                      advisorName: brief.advisorName,
+                      studentName: brief.studentName,
+                      city: brief.city,
+                      academicYear: brief.academicYear,
+                      dueDate: brief.dueDate ? new Date(brief.dueDate) : undefined,
+                      theme: brief.theme || title,
+                      subtitle: brief.subtitle,
+                      objective: brief.objective,
+                      researchQuestion: brief.researchQuestion,
+                      methodology: brief.methodology,
+                      keywords: brief.keywords,
+                      referencesSeed: brief.referencesSeed,
+                      citationStyle: brief.citationStyle || "ABNT",
+                      language: brief.language || "pt-MZ",
+                      additionalInstructions: brief.additionalInstructions,
+                      className: brief.className,
+                      turma: brief.turma,
+                      facultyName: brief.facultyName,
+                      departmentName: brief.departmentName,
+                      studentNumber: brief.studentNumber,
+                      semester: brief.semester,
+                    },
                   },
-                },
-              }
+                }
             : {}),
         },
       });
 
       // Create default document structure from template
+      const sections = getSectionsForEducationLevel(brief?.educationLevel, type);
       await tx.documentSection.createMany({
-        data: DEFAULT_PROJECT_SECTIONS.map((section) => ({
+        data: sections.map((section) => ({
           projectId: newProject.id,
           title: section.title,
           order: section.order,

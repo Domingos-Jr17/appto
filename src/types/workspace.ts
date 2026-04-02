@@ -19,6 +19,13 @@ export interface WorkBrief {
   city?: string;
   year?: string;
   coverTemplate?: string;
+  // Education-level specific fields
+  className?: string;
+  turma?: string;
+  facultyName?: string;
+  departmentName?: string;
+  studentNumber?: string;
+  semester?: string;
 }
 
 export interface WorkspaceData {

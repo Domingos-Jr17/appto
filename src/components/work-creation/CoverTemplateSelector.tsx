@@ -16,6 +16,8 @@ const TEMPLATES: CoverTemplateOption[] = [
   { value: "ABNT_GENERIC", label: "ABNT Genérica", description: "Norma ABNT pura, margens padrão" },
   { value: "MODERNA", label: "Moderna", description: "Linha verde de destaque, estilo contemporâneo" },
   { value: "CLASSICA", label: "Clássica", description: "Bordas decorativas duplas, estilo formal" },
+  { value: "SCHOOL_MOZ", label: "Escola Moçambique", description: "Capa para ensino secundário, com REP DE MOÇAMBIQUE" },
+  { value: "DISCIPLINARY_MOZ", label: "Disciplinar", description: "Capa universitária com faculdade e Nº de Estudante" },
 ];
 
 interface CoverTemplateSelectorProps {
@@ -107,6 +109,22 @@ function CoverPreviewIcon({ template }: { template: CoverTemplate }) {
       return (
         <div className="flex flex-col items-center gap-1">
           <div className="h-10 w-12 rounded border border-dashed border-border" />
+        </div>
+      );
+    case "SCHOOL_MOZ":
+      return (
+        <div className="flex flex-col items-center gap-1">
+          <div className={cn(base, "w-6 bg-border")} />
+          <div className={cn(base, "w-10 bg-foreground/20")} />
+          <div className={cn(base, "w-8 bg-foreground/30")} />
+        </div>
+      );
+    case "DISCIPLINARY_MOZ":
+      return (
+        <div className="flex flex-col items-center gap-1">
+          <div className={cn(base, "w-10 bg-foreground/20")} />
+          <div className={cn(base, "w-7 bg-border")} />
+          <div className={cn(base, "w-10 bg-foreground/30")} />
         </div>
       );
     default:

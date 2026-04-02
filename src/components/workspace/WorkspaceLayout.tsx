@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import { DocumentPreview } from "./DocumentPreview";
@@ -39,11 +40,18 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
         />
 
         <div className="flex-1 overflow-y-auto">
-          <DocumentPreview
-            sections={workspace.data?.sections ?? []}
-            isGenerating={workspace.isGenerating}
-            onGenerate={workspace.generateAll}
-          />
+          <div
+            className={cn(
+              "transition-[margin] duration-300 ease-in-out",
+              coverSheetOpen ? "mr-0 sm:mr-[28rem]" : "mr-0"
+            )}
+          >
+            <DocumentPreview
+              sections={workspace.data?.sections ?? []}
+              isGenerating={workspace.isGenerating}
+              onGenerate={workspace.generateAll}
+            />
+          </div>
         </div>
 
         <EditorLink workId={workspace.data?.id ?? ''} />

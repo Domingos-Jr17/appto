@@ -4,6 +4,7 @@ import { ZodError } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { createWorkSchema } from "@/lib/validators";
+import { getSectionsForEducationLevel } from "@/lib/project-templates";
 import {
   formatProjectType,
   generateCover,
@@ -71,21 +72,40 @@ export async function POST(request: NextRequest) {
               language: brief.language,
               additionalInstructions: brief.additionalInstructions,
               coverTemplate: brief.coverTemplate,
+              className: brief.className,
+              turma: brief.turma,
+              facultyName: brief.facultyName,
+              departmentName: brief.departmentName,
+              studentNumber: brief.studentNumber,
+              semester: brief.semester,
             },
           },
         },
       });
 
       const referenceOrder = Math.max(...templates.map((section) => section.order)) + 1;
+      const projectSections = getSectionsForEducationLevel(brief.educationLevel, type);
+
+      // Build initial sections: cover + content sections + references
       const initialSections = [
         { title: "Capa", order: 1, content: generateCover(title, type, brief) },
-        { title: "Resumo", order: 2, content: "" },
+        ...projectSections
+          .filter((s) => s.title !== "Capa" && s.title !== "Referências" && s.title !== "Anexos")
+          .map((section) => ({ title: section.title, order: section.order, content: "" })),
         ...templates.map((section) => ({ title: section.title, order: section.order, content: "" })),
         { title: "Referências", order: referenceOrder, content: brief.referencesSeed || "" },
       ];
 
+      // Deduplicate by title (keep first occurrence)
+      const seen = new Set<string>();
+      const dedupedSections = initialSections.filter((s) => {
+        if (seen.has(s.title)) return false;
+        seen.add(s.title);
+        return true;
+      });
+
       await tx.documentSection.createMany({
-        data: initialSections.map((section) => ({
+        data: dedupedSections.map((section) => ({
           projectId: createdProject.id,
           title: section.title,
           order: section.order,

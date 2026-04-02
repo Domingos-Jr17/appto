@@ -32,8 +32,30 @@ interface GeneratedWorkContent {
 const SYSTEM_PROMPT = `Você é um especialista em escrita académica para estudantes moçambicanos.
 Gere conteúdo académico de alta qualidade em Português de Moçambique.
 Siga a norma de citação pedida no briefing.
-Seja formal, estruturado e academicamente plausível.
+Adapte o nível de linguagem ao nível educacional indicado:
+- SECONDARY: linguagem simples, frases curtas, vocabulário acessível, sem jargão excessivo
+- TECHNICAL: terminologia técnica prática, foco em aplicações
+- HIGHER_EDUCATION: linguagem formal, terminologia académica, citações obrigatórias
 Nunca invente metadados da capa sem base no briefing.`;
+
+function getSystemPromptForEducation(educationLevel?: string | null): string {
+  if (educationLevel === "SECONDARY") {
+    return `Você é um assistente de escrita para estudantes do ensino secundário moçambicano.
+Gere conteúdo simples e acessível em Português de Moçambique.
+Use frases curtas e vocabulário acessível.
+Evite jargão técnico excessivo.
+Não é obrigatório incluir citações formais no texto.
+Estrutura básica: Introdução, Desenvolvimento, Conclusão.`;
+  }
+  if (educationLevel === "TECHNICAL") {
+    return `Você é um assistente de escrita para estudantes do ensino técnico profissional moçambicano.
+Gere conteúdo técnico e prático em Português de Moçambique.
+Use terminologia técnica apropriada com foco em aplicações práticas.
+Inclua exemplos relevantes para o contexto profissional.
+Cite fontes quando relevante.`;
+  }
+  return SYSTEM_PROMPT;
+}
 
 const SECTION_TEMPLATES: Record<string, SectionTemplate[]> = {
   MONOGRAPHY: [
@@ -170,6 +192,12 @@ export function serializeBrief(brief: {
   language: string;
   additionalInstructions: string | null;
   coverTemplate?: string | null;
+  className: string | null;
+  turma: string | null;
+  facultyName: string | null;
+  departmentName: string | null;
+  studentNumber: string | null;
+  semester: string | null;
 }) {
   return {
     ...brief,
@@ -193,6 +221,12 @@ export function generateCover(title: string, type: string, brief: WorkBriefInput
       city: brief.city,
       academicYear: brief.academicYear,
       subtitle: brief.subtitle,
+      className: brief.className,
+      turma: brief.turma,
+      facultyName: brief.facultyName,
+      departmentName: brief.departmentName,
+      studentNumber: brief.studentNumber,
+      semester: brief.semester,
     });
   }
 
@@ -277,11 +311,17 @@ function parseGeneratedWorkContent(rawContent: string, templates: SectionTemplat
 function buildBriefContext(brief: WorkBriefInput) {
   return [
     ["Instituição", brief.institutionName],
+    ["Faculdade", brief.facultyName],
+    ["Departamento", brief.departmentName],
     ["Curso", brief.courseName],
     ["Disciplina", brief.subjectName],
     ["Nível académico", brief.educationLevel],
+    ["Classe", brief.className],
+    ["Turma", brief.turma],
+    ["Semestre", brief.semester],
     ["Professor/Orientador", brief.advisorName],
     ["Estudante", brief.studentName],
+    ["Nº de Estudante", brief.studentNumber],
     ["Cidade", brief.city],
     ["Ano académico", brief.academicYear?.toString()],
     ["Prazo", brief.dueDate],
@@ -308,6 +348,15 @@ async function generateCompleteWorkContent(
   templates: SectionTemplate[]
 ) {
   const orderedTitles = templates.map((section) => section.title).join(", ");
+  const isSchool = brief.educationLevel === "SECONDARY" || brief.educationLevel === "TECHNICAL";
+  const abstractRequirement = isSchool
+    ? "O resumo é opcional; se incluído, deve ter entre 80 e 140 palavras"
+    : "O resumo deve ter entre 140 e 220 palavras";
+  const sectionWords = isSchool ? "entre 150 e 280" : "entre 220 e 380";
+  const citationNote = isSchool
+    ? `As citações no texto são opcionais; se usar, siga a norma ${brief.citationStyle || "ABNT"}`
+    : `Respeite a norma ${brief.citationStyle || "ABNT"}`;
+
   const prompt = `Gere um trabalho académico sobre "${title}".
 
 Tipo de trabalho: ${formatProjectType(type)}
@@ -326,19 +375,20 @@ Use exactamente este formato:
 
 Requisitos obrigatórios:
 - Mantenha exactamente estes títulos e esta ordem: ${orderedTitles}
-- O resumo deve ter entre 140 e 220 palavras
-- Cada secção deve ter entre 220 e 380 palavras
-- Use Português académico de Moçambique
-- Respeite a norma ${brief.citationStyle || "ABNT"}
+- ${abstractRequirement}
+- Cada secção deve ter ${sectionWords} palavras
+- Use Português académico de Moçambique${isSchool ? " (simplificado para o ensino secundário)" : ""}
+- ${citationNote}
 - Use os dados do briefing para tornar o conteúdo específico e plausível
 - Não deixe nenhuma secção vazia
 - Produza JSON estritamente válido`;
 
   const provider = await getAIProvider();
+  const systemPrompt = getSystemPromptForEducation(brief.educationLevel);
   const completion = await provider.chatCompletion({
     model: "", // Provider uses its default model
     messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       { role: "user", content: prompt },
     ],
     max_tokens: 8000,
@@ -559,6 +609,9 @@ export async function regenerateWorkSection(input: {
 }) {
   const { sectionId, title, type, brief, sectionTitle } = input;
 
+  const isSchool = brief.educationLevel === "SECONDARY" || brief.educationLevel === "TECHNICAL";
+  const wordCount = isSchool ? "entre 180 e 320" : "entre 260 e 420";
+
   const prompt = `Regere apenas a secção "${sectionTitle}" de um trabalho académico.
 
 Título do trabalho: ${title}
@@ -567,17 +620,18 @@ Contexto do briefing:
 ${buildBriefContext(brief)}
 
 Requisitos obrigatórios:
-- Escreva em Português académico de Moçambique
+- Escreva em Português académico de Moçambique${isSchool ? " (simplificado para o ensino secundário)" : ""}
 - Use a norma ${brief.citationStyle || "ABNT"}
-- Produza entre 260 e 420 palavras
+- Produza ${wordCount} palavras
 - Mantenha tom formal, coerente e plausível
 - Devolva apenas o conteúdo final da secção, sem markdown extra nem explicações`;
 
   const provider = await getAIProvider();
+  const systemPrompt = getSystemPromptForEducation(brief.educationLevel);
   const completion = await provider.chatCompletion({
     model: "", // Provider uses its default model
     messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       { role: "user", content: prompt },
     ],
     max_tokens: 2500,

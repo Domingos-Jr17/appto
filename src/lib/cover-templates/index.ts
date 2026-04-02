@@ -11,6 +11,13 @@ export interface CoverData {
   city?: string | null;
   academicYear?: number | null;
   subtitle?: string | null;
+  // Education-level specific fields
+  className?: string | null;
+  turma?: string | null;
+  facultyName?: string | null;
+  departmentName?: string | null;
+  studentNumber?: string | null;
+  semester?: string | null;
 }
 
 export type CoverTemplateRenderer = (data: CoverData) => string;
@@ -273,6 +280,98 @@ const renderers: Record<string, CoverTemplateRenderer> = {
       <div class="advisor">${data.advisorName ? `Orientador: ${data.advisorName}` : ""}</div>
       <div class="location-year">${fallback(data.city, "Maputo")} — ${data.academicYear || new Date().getFullYear()}</div>
     </div>
+  </div>
+</div></body></html>`;
+  },
+
+  SCHOOL_MOZ(data) {
+    return `<!DOCTYPE html>
+<html lang="pt"><head><meta charset="utf-8"><style>${baseStyles}
+  .school-page {
+    width: 210mm; min-height: 297mm;
+    padding: 30mm 30mm 20mm 30mm;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: space-between;
+    text-align: center;
+  }
+  .republic { font-size: 11pt; font-weight: bold; margin-bottom: 8px; }
+  .ministry { font-size: 10pt; margin-bottom: 16px; }
+  .school-institution { font-size: 14pt; font-weight: bold; text-transform: uppercase; }
+  .school-class-info { font-size: 11pt; margin-top: 4px; }
+  .school-meta { font-size: 11pt; margin-top: 2px; }
+</style></head>
+<body><div class="school-page">
+  <div>
+    <div class="republic">República de Moçambique</div>
+    <div class="ministry">Ministério da Educação e Desenvolvimento Humano</div>
+    <div class="logo-placeholder">Logo</div>
+    <div class="school-institution">${fallback(data.institutionName, "Escola Secundária")}</div>
+    ${data.className ? `<div class="school-class-info">${data.className} Classe${data.turma ? ` — Turma ${data.turma}` : ""}</div>` : ""}
+  </div>
+  <div class="spacer"></div>
+  <div>
+    <div class="divider-double"></div>
+    <div class="title-main">${data.title}</div>
+    ${data.subtitle ? `<div class="subtitle">${data.subtitle}</div>` : ""}
+    <div class="type-label">${data.type}</div>
+    <div class="divider-double"></div>
+  </div>
+  <div class="spacer"></div>
+  <div>
+    <div class="school-meta">${data.subjectName ? `Disciplina: ${data.subjectName}` : ""}</div>
+    <div class="school-meta">${data.advisorName ? `Professor(a): ${data.advisorName}` : ""}</div>
+    <div style="height:16px"></div>
+    <div class="author">${fallback(data.studentName, "Nome do Estudante")}</div>
+    ${data.studentNumber ? `<div class="school-meta">Nº: ${data.studentNumber}</div>` : ""}
+    <div style="height:24px"></div>
+    <div class="location-year">${fallback(data.city, "Cidade")} — ${data.academicYear || new Date().getFullYear()}</div>
+  </div>
+</div></body></html>`;
+  },
+
+  DISCIPLINARY_MOZ(data) {
+    const semesterLabel = data.semester ? ` — ${data.semester} Semestre` : "";
+    return `<!DOCTYPE html>
+<html lang="pt"><head><meta charset="utf-8"><style>${baseStyles}
+  .disc-page {
+    width: 210mm; min-height: 297mm;
+    padding: 35mm 30mm;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: space-between;
+    text-align: center;
+  }
+  .uni-name { font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-top: 16px; }
+  .fac-name { font-size: 12pt; }
+  .dept-name { font-size: 11pt; }
+  .course-name { font-size: 11pt; font-weight: 500; }
+  .disc-meta { font-size: 11pt; margin-top: 2px; color: #333; }
+  .grau-text { font-size: 11pt; color: #555; font-style: italic; }
+</style></head>
+<body><div class="disc-page">
+  <div>
+    <div class="logo-placeholder">Logo</div>
+    <div class="uni-name">${fallback(data.institutionName, "Universidade")}</div>
+    ${data.facultyName ? `<div class="fac-name">${data.facultyName}</div>` : ""}
+    ${data.departmentName ? `<div class="dept-name">${data.departmentName}</div>` : ""}
+    ${data.courseName ? `<div class="course-name">Curso de ${data.courseName}</div>` : ""}
+  </div>
+  <div class="spacer"></div>
+  <div>
+    <div class="divider-double"></div>
+    <div class="title-main">${data.title}</div>
+    ${data.subtitle ? `<div class="subtitle">${data.subtitle}</div>` : ""}
+    <div class="type-label">${data.type}</div>
+    <div class="divider-double"></div>
+  </div>
+  <div class="spacer"></div>
+  <div>
+    <div class="disc-meta">${data.subjectName ? `${data.subjectName}${semesterLabel}` : ""}</div>
+    <div class="disc-meta">${data.advisorName ? `Orientador: ${data.advisorName}` : ""}</div>
+    <div style="height:16px"></div>
+    <div class="author">${fallback(data.studentName, "Nome do Estudante")}</div>
+    ${data.studentNumber ? `<div class="disc-meta">Nº de Estudante: ${data.studentNumber}</div>` : ""}
+    <div style="height:24px"></div>
+    <div class="location-year">${fallback(data.city, "Maputo")} — ${data.academicYear || new Date().getFullYear()}</div>
   </div>
 </div></body></html>`;
   },

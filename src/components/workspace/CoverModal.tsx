@@ -71,15 +71,18 @@ export function CoverModal({
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="right" className="sm:max-w-md flex flex-col">
-        <SheetHeader>
+      <SheetContent
+        side="right"
+        className="flex flex-col w-full p-0 sm:w-[28rem] sm:top-[72px] sm:bottom-0 sm:h-auto sm:border-l sm:rounded-tl-2xl"
+      >
+        <SheetHeader className="px-4 pt-4 pb-2 sm:pt-6">
           <SheetTitle>Editar capa</SheetTitle>
           <SheetDescription>
             Altera o estilo e os dados que aparecem na capa do trabalho.
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto px-4">
           <Tabs defaultValue="estilo" className="py-2">
             <TabsList className="w-full">
               <TabsTrigger value="estilo" className="flex-1 text-xs">
@@ -91,7 +94,7 @@ export function CoverModal({
             </TabsList>
 
             <TabsContent value="estilo" className="mt-4">
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2">
                 {TEMPLATES.map((tpl) => (
                   <button
                     type="button"

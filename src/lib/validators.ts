@@ -59,6 +59,8 @@ export const coverTemplateSchema = z.enum([
   "ABNT_GENERIC",
   "MODERNA",
   "CLASSICA",
+  "SCHOOL_MOZ",
+  "DISCIPLINARY_MOZ",
 ]);
 
 export const workGenerationStatusSchema = z.enum([
@@ -90,6 +92,13 @@ export const workBriefSchema = z.object({
   language: z.string().trim().min(2).max(20).default("pt-MZ"),
   additionalInstructions: z.string().trim().max(10000).optional(),
   coverTemplate: coverTemplateSchema.default("UEM_STANDARD"),
+  // Education-level specific fields
+  className: z.string().trim().max(30).optional(),
+  turma: z.string().trim().max(10).optional(),
+  facultyName: z.string().trim().max(180).optional(),
+  departmentName: z.string().trim().max(180).optional(),
+  studentNumber: z.string().trim().max(30).optional(),
+  semester: z.string().trim().max(10).optional(),
 });
 
 export const updateWorkBriefSchema = workBriefSchema.partial();

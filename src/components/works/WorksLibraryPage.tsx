@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileText, Plus, Sparkles, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
     AlertDialog,
@@ -77,6 +78,12 @@ const WORK_TYPES = [
     { value: "PRACTICAL_WORK", label: "Trabalho prático" },
 ] as const;
 
+const EDUCATION_TO_TYPE: Record<AcademicEducationLevel, string> = {
+    SECONDARY: "SCHOOL_WORK",
+    TECHNICAL: "PRACTICAL_WORK",
+    HIGHER_EDUCATION: "MONOGRAPHY",
+};
+
 const PROJECT_TYPE_LABELS: Record<string, ProjectCardData["type"]> = {
     MONOGRAPHY: "monografia",
     DISSERTATION: "dissertação",
@@ -132,11 +139,18 @@ type WorkFormState = {
     researchQuestion: string;
     keywords: string;
     subtitle: string;
+    // Education-level specific fields
+    className: string;
+    turma: string;
+    facultyName: string;
+    departmentName: string;
+    studentNumber: string;
+    semester: string;
 };
 
 const INITIAL_WORK_FORM: WorkFormState = {
     title: "",
-    type: "MONOGRAPHY",
+    type: "SCHOOL_WORK",
     institutionName: "",
     courseName: "",
     subjectName: "",
@@ -144,16 +158,23 @@ const INITIAL_WORK_FORM: WorkFormState = {
     advisorName: "",
     studentName: "",
     city: "",
-    educationLevel: "HIGHER_EDUCATION",
+    educationLevel: "SECONDARY",
     objective: "",
     methodology: "",
     citationStyle: "ABNT",
     referencesSeed: "",
     additionalInstructions: "",
-    coverTemplate: "UEM_STANDARD",
+    coverTemplate: "SCHOOL_MOZ",
     researchQuestion: "",
     keywords: "",
     subtitle: "",
+    // Education-level specific fields
+    className: "",
+    turma: "",
+    facultyName: "",
+    departmentName: "",
+    studentNumber: "",
+    semester: "",
 };
 
 export function WorksLibraryPage() {
@@ -395,6 +416,24 @@ export function WorksLibraryPage() {
         setWorkForm((current) => ({ ...current, [key]: value }));
     };
 
+    const handleEducationLevelChange = (value: AcademicEducationLevel) => {
+        setWorkForm((current) => {
+            // Auto-default cover template based on education level
+            let coverTemplate = current.coverTemplate;
+            if (value === "SECONDARY" && current.coverTemplate !== "SCHOOL_MOZ") {
+                coverTemplate = "SCHOOL_MOZ";
+            } else if (value !== "SECONDARY" && current.coverTemplate === "SCHOOL_MOZ") {
+                coverTemplate = "DISCIPLINARY_MOZ";
+            }
+            return {
+                ...current,
+                educationLevel: value,
+                type: EDUCATION_TO_TYPE[value],
+                coverTemplate,
+            };
+        });
+    };
+
     const resetWorkForm = () => {
         setBriefStep(0);
         setIsCreating(false);
@@ -462,6 +501,12 @@ export function WorksLibraryPage() {
                             workForm.researchQuestion || undefined,
                         keywords: workForm.keywords || undefined,
                         subtitle: workForm.subtitle || undefined,
+                        className: workForm.className || undefined,
+                        turma: workForm.turma || undefined,
+                        facultyName: workForm.facultyName || undefined,
+                        departmentName: workForm.departmentName || undefined,
+                        studentNumber: workForm.studentNumber || undefined,
+                        semester: workForm.semester || undefined,
                     },
                 }),
             });
@@ -628,32 +673,35 @@ export function WorksLibraryPage() {
                                 {briefStep === 0 ? (
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="work-type">
-                                                Tipo de trabalho
-                                            </Label>
-                                            <Select
-                                                value={workForm.type}
-                                                onValueChange={(value) =>
-                                                    updateWorkForm(
-                                                        "type",
-                                                        value,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger id="work-type">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {WORK_TYPES.map((type) => (
-                                                        <SelectItem
-                                                            key={type.value}
-                                                            value={type.value}
-                                                        >
-                                                            {type.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <Label>Nível académico</Label>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {([
+                                                    { value: "SECONDARY", label: "Secundário", icon: "📚" },
+                                                    { value: "TECHNICAL", label: "Técnico", icon: "🔧" },
+                                                    { value: "HIGHER_EDUCATION", label: "Superior", icon: "🎓" },
+                                                ] as const).map((level) => (
+                                                    <button
+                                                        key={level.value}
+                                                        type="button"
+                                                        onClick={() =>
+                                                            handleEducationLevelChange(
+                                                                level.value,
+                                                            )
+                                                        }
+                                                        className={cn(
+                                                            "rounded-xl border p-3 text-center transition-colors",
+                                                            workForm.educationLevel === level.value
+                                                                ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                                                                : "border-border/60 hover:border-border",
+                                                        )}
+                                                    >
+                                                        <div className="text-lg">{level.icon}</div>
+                                                        <div className="mt-1 text-xs font-medium leading-tight">
+                                                            {level.label}
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
 
                                         <div className="space-y-2">
@@ -698,145 +746,327 @@ export function WorksLibraryPage() {
                                     </div>
                                 ) : (
                                     <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
-                                        <div className="grid gap-4 sm:grid-cols-2">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="institution">
-                                                    Instituição
-                                                </Label>
+                                        {/* Nível selecionado: workForm.educationLevel — campos condicionais */}
 
-                                                <Input
-                                                    id="institution"
-                                                    value={
-                                                        workForm.institutionName
-                                                    }
-                                                    onChange={(event) =>
-                                                        updateWorkForm(
-                                                            "institutionName",
-                                                            event.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Ex.: UEM"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="course">
-                                                    Curso
-                                                </Label>
-                                                <Input
-                                                    id="course"
-                                                    value={workForm.courseName}
-                                                    onChange={(event) =>
-                                                        updateWorkForm(
-                                                            "courseName",
-                                                            event.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Ex.: Gestão"
-                                                />
-                                            </div>
-                                        </div>
+                                        {/* === SECONDARY fields === */}
+                                        {workForm.educationLevel === "SECONDARY" && (
+                                            <>
+                                                <div className="grid gap-4 sm:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="institution">
+                                                            Escola
+                                                        </Label>
+                                                        <Input
+                                                            id="institution"
+                                                            value={workForm.institutionName}
+                                                            onChange={(e) => updateWorkForm("institutionName", e.target.value)}
+                                                            placeholder="Ex.: Escola Secundária Josina Machel"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="subject">
+                                                            Disciplina
+                                                        </Label>
+                                                        <Input
+                                                            id="subject"
+                                                            value={workForm.subjectName}
+                                                            onChange={(e) => updateWorkForm("subjectName", e.target.value)}
+                                                            placeholder="Ex.: História"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid gap-4 sm:grid-cols-3">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="className">
+                                                            Classe
+                                                        </Label>
+                                                        <Select
+                                                            value={workForm.className}
+                                                            onValueChange={(v) => updateWorkForm("className", v)}
+                                                        >
+                                                            <SelectTrigger id="className">
+                                                                <SelectValue placeholder="Selecionar" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="10ª">10ª Classe</SelectItem>
+                                                                <SelectItem value="11ª">11ª Classe</SelectItem>
+                                                                <SelectItem value="12ª">12ª Classe</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="turma">
+                                                            Turma
+                                                        </Label>
+                                                        <Input
+                                                            id="turma"
+                                                            value={workForm.turma}
+                                                            onChange={(e) => updateWorkForm("turma", e.target.value)}
+                                                            placeholder="Ex.: A"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="studentNumber">
+                                                            Nº
+                                                        </Label>
+                                                        <Input
+                                                            id="studentNumber"
+                                                            value={workForm.studentNumber}
+                                                            onChange={(e) => updateWorkForm("studentNumber", e.target.value)}
+                                                            placeholder="Ex.: 15"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid gap-4 sm:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="student">
+                                                            Nome do aluno(a)
+                                                        </Label>
+                                                        <Input
+                                                            id="student"
+                                                            value={workForm.studentName}
+                                                            onChange={(e) => updateWorkForm("studentName", e.target.value)}
+                                                            placeholder="Ex.: Maria João António"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="advisor">
+                                                            Professor(a)
+                                                        </Label>
+                                                        <Input
+                                                            id="advisor"
+                                                            value={workForm.advisorName}
+                                                            onChange={(e) => updateWorkForm("advisorName", e.target.value)}
+                                                            placeholder="Ex.: Prof. Carlos Bento"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="city">Cidade</Label>
+                                                    <Input
+                                                        id="city"
+                                                        value={workForm.city}
+                                                        onChange={(e) => updateWorkForm("city", e.target.value)}
+                                                        placeholder="Ex.: Maputo"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
 
-                                        <div className="grid gap-4 sm:grid-cols-2">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="student">
-                                                    Nome do estudante
-                                                </Label>
+                                        {/* === TECHNICAL fields === */}
+                                        {workForm.educationLevel === "TECHNICAL" && (
+                                            <>
+                                                <div className="grid gap-4 sm:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="institution">
+                                                            Instituição
+                                                        </Label>
+                                                        <Input
+                                                            id="institution"
+                                                            value={workForm.institutionName}
+                                                            onChange={(e) => updateWorkForm("institutionName", e.target.value)}
+                                                            placeholder="Ex.: ISTEG"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="course">
+                                                            Curso
+                                                        </Label>
+                                                        <Input
+                                                            id="course"
+                                                            value={workForm.courseName}
+                                                            onChange={(e) => updateWorkForm("courseName", e.target.value)}
+                                                            placeholder="Ex.: Informática"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid gap-4 sm:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="student">
+                                                            Nome do estudante
+                                                        </Label>
+                                                        <Input
+                                                            id="student"
+                                                            value={workForm.studentName}
+                                                            onChange={(e) => updateWorkForm("studentName", e.target.value)}
+                                                            placeholder="Ex.: Maria João António"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="advisor">
+                                                            Professor ou orientador
+                                                        </Label>
+                                                        <Input
+                                                            id="advisor"
+                                                            value={workForm.advisorName}
+                                                            onChange={(e) => updateWorkForm("advisorName", e.target.value)}
+                                                            placeholder="Ex.: Prof. Doutor João Luís"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid gap-4 sm:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="studentNumber">
+                                                            Nº de Estudante
+                                                        </Label>
+                                                        <Input
+                                                            id="studentNumber"
+                                                            value={workForm.studentNumber}
+                                                            onChange={(e) => updateWorkForm("studentNumber", e.target.value)}
+                                                            placeholder="Ex.: 2024/001"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="subject">
+                                                            Disciplina
+                                                        </Label>
+                                                        <Input
+                                                            id="subject"
+                                                            value={workForm.subjectName}
+                                                            onChange={(e) => updateWorkForm("subjectName", e.target.value)}
+                                                            placeholder="Ex.: Gestão de Redes"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="city">Cidade</Label>
+                                                    <Input
+                                                        id="city"
+                                                        value={workForm.city}
+                                                        onChange={(e) => updateWorkForm("city", e.target.value)}
+                                                        placeholder="Ex.: Maputo"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
 
-                                                <Input
-                                                    id="student"
-                                                    value={workForm.studentName}
-                                                    onChange={(event) =>
-                                                        updateWorkForm(
-                                                            "studentName",
-                                                            event.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Ex.: Maria João António"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="advisor">
-                                                    Professor ou orientador
-                                                </Label>
-                                                <Input
-                                                    id="advisor"
-                                                    value={workForm.advisorName}
-                                                    onChange={(event) =>
-                                                        updateWorkForm(
-                                                            "advisorName",
-                                                            event.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Ex.: Prof. Doutor João Luís"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="city">Cidade</Label>
-                                            <Input
-                                                id="city"
-                                                value={workForm.city}
-                                                onChange={(event) =>
-                                                    updateWorkForm(
-                                                        "city",
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                placeholder="Ex.: Maputo"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="education-level">
-                                                Nível académico
-                                            </Label>
-                                            <p className="text-xs text-muted-foreground">
-                                                Ajusta o tom e a complexidade do
-                                                conteúdo gerado.
-                                            </p>
-                                            <Select
-                                                value={workForm.educationLevel}
-                                                onValueChange={(value) =>
-                                                    updateWorkForm(
-                                                        "educationLevel",
-                                                        value as AcademicEducationLevel,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger id="education-level">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="SECONDARY">
-                                                        Secundário
-                                                    </SelectItem>
-                                                    <SelectItem value="TECHNICAL">
-                                                        Técnico Profissional
-                                                    </SelectItem>
-                                                    <SelectItem value="HIGHER_EDUCATION">
-                                                        Ensino Superior
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="subject">
-                                                Disciplina
-                                            </Label>
-                                            <Input
-                                                id="subject"
-                                                value={workForm.subjectName}
-                                                onChange={(event) =>
-                                                    updateWorkForm(
-                                                        "subjectName",
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                placeholder="Ex.: Metodologia de Investigação"
-                                            />
-                                        </div>
+                                        {/* === HIGHER_EDUCATION fields === */}
+                                        {workForm.educationLevel === "HIGHER_EDUCATION" && (
+                                            <>
+                                                <div className="grid gap-4 sm:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="institution">
+                                                            Universidade
+                                                        </Label>
+                                                        <Input
+                                                            id="institution"
+                                                            value={workForm.institutionName}
+                                                            onChange={(e) => updateWorkForm("institutionName", e.target.value)}
+                                                            placeholder="Ex.: Universidade Eduardo Mondlane"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="facultyName">
+                                                            Faculdade
+                                                        </Label>
+                                                        <Input
+                                                            id="facultyName"
+                                                            value={workForm.facultyName}
+                                                            onChange={(e) => updateWorkForm("facultyName", e.target.value)}
+                                                            placeholder="Ex.: Faculdade de Economia"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid gap-4 sm:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="departmentName">
+                                                            Departamento
+                                                        </Label>
+                                                        <Input
+                                                            id="departmentName"
+                                                            value={workForm.departmentName}
+                                                            onChange={(e) => updateWorkForm("departmentName", e.target.value)}
+                                                            placeholder="Ex.: Departamento de Gestão"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="course">
+                                                            Curso
+                                                        </Label>
+                                                        <Input
+                                                            id="course"
+                                                            value={workForm.courseName}
+                                                            onChange={(e) => updateWorkForm("courseName", e.target.value)}
+                                                            placeholder="Ex.: Gestão"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid gap-4 sm:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="student">
+                                                            Nome do estudante
+                                                        </Label>
+                                                        <Input
+                                                            id="student"
+                                                            value={workForm.studentName}
+                                                            onChange={(e) => updateWorkForm("studentName", e.target.value)}
+                                                            placeholder="Ex.: Maria João António"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="advisor">
+                                                            Orientador
+                                                        </Label>
+                                                        <Input
+                                                            id="advisor"
+                                                            value={workForm.advisorName}
+                                                            onChange={(e) => updateWorkForm("advisorName", e.target.value)}
+                                                            placeholder="Ex.: Prof. Doutor João Luís"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid gap-4 sm:grid-cols-3">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="studentNumber">
+                                                            Nº de Estudante
+                                                        </Label>
+                                                        <Input
+                                                            id="studentNumber"
+                                                            value={workForm.studentNumber}
+                                                            onChange={(e) => updateWorkForm("studentNumber", e.target.value)}
+                                                            placeholder="Ex.: 2024/001"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="subject">
+                                                            Disciplina
+                                                        </Label>
+                                                        <Input
+                                                            id="subject"
+                                                            value={workForm.subjectName}
+                                                            onChange={(e) => updateWorkForm("subjectName", e.target.value)}
+                                                            placeholder="Ex.: Metodologia de Investigação"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="semester">
+                                                            Semestre
+                                                        </Label>
+                                                        <Select
+                                                            value={workForm.semester}
+                                                            onValueChange={(v) => updateWorkForm("semester", v)}
+                                                        >
+                                                            <SelectTrigger id="semester">
+                                                                <SelectValue placeholder="Selecionar" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="I">I Semestre</SelectItem>
+                                                                <SelectItem value="II">II Semestre</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="city">Cidade</Label>
+                                                    <Input
+                                                        id="city"
+                                                        value={workForm.city}
+                                                        onChange={(e) => updateWorkForm("city", e.target.value)}
+                                                        placeholder="Ex.: Maputo"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
 
                                         <CoverTemplateSelector
                                             value={workForm.coverTemplate}
@@ -924,6 +1154,11 @@ export function WorksLibraryPage() {
                                                                 Metodologia ou
                                                                 orientação
                                                             </Label>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {workForm.educationLevel === "SECONDARY"
+                                                                    ? "Preencha apenas se o professor pediu."
+                                                                    : "Descreva a abordagem a seguir."}
+                                                            </p>
                                                             <Textarea
                                                                 id="methodology"
                                                                 value={
@@ -1036,10 +1271,9 @@ export function WorksLibraryPage() {
                                                                 investigação
                                                             </Label>
                                                             <p className="text-xs text-muted-foreground">
-                                                                A pergunta
-                                                                central que o
-                                                                trabalho vai
-                                                                responder.
+                                                                {workForm.educationLevel === "SECONDARY"
+                                                                    ? "Preencha apenas se o professor pediu."
+                                                                    : "A pergunta central que o trabalho vai responder."}
                                                             </p>
                                                             <Textarea
                                                                 id="research-question"
@@ -1118,18 +1352,6 @@ export function WorksLibraryPage() {
                                                                 placeholder="Ex.: Um estudo de caso no sector bancário moçambicano"
                                                             />
                                                         </div>
-
-                                                        <CoverTemplateSelector
-                                                            value={
-                                                                workForm.coverTemplate
-                                                            }
-                                                            onChange={(value) =>
-                                                                updateWorkForm(
-                                                                    "coverTemplate",
-                                                                    value,
-                                                                )
-                                                            }
-                                                        />
                                                     </div>
                                                 </AccordionContent>
                                             </AccordionItem>

@@ -64,7 +64,9 @@ export type CoverTemplate =
   | "ISRI"
   | "ABNT_GENERIC"
   | "MODERNA"
-  | "CLASSICA";
+  | "CLASSICA"
+  | "SCHOOL_MOZ"
+  | "DISCIPLINARY_MOZ";
 
 export interface ProjectBrief {
   workType: string;
@@ -89,6 +91,13 @@ export interface ProjectBrief {
   language: string;
   additionalInstructions: string | null;
   coverTemplate: CoverTemplate;
+  // Education-level specific fields
+  className: string | null;
+  turma: string | null;
+  facultyName: string | null;
+  departmentName: string | null;
+  studentNumber: string | null;
+  semester: string | null;
 }
 
 export interface WorkBriefInput {
@@ -112,6 +121,13 @@ export interface WorkBriefInput {
   language?: string;
   additionalInstructions?: string;
   coverTemplate?: CoverTemplate;
+  // Education-level specific fields
+  className?: string;
+  turma?: string;
+  facultyName?: string;
+  departmentName?: string;
+  studentNumber?: string;
+  semester?: string;
 }
 
 export interface CreateWorkPayload {

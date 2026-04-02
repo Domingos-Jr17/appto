@@ -211,6 +211,13 @@ model ProjectBrief {
   language                String               @default("pt-MZ")
   additionalInstructions  String?
   coverTemplate           String?              @default("UEM_STANDARD")
+  // Education-level specific fields
+  className               String?              @db.VarChar(30)   // 10ª/11ª/12ª Classe (Secundário)
+  turma                   String?              @db.VarChar(10)   // A/B/C (Secundário)
+  facultyName             String?              @db.VarChar(180)  // Faculdade (Superior)
+  departmentName          String?              @db.VarChar(180)  // Departamento (Superior)
+  studentNumber           String?              @db.VarChar(30)   // Nº de Estudante
+  semester                String?              @db.VarChar(10)   // I/II (Superior)
   createdAt               DateTime             @default(now())
   updatedAt               DateTime             @updatedAt
 

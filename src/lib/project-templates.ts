@@ -21,4 +21,36 @@ export const DEFAULT_PROJECT_SECTIONS: ProjectSectionTemplate[] = [
   { title: "Anexos", order: 13, isFrontMatter: false, isPrimaryEditable: false },
 ];
 
+const SCHOOL_PROJECT_SECTIONS: ProjectSectionTemplate[] = [
+  { title: "Capa", order: 1, isFrontMatter: true, isPrimaryEditable: false },
+  { title: "Índice", order: 2, isFrontMatter: true, isPrimaryEditable: false },
+  { title: "1. Introdução", order: 3, isFrontMatter: false, isPrimaryEditable: true },
+  { title: "2. Desenvolvimento", order: 4, isFrontMatter: false, isPrimaryEditable: true },
+  { title: "3. Conclusão", order: 5, isFrontMatter: false, isPrimaryEditable: true },
+  { title: "Referências", order: 6, isFrontMatter: false, isPrimaryEditable: false },
+  { title: "Anexos", order: 7, isFrontMatter: false, isPrimaryEditable: false },
+];
+
+const SCHOOL_TYPES = new Set([
+  "SCHOOL_WORK",
+  "RESEARCH_PROJECT",
+  "PRACTICAL_WORK",
+  "INTERNSHIP_REPORT",
+  "TCC",
+]);
+
+export function getSectionsForEducationLevel(
+  educationLevel: string | null | undefined,
+  projectType: string,
+): ProjectSectionTemplate[] {
+  // ESSAY always uses default (3-section structure is defined in SECTION_TEMPLATES)
+  if (projectType === "ESSAY") return DEFAULT_PROJECT_SECTIONS;
+
+  if (educationLevel === "SECONDARY" || educationLevel === "TECHNICAL") {
+    if (SCHOOL_TYPES.has(projectType)) return SCHOOL_PROJECT_SECTIONS;
+  }
+
+  return DEFAULT_PROJECT_SECTIONS;
+}
+
 

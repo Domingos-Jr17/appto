@@ -65,7 +65,7 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
             title: '',
             workType: 'monografia',
             theme: '',
-            educationLevel: 'licenciatura',
+            educationLevel: 'HIGHER_EDUCATION',
             coverTemplate: 'default',
           }}
           currentTemplate={workspace.data?.brief?.coverTemplate ?? 'default'}

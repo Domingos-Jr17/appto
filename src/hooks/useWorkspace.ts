@@ -60,8 +60,8 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
           })),
         }));
       }
-    } catch {
-      // silent — will retry on next poll
+    } catch (err) {
+      console.warn("[useWorkspace] refreshProject failed:", err);
     }
   }, [data.id]);
 
@@ -123,7 +123,9 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${data.brief.title.slice(0, 50)}.docx`;
+      const truncate = (text: string, max: number) =>
+        text.length <= max ? text : text.slice(0, max).replace(/\s+\S*$/, "");
+      a.download = `${truncate(data.brief.title, 50)}.docx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -171,6 +173,12 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
               advisorName: updates.advisorName,
               city: updates.city,
               academicYear: updates.year ? parseInt(updates.year, 10) : undefined,
+              className: updates.className,
+              turma: updates.turma,
+              facultyName: updates.facultyName,
+              departmentName: updates.departmentName,
+              studentNumber: updates.studentNumber,
+              semester: updates.semester,
             },
           }),
         });

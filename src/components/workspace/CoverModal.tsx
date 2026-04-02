@@ -13,6 +13,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { getTemplatesForLevel } from "@/lib/cover-template-config";
 import type { WorkBrief } from "@/types/workspace";
@@ -28,6 +35,21 @@ interface CoverModalProps {
   onClose: () => void;
 }
 
+interface CoverInfoState {
+  institutionName: string;
+  courseName: string;
+  studentName: string;
+  advisorName: string;
+  city: string;
+  year: string;
+  className?: string;
+  turma?: string;
+  studentNumber?: string;
+  facultyName?: string;
+  departmentName?: string;
+  semester?: string;
+}
+
 export function CoverModal({
   open,
   brief,
@@ -41,14 +63,56 @@ export function CoverModal({
     currentTemplate ?? "UEM_STANDARD"
   );
 
-  const [info, setInfo] = useState({
+  const [info, setInfo] = useState<CoverInfoState>(() => ({
     institutionName: brief.institutionName ?? "",
     courseName: brief.courseName ?? "",
     studentName: brief.studentName ?? "",
     advisorName: brief.advisorName ?? "",
     city: brief.city ?? "",
     year: brief.year ?? "",
+    className: brief.className ?? "",
+    turma: brief.turma ?? "",
+    studentNumber: brief.studentNumber ?? "",
+    facultyName: brief.facultyName ?? "",
+    departmentName: brief.departmentName ?? "",
+    semester: brief.semester ?? "",
+  }));
+
+  // Reset state when modal opens with new brief data
+  const lastBriefKey = JSON.stringify({
+    institutionName: brief.institutionName,
+    courseName: brief.courseName,
+    studentName: brief.studentName,
+    advisorName: brief.advisorName,
+    city: brief.city,
+    year: brief.year,
+    className: brief.className,
+    turma: brief.turma,
+    studentNumber: brief.studentNumber,
+    facultyName: brief.facultyName,
+    departmentName: brief.departmentName,
+    semester: brief.semester,
   });
+
+  const [initializedKey, setInitializedKey] = useState(lastBriefKey);
+
+  if (initializedKey !== lastBriefKey) {
+    setInfo({
+      institutionName: brief.institutionName ?? "",
+      courseName: brief.courseName ?? "",
+      studentName: brief.studentName ?? "",
+      advisorName: brief.advisorName ?? "",
+      city: brief.city ?? "",
+      year: brief.year ?? "",
+      className: brief.className ?? "",
+      turma: brief.turma ?? "",
+      studentNumber: brief.studentNumber ?? "",
+      facultyName: brief.facultyName ?? "",
+      departmentName: brief.departmentName ?? "",
+      semester: brief.semester ?? "",
+    });
+    setInitializedKey(lastBriefKey);
+  }
 
   const filteredTemplates = getTemplatesForLevel(educationLevel);
 
@@ -58,11 +122,36 @@ export function CoverModal({
   };
 
   const handleSaveInfo = () => {
-    onSaveBrief(info);
+    const updates: Partial<WorkBrief> = {
+      institutionName: info.institutionName,
+      courseName: info.courseName,
+      studentName: info.studentName,
+      advisorName: info.advisorName,
+      city: info.city,
+      year: info.year,
+    };
+
+    if (educationLevel === "SECONDARY") {
+      updates.className = info.className;
+      updates.turma = info.turma;
+      updates.studentNumber = info.studentNumber;
+    } else if (educationLevel === "HIGHER_EDUCATION") {
+      updates.facultyName = info.facultyName;
+      updates.departmentName = info.departmentName;
+      updates.studentNumber = info.studentNumber;
+      updates.semester = info.semester;
+    } else if (educationLevel === "TECHNICAL") {
+      updates.studentNumber = info.studentNumber;
+    }
+
+    onSaveBrief(updates);
     onClose();
   };
 
-  const updateField = (field: keyof typeof info, value: string) => {
+  const updateField = <K extends keyof CoverInfoState>(
+    field: K,
+    value: CoverInfoState[K]
+  ) => {
     setInfo((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -128,34 +217,71 @@ export function CoverModal({
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="cover-institution" className="text-xs">
-                    Instituição
+                    {educationLevel === "SECONDARY" ? "Escola" : "Instituição"}
                   </Label>
                   <Input
                     id="cover-institution"
                     value={info.institutionName}
                     onChange={(e) => updateField("institutionName", e.target.value)}
-                    placeholder="Ex.: Universidade Eduardo Mondlane"
+                    placeholder={
+                      educationLevel === "SECONDARY"
+                        ? "Ex.: Escola Secundária Josina Machel"
+                        : "Ex.: Universidade Eduardo Mondlane"
+                    }
                     className="text-xs"
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="cover-course" className="text-xs">
-                    Curso
-                  </Label>
-                  <Input
-                    id="cover-course"
-                    value={info.courseName}
-                    onChange={(e) => updateField("courseName", e.target.value)}
-                    placeholder="Ex.: Gestão Bancária"
-                    className="text-xs"
-                  />
-                </div>
+                {educationLevel !== "SECONDARY" && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cover-course" className="text-xs">
+                      {educationLevel === "TECHNICAL" ? "Curso" : "Curso"}
+                    </Label>
+                    <Input
+                      id="cover-course"
+                      value={info.courseName}
+                      onChange={(e) => updateField("courseName", e.target.value)}
+                      placeholder="Ex.: Gestão Bancária"
+                      className="text-xs"
+                    />
+                  </div>
+                )}
+
+                {educationLevel === "HIGHER_EDUCATION" && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="cover-faculty" className="text-xs">
+                          Faculdade
+                        </Label>
+                        <Input
+                          id="cover-faculty"
+                          value={info.facultyName}
+                          onChange={(e) => updateField("facultyName", e.target.value)}
+                          placeholder="Ex.: Facultad de Economia"
+                          className="text-xs"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="cover-department" className="text-xs">
+                          Departamento
+                        </Label>
+                        <Input
+                          id="cover-department"
+                          value={info.departmentName}
+                          onChange={(e) => updateField("departmentName", e.target.value)}
+                          placeholder="Ex.: Departamento de Gestão"
+                          className="text-xs"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="cover-student" className="text-xs">
-                      Estudante
+                      {educationLevel === "SECONDARY" ? "Aluno" : "Estudante"}
                     </Label>
                     <Input
                       id="cover-student"
@@ -170,19 +296,124 @@ export function CoverModal({
 
                   <div className="space-y-1.5">
                     <Label htmlFor="cover-advisor" className="text-xs">
-                      Orientador
+                      {educationLevel === "SECONDARY" ? "Professor" : "Orientador"}
                     </Label>
                     <Input
                       id="cover-advisor"
                       value={info.advisorName}
                       onChange={(e) => updateField("advisorName", e.target.value)}
-                      placeholder="Ex.: Prof. Doutor João"
+                      placeholder={
+                        educationLevel === "SECONDARY"
+                          ? "Ex.: Prof. Bento"
+                          : "Ex.: Prof. Doutor João"
+                      }
                       className="text-xs"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
+                  {educationLevel === "SECONDARY" && (
+                    <>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="cover-class" className="text-xs">
+                          Classe
+                        </Label>
+                        <Select
+                          value={info.className}
+                          onValueChange={(v) => updateField("className", v)}
+                        >
+                          <SelectTrigger id="cover-class" className="text-xs">
+                            <SelectValue placeholder="Selecionar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10ª">10ª Classe</SelectItem>
+                            <SelectItem value="11ª">11ª Classe</SelectItem>
+                            <SelectItem value="12ª">12ª Classe</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="cover-turma" className="text-xs">
+                          Turma
+                        </Label>
+                        <Input
+                          id="cover-turma"
+                          value={info.turma}
+                          onChange={(e) => updateField("turma", e.target.value)}
+                          placeholder="Ex.: A"
+                          className="text-xs"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {educationLevel === "TECHNICAL" && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="cover-student-number" className="text-xs">
+                        Nº de Estudante
+                      </Label>
+                      <Input
+                        id="cover-student-number"
+                        value={info.studentNumber}
+                        onChange={(e) => updateField("studentNumber", e.target.value)}
+                        placeholder="Ex.: 2024/001"
+                        className="text-xs"
+                      />
+                    </div>
+                  )}
+
+                  {educationLevel === "HIGHER_EDUCATION" && (
+                    <>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="cover-student-number" className="text-xs">
+                          Nº de Estudante
+                        </Label>
+                        <Input
+                          id="cover-student-number"
+                          value={info.studentNumber}
+                          onChange={(e) => updateField("studentNumber", e.target.value)}
+                          placeholder="Ex.: 2024/001"
+                          className="text-xs"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="cover-semester" className="text-xs">
+                          Semestre
+                        </Label>
+                        <Select
+                          value={info.semester}
+                          onValueChange={(v) => updateField("semester", v)}
+                        >
+                          <SelectTrigger id="cover-semester" className="text-xs">
+                            <SelectValue placeholder="Selecionar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="I">I Semestre</SelectItem>
+                            <SelectItem value="II">II Semestre</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
+
+                  {(!educationLevel || educationLevel === "SECONDARY") && (
+                    <div className={educationLevel === "SECONDARY" ? "col-span-2" : ""}>
+                      <Label htmlFor="cover-city" className="text-xs">
+                        Cidade
+                      </Label>
+                      <Input
+                        id="cover-city"
+                        value={info.city}
+                        onChange={(e) => updateField("city", e.target.value)}
+                        placeholder="Ex.: Maputo"
+                        className="text-xs"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {educationLevel !== "SECONDARY" && (
                   <div className="space-y-1.5">
                     <Label htmlFor="cover-city" className="text-xs">
                       Cidade
@@ -195,19 +426,19 @@ export function CoverModal({
                       className="text-xs"
                     />
                   </div>
+                )}
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="cover-year" className="text-xs">
-                      Ano
-                    </Label>
-                    <Input
-                      id="cover-year"
-                      value={info.year}
-                      onChange={(e) => updateField("year", e.target.value)}
-                      placeholder="Ex.: 2026"
-                      className="text-xs"
-                    />
-                  </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="cover-year" className="text-xs">
+                    Ano
+                  </Label>
+                  <Input
+                    id="cover-year"
+                    value={info.year}
+                    onChange={(e) => updateField("year", e.target.value)}
+                    placeholder="Ex.: 2026"
+                    className="text-xs"
+                  />
                 </div>
               </div>
             </TabsContent>

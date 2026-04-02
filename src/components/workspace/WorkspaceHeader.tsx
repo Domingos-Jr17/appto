@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Edit3, Check, X, Loader2, CheckCircle2, Circle } from "lucide-react";
+import { Edit3, Check, X, Loader2, CheckCircle2, Circle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GenerateButton } from "./GenerateButton";
@@ -19,6 +19,7 @@ interface WorkspaceHeaderProps {
   isGenerating: boolean;
   allDone: boolean;
   sections?: WorkSection[];
+  creditsRemaining?: number;
   onGenerate: () => void;
   onDownload: () => void;
   onEditCover: () => void;
@@ -34,6 +35,7 @@ export function WorkspaceHeader({
   isGenerating,
   allDone,
   sections = [],
+  creditsRemaining,
   onGenerate,
   onDownload,
   onEditCover,
@@ -201,7 +203,15 @@ export function WorkspaceHeader({
 
       <div className="mt-3">
         <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-          <span>Progresso</span>
+          <div className="flex items-center gap-2">
+            <span>Progresso</span>
+            {creditsRemaining !== undefined && (
+              <span className="flex items-center gap-1 text-primary/80">
+                <Zap className="h-3 w-3" />
+                {creditsRemaining}
+              </span>
+            )}
+          </div>
           <span>{progress}%</span>
         </div>
         <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted/40">

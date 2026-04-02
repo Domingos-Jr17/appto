@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { SettingsSectionSkeleton } from "@/components/skeletons/SettingsSectionSkeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useAccountData } from "@/hooks/use-account-data";
 import {
   Loader2,
   Mail,
@@ -22,40 +23,30 @@ interface SettingsData {
 
 export function NotificationsSection() {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
+  const { settings, isLoading: isAccountLoading } = useAccountData();
+  const [isSaving, setIsSaving] = useState(false);
   const [preferences, setPreferences] = useState<SettingsData>({
     emailNotifications: true,
     marketingEmails: false,
   });
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const response = await fetch("/api/settings");
-      if (response.ok) {
-        const data = await response.json();
-        setPreferences({
-          emailNotifications: data.emailNotifications ?? true,
-          marketingEmails: data.marketingEmails ?? false,
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching settings:", error);
-    } finally {
-      setIsFetching(false);
+  React.useEffect(() => {
+    if (settings) {
+      setPreferences({
+        emailNotifications: settings.emailNotifications ?? true,
+        marketingEmails: settings.marketingEmails ?? false,
+      });
     }
-  };
+  }, [settings]);
+
+  const isFetching = isAccountLoading;
 
   const handleToggle = (field: keyof SettingsData, checked: boolean) => {
     setPreferences((prev) => ({ ...prev, [field]: checked }));
   };
 
   const handleSave = async () => {
-    setIsLoading(true);
+    setIsSaving(true);
     try {
       const response = await fetch("/api/settings", {
         method: "PATCH",
@@ -78,7 +69,7 @@ export function NotificationsSection() {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -144,8 +135,8 @@ export function NotificationsSection() {
       <Separator />
 
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={isLoading}>
-          {isLoading ? (
+        <Button onClick={handleSave} disabled={isSaving}>
+          {isSaving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               A guardar...

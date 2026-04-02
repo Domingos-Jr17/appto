@@ -28,6 +28,12 @@ import {
 } from "./mappers";
 import { WorkWorkspaceErrorBoundary } from "./WorkWorkspaceErrorBoundary";
 
+const POLLING_CONFIG = {
+  initial: 3000,
+  max: 10000,
+  multiplier: 1.5,
+};
+
 interface WorkWorkspaceRouteProps {
   projectId: string;
 }
@@ -36,6 +42,8 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
   const { toast } = useToast();
   const { setCredits: setAppCredits } = useAppShellData();
   const initializedProjectId = useRef<string | null>(null);
+  const pollingIntervalRef = useRef(POLLING_CONFIG.initial);
+  const lastDoneCountRef = useRef(0);
 
   const project = useProjectStore((state) => state.project);
   const sections = useProjectStore((state) => state.sections);
@@ -94,18 +102,34 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
   }, [project, projectId, sections, selectSection]);
 
   useEffect(() => {
-    if (!project || project.generationStatus !== "GENERATING") return;
+    if (!project || project.generationStatus !== "GENERATING") {
+      pollingIntervalRef.current = POLLING_CONFIG.initial;
+      return;
+    }
 
-    // Stop polling after 2 minutes (generation should complete by then)
+    lastDoneCountRef.current = project.sections?.filter((s) => s.wordCount > 0).length || 0;
+
     const timeoutId = window.setTimeout(() => {
       void fetchProject(projectId);
     }, 2000);
 
-    const intervalId = window.setInterval(() => {
-      void fetchProject(projectId);
-    }, 3000);
+    const pollWithBackoff = async () => {
+      await fetchProject(projectId);
+      
+      const currentDoneCount = project.sections?.filter((s: { wordCount: number }) => s.wordCount > 0).length || 0;
+      const hasProgress = currentDoneCount > lastDoneCountRef.current;
+      lastDoneCountRef.current = currentDoneCount;
 
-    // Stop polling after 2 minutes if still generating
+      pollingIntervalRef.current = hasProgress
+        ? POLLING_CONFIG.initial
+        : Math.min(
+            pollingIntervalRef.current * POLLING_CONFIG.multiplier,
+            POLLING_CONFIG.max
+          );
+    };
+
+    const intervalId = window.setInterval(pollWithBackoff, pollingIntervalRef.current);
+
     const maxPollingId = window.setTimeout(() => {
       window.clearInterval(intervalId);
     }, 120000);

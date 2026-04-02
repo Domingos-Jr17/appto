@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { appNavItems, isNavActive } from "./app-nav";
 import { AppSidebar } from "./AppSidebar";
 import { AppShellDataProvider, useAppShellData } from "./AppShellDataContext";
+import { AccountDataProvider } from "@/hooks/use-account-data";
 import { AppHeader } from "./AppHeader";
 import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "@/components/ui-aptto/ThemeToggle";
@@ -325,7 +326,9 @@ function AppShellChrome({ children, user }: AppShellProps) {
 export function AppShell({ children, user }: AppShellProps) {
     return (
         <AppShellDataProvider>
-            <AppShellChrome user={user}>{children}</AppShellChrome>
+            <AccountDataProvider>
+                <AppShellChrome user={user}>{children}</AppShellChrome>
+            </AccountDataProvider>
         </AppShellDataProvider>
     );
 }

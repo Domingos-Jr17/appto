@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -17,6 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { SettingsSectionSkeleton } from "@/components/skeletons/SettingsSectionSkeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
+import { useAccountData } from "@/hooks/use-account-data";
 import {
   Loader2,
   Globe,
@@ -61,8 +62,8 @@ interface SettingsData {
 export function PreferencesSection() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
+  const { settings, isLoading: isAccountLoading } = useAccountData();
+  const [isSaving, setIsSaving] = useState(false);
   const [preferences, setPreferences] = useState<SettingsData>({
     language: "pt-MZ",
     citationStyle: "ABNT",
@@ -73,32 +74,21 @@ export function PreferencesSection() {
     marketingEmails: false,
   });
 
-  // Fetch settings on mount
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const response = await fetch("/api/settings");
-      if (response.ok) {
-        const data = await response.json();
-        setPreferences({
-          language: data.language || "pt-MZ",
-          citationStyle: data.citationStyle || "ABNT",
-          fontSize: data.fontSize || 14,
-          autoSave: data.autoSave ?? true,
-          aiSuggestionsEnabled: data.aiSuggestionsEnabled ?? true,
-          emailNotifications: data.emailNotifications ?? true,
-          marketingEmails: data.marketingEmails ?? false,
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching settings:", error);
-    } finally {
-      setIsFetching(false);
+  React.useEffect(() => {
+    if (settings) {
+      setPreferences({
+        language: settings.language || "pt-MZ",
+        citationStyle: settings.citationStyle || "ABNT",
+        fontSize: settings.fontSize || 14,
+        autoSave: settings.autoSave ?? true,
+        aiSuggestionsEnabled: settings.aiSuggestionsEnabled ?? true,
+        emailNotifications: settings.emailNotifications ?? true,
+        marketingEmails: settings.marketingEmails ?? false,
+      });
     }
-  };
+  }, [settings]);
+
+  const isFetching = isAccountLoading;
 
   const handleSelectChange = (field: keyof SettingsData, value: string) => {
     setPreferences((prev) => ({ ...prev, [field]: value }));
@@ -113,7 +103,7 @@ export function PreferencesSection() {
   };
 
   const handleSave = async () => {
-    setIsLoading(true);
+    setIsSaving(true);
     try {
       const response = await fetch("/api/settings", {
         method: "PATCH",
@@ -136,7 +126,7 @@ export function PreferencesSection() {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -310,8 +300,8 @@ export function PreferencesSection() {
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={isLoading}>
-          {isLoading ? (
+        <Button onClick={handleSave} disabled={isSaving}>
+          {isSaving ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
               A guardar...

@@ -3,6 +3,12 @@ import type { AutoSaveStatus, Section } from "@/types/editor";
 import { countWordsInMarkdown } from "@/lib/content";
 
 let saveTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let idleTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+const AUTO_SAVE_CONFIG = {
+  debounce: 850,
+  idleThreshold: 2000,
+};
 
 interface EditorStoreState {
   activeSectionId: string | null;
@@ -30,20 +36,18 @@ function triggerScheduleSave(
   set({ autoSaveStatus: "saving" });
 
   if (saveTimeoutId) clearTimeout(saveTimeoutId);
+  if (idleTimeoutId) clearTimeout(idleTimeoutId);
 
   const currentSectionId = activeSectionId;
   const currentTitle = sectionTitle;
   const currentContent = content;
 
-  saveTimeoutId = setTimeout(async () => {
+  const doSave = async () => {
     try {
       const response = await fetch(`/api/documents/${currentSectionId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: currentTitle,
-          content: currentContent,
-        }),
+        body: JSON.stringify({ title: currentTitle, content: currentContent }),
       });
 
       if (!response.ok) throw new Error();
@@ -61,7 +65,11 @@ function triggerScheduleSave(
         set({ autoSaveStatus: "error" });
       }
     }
-  }, 850);
+  };
+
+  saveTimeoutId = setTimeout(doSave, AUTO_SAVE_CONFIG.debounce);
+
+  idleTimeoutId = setTimeout(doSave, AUTO_SAVE_CONFIG.debounce + AUTO_SAVE_CONFIG.idleThreshold);
 }
 
 export const useEditorStore = create<EditorStoreState>((set, get) => ({
@@ -107,6 +115,10 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
     if (saveTimeoutId) {
       clearTimeout(saveTimeoutId);
       saveTimeoutId = null;
+    }
+    if (idleTimeoutId) {
+      clearTimeout(idleTimeoutId);
+      idleTimeoutId = null;
     }
     set({
       activeSectionId: null,

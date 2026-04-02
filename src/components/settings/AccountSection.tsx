@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAccountData } from "@/hooks/use-account-data";
 import {
   Loader2,
   Download,
@@ -33,57 +34,18 @@ import {
   Package,
 } from "lucide-react";
 
-interface UserData {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  credits: number;
-  twoFactorEnabled: boolean;
-  subscription: {
-    plan: string;
-    status: string;
-  } | null;
-  createdAt: string;
-}
-
 export function AccountSection() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user: accountUser, isLoading: isAccountLoading } = useAccountData();
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteOtpCode, setDeleteOtpCode] = useState("");
-  const [user, setUser] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUserData = React.useCallback(async () => {
-    try {
-      const response = await fetch("/api/user");
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Não foi possível carregar a conta.");
-      }
-
-      setUser(data);
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Não foi possível carregar a conta.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    void fetchUserData();
-  }, [fetchUserData]);
+  const user = accountUser;
+  const isLoading = isAccountLoading;
 
   const handleExportData = async () => {
     setIsExporting(true);

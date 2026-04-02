@@ -13,14 +13,20 @@ interface AppShellDataContextValue {
 
 const AppShellDataContext = React.createContext<AppShellDataContextValue | null>(null);
 
+const STALE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+const BACKGROUND_REFRESH_INTERVAL = 60 * 1000; // 1 minute
+
 export function AppShellDataProvider({ children }: { children: React.ReactNode }) {
   const [projects, setProjects] = React.useState<AppProjectRecord[]>([]);
   const [credits, setCredits] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [lastFetchTime, setLastFetchTime] = React.useState<number>(0);
   const refreshRef = React.useRef<(() => Promise<void>) | null>(null);
 
-  const refresh = React.useCallback(async () => {
-    setIsLoading(true);
+  const refresh = React.useCallback(async (silent = false) => {
+    if (!silent) {
+      setIsLoading(true);
+    }
 
     const [projectsResult, creditsResult] = await Promise.allSettled([
       fetchAppProjects(),
@@ -35,7 +41,10 @@ export function AppShellDataProvider({ children }: { children: React.ReactNode }
       setCredits(creditsResult.value);
     }
 
-    setIsLoading(false);
+    setLastFetchTime(Date.now());
+    if (!silent) {
+      setIsLoading(false);
+    }
   }, []);
 
   React.useEffect(() => {
@@ -48,6 +57,18 @@ export function AppShellDataProvider({ children }: { children: React.ReactNode }
     }, 100);
     return () => clearTimeout(timer);
   }, []);
+
+  // Background refresh when stale
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      const isStale = Date.now() - lastFetchTime > STALE_THRESHOLD;
+      if (isStale && !isLoading) {
+        refresh(true); // silent refresh
+      }
+    }, BACKGROUND_REFRESH_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [lastFetchTime, isLoading, refresh]);
 
   const value = React.useMemo(
     () => ({

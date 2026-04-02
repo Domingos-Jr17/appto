@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { WorkOutline } from "@/components/work-workspace/WorkOutline";
 import { WorkspaceOnboardingTooltip } from "@/components/work-workspace/WorkspaceOnboardingTooltip";
 import { cn } from "@/lib/utils";
+import { WORKSPACE_THRESHOLDS } from "@/lib/workspace";
 import type { Project, Section } from "@/types/editor";
 
 interface WorkspaceSidebarProps {
@@ -28,7 +29,7 @@ export function WorkspaceSidebar({
     .join(" · ");
 
   const totalSections = sections.length;
-  const completedSections = sections.filter((section) => section.wordCount >= 180).length;
+  const completedSections = sections.filter((section) => section.wordCount >= WORKSPACE_THRESHOLDS.COMPLETE_MIN).length;
   const progressPercent = totalSections > 0 ? Math.round((completedSections / totalSections) * 100) : 0;
 
   return (

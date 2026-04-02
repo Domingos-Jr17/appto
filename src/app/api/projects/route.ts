@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { getWorkGenerationStatus } from "@/lib/work-generation-jobs";
 import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
 import { DEFAULT_PROJECT_SECTIONS } from "@/lib/project-templates";
-import { CREDIT_DEFAULTS } from "@/lib/credits";
+import { subscriptionService } from "@/lib/subscription";
 import { createProjectSchema } from "@/lib/validators";
 
 function serializeBrief(
@@ -120,9 +120,16 @@ export async function GET(request: NextRequest) {
     const sortByInput = searchParams.get("sortBy") || "updatedAt";
     const sortOrderInput = searchParams.get("sortOrder") || "desc";
 
-    const ALLOWED_SORT_FIELDS = ['createdAt', 'updatedAt', 'title'];
-    const sortBy = ALLOWED_SORT_FIELDS.includes(sortByInput) ? sortByInput : 'updatedAt';
-    const sortOrder = sortOrderInput === 'asc' ? 'asc' : 'desc';
+    const sortBy = (
+      field: string
+    ): "createdAt" | "updatedAt" | "title" => {
+      if (field === "createdAt") return "createdAt";
+      if (field === "updatedAt") return "updatedAt";
+      if (field === "title") return "title";
+      return "updatedAt";
+    };
+    const sortField = sortBy(sortByInput);
+    const sortOrder = sortOrderInput === "asc" ? "asc" as const : "desc" as const;
 
     const where: any = {
       userId: session.user.id,
@@ -163,7 +170,7 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: {
-        [sortBy]: sortOrder,
+        [sortField]: sortOrder,
       },
     });
 
@@ -189,38 +196,20 @@ export async function POST(request: NextRequest) {
     const body = createProjectSchema.parse(await request.json());
     const { title, description, type = "MONOGRAPHY", brief } = body;
 
-    // Check user credits
-    const userCredits = await db.credit.findUnique({
-      where: { userId: session.user.id },
-    });
+    // Check user subscription
+    const { allowed, reason, remaining } = await subscriptionService.canGenerateWork(session.user.id);
 
-    if (!userCredits || userCredits.balance < CREDIT_DEFAULTS.createProject) {
+    if (!allowed) {
       return NextResponse.json(
-        { error: "Créditos insuficientes para criar um novo projecto" },
-        { status: 400 }
+        { error: reason, code: "LIMIT_REACHED", remaining: 0 },
+        { status: 403 }
       );
     }
 
     // Create project with default sections
     const project = await db.$transaction(async (tx) => {
-      // Deduct credits
-      await tx.credit.update({
-        where: { userId: session.user.id },
-        data: {
-          balance: { decrement: CREDIT_DEFAULTS.createProject },
-          used: { increment: CREDIT_DEFAULTS.createProject },
-        },
-      });
-
-      // Log transaction
-      await tx.creditTransaction.create({
-        data: {
-          userId: session.user.id,
-          amount: -CREDIT_DEFAULTS.createProject,
-          type: "USAGE",
-          description: `Criação do projecto: ${title}`,
-        },
-      });
+      // Consume work from subscription
+      await subscriptionService.consumeWork(session.user.id);
 
       // Create project
       const newProject = await tx.project.create({

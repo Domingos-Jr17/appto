@@ -8,6 +8,7 @@ import { env } from "@/lib/env";
 import { AuthSecurityService } from "@/lib/auth-security";
 import { CreditLedgerService } from "@/lib/credit-ledger";
 import { CREDIT_DEFAULTS } from "@/lib/credits";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { verifySync } from "otplib";
 import { decryptText } from "@/lib/crypto";
 import { AuthSessionEvent } from "@prisma/client";
@@ -68,6 +69,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         const normalizedEmail = credentials.email.trim().toLowerCase();
+
+        enforceRateLimit(`login:${normalizedEmail}`, 20, 60 * 1000);
 
         const user = await db.user.findUnique({
           where: { email: normalizedEmail },
@@ -226,7 +229,7 @@ export const authOptions: NextAuthOptions = {
             userId: user.id,
             plan: "FREE",
             status: "ACTIVE",
-            creditsPerMonth: CREDIT_DEFAULTS.initialBalance,
+            worksPerMonth: 1,
           },
         });
 

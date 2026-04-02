@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-export type ProjectStatus = "all" | "in_progress" | "completed" | "draft" | "archived";
+export type ProjectStatus = "all" | "in_progress" | "completed" | "draft" | "archived" | "review";
 export type ViewMode = "grid" | "list";
 export type SortOption = "updated" | "created" | "title" | "progress";
 
@@ -20,6 +20,7 @@ const FILTERS: { value: ProjectStatus; label: string }[] = [
   { value: "all", label: "Todos" },
   { value: "in_progress", label: "Em curso" },
   { value: "completed", label: "Concluídos" },
+  { value: "review", label: "Revisão" },
   { value: "draft", label: "Rascunho" },
   { value: "archived", label: "Arquivados" },
 ];

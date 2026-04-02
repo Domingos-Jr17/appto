@@ -15,6 +15,13 @@ export type WorkspaceSectionLike = {
 
 const STALE_DAYS = 14;
 
+export const WORKSPACE_THRESHOLDS = {
+  STARTED_MAX: 179,
+  DRAFTING_MAX_CHAPTER: 799,
+  DRAFTING_MAX_SECTION: 399,
+  COMPLETE_MIN: 180,
+} as const;
+
 export function isChapterSection(section: WorkspaceSectionLike) {
   return section.parentId === null;
 }
@@ -30,10 +37,10 @@ export function getEditorialStatus(section: WorkspaceSectionLike): EditorialStat
   }
 
   const isChapter = isChapterSection(section);
-  const startedMax = 179;
-  const draftingMax = isChapter ? 799 : 399;
+  const { STARTED_MAX, DRAFTING_MAX_CHAPTER, DRAFTING_MAX_SECTION } = WORKSPACE_THRESHOLDS;
+  const draftingMax = isChapter ? DRAFTING_MAX_CHAPTER : DRAFTING_MAX_SECTION;
 
-  if (words <= startedMax) return "started";
+  if (words <= STARTED_MAX) return "started";
   if (words <= draftingMax) return "drafting";
   return "review";
 }

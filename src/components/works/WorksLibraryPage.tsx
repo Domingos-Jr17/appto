@@ -166,6 +166,12 @@ export function WorksLibraryPage() {
         isLoading,
         refresh,
     } = useAppShellData();
+    const [subscriptionStatus, setSubscriptionStatus] = useState<{
+        remaining: number;
+        worksPerMonth: number;
+        worksUsed: number;
+        canGenerate: boolean;
+    } | null>(null);
     const [status, setStatus] = useState<ProjectStatus>("all");
     const [search, setSearch] = useState("");
     const [viewMode, _setViewMode] = useState<ViewMode>("grid");
@@ -180,6 +186,27 @@ export function WorksLibraryPage() {
     >(null);
     const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
     const [openedFromUrl, setOpenedFromUrl] = useState(false);
+
+    useEffect(() => {
+        const fetchSubscription = async () => {
+            try {
+                const res = await fetch("/api/subscription");
+                const data = await res.json();
+                if (data.success && data.data.subscription) {
+                    const sub = data.data.subscription;
+                    setSubscriptionStatus({
+                        remaining: sub.remaining,
+                        worksPerMonth: sub.worksPerMonth,
+                        worksUsed: sub.worksUsed,
+                        canGenerate: sub.remaining > 0,
+                    });
+                }
+            } catch (error) {
+                console.error("Failed to fetch subscription:", error);
+            }
+        };
+        fetchSubscription();
+    }, []);
 
     useEffect(() => {
         const shouldOpenFromUrl = searchParams.get("new") === "1";
@@ -451,6 +478,18 @@ export function WorksLibraryPage() {
                     data.message || "O trabalho foi criado com sucesso.",
             });
 
+            const subRes = await fetch("/api/subscription");
+            const subData = await subRes.json();
+            if (subData.success && subData.data.subscription) {
+                const sub = subData.data.subscription;
+                setSubscriptionStatus({
+                    remaining: sub.remaining,
+                    worksPerMonth: sub.worksPerMonth,
+                    worksUsed: sub.worksUsed,
+                    canGenerate: sub.remaining > 0,
+                });
+            }
+
             if (data.generation?.asynchronous) {
                 setGenerationProjectId(data.project.id);
                 setGenerationStep(0);
@@ -636,17 +675,24 @@ export function WorksLibraryPage() {
                                         </div>
 
                                         <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-                                            A geração completa deste trabalho
-                                            usa{" "}
-                                            <span className="font-medium text-foreground">
-                                                {calculateCost()} créditos
-                                            </span>
-                                            .
-                                            {credits < calculateCost() && (
-                                                <span className="block mt-1 text-warning font-medium">
-                                                    Créditos insuficientes.
-                                                    Recarregue para continuar.
-                                                </span>
+                                            {subscriptionStatus ? (
+                                                <>
+                                                    Tem{" "}
+                                                    <span className="font-medium text-foreground">
+                                                        {subscriptionStatus.remaining} trabalho
+                                                        {subscriptionStatus.remaining !== 1 ? "s" : ""}
+                                                    </span>{" "}
+                                                    disponível{subscriptionStatus.remaining !== 1 ? "is" : ""} este mês.
+                                                    {!subscriptionStatus.canGenerate && (
+                                                        <span className="block mt-1 text-warning font-medium">
+                                                            Limite atingido. Faça upgrade do plano ou compre trabalhos extras.
+                                                        </span>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    A geração completa deste trabalho usa 1 dos seus trabalhos mensais disponíveis.
+                                                </>
                                             )}
                                         </div>
                                     </div>
@@ -813,28 +859,6 @@ export function WorksLibraryPage() {
                                                 <AccordionContent>
                                                     <div className="space-y-4 pt-2">
                                                         <div className="grid gap-4 sm:grid-cols-2">
-                                                            <div className="space-y-2">
-                                                                <Label htmlFor="subject">
-                                                                    Disciplina
-                                                                </Label>
-                                                                <Input
-                                                                    id="subject"
-                                                                    value={
-                                                                        workForm.subjectName
-                                                                    }
-                                                                    onChange={(
-                                                                        event,
-                                                                    ) =>
-                                                                        updateWorkForm(
-                                                                            "subjectName",
-                                                                            event
-                                                                                .target
-                                                                                .value,
-                                                                        )
-                                                                    }
-                                                                    placeholder="Ex.: Metodologia de Investigação"
-                                                                />
-                                                            </div>
                                                             <div className="space-y-2">
                                                                 <Label htmlFor="year">
                                                                     Ano lectivo
@@ -1144,7 +1168,7 @@ export function WorksLibraryPage() {
                                             onClick={createWork}
                                             disabled={
                                                 !workForm.title.trim() ||
-                                                credits < calculateCost()
+                                                (subscriptionStatus ? !subscriptionStatus.canGenerate : false)
                                             }
                                             className="gap-2"
                                         >
@@ -1157,7 +1181,7 @@ export function WorksLibraryPage() {
                                         onClick={createWork}
                                         disabled={
                                             !workForm.title.trim() ||
-                                            credits < calculateCost()
+                                            (subscriptionStatus ? !subscriptionStatus.canGenerate : false)
                                         }
                                         className="gap-2"
                                     >
@@ -1295,7 +1319,7 @@ function mapStatus(status: string): ProjectCardData["status"] {
     const map: Record<string, ProjectCardData["status"]> = {
         DRAFT: "draft",
         IN_PROGRESS: "in_progress",
-        REVIEW: "in_progress",
+        REVIEW: "review",
         COMPLETED: "completed",
         ARCHIVED: "archived",
     };

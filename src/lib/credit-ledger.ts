@@ -24,31 +24,43 @@ export class CreditLedgerService {
   }
 
   async charge(userId: string, amount: number, description: string, metadata?: Prisma.InputJsonValue) {
-    const credits = await this.getOrCreate(userId);
+    const { PrismaClient: Prisma } = await import("@prisma/client");
+    const db = new Prisma();
+    
+    return await db.$transaction(async (tx) => {
+      const credits = await tx.credit.findUnique({
+        where: { userId },
+      });
 
-    if (credits.balance < amount) {
-      throw new Error(`Créditos insuficientes. Necessário: ${amount} créditos.`);
-    }
+      if (!credits) {
+        throw new Error(`Utilizador não encontrado: ${userId}`);
+      }
 
-    const updated = await this.db.credit.update({
-      where: { userId },
-      data: {
-        balance: { decrement: amount },
-        used: { increment: amount },
-      },
+      if (credits.balance < amount) {
+        throw new Error(`Créditos insuficientes. Necessário: ${amount} créditos.`);
+      }
+
+      const [updated] = await Promise.all([
+        tx.credit.update({
+          where: { userId },
+          data: {
+            balance: { decrement: amount },
+            used: { increment: amount },
+          },
+        }),
+        tx.creditTransaction.create({
+          data: {
+            userId,
+            amount: -amount,
+            type: "USAGE",
+            description,
+            metadata: metadata ? JSON.stringify(metadata) : undefined,
+          },
+        }),
+      ]);
+
+      return updated;
     });
-
-    await this.db.creditTransaction.create({
-      data: {
-        userId,
-        amount: -amount,
-        type: "USAGE",
-        description,
-        metadata: metadata ? JSON.stringify(metadata) : undefined,
-      },
-    });
-
-    return updated;
   }
 
   async grant(
@@ -58,25 +70,38 @@ export class CreditLedgerService {
     description: string,
     metadata?: Prisma.InputJsonValue
   ) {
-    await this.getOrCreate(userId);
+    const { PrismaClient: Prisma } = await import("@prisma/client");
+    const db = new Prisma();
 
-    const updated = await this.db.credit.update({
-      where: { userId },
-      data: {
-        balance: { increment: amount },
-      },
+    return await db.$transaction(async (tx) => {
+      await tx.credit.upsert({
+        where: { userId },
+        create: {
+          userId,
+          balance: CREDIT_DEFAULTS.initialBalance,
+        },
+        update: {},
+      });
+
+      const [updated] = await Promise.all([
+        tx.credit.update({
+          where: { userId },
+          data: {
+            balance: { increment: amount },
+          },
+        }),
+        tx.creditTransaction.create({
+          data: {
+            userId,
+            amount,
+            type,
+            description,
+            metadata: metadata ? JSON.stringify(metadata) : undefined,
+          },
+        }),
+      ]);
+
+      return updated;
     });
-
-    await this.db.creditTransaction.create({
-      data: {
-        userId,
-        amount,
-        type,
-        description,
-        metadata: metadata ? JSON.stringify(metadata) : undefined,
-      },
-    });
-
-    return updated;
   }
 }

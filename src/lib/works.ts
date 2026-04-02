@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { normalizeStoredContent } from "@/lib/content";
-import { getWorkGenerationStatus } from "@/lib/work-generation-jobs";
+import { getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
 import type {
     WorkspaceData,
     WorkSection,
@@ -44,7 +44,7 @@ export async function getWork(
 
     if (!project) return null;
 
-    const liveGeneration = getWorkGenerationStatus(project.id);
+    const liveGeneration = await getWorkGenerationStatusAsync(project.id);
     const generationStatus =
         liveGeneration?.status || project.brief?.generationStatus || "BRIEFING";
     const generationProgress =

@@ -81,14 +81,46 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        if (user.lockoutUntil && user.lockoutUntil > new Date()) {
+          const remainingMinutes = Math.ceil(
+            (user.lockoutUntil.getTime() - Date.now()) / 60000
+          );
+          throw new Error(`Conta bloqueada. Tenta novamente em ${remainingMinutes} minuto(s).`);
+        }
+
         const passwordMatch = await bcrypt.compare(
           credentials.password,
           user.password
         );
 
         if (!passwordMatch) {
-          return null;
+          const newFailedAttempts = (user.failedLoginAttempts || 0) + 1;
+          
+          if (newFailedAttempts >= 5) {
+            const lockoutDuration = new Date(Date.now() + 15 * 60 * 1000);
+            await db.user.update({
+              where: { id: user.id },
+              data: {
+                failedLoginAttempts: newFailedAttempts,
+                lockoutUntil: lockoutDuration,
+              },
+            });
+            throw new Error("Exceeded login attempts. Account locked for 15 minutes.");
+          }
+
+          await db.user.update({
+            where: { id: user.id },
+            data: { failedLoginAttempts: newFailedAttempts },
+          });
+
+          const remainingAttempts = 5 - newFailedAttempts;
+          throw new Error(`Palavra-passe incorrecta. Restam ${remainingAttempts} tentativa(s).`);
         }
+
+        await db.user.update({
+          where: { id: user.id },
+          data: { failedLoginAttempts: 0, lockoutUntil: null },
+        });
 
         if (user.twoFactorEnabled) {
           if (!credentials.otpCode || !user.totpCredential?.secretEncrypted) {

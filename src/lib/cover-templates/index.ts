@@ -76,6 +76,7 @@ const renderers: Record<string, CoverTemplateRenderer> = {
     <div class="logo-placeholder">Logo</div>
     <div class="institution">${fallback(data.institutionName, "Universidade Eduardo Mondlane")}</div>
     <div class="department">${fallback(data.courseName, "Faculdade / Departamento")}</div>
+    ${data.subjectName ? `<div class="department">${fallback(data.subjectName, "Disciplina")}</div>` : ""}
   </div>
   <div class="spacer"></div>
   <div>
@@ -163,6 +164,7 @@ const renderers: Record<string, CoverTemplateRenderer> = {
   <div class="abnt-center">
     <div class="institution">${fallback(data.institutionName, "Instituição")}</div>
     <div class="department">${fallback(data.courseName, "Curso")}</div>
+    ${data.subjectName ? `<div class="department">${fallback(data.subjectName, "Disciplina")}</div>` : ""}
     <div style="height:80px"></div>
     <div class="author" style="margin:0">${fallback(data.studentName, "Nome do Autor")}</div>
     <div style="height:60px"></div>
@@ -218,6 +220,8 @@ const renderers: Record<string, CoverTemplateRenderer> = {
     <div class="modern-meta">${data.type}</div>
     <div style="height:40px"></div>
     <div class="modern-meta">${fallback(data.studentName, "Autor")}</div>
+    <div class="modern-meta">${data.advisorName ? `Orientador: ${data.advisorName}` : ""}</div>
+    <div class="modern-meta">${data.subjectName || data.courseName || ""}</div>
     <div class="modern-meta">${fallback(data.institutionName, "")}</div>
   </div>
   <div class="modern-footer">

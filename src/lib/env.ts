@@ -30,6 +30,7 @@ const envSchema = z
     R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
     R2_BUCKET: z.string().min(1).optional(),
     R2_PUBLIC_BASE_URL: z.string().url().optional(),
+    PAYMENT_WEBHOOK_SECRET: z.string().min(1).optional(),
   })
   .superRefine((data, ctx) => {
     if (!data.NEXTAUTH_SECRET && !data.AUTH_SECRET) {

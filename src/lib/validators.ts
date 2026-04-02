@@ -95,14 +95,14 @@ export const workBriefSchema = z.object({
 export const updateWorkBriefSchema = workBriefSchema.partial();
 
 export const createProjectSchema = z.object({
-  title: z.string().trim().min(1).max(180),
+  title: z.string().trim().min(5).max(180),
   description: z.string().trim().max(5000).optional(),
   type: projectTypeSchema.default("MONOGRAPHY"),
   brief: updateWorkBriefSchema.optional(),
 });
 
 export const createWorkSchema = z.object({
-  title: z.string().trim().min(1).max(180),
+  title: z.string().trim().min(5).max(180),
   description: z.string().trim().max(5000).optional(),
   type: projectTypeSchema.default("MONOGRAPHY"),
   brief: workBriefSchema.default({ language: "pt-MZ", citationStyle: "ABNT", coverTemplate: "UEM_STANDARD" }),
@@ -110,7 +110,7 @@ export const createWorkSchema = z.object({
 });
 
 export const updateProjectSchema = z.object({
-  title: z.string().trim().min(1).max(180).optional(),
+  title: z.string().trim().min(5).max(180).optional(),
   description: z.string().trim().max(5000).nullable().optional(),
   type: projectTypeSchema.optional(),
   status: projectStatusSchema.optional(),
@@ -194,6 +194,7 @@ export const paymentCallbackSchema = z.object({
   providerReference: z.string().min(1),
   status: z.enum(["CONFIRMED", "FAILED", "CANCELLED"]),
   providerPayload: z.unknown().optional(),
+  signature: z.string().min(1),
 });
 
 export const totpVerifySchema = z.object({

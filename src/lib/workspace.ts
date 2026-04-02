@@ -30,7 +30,7 @@ export function getEditorialStatus(section: WorkspaceSectionLike): EditorialStat
   }
 
   const isChapter = isChapterSection(section);
-  const startedMax = isChapter ? 249 : 149;
+  const startedMax = 179;
   const draftingMax = isChapter ? 799 : 399;
 
   if (words <= startedMax) return "started";

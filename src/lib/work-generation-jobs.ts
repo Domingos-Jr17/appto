@@ -120,7 +120,29 @@ export function getSectionTemplates(type: string) {
   return SECTION_TEMPLATES[type] || SECTION_TEMPLATES.MONOGRAPHY;
 }
 
-export function getWorkGenerationStatus(projectId: string) {
+export function getWorkGenerationStatus(projectId: string): WorkGenerationJobStatus | null {
+  const inMemory = jobs.get(projectId);
+  if (inMemory) return inMemory;
+  
+  return null;
+}
+
+export async function getWorkGenerationStatusAsync(projectId: string): Promise<WorkGenerationJobStatus | null> {
+  const dbJob = await db.generationJob.findUnique({
+    where: { projectId },
+    select: { status: true, progress: true, step: true, error: true },
+  });
+
+  if (dbJob) {
+    return {
+      projectId,
+      status: dbJob.status as "GENERATING" | "READY" | "FAILED",
+      progress: dbJob.progress,
+      step: dbJob.step || "",
+      error: dbJob.error || undefined,
+    };
+  }
+
   return jobs.get(projectId) || null;
 }
 
@@ -146,11 +168,12 @@ export function serializeBrief(brief: {
   citationStyle: CitationStyle | string;
   language: string;
   additionalInstructions: string | null;
-  coverTemplate?: string;
+  coverTemplate?: string | null;
 }) {
   return {
     ...brief,
     dueDate: brief.dueDate?.toISOString() ?? null,
+    coverTemplate: brief.coverTemplate ?? undefined,
   };
 }
 
@@ -337,7 +360,38 @@ function setJob(projectId: string, partial: Partial<WorkGenerationJobStatus>) {
     step: "A preparar geração",
   };
 
-  jobs.set(projectId, { ...current, ...partial });
+  const updated = { ...current, ...partial };
+  jobs.set(projectId, updated);
+
+  persistJob(projectId, partial).catch(console.error);
+}
+
+async function persistJob(
+  projectId: string,
+  partial: Partial<WorkGenerationJobStatus>,
+  userId?: string
+) {
+  const current = await db.generationJob.findUnique({
+    where: { projectId },
+  });
+
+  if (current) {
+    await db.generationJob.update({
+      where: { projectId },
+      data: partial,
+    });
+  } else if (userId) {
+    await db.generationJob.create({
+      data: {
+        projectId,
+        userId,
+        status: partial.status || "GENERATING",
+        progress: partial.progress || 0,
+        step: partial.step,
+        error: partial.error,
+      },
+    });
+  }
 }
 
 export async function startWorkGenerationJob(input: {
@@ -347,9 +401,39 @@ export async function startWorkGenerationJob(input: {
   type: string;
   brief: WorkBriefInput;
   contentCost: number;
+  baseCost: number;
 }) {
-  const { projectId, userId, title, type, brief, contentCost } = input;
+  const { projectId, userId, title, type, brief, contentCost, baseCost } = input;
   const templates = getSectionTemplates(type);
+  const totalRefund = baseCost + contentCost;
+
+  const existingBrief = await db.projectBrief.findUnique({
+    where: { projectId },
+    select: { generationStatus: true },
+  });
+
+  if (existingBrief?.generationStatus === "GENERATING") {
+    throw new Error("Geração já está em curso para este trabalho.");
+  }
+
+  await db.generationJob.upsert({
+    where: { projectId },
+    create: {
+      projectId,
+      userId,
+      status: "GENERATING",
+      progress: 5,
+      step: "A validar o briefing",
+    },
+    update: {
+      status: "GENERATING",
+      progress: 5,
+      step: "A validar o briefing",
+      error: null,
+      startedAt: new Date(),
+      completedAt: null,
+    },
+  });
 
   setJob(projectId, {
     status: "GENERATING",
@@ -430,19 +514,19 @@ export async function startWorkGenerationJob(input: {
           data: { generationStatus: "FAILED" },
         });
 
-        if (contentCost > 0) {
+        if (totalRefund > 0) {
           await tx.credit.update({
             where: { userId },
             data: {
-              balance: { increment: contentCost },
-              used: { decrement: contentCost },
+              balance: { increment: totalRefund },
+              used: { decrement: totalRefund },
             },
           });
 
           await tx.creditTransaction.create({
             data: {
               userId,
-              amount: contentCost,
+              amount: totalRefund,
               type: "REFUND",
               description: `Compensação pela falha na geração do trabalho: ${title}`,
               metadata: JSON.stringify({ projectId }),

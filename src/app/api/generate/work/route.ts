@@ -37,6 +37,15 @@ export async function POST(request: NextRequest) {
     }
 
     const project = await db.$transaction(async (tx) => {
+      const currentCredits = await tx.credit.findUnique({
+        where: { userId: session.user.id },
+        select: { balance: true },
+      });
+
+      if (!currentCredits || currentCredits.balance < totalCost) {
+        throw new Error("Créditos insuficientes");
+      }
+
       const createdProject = await tx.project.create({
         data: {
           title,
@@ -116,6 +125,18 @@ export async function POST(request: NextRequest) {
     });
 
     if (generateContent) {
+      const existingBrief = await db.projectBrief.findUnique({
+        where: { projectId: project.id },
+        select: { generationStatus: true },
+      });
+
+      if (existingBrief?.generationStatus === "GENERATING") {
+        return NextResponse.json(
+          { error: "Geração já está em curso para este trabalho." },
+          { status: 409 }
+        );
+      }
+
       await startWorkGenerationJob({
         projectId: project.id,
         userId: session.user.id,
@@ -123,6 +144,7 @@ export async function POST(request: NextRequest) {
         type,
         brief,
         contentCost,
+        baseCost,
       });
     }
 

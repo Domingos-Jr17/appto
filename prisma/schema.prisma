@@ -24,6 +24,8 @@ model User {
   educationLevel  EducationLevel? @default(SECONDARY)
   twoFactorEnabled Boolean        @default(false)
   passwordChangedAt DateTime?
+  failedLoginAttempts Int         @default(0)
+  lockoutUntil     DateTime?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -43,6 +45,7 @@ model User {
   knowledgeSources KnowledgeSource[]
   storedFiles     StoredFile[]
   createdExports  ProjectExport[]     @relation("ProjectExportCreator")
+  generationJobs  GenerationJob[]
 
   @@map("users")
 }
@@ -178,6 +181,7 @@ model Project {
   sections        DocumentSection[]
   storedFiles     StoredFile[]
   exports         ProjectExport[]
+  generationJob   GenerationJob?
 
   @@map("projects")
 }
@@ -205,6 +209,7 @@ model ProjectBrief {
   citationStyle           CitationStyle        @default(ABNT)
   language                String               @default("pt-MZ")
   additionalInstructions  String?
+  coverTemplate           String?              @default("UEM_STANDARD")
   createdAt               DateTime             @default(now())
   updatedAt               DateTime             @updatedAt
 
@@ -212,6 +217,23 @@ model ProjectBrief {
 
   @@index([generationStatus])
   @@map("project_briefs")
+}
+
+model GenerationJob {
+  id            String   @id @default(cuid())
+  projectId     String   @unique
+  userId        String
+  status        String   @default("GENERATING")
+  progress      Int      @default(0)
+  step          String?
+  error         String?
+  startedAt     DateTime @default(now())
+  completedAt   DateTime?
+  
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("generation_jobs")
 }
 
 model DocumentSection {

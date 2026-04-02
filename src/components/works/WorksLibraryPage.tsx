@@ -65,12 +65,16 @@ import type {
 
 const WORK_TYPES = [
     { value: "MONOGRAPHY", label: "Monografia" },
+    { value: "DISSERTATION", label: "Dissertação" },
+    { value: "THESIS", label: "Tese" },
     { value: "REPORT", label: "Relatório" },
     { value: "ARTICLE", label: "Artigo científico" },
+    { value: "SCHOOL_WORK", label: "Trabalho escolar" },
     { value: "RESEARCH_PROJECT", label: "Proposta de investigação" },
     { value: "TCC", label: "TCC" },
     { value: "INTERNSHIP_REPORT", label: "Relatório de estágio" },
     { value: "ESSAY", label: "Ensaio académico" },
+    { value: "PRACTICAL_WORK", label: "Trabalho prático" },
 ] as const;
 
 const PROJECT_TYPE_LABELS: Record<string, ProjectCardData["type"]> = {
@@ -127,6 +131,7 @@ type WorkFormState = {
     coverTemplate: CoverTemplate;
     researchQuestion: string;
     keywords: string;
+    subtitle: string;
 };
 
 const INITIAL_WORK_FORM: WorkFormState = {
@@ -148,6 +153,7 @@ const INITIAL_WORK_FORM: WorkFormState = {
     coverTemplate: "UEM_STANDARD",
     researchQuestion: "",
     keywords: "",
+    subtitle: "",
 };
 
 export function WorksLibraryPage() {
@@ -428,6 +434,7 @@ export function WorksLibraryPage() {
                         researchQuestion:
                             workForm.researchQuestion || undefined,
                         keywords: workForm.keywords || undefined,
+                        subtitle: workForm.subtitle || undefined,
                     },
                 }),
             });
@@ -1057,6 +1064,34 @@ export function WorksLibraryPage() {
                                                                     )
                                                                 }
                                                                 placeholder="Ex.: digitalização, sector bancário, Moçambique, inovação"
+                                                            />
+                                                        </div>
+
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor="subtitle">
+                                                                Subtítulo
+                                                            </Label>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                Subtítulo
+                                                                descritivo do
+                                                                trabalho.
+                                                            </p>
+                                                            <Input
+                                                                id="subtitle"
+                                                                value={
+                                                                    workForm.subtitle
+                                                                }
+                                                                onChange={(
+                                                                    event,
+                                                                ) =>
+                                                                    updateWorkForm(
+                                                                        "subtitle",
+                                                                        event
+                                                                            .target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                placeholder="Ex.: Um estudo de caso no sector bancário moçambicano"
                                                             />
                                                         </div>
 

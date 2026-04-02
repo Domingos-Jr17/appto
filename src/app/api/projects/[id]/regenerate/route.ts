@@ -98,6 +98,7 @@ export async function POST(
         additionalInstructions: project.brief.additionalInstructions || undefined,
       },
       contentCost,
+      baseCost: 20,
     });
 
     return NextResponse.json({ success: true, asynchronous: true, projectId: id }, { status: 202 });

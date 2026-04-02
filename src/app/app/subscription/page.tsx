@@ -2,11 +2,13 @@
 
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { Check, Loader2, Sparkles, CreditCard, Zap } from "lucide-react";
+import { Check, Loader2, Sparkles, CreditCard, Zap, History, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { pt } from "date-fns/locale";
 
 interface Plan {
   key: "FREE" | "STARTER" | "PRO";
@@ -25,6 +27,7 @@ interface SubscriptionData {
     worksPerMonth: number;
     worksUsed: number;
     remaining: number;
+    lastReset?: string;
   };
   extraWorks: Array<{
     id: string;
@@ -34,6 +37,16 @@ interface SubscriptionData {
   }>;
   plans: Plan[];
   extraWorkPrice: number;
+  transactions: Array<{
+    id: string;
+    moneyAmount: number;
+    creditsAmount: number;
+    type: string;
+    status: string;
+    createdAt: string;
+    payloadJson: any;
+  }>;
+  nextResetDate: string | null;
 }
 
 export default function SubscriptionPage() {
@@ -145,6 +158,21 @@ export default function SubscriptionPage() {
   const plans = subscriptionData?.plans || [];
   const extraWorkPrice = subscriptionData?.extraWorkPrice || 50;
   const extraWorks = subscriptionData?.extraWorks || [];
+  const transactions = subscriptionData?.transactions || [];
+  const nextResetDate = subscriptionData?.nextResetDate;
+
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "-";
+    return format(new Date(dateStr), "dd MMM yyyy", { locale: pt });
+  };
+
+  const getTransactionLabel = (tx: any) => {
+    const payload = tx.payloadJson || {};
+    if (payload.plan) return `Plano ${payload.plan}`;
+    if (payload.quantity) return `${payload.quantity} trabalho(s) extra(s)`;
+    if (tx.creditsAmount) return `${Math.abs(tx.creditsAmount)} créditos`;
+    return "Transação";
+  };
 
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
@@ -185,6 +213,11 @@ export default function SubscriptionPage() {
               <p className="text-sm text-yellow-800">
                 Alcançou o limite de trabalhos deste mês. faça upgrade do plano ou compre trabalhos extras.
               </p>
+            </div>
+          )}
+          {nextResetDate && (
+            <div className="mt-3 text-sm text-muted-foreground">
+              Próximo reset: {formatDate(nextResetDate)}
             </div>
           )}
         </CardContent>
@@ -331,6 +364,54 @@ export default function SubscriptionPage() {
                   <Badge variant="outline">
                     {work.quantity - work.used} restantes
                   </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Transaction History */}
+      {transactions.length > 0 && (
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Histórico de Transações
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {transactions.map((tx) => (
+                <div
+                  key={tx.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                      tx.status === "CONFIRMED" ? "bg-green-100" : "bg-yellow-100"
+                    }`}>
+                      {tx.status === "CONFIRMED" ? (
+                        <ArrowUpRight className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <ArrowDownRight className="h-4 w-4 text-yellow-600" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium">{getTransactionLabel(tx)}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {format(new Date(tx.createdAt), "dd MMM yyyy, HH:mm", { locale: pt })}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">
+                      {tx.moneyAmount > 0 ? `+${tx.moneyAmount}` : tx.moneyAmount} MZN
+                    </div>
+                    <Badge variant={tx.status === "CONFIRMED" ? "default" : "secondary"}>
+                      {tx.status === "CONFIRMED" ? "Confirmado" : "Pendente"}
+                    </Badge>
+                  </div>
                 </div>
               ))}
             </div>

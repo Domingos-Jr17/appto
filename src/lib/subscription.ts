@@ -198,6 +198,19 @@ export class SubscriptionService {
     });
   }
 
+  async refundWork(userId: string): Promise<void> {
+    const subscription = await this.getOrCreate(userId);
+
+    if (subscription.worksUsed > 0) {
+      await db.subscription.update({
+        where: { userId },
+        data: {
+          worksUsed: { decrement: 1 },
+        },
+      });
+    }
+  }
+
   async upgradePlan(userId: string, plan: PlanType): Promise<void> {
     const planDetails = PLAN_PRICES[plan];
     if (!planDetails) {

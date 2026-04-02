@@ -36,11 +36,21 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
+    const recentTransactions = await db.paymentTransaction.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+
     return apiSuccess({
       subscription: subscriptionStatus,
       extraWorks,
       plans: PLAN_DISPLAY,
       extraWorkPrice: EXTRA_WORK_PRICE,
+      transactions: recentTransactions,
+      nextResetDate: subscriptionStatus.lastReset 
+        ? new Date(new Date(subscriptionStatus.lastReset).getTime() + 30 * 24 * 60 * 60 * 1000)
+        : null,
     });
   } catch (error) {
     console.error("Get subscription error:", error);

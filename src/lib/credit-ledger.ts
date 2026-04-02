@@ -24,10 +24,7 @@ export class CreditLedgerService {
   }
 
   async charge(userId: string, amount: number, description: string, metadata?: Prisma.InputJsonValue) {
-    const { PrismaClient: Prisma } = await import("@prisma/client");
-    const db = new Prisma();
-    
-    return await db.$transaction(async (tx) => {
+    return await this.db.$transaction(async (tx) => {
       const credits = await tx.credit.findUnique({
         where: { userId },
       });
@@ -70,10 +67,7 @@ export class CreditLedgerService {
     description: string,
     metadata?: Prisma.InputJsonValue
   ) {
-    const { PrismaClient: Prisma } = await import("@prisma/client");
-    const db = new Prisma();
-
-    return await db.$transaction(async (tx) => {
+    return await this.db.$transaction(async (tx) => {
       await tx.credit.upsert({
         where: { userId },
         create: {

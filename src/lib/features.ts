@@ -15,7 +15,7 @@ export type FeatureKey =
 export const featureRegistry: Record<FeatureKey, FeatureStatus> = {
   localRag: "hidden",
   pdfExport: "beta",
-  realTimeStreaming: "hidden",
+  realTimeStreaming: "beta",
   workRecovery: "real",
   twoFactorAuth: "beta",
   passwordReset: "beta",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -91,11 +91,18 @@ export function InlineWorkCreator() {
   const firstName = session?.user?.name?.split(" ")[0] || "Estudante";
   const recentProjects = projects.slice(0, 3);
 
+  const prevSearchRef = useRef<string | null>(null);
+
   // Handle ?new=1 → reset form to EMPTY
   useEffect(() => {
-    if (searchParams.get("new") === "1") {
+    const current = searchParams.get("new");
+    if (prevSearchRef.current !== current && current === "1") {
+      prevSearchRef.current = current;
       resetWorkForm();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setState("EMPTY");
+    } else {
+      prevSearchRef.current = current;
     }
   }, [searchParams, resetWorkForm]);
 

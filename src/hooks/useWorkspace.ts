@@ -1,29 +1,17 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback } from "react";
 import type { WorkspaceData, WorkBrief } from "@/types/workspace";
 import { toast } from "@/hooks/use-toast";
+import { useGenerationPolling } from "@/hooks/useGenerationPolling";
 
 interface UseWorkspaceOptions {
   initialData: WorkspaceData;
 }
 
-const POLLING_CONFIG = {
-  initial: 3000,
-  max: 10000,
-  multiplier: 1.5,
-  minChangesForReset: 1,
-};
-
 export function useWorkspace({ initialData }: UseWorkspaceOptions) {
   const [data, setData] = useState(initialData);
-  const [isGenerating, setIsGenerating] = useState(
-    initialData.generationStatus === "GENERATING"
-  );
   const [error, setError] = useState<string | null>(null);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollingIntervalRef = useRef(POLLING_CONFIG.initial);
-  const lastDoneCountRef = useRef(0);
 
   const allDone = data.sections.every((s) => s.status === "done");
   const progress = Math.round(
@@ -32,36 +20,16 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
       100
   );
 
-  const stopPolling = useCallback(() => {
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current);
-      pollingRef.current = null;
-    }
-  }, []);
+  const getDoneCount = useCallback(
+    () => data.sections.filter((s) => s.status === "done").length,
+    [data.sections]
+  );
 
   const refreshProject = useCallback(async () => {
     try {
-      const currentDoneCount = data.sections.filter(
-        (s) => s.status === "done"
-      ).length;
-      const changesBefore = lastDoneCountRef.current;
-      lastDoneCountRef.current = currentDoneCount;
-
       const res = await fetch(`/api/projects/${data.id}`);
       if (!res.ok) return;
       const project = await res.json();
-
-      const newDoneCount = project.sections?.filter(
-        (s: { wordCount: number }) => s.wordCount > 0
-      ).length || 0;
-      const hasProgress = newDoneCount > changesBefore;
-
-      pollingIntervalRef.current = hasProgress
-        ? POLLING_CONFIG.initial
-        : Math.min(
-            pollingIntervalRef.current * POLLING_CONFIG.multiplier,
-            POLLING_CONFIG.max
-          );
 
       setData((prev) => ({
         ...prev,
@@ -74,7 +42,7 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
           return {
             ...section,
             content: updated.content ?? "",
-            status: updated.wordCount > 0 ? "done" as const : section.status,
+            status: updated.wordCount > 0 ? ("done" as const) : section.status,
           };
         }),
         generationStatus: project.generationStatus,
@@ -83,9 +51,6 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
       }));
 
       if (project.generationStatus !== "GENERATING") {
-        setIsGenerating(false);
-        stopPolling();
-        pollingIntervalRef.current = POLLING_CONFIG.initial;
         setData((prev) => ({
           ...prev,
           generationProgress: 100,
@@ -94,37 +59,28 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
             status: s.content ? "done" : "pending",
           })),
         }));
-      } else if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = setInterval(
-          refreshProject,
-          pollingIntervalRef.current
-        );
       }
     } catch {
       // silent — will retry on next poll
     }
-  }, [data.id, data.sections, stopPolling]);
+  }, [data.id]);
 
-  const startPolling = useCallback(() => {
-    stopPolling();
-    pollingIntervalRef.current = POLLING_CONFIG.initial;
-    lastDoneCountRef.current = data.sections.filter(
-      (s) => s.status === "done"
-    ).length;
-    pollingRef.current = setInterval(refreshProject, pollingIntervalRef.current);
-  }, [refreshProject, stopPolling, data.sections]);
+  const isGenerating = data.generationStatus === "GENERATING";
 
-  useEffect(() => {
-    return () => stopPolling();
-  }, [stopPolling]);
+  useGenerationPolling({
+    projectId: data.id,
+    generationStatus: data.generationStatus,
+    onFetch: refreshProject,
+    getDoneCount,
+    enabled: isGenerating,
+  });
 
   const generateAll = useCallback(async () => {
     setError(null);
-    setIsGenerating(true);
 
     setData((prev) => ({
       ...prev,
+      generationStatus: "GENERATING",
       sections: prev.sections.map((s) =>
         s.status !== "done" ? { ...s, status: "generating" as const } : s
       ),
@@ -141,13 +97,11 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
         const body = await res.json();
         throw new Error(body.error || "Falhou a regeneração");
       }
-
-      startPolling();
     } catch (err) {
-      setIsGenerating(false);
       setError(err instanceof Error ? err.message : "Erro desconhecido");
       setData((prev) => ({
         ...prev,
+        generationStatus: "READY",
         sections: prev.sections.map((s) =>
           s.status === "generating"
             ? { ...s, status: s.content ? "done" : "pending" }
@@ -155,7 +109,7 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
         ),
       }));
     }
-  }, [data.id, startPolling]);
+  }, [data.id]);
 
   const downloadDocx = useCallback(async () => {
     setError(null);

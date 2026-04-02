@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -14,19 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { getTemplatesForLevel } from "@/lib/cover-template-config";
 import type { WorkBrief } from "@/types/workspace";
 import type { AcademicEducationLevel } from "@/types/editor";
-
-const TEMPLATES = [
-  { id: "UEM_STANDARD", name: "UEM", desc: "Universidade Eduardo Mondlane", levels: ["HIGHER_EDUCATION"] as AcademicEducationLevel[] },
-  { id: "UCM_STANDARD", name: "UCM", desc: "Universidade Católica", levels: ["HIGHER_EDUCATION"] as AcademicEducationLevel[] },
-  { id: "ISRI", name: "ISRI", desc: "Relações Internacionais", levels: ["TECHNICAL", "HIGHER_EDUCATION"] as AcademicEducationLevel[] },
-  { id: "ABNT_GENERIC", name: "ABNT", desc: "Qualquer instituição", levels: ["SECONDARY", "TECHNICAL", "HIGHER_EDUCATION"] as AcademicEducationLevel[] },
-  { id: "MODERNA", name: "Moderna", desc: "Relatórios e propostas", levels: ["SECONDARY", "TECHNICAL", "HIGHER_EDUCATION"] as AcademicEducationLevel[] },
-  { id: "CLASSICA", name: "Clássica", desc: "Contextos formais", levels: ["SECONDARY", "TECHNICAL", "HIGHER_EDUCATION"] as AcademicEducationLevel[] },
-  { id: "SCHOOL_MOZ", name: "Escola Moçambique", desc: "Ensino secundário", levels: ["SECONDARY"] as AcademicEducationLevel[] },
-  { id: "DISCIPLINARY_MOZ", name: "Disciplinar", desc: "Faculdade e Nº de Estudante", levels: ["TECHNICAL", "HIGHER_EDUCATION"] as AcademicEducationLevel[] },
-] as const;
 
 interface CoverModalProps {
   open: boolean;
@@ -60,6 +50,8 @@ export function CoverModal({
     year: brief.year ?? "",
   });
 
+  const filteredTemplates = getTemplatesForLevel(educationLevel);
+
   const handleApplyTemplate = () => {
     onSelect(selected);
     onClose();
@@ -73,13 +65,6 @@ export function CoverModal({
   const updateField = (field: keyof typeof info, value: string) => {
     setInfo((prev) => ({ ...prev, [field]: value }));
   };
-
-  const filteredTemplates = useMemo(
-    () => (educationLevel
-      ? TEMPLATES.filter((t) => t.levels.includes(educationLevel))
-      : TEMPLATES),
-    [educationLevel],
-  );
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
@@ -131,7 +116,7 @@ export function CoverModal({
                         {tpl.name}
                       </p>
                       <p className="text-[10px] text-muted-foreground">
-                        {tpl.desc}
+                        {tpl.description}
                       </p>
                     </div>
                   </button>

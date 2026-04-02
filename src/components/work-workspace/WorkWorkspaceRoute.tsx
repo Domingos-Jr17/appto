@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useGenerationPolling } from "@/hooks/useGenerationPolling";
+import { useGenerationStream } from "@/hooks/useGenerationStream";
+import { isFeatureVisible } from "@/lib/features";
 import Link from "next/link";
 import { FolderTree } from "lucide-react";
 import { useAppShellData } from "@/components/app-shell/AppShellDataContext";
@@ -29,12 +32,6 @@ import {
 } from "./mappers";
 import { WorkWorkspaceErrorBoundary } from "./WorkWorkspaceErrorBoundary";
 
-const POLLING_CONFIG = {
-  initial: 3000,
-  max: 10000,
-  multiplier: 1.5,
-};
-
 interface WorkWorkspaceRouteProps {
   projectId: string;
 }
@@ -43,8 +40,6 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
   const { toast } = useToast();
   const { setCredits: setAppCredits } = useAppShellData();
   const initializedProjectId = useRef<string | null>(null);
-  const pollingIntervalRef = useRef(POLLING_CONFIG.initial);
-  const lastDoneCountRef = useRef(0);
 
   const project = useProjectStore((state) => state.project);
   const sections = useProjectStore((state) => state.sections);
@@ -104,45 +99,62 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
     initializedProjectId.current = projectId;
   }, [project, projectId, sections, selectSection]);
 
-  useEffect(() => {
-    if (!project || project.generationStatus !== "GENERATING") {
-      pollingIntervalRef.current = POLLING_CONFIG.initial;
-      return;
-    }
+  const getDoneCount = useCallback(
+    () => project?.sections?.filter((s: { wordCount: number }) => s.wordCount > 0).length || 0,
+    [project?.sections]
+  );
 
-    lastDoneCountRef.current = project.sections?.filter((s) => s.wordCount > 0).length || 0;
+  const useSSE = isFeatureVisible("realTimeStreaming");
+  const isGenerating = project?.generationStatus === "GENERATING";
 
-    const timeoutId = window.setTimeout(() => {
+  const handleStreamProgress = useCallback(
+    (event: { progress: number; step: string }) => {
+      useProjectStore.setState((state) => ({
+        project: state.project
+          ? { ...state.project, generationProgress: event.progress, generationStep: event.step }
+          : null,
+      }));
+    },
+    []
+  );
+
+  const handleStreamComplete = useCallback(
+    (_event: { progress: number; step: string }) => {
       void fetchProject(projectId);
-    }, 2000);
+    },
+    [fetchProject, projectId]
+  );
 
-    const pollWithBackoff = async () => {
-      await fetchProject(projectId);
-      
-      const currentDoneCount = project.sections?.filter((s: { wordCount: number }) => s.wordCount > 0).length || 0;
-      const hasProgress = currentDoneCount > lastDoneCountRef.current;
-      lastDoneCountRef.current = currentDoneCount;
+  const handleStreamError = useCallback(
+    (event: { progress: number; step: string; error?: string }) => {
+      if (event.error) {
+        toast({
+          title: "Erro na geração",
+          description: event.error,
+          variant: "destructive",
+        });
+      }
+      void fetchProject(projectId);
+    },
+    [fetchProject, projectId, toast]
+  );
 
-      pollingIntervalRef.current = hasProgress
-        ? POLLING_CONFIG.initial
-        : Math.min(
-            pollingIntervalRef.current * POLLING_CONFIG.multiplier,
-            POLLING_CONFIG.max
-          );
-    };
+  useGenerationStream({
+    projectId,
+    generationStatus: project?.generationStatus,
+    onProgress: handleStreamProgress,
+    onComplete: handleStreamComplete,
+    onError: handleStreamError,
+    enabled: useSSE && isGenerating,
+  });
 
-    const intervalId = window.setInterval(pollWithBackoff, pollingIntervalRef.current);
-
-    const maxPollingId = window.setTimeout(() => {
-      window.clearInterval(intervalId);
-    }, 120000);
-
-    return () => {
-      window.clearInterval(intervalId);
-      window.clearTimeout(timeoutId);
-      window.clearTimeout(maxPollingId);
-    };
-  }, [fetchProject, project, projectId]);
+  useGenerationPolling({
+    projectId,
+    generationStatus: project?.generationStatus,
+    onFetch: useCallback(() => fetchProject(projectId), [fetchProject, projectId]),
+    getDoneCount,
+    enabled: !useSSE && isGenerating,
+  });
 
   const activeSection = useMemo(
     () => (activeSectionId ? findSectionById(activeSectionId, sections) : null),

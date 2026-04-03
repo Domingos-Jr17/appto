@@ -54,11 +54,9 @@ export const citationStyleSchema = z.enum(["ABNT", "APA", "Vancouver"]);
 
 export const coverTemplateSchema = z.enum([
   "UEM_STANDARD",
-  "UCM_STANDARD",
-  "ISRI",
+  "UP",
+  "UDM",
   "ABNT_GENERIC",
-  "MODERNA",
-  "CLASSICA",
   "SCHOOL_MOZ",
   "DISCIPLINARY_MOZ",
 ]);

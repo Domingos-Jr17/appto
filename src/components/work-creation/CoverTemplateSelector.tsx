@@ -11,23 +11,21 @@ interface CoverTemplateOption {
 }
 
 const TEMPLATES: CoverTemplateOption[] = [
-  { value: "UEM_STANDARD", label: "UEM Standard", description: "Padrão universitário, layout centrado", recommended: ["HIGHER_EDUCATION"] },
-  { value: "UCM_STANDARD", label: "UCM Standard", description: "Padrão UCM, com nota de cumprimento", recommended: ["HIGHER_EDUCATION"] },
-  { value: "ISRI", label: "ISRI", description: "Estilo ISRI, com República de Moçambique", recommended: ["TECHNICAL", "HIGHER_EDUCATION"] },
-  { value: "ABNT_GENERIC", label: "ABNT Genérica", description: "Norma ABNT pura, margens padrão" },
-  { value: "MODERNA", label: "Moderna", description: "Linha verde de destaque, estilo contemporâneo" },
-  { value: "CLASSICA", label: "Clássica", description: "Bordas decorativas duplas, estilo formal" },
-  { value: "SCHOOL_MOZ", label: "Escola Moçambique", description: "Capa para ensino secundário, com REP DE MOÇAMBIQUE", recommended: ["SECONDARY"] },
-  { value: "DISCIPLINARY_MOZ", label: "Disciplinar", description: "Capa universitária com faculdade e Nº de Estudante", recommended: ["TECHNICAL", "HIGHER_EDUCATION"] },
+  { value: "UEM_STANDARD", label: "UEM", description: "Universidade Eduardo Mondlane", recommended: ["HIGHER_EDUCATION"] },
+  { value: "UP", label: "UP", description: "Universidade Pedagógica", recommended: ["HIGHER_EDUCATION"] },
+  { value: "UDM", label: "UDM", description: "Universidade de Moçambique", recommended: ["HIGHER_EDUCATION"] },
+  { value: "ABNT_GENERIC", label: "ABNT", description: "Qualquer instituição" },
+  { value: "SCHOOL_MOZ", label: "Escola Moçambique", description: "Ensino secundário", recommended: ["SECONDARY"] },
+  { value: "DISCIPLINARY_MOZ", label: "Técnico", description: "Ensino técnico e profissional", recommended: ["TECHNICAL"] },
 ];
 
 function getFilteredTemplates(educationLevel?: AcademicEducationLevel): CoverTemplateOption[] {
   if (!educationLevel) return TEMPLATES;
 
   const hidden: Record<AcademicEducationLevel, CoverTemplate[]> = {
-    SECONDARY: ["UEM_STANDARD", "UCM_STANDARD", "ISRI", "DISCIPLINARY_MOZ"],
-    TECHNICAL: ["UEM_STANDARD", "UCM_STANDARD", "SCHOOL_MOZ"],
-    HIGHER_EDUCATION: ["SCHOOL_MOZ"],
+    SECONDARY: ["UEM_STANDARD", "UP", "UDM", "DISCIPLINARY_MOZ"],
+    TECHNICAL: ["UEM_STANDARD", "UP", "UDM", "SCHOOL_MOZ"],
+    HIGHER_EDUCATION: ["SCHOOL_MOZ", "DISCIPLINARY_MOZ"],
   };
 
   const hiddenTemplates = hidden[educationLevel] ?? [];
@@ -89,20 +87,20 @@ function CoverPreviewIcon({ template }: { template: CoverTemplate }) {
           <div className={cn(base, "w-6 bg-border")} />
         </div>
       );
-    case "UCM_STANDARD":
+    case "UP":
       return (
         <div className="flex flex-col items-center gap-1">
-          <div className={cn(base, "w-8 bg-border")} />
+          <div className={cn(base, "w-10 bg-border")} />
+          <div className={cn(base, "w-8 bg-foreground/30")} />
           <div className={cn(base, "w-6 bg-border")} />
-          <div className={cn(base, "w-10 bg-foreground/30")} />
         </div>
       );
-    case "ISRI":
+    case "UDM":
       return (
         <div className="flex flex-col items-center gap-1">
-          <div className={cn(base, "w-12 bg-border")} />
           <div className={cn(base, "w-8 bg-border")} />
-          <div className={cn(base, "w-10 bg-foreground/30")} />
+          <div className={cn(base, "w-6 bg-foreground/30")} />
+          <div className={cn(base, "w-10 bg-border")} />
         </div>
       );
     case "ABNT_GENERIC":
@@ -111,20 +109,6 @@ function CoverPreviewIcon({ template }: { template: CoverTemplate }) {
           <div className={cn(base, "w-10 bg-foreground/30")} />
           <div className="h-3" />
           <div className={cn(base, "w-8 bg-border")} />
-        </div>
-      );
-    case "MODERNA":
-      return (
-        <div className="flex flex-col items-center gap-1">
-          <div className="h-[3px] w-14 rounded-full bg-primary" />
-          <div className={cn(base, "w-10 bg-foreground/30")} />
-          <div className={cn(base, "w-4 bg-primary/50")} />
-        </div>
-      );
-    case "CLASSICA":
-      return (
-        <div className="flex flex-col items-center gap-1">
-          <div className="h-10 w-12 rounded border border-dashed border-border" />
         </div>
       );
     case "SCHOOL_MOZ":

@@ -161,6 +161,30 @@ export function CoverModal({
             </Select>
           </div>
 
+          {/* Mini preview */}
+          <div className="rounded-xl border border-border/40 bg-muted/10 p-4">
+            <div className="rounded-lg border border-border/30 bg-background px-6 py-8 text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                {info.institutionName || "Nome da instituição"}
+              </p>
+              <div className="my-3 h-px w-12 bg-primary/40 mx-auto" />
+              <p className="text-xs font-medium text-foreground">
+                {info.courseName || "Curso"}
+              </p>
+              <p className="mt-2 text-xs text-foreground/80">
+                {info.studentName || "Nome do estudante"}
+              </p>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                {info.advisorName ? `Orientador: ${info.advisorName}` : "Orientador"}
+              </p>
+              <div className="mt-4 flex items-center justify-center gap-3 text-[10px] text-muted-foreground/60">
+                <span>{info.city || "Cidade"}</span>
+                <span>·</span>
+                <span>{info.year || "Ano"}</span>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="cover-institution" className="text-xs">

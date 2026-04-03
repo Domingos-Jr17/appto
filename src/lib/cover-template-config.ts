@@ -16,33 +16,21 @@ export const COVER_TEMPLATES: CoverTemplateConfig[] = [
     educationLevels: ["HIGHER_EDUCATION"],
   },
   {
-    id: "UCM_STANDARD",
-    name: "UCM",
-    description: "Universidade Católica",
+    id: "UP",
+    name: "UP",
+    description: "Universidade Pedagógica",
     educationLevels: ["HIGHER_EDUCATION"],
   },
   {
-    id: "ISRI",
-    name: "ISRI",
-    description: "Relações Internacionais",
-    educationLevels: ["TECHNICAL", "HIGHER_EDUCATION"],
+    id: "UDM",
+    name: "UDM",
+    description: "Universidade de Moçambique",
+    educationLevels: ["HIGHER_EDUCATION"],
   },
   {
     id: "ABNT_GENERIC",
     name: "ABNT",
     description: "Qualquer instituição",
-    educationLevels: ["SECONDARY", "TECHNICAL", "HIGHER_EDUCATION"],
-  },
-  {
-    id: "MODERNA",
-    name: "Moderna",
-    description: "Relatórios e propostas",
-    educationLevels: ["SECONDARY", "TECHNICAL", "HIGHER_EDUCATION"],
-  },
-  {
-    id: "CLASSICA",
-    name: "Clássica",
-    description: "Contextos formais",
     educationLevels: ["SECONDARY", "TECHNICAL", "HIGHER_EDUCATION"],
   },
   {
@@ -53,9 +41,9 @@ export const COVER_TEMPLATES: CoverTemplateConfig[] = [
   },
   {
     id: "DISCIPLINARY_MOZ",
-    name: "Disciplinar",
-    description: "Faculdade e Nº de Estudante",
-    educationLevels: ["TECHNICAL", "HIGHER_EDUCATION"],
+    name: "Técnico",
+    description: "Ensino técnico e profissional",
+    educationLevels: ["TECHNICAL"],
   },
 ];
 

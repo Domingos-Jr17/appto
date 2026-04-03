@@ -81,20 +81,19 @@ function getSmartTemplate(
   const inst = institution.toLowerCase();
 
   if (level === "HIGHER_EDUCATION") {
-    if (inst.includes("eduardo mondlan") || inst.includes("uem")) return "UEM_STANDARD";
-    if (inst.includes("católic") || inst.includes("ucm")) return "UCM_STANDARD";
-    if (inst.includes("isri")) return "ISRI";
+    if (inst.includes("eduardo mondlan") || inst.includes("eduardo mondlane") || inst.includes(" uem")) return "UEM_STANDARD";
+    if (inst.includes("pedagógic") || inst.includes("pedagogica") || inst.includes(" universidade pedagógica")) return "UP";
+    if (inst.includes("universidade de moçambique") || inst.includes("universidade de mocambique") || inst.includes(" udm")) return "UDM";
+    return "ABNT_GENERIC";
   }
 
   if (level === "TECHNICAL") {
-    if (inst.includes("isri")) return "ISRI";
+    return "ABNT_GENERIC";
   }
 
   if (level === "SECONDARY") return "SCHOOL_MOZ";
 
-  if (level === "TECHNICAL" || level === "HIGHER_EDUCATION") return "DISCIPLINARY_MOZ";
-
-  return "SCHOOL_MOZ";
+  return "ABNT_GENERIC";
 }
 
 export const GENERATION_STEPS = [

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, CheckCircle2, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -30,13 +30,17 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
   const [step, setStep] = useState(1);
   const [showOptional, setShowOptional] = useState(false);
   const firstFieldRef = useRef<HTMLInputElement>(null);
+  const optionalFieldsId = `education-optional-fields-${educationLevel.toLowerCase()}`;
 
   useEffect(() => {
     const timer = setTimeout(() => firstFieldRef.current?.focus(), 100);
     return () => clearTimeout(timer);
   }, [step]);
 
-  const isStep1Complete = form.institutionName.trim().length > 0;
+  const isStep1Complete = educationLevel === "SECONDARY"
+    ? form.institutionName.trim().length > 0
+    : form.institutionName.trim().length > 0 && form.courseName.trim().length > 0;
+  const isStep2Complete = form.studentName.trim().length > 0;
 
   const step1Summary = () => {
     if (educationLevel === "SECONDARY") {
@@ -57,6 +61,7 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
   };
 
   const handleBack = (toStep: number) => {
+    setShowOptional(false);
     setStep(toStep);
   };
 
@@ -74,7 +79,7 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
               className="space-y-3"
             >
               <p className="text-xs font-medium text-muted-foreground">
-                Passo 1 de 2: Escola
+                Passo 1 de 2: Contexto escolar
               </p>
               <div className="space-y-2">
                 <Label htmlFor="institution">Escola</Label>
@@ -129,7 +134,7 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
               </div>
 
               <p className="text-xs font-medium text-muted-foreground">
-                Passo 2 de 2: Dados pessoais
+                Passo 2 de 2: Dados principais
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -158,6 +163,7 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
                   variant="default"
                   size="sm"
                   onClick={handleContinue}
+                  disabled={!isStep2Complete}
                   className="rounded-xl text-xs"
                 >
                   Concluir
@@ -215,6 +221,8 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
               <button
                 type="button"
                 onClick={() => setShowOptional(!showOptional)}
+                aria-expanded={showOptional}
+                aria-controls={optionalFieldsId}
                 className="flex w-full items-center justify-between rounded-xl border border-border/60 px-4 py-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/20 hover:text-foreground"
               >
                 <span>{showOptional ? "Ocultar detalhes" : "+ Adicionar detalhes"}</span>
@@ -224,6 +232,7 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
               <AnimatePresence>
                 {showOptional && (
                   <motion.div
+                    id={optionalFieldsId}
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
@@ -308,11 +317,11 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
               className="space-y-3"
             >
               <p className="text-xs font-medium text-muted-foreground">
-                Passo 1 de 2: Instituição
+                Passo 1 de 2: Contexto académico
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="institution">Instituição</Label>
+                  <Label htmlFor="institution">Instituto</Label>
                   <Input
                     ref={firstFieldRef}
                     id="institution"
@@ -373,7 +382,7 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
               </div>
 
               <p className="text-xs font-medium text-muted-foreground">
-                Passo 2 de 2: Dados pessoais
+                Passo 2 de 2: Dados principais
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -402,6 +411,7 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
                   variant="default"
                   size="sm"
                   onClick={handleContinue}
+                  disabled={!isStep2Complete}
                   className="rounded-xl text-xs"
                 >
                   Concluir
@@ -456,6 +466,8 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
               <button
                 type="button"
                 onClick={() => setShowOptional(!showOptional)}
+                aria-expanded={showOptional}
+                aria-controls={optionalFieldsId}
                 className="flex w-full items-center justify-between rounded-xl border border-border/60 px-4 py-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/20 hover:text-foreground"
               >
                 <span>{showOptional ? "Ocultar detalhes" : "+ Adicionar detalhes"}</span>
@@ -465,6 +477,7 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
               <AnimatePresence>
                 {showOptional && (
                   <motion.div
+                    id={optionalFieldsId}
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
@@ -589,7 +602,7 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
             </div>
 
             <p className="text-xs font-medium text-muted-foreground">
-              Passo 2 de 2: Dados pessoais
+              Passo 2 de 2: Dados principais
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -618,6 +631,7 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
                 variant="default"
                 size="sm"
                 onClick={handleContinue}
+                disabled={!isStep2Complete}
                 className="rounded-xl text-xs"
               >
                 Concluir
@@ -672,6 +686,8 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
             <button
               type="button"
               onClick={() => setShowOptional(!showOptional)}
+              aria-expanded={showOptional}
+              aria-controls={optionalFieldsId}
               className="flex w-full items-center justify-between rounded-xl border border-border/60 px-4 py-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/20 hover:text-foreground"
             >
               <span>{showOptional ? "Ocultar detalhes" : "+ Adicionar detalhes"}</span>
@@ -681,6 +697,7 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
             <AnimatePresence>
               {showOptional && (
                 <motion.div
+                  id={optionalFieldsId}
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}

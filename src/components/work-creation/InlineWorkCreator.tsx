@@ -85,6 +85,10 @@ export function InlineWorkCreator() {
 
   const handleContinue = () => {
     if (workForm.title.trim().length > 0) {
+      const normalizedTitle = normalizeTitle(workForm.title).trim();
+      if (normalizedTitle !== workForm.title) {
+        updateWorkForm("title", normalizedTitle);
+      }
       setState("FILLING");
     }
   };
@@ -94,6 +98,7 @@ export function InlineWorkCreator() {
   };
 
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const normalizeTitle = (value: string) => value.replace(/\s*\n+\s*/g, " ");
 
   const handleCreate = async () => {
     const projectId = await createWork();
@@ -119,6 +124,15 @@ export function InlineWorkCreator() {
             activeIndex={generationStep}
           />
         </div>
+        <p className="text-center text-xs text-muted-foreground">
+          Podes fechar esta página. O trabalho continua a gerar em segundo plano.
+          <Link
+            href={generationProjectId ? `/app/trabalhos/${generationProjectId}` : "/app/trabalhos"}
+            className="ml-1 font-medium text-primary hover:underline"
+          >
+            {generationProjectId ? "Abrir trabalho" : "Ver trabalhos"} →
+          </Link>
+        </p>
       </div>
     );
   }
@@ -137,35 +151,31 @@ export function InlineWorkCreator() {
 
       {/* Title + Level — always visible */}
       <div className="space-y-4">
-        {state === "EMPTY" ? (
-          <Textarea
-            id="inline-title"
-            placeholder="Qual o tema do teu trabalho?"
-            value={workForm.title}
-            onChange={(e) => updateWorkForm("title", e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleContinue();
-              }
-            }}
-            rows={2}
-            className="text-lg resize-none"
-          />
-        ) : (
-          <div className="space-y-1">
-            <Label htmlFor="filling-title" className="text-xs text-muted-foreground">
-              Tema do trabalho
-            </Label>
-            <Input
-              id="filling-title"
-              value={workForm.title}
-              onChange={(e) => updateWorkForm("title", e.target.value)}
-              className="text-xl font-semibold"
-              placeholder="Ex.: Impacto do microcrédito..."
-            />
-          </div>
-        )}
+        <Textarea
+          id="inline-title"
+          placeholder="Qual o tema do teu trabalho?"
+          value={workForm.title}
+          onChange={(e) =>
+            updateWorkForm(
+              "title",
+              state === "EMPTY" ? e.target.value : normalizeTitle(e.target.value)
+            )
+          }
+          onKeyDown={(e) => {
+            if (state === "EMPTY" && e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleContinue();
+            }
+            if (state === "FILLING" && e.key === "Enter") {
+              e.preventDefault();
+            }
+          }}
+          rows={state === "EMPTY" ? 2 : 3}
+          className={cn(
+            "resize-none text-lg leading-relaxed",
+            state === "FILLING" && "min-h-[96px] font-medium"
+          )}
+        />
 
         {/* Education level — cards in EMPTY, compact badge in FILLING */}
         {state === "EMPTY" ? (
@@ -175,6 +185,7 @@ export function InlineWorkCreator() {
                 key={level.value}
                 type="button"
                 onClick={() => handleEducationLevelChange(level.value)}
+                aria-pressed={workForm.educationLevel === level.value}
                 className={cn(
                   "rounded-xl border p-3 text-center transition-colors",
                   workForm.educationLevel === level.value
@@ -238,6 +249,7 @@ export function InlineWorkCreator() {
         >
           {/* Conditional education fields */}
           <EducationFields
+            key={workForm.educationLevel}
             educationLevel={workForm.educationLevel}
             form={workForm}
             onUpdate={updateWorkForm}
@@ -248,6 +260,8 @@ export function InlineWorkCreator() {
           <button
             type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
+            aria-expanded={showAdvanced}
+            aria-controls="advanced-work-details"
             className="flex w-full items-center justify-between rounded-xl border border-border/60 px-4 py-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/20 hover:text-foreground"
           >
             <span>{showAdvanced ? "Ocultar detalhes avançados" : "+ Adicionar detalhes avançados"}</span>
@@ -256,6 +270,7 @@ export function InlineWorkCreator() {
 
           {showAdvanced && (
             <motion.div
+              id="advanced-work-details"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
@@ -271,136 +286,158 @@ export function InlineWorkCreator() {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="objective">Objetivo</Label>
-                <Textarea
-                  id="objective"
-                  value={workForm.objective}
-                  onChange={(e) =>
-                    updateWorkForm("objective", e.target.value)
-                  }
-                  rows={2}
-                  placeholder="Ajuda a IA a manter o foco ao gerar o conteúdo."
-                />
+              <div className="space-y-4 rounded-2xl border border-border/50 bg-background/60 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Conteudo do trabalho
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Ajusta o foco academico antes de gerar o documento.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="objective">Objetivo</Label>
+                  <Textarea
+                    id="objective"
+                    value={workForm.objective}
+                    onChange={(e) =>
+                      updateWorkForm("objective", e.target.value)
+                    }
+                    rows={2}
+                    placeholder="Ajuda a IA a manter o foco ao gerar o conteúdo."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="methodology">
+                    Metodologia ou orientação
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {workForm.educationLevel === "SECONDARY"
+                      ? "Preencha apenas se o professor pediu."
+                      : "Descreva a abordagem a seguir."}
+                  </p>
+                  <Textarea
+                    id="methodology"
+                    value={workForm.methodology}
+                    onChange={(e) =>
+                      updateWorkForm("methodology", e.target.value)
+                    }
+                    rows={2}
+                    placeholder="Ex.: revisão bibliográfica e estudo comparativo."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="research-question">
+                    Pergunta de investigação
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {workForm.educationLevel === "SECONDARY"
+                      ? "Preencha apenas se o professor pediu."
+                      : "A pergunta central que o trabalho vai responder."}
+                  </p>
+                  <Textarea
+                    id="research-question"
+                    value={workForm.researchQuestion}
+                    onChange={(e) =>
+                      updateWorkForm("researchQuestion", e.target.value)
+                    }
+                    rows={2}
+                    placeholder="Ex.: Quais os factores que influenciam a digitalização no sector bancário em Moçambique?"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="subtitle">Subtítulo</Label>
+                  <Input
+                    id="subtitle"
+                    value={workForm.subtitle}
+                    onChange={(e) =>
+                      updateWorkForm("subtitle", e.target.value)
+                    }
+                    placeholder="Ex.: Um estudo de caso no sector bancário moçambicano"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="methodology">
-                  Metodologia ou orientação
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {workForm.educationLevel === "SECONDARY"
-                    ? "Preencha apenas se o professor pediu."
-                    : "Descreva a abordagem a seguir."}
-                </p>
-                <Textarea
-                  id="methodology"
-                  value={workForm.methodology}
-                  onChange={(e) =>
-                    updateWorkForm("methodology", e.target.value)
-                  }
-                  rows={2}
-                  placeholder="Ex.: revisão bibliográfica e estudo comparativo."
-                />
-              </div>
+              <div className="space-y-4 rounded-2xl border border-border/50 bg-background/60 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Referências e formatação
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Define as pistas editoriais que vao orientar a estrutura final.
+                  </p>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="research-question">
-                  Pergunta de investigação
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {workForm.educationLevel === "SECONDARY"
-                    ? "Preencha apenas se o professor pediu."
-                    : "A pergunta central que o trabalho vai responder."}
-                </p>
-                <Textarea
-                  id="research-question"
-                  value={workForm.researchQuestion}
-                  onChange={(e) =>
-                    updateWorkForm("researchQuestion", e.target.value)
-                  }
-                  rows={2}
-                  placeholder="Ex.: Quais os factores que influenciam a digitalização no sector bancário em Moçambique?"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="keywords">Palavras-chave</Label>
+                  <Input
+                    id="keywords"
+                    value={workForm.keywords}
+                    onChange={(e) =>
+                      updateWorkForm("keywords", e.target.value)
+                    }
+                    placeholder="Ex.: digitalização, sector bancário, Moçambique"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="keywords">Palavras-chave</Label>
-                <Input
-                  id="keywords"
-                  value={workForm.keywords}
-                  onChange={(e) =>
-                    updateWorkForm("keywords", e.target.value)
-                  }
-                  placeholder="Ex.: digitalização, sector bancário, Moçambique"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="references-seed">
+                    Referências iniciais
+                  </Label>
+                  <Textarea
+                    id="references-seed"
+                    value={workForm.referencesSeed}
+                    onChange={(e) =>
+                      updateWorkForm("referencesSeed", e.target.value)
+                    }
+                    rows={2}
+                    placeholder="Autores, livros, artigos ou links que devem orientar o trabalho."
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="subtitle">Subtítulo</Label>
-                <Input
-                  id="subtitle"
-                  value={workForm.subtitle}
-                  onChange={(e) =>
-                    updateWorkForm("subtitle", e.target.value)
-                  }
-                  placeholder="Ex.: Um estudo de caso no sector bancário moçambicano"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="citation-style">Norma de citação</Label>
+                  <Select
+                    value={workForm.citationStyle}
+                    onValueChange={(value) =>
+                      updateWorkForm(
+                        "citationStyle",
+                        value as typeof workForm.citationStyle,
+                      )
+                    }
+                  >
+                    <SelectTrigger id="citation-style">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ABNT">ABNT</SelectItem>
+                      <SelectItem value="APA">APA</SelectItem>
+                      <SelectItem value="Vancouver">Vancouver</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="references-seed">
-                  Referências iniciais
-                </Label>
-                <Textarea
-                  id="references-seed"
-                  value={workForm.referencesSeed}
-                  onChange={(e) =>
-                    updateWorkForm("referencesSeed", e.target.value)
-                  }
-                  rows={2}
-                  placeholder="Autores, livros, artigos ou links que devem orientar o trabalho."
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="citation-style">Norma de citação</Label>
-                <Select
-                  value={workForm.citationStyle}
-                  onValueChange={(value) =>
-                    updateWorkForm(
-                      "citationStyle",
-                      value as typeof workForm.citationStyle,
-                    )
-                  }
-                >
-                  <SelectTrigger id="citation-style">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ABNT">ABNT</SelectItem>
-                    <SelectItem value="APA">APA</SelectItem>
-                    <SelectItem value="Vancouver">Vancouver</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="additional-instructions">
-                  Notas adicionais
-                </Label>
-                <Textarea
-                  id="additional-instructions"
-                  value={workForm.additionalInstructions}
-                  onChange={(e) =>
-                    updateWorkForm(
-                      "additionalInstructions",
-                      e.target.value,
-                    )
-                  }
-                  rows={2}
-                  placeholder="Ex.: incluir exemplos de Moçambique."
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="additional-instructions">
+                    Notas adicionais
+                  </Label>
+                  <Textarea
+                    id="additional-instructions"
+                    value={workForm.additionalInstructions}
+                    onChange={(e) =>
+                      updateWorkForm(
+                        "additionalInstructions",
+                        e.target.value,
+                      )
+                    }
+                    rows={2}
+                    placeholder="Ex.: incluir exemplos de Moçambique."
+                  />
+                </div>
               </div>
             </motion.div>
           )}

@@ -60,11 +60,9 @@ export type AcademicEducationLevel = "SECONDARY" | "TECHNICAL" | "HIGHER_EDUCATI
 
 export type CoverTemplate =
   | "UEM_STANDARD"
-  | "UCM_STANDARD"
-  | "ISRI"
+  | "UP"
+  | "UDM"
   | "ABNT_GENERIC"
-  | "MODERNA"
-  | "CLASSICA"
   | "SCHOOL_MOZ"
   | "DISCIPLINARY_MOZ";
 

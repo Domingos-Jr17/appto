@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Edit3, Check, X, Loader2 } from "lucide-react";
+import { Edit3, Check, X, Loader2, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GenerateButton } from "./GenerateButton";
@@ -159,6 +159,7 @@ export function WorkspaceHeader({
               className="h-7 w-7 shrink-0 text-success"
               onClick={handleSave}
               disabled={isSaving}
+              aria-label="Guardar título"
             >
               {isSaving ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -172,22 +173,21 @@ export function WorkspaceHeader({
               className="h-7 w-7 shrink-0 text-muted-foreground"
               onClick={handleCancel}
               disabled={isSaving}
+              aria-label="Cancelar edição"
             >
               <X className="h-3.5 w-3.5" />
             </Button>
           </div>
         ) : (
-          <h3
-            className="group flex-1 cursor-pointer line-clamp-2 text-sm font-semibold leading-tight tracking-tight text-foreground"
+          <button
+            type="button"
+            className="group flex-1 text-left line-clamp-2 text-sm font-semibold leading-tight tracking-tight text-foreground"
             onClick={handleStartEdit}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => e.key === "Enter" && handleStartEdit()}
             title="Clique para editar o título"
           >
             {title}
             <Edit3 className="ml-1.5 inline h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-          </h3>
+          </button>
         )}
       </div>
 
@@ -225,13 +225,13 @@ export function WorkspaceHeader({
 
       <div className="mt-3 flex gap-2">
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="flex-1 rounded-2xl text-xs"
+          className="shrink-0 rounded-2xl px-2 text-xs text-muted-foreground hover:text-foreground"
           onClick={onEditCover}
         >
-          <Edit3 className="mr-1.5 h-3.5 w-3.5" />
-          Editar capa
+          <ImageIcon className="mr-1 h-3.5 w-3.5" />
+          Capa
         </Button>
         {hasContent && (
           <GenerateButton

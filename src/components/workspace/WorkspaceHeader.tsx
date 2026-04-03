@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Edit3, Check, X, Loader2, CheckCircle2, Circle, Zap } from "lucide-react";
+import { Edit3, Check, X, Loader2, CheckCircle2, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GenerateButton } from "./GenerateButton";
@@ -19,7 +19,7 @@ interface WorkspaceHeaderProps {
   isGenerating: boolean;
   allDone: boolean;
   sections?: WorkSection[];
-  creditsRemaining?: number;
+  subscriptionStatus?: { plan: string; remaining: number; total: number };
   onGenerate: () => void;
   onDownload: () => void;
   onEditCover: () => void;
@@ -35,7 +35,7 @@ export function WorkspaceHeader({
   isGenerating,
   allDone,
   sections = [],
-  creditsRemaining,
+  subscriptionStatus,
   onGenerate,
   onDownload,
   onEditCover,
@@ -65,6 +65,15 @@ export function WorkspaceHeader({
   const handleCancel = () => {
     setEditValue(title);
     setIsEditing(false);
+  };
+
+  const handleBlur = () => {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== title) {
+      handleSave();
+    } else {
+      handleCancel();
+    }
   };
 
   const handleSave = async () => {
@@ -157,7 +166,7 @@ export function WorkspaceHeader({
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              onBlur={handleCancel}
+              onBlur={handleBlur}
               className="h-7 text-sm font-semibold leading-tight"
               placeholder="Título do trabalho..."
               disabled={isSaving}
@@ -205,10 +214,18 @@ export function WorkspaceHeader({
         <div className="flex items-center justify-between text-[10px] text-muted-foreground">
           <div className="flex items-center gap-2">
             <span>Progresso</span>
-            {creditsRemaining !== undefined && (
-              <span className="flex items-center gap-1 text-primary/80">
-                <Zap className="h-3 w-3" />
-                {creditsRemaining}
+            {subscriptionStatus && (
+              <span
+                className={cn(
+                  "flex items-center gap-1",
+                  subscriptionStatus.remaining === 0
+                    ? "text-destructive"
+                    : "text-primary/80"
+                )}
+              >
+                {subscriptionStatus.remaining === 0
+                  ? "Limite atingido"
+                  : `${subscriptionStatus.remaining}/${subscriptionStatus.total} trabalhos`}
               </span>
             )}
           </div>
@@ -240,7 +257,10 @@ export function WorkspaceHeader({
           allDone={allDone}
           onGenerate={onGenerate}
         />
-        <DownloadButton onDownload={onDownload} />
+        <DownloadButton
+          onDownload={onDownload}
+          hasContent={sections.some((s) => s.status === "done" && s.content.trim().length > 0)}
+        />
       </div>
     </div>
   );

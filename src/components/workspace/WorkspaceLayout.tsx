@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceHeader } from "./WorkspaceHeader";
@@ -17,6 +17,29 @@ interface WorkspaceLayoutProps {
 export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
   const workspace = useWorkspace({ initialData });
   const [coverSheetOpen, setCoverSheetOpen] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<{
+    plan: string;
+    remaining: number;
+    total: number;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/subscription")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data.subscription) {
+          const sub = data.data.subscription;
+          setSubscriptionStatus({
+            plan: sub.plan,
+            remaining: sub.remaining,
+            total: sub.worksPerMonth,
+          });
+        }
+      })
+      .catch(() => {
+        // silent — subscription info is optional
+      });
+  }, []);
 
   return (
     <>
@@ -36,6 +59,7 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
           isGenerating={workspace.isGenerating}
           allDone={workspace.allDone}
           sections={workspace.data?.sections ?? []}
+          subscriptionStatus={subscriptionStatus ?? undefined}
           onGenerate={workspace.generateAll}
           onDownload={workspace.downloadDocx}
           onEditCover={() => setCoverSheetOpen(true)}

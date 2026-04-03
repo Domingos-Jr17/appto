@@ -3,6 +3,7 @@ import {
     isFeatureVisible,
     type FeatureKey,
 } from "@/lib/features";
+import { BILLING_PLAN_DISPLAY, EXTRA_WORKS } from "@/lib/billing";
 
 type LandingItem<T> = T & {
     featureKey?: FeatureKey;
@@ -231,68 +232,21 @@ export const genericComparison = [
     },
     { feature: "Foco em estrutura académica", aptto: true, generic: false },
     { feature: "Contexto de Moçambique", aptto: true, generic: false },
-    { feature: "Créditos transparentes", aptto: true, generic: false },
+    { feature: "Planos e extras transparentes", aptto: true, generic: false },
 ];
 
-export const pricingPlans = [
-    {
-        id: "gratuito",
-        name: "Gratuito",
-        price: 0,
-        currency: "MZN",
-        period: "para sempre",
-        description: "Perfeito para experimentar o aptto",
-        features: [
-            "50 créditos iniciais",
-            "5 gerações por dia",
-            "Exportação básica",
-            "Estruturação simples",
-            "Suporte por email",
-        ],
-        cta: "Começar Grátis",
-        highlighted: false,
-        badge: null,
-    },
-    {
-        id: "estudante",
-        name: "Estudante",
-        price: 350,
-        currency: "MZN",
-        period: "por mês",
-        description: "Ideal para finalistas e uso recorrente",
-        features: [
-            "500 créditos por mês",
-            "Gerações ilimitadas",
-            "Exportação completa DOCX/PDF",
-            "Todas as estruturas académicas",
-            "Normalização ABNT automática",
-            "Suporte prioritário",
-        ],
-        cta: "Escolher Estudante",
-        highlighted: true,
-        badge: "Mais Popular",
-    },
-    {
-        id: "academico",
-        name: "Académico",
-        price: 900,
-        currency: "MZN",
-        period: "por mês",
-        description: "Para pós-graduação e utilizadores intensivos",
-        features: [
-            "2.000 créditos por mês",
-            "Gerações ilimitadas",
-            "Acesso ao RAG local",
-            "Modelos de IA avançados",
-            "Exportação premium",
-            "Projectos ilimitados",
-            "Suporte dedicado",
-        ],
-        cta: "Escolher Académico",
-        highlighted: false,
-        badge: null,
-    },
-];
+export const pricingPlans = BILLING_PLAN_DISPLAY.map((plan) => ({
+    id: plan.key.toLowerCase(),
+    name: plan.name,
+    price: plan.price,
+    currency: "MZN",
+    period: plan.price > 0 ? "por mês" : "para sempre",
+    description: plan.description,
+    features: [...plan.features],
+    cta: plan.key === "FREE" ? "Começar Grátis" : `Escolher ${plan.name}`,
+    highlighted: plan.popular,
+    badge: plan.popular ? "Mais Popular" : null,
+}));
 
 export const faqs = [
     {
@@ -304,12 +258,12 @@ export const faqs = [
         answer: "Sim. O aptto foi treinado para produzir texto em português académico moçambicano, com a terminologia e expressões adequadas ao contexto das nossas universidades.",
     },
     {
-        question: "Como funcionam os créditos?",
-        answer: "Cada acção na plataforma consome créditos (gerar texto, estruturar, exportar). Os créditos são transparentes - você sempre sabe quanto custa antes de executar. Pode recarregar ou fazer upgrade de pacote quando precisar.",
+        question: "Como funcionam os planos e trabalhos extras?",
+        answer: `Cada pacote inclui um número fixo de trabalhos por mês. Quando precisar de mais capacidade, pode comprar trabalhos extras por ${EXTRA_WORKS.price} MZN cada, com validade de ${EXTRA_WORKS.validityMonths} meses.`,
     },
     {
         question: "Posso exportar em DOCX e PDF?",
-        answer: "Hoje o aptto exporta em DOCX. A exportação em PDF continua fora da experiência pública até existir um renderer dedicado e validado.",
+        answer: "Sim. O aptto exporta em DOCX para todos os pacotes e disponibiliza PDF para utilizadores PRO.",
     },
     {
         question: "O aptto serve para monografia e seminário?",

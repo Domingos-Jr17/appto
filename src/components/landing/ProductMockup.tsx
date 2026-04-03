@@ -80,7 +80,7 @@ export function ProductMockup() {
               className="px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium flex items-center gap-1"
             >
               <Zap className="w-3 h-3" />
-              <span>247 créditos</span>
+              <span>3 trabalhos restantes</span>
             </motion.div>
           </div>
         </div>

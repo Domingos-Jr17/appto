@@ -2,23 +2,25 @@ import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { apiError, apiSuccess, handleApiError, parseBody as _parseBody } from "@/lib/api";
-import { PLAN_DISPLAY, PACKAGE_PRICING as _PACKAGE_PRICING, EXTRA_WORK_PRICE } from "@/lib/credits";
+import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
+import { BILLING_PLAN_DISPLAY, EXTRA_WORKS } from "@/lib/billing";
 import { PaymentService } from "@/lib/payments";
 import { subscriptionService } from "@/lib/subscription";
 import { env } from "@/lib/env";
 import { PaymentProvider, PackageType } from "@prisma/client";
 import { z } from "zod";
 
-const _activatePackageSchema = z.object({
+const activatePackageSchema = z.object({
   package: z.enum(["STARTER", "PRO"]),
   provider: z.enum(["SIMULATED", "MPESA", "EMOLA"]).optional(),
 });
 
-const _purchaseExtraSchema = z.object({
-  quantity: z.number().min(1).max(10),
+const purchaseExtraSchema = z.object({
+  quantity: z.number().int().min(1).max(EXTRA_WORKS.maxQuantityPerPurchase),
   provider: z.enum(["SIMULATED", "MPESA", "EMOLA"]).optional(),
 });
+
+const subscriptionActionSchema = z.union([activatePackageSchema, purchaseExtraSchema]);
 
 // GET /api/subscription - Get user's subscription status
 export async function GET(_request: NextRequest) {
@@ -45,8 +47,10 @@ export async function GET(_request: NextRequest) {
     return apiSuccess({
       subscription: subscriptionStatus,
       extraWorks,
-      plans: PLAN_DISPLAY,
-      extraWorkPrice: EXTRA_WORK_PRICE,
+      plans: BILLING_PLAN_DISPLAY,
+      extraWorkPrice: EXTRA_WORKS.price,
+      paymentGateway: env.PAYMENT_GATEWAY,
+      paymentDefaultProvider: env.PAYMENT_DEFAULT_PROVIDER,
       transactions: recentTransactions,
       nextResetDate: subscriptionStatus.lastReset 
         ? new Date(new Date(subscriptionStatus.lastReset).getTime() + 30 * 24 * 60 * 60 * 1000)
@@ -67,14 +71,13 @@ export async function POST(request: NextRequest) {
       return apiError("Não autorizado", 401);
     }
 
-    const body = await request.json();
-    const { package: packageValue, quantity, provider } = body;
+    const body = await parseBody(request, subscriptionActionSchema);
+    const providerValue = (body.provider ?? env.PAYMENT_DEFAULT_PROVIDER) as PaymentProvider;
 
     const paymentService = new PaymentService(db);
-    const providerValue = (provider ?? env.PAYMENT_DEFAULT_PROVIDER) as PaymentProvider;
 
-    if (packageValue) {
-      const validPackage = PackageType[packageValue as keyof typeof PackageType];
+    if ("package" in body) {
+      const validPackage = PackageType[body.package as keyof typeof PackageType];
       if (!validPackage) {
         return apiError("Pacote inválido", 400);
       }
@@ -92,25 +95,27 @@ export async function POST(request: NextRequest) {
       return apiSuccess({
         success: true,
         payment,
-        message: `Pacote ${packageValue} ativado com sucesso`,
+        message:
+          payment.status === "CONFIRMED"
+            ? `Pacote ${body.package} ativado com sucesso`
+            : `Checkout iniciado para o pacote ${body.package}`,
       });
     }
 
-    if (quantity) {
-      if (quantity < 1 || quantity > 10) {
-        return apiError("Quantidade inválida. Mínimo: 1, Máximo: 10", 400);
-      }
-
+    if ("quantity" in body) {
       const payment = await paymentService.createExtraWorkCheckout(
         session.user.id,
         providerValue,
-        quantity
+        body.quantity
       );
 
       return apiSuccess({
         success: true,
         payment,
-        message: `${quantity} trabalho(s) extra(s) adicionado(s) com sucesso`,
+        message:
+          payment.status === "CONFIRMED"
+            ? `${body.quantity} trabalho(s) extra(s) adicionado(s) com sucesso`
+            : `Checkout iniciado para ${body.quantity} trabalho(s) extra(s)`,
       });
     }
 

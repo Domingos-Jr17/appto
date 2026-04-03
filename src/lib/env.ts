@@ -22,7 +22,11 @@ const envSchema = z
     RESEND_API_KEY: z.string().min(1).optional(),
     RESEND_FROM_EMAIL: z.string().email().optional(),
     SENTRY_DSN: z.string().url().optional(),
+    PAYMENT_GATEWAY: z.enum(["SIMULATED", "PAYSUITE"]).optional(),
     PAYMENT_DEFAULT_PROVIDER: z.enum(["SIMULATED", "MPESA", "EMOLA"]).optional(),
+    PAYSUITE_API_BASE_URL: z.string().url().optional(),
+    PAYSUITE_API_TOKEN: z.string().min(1).optional(),
+    PAYSUITE_CALLBACK_BASE_URL: z.string().url().optional(),
     STORAGE_PROVIDER: z.enum(["LOCAL", "R2"]).optional(),
     STORAGE_LOCAL_ROOT: z.string().min(1).optional(),
     R2_ACCOUNT_ID: z.string().min(1).optional(),
@@ -59,6 +63,23 @@ const envSchema = z
         }
       }
     }
+
+    if (data.PAYMENT_GATEWAY === "PAYSUITE") {
+      const requiredKeys = [
+        "PAYSUITE_API_TOKEN",
+        "PAYMENT_WEBHOOK_SECRET",
+      ] as const;
+
+      for (const key of requiredKeys) {
+        if (!data[key]) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message: `${key} is required when PAYMENT_GATEWAY=PAYSUITE`,
+          });
+        }
+      }
+    }
   });
 
 const parsedEnv = envSchema.safeParse({
@@ -77,18 +98,23 @@ const parsedEnv = envSchema.safeParse({
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
   OPENROUTER_BASE_URL: process.env.OPENROUTER_BASE_URL,
   OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
-  RESEND_API_KEY: process.env.RESEND_API_KEY,
-  RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
-  SENTRY_DSN: process.env.SENTRY_DSN,
-  PAYMENT_DEFAULT_PROVIDER: process.env.PAYMENT_DEFAULT_PROVIDER,
-  STORAGE_PROVIDER: process.env.STORAGE_PROVIDER,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
+    SENTRY_DSN: process.env.SENTRY_DSN,
+    PAYMENT_GATEWAY: process.env.PAYMENT_GATEWAY,
+    PAYMENT_DEFAULT_PROVIDER: process.env.PAYMENT_DEFAULT_PROVIDER,
+    PAYSUITE_API_BASE_URL: process.env.PAYSUITE_API_BASE_URL,
+    PAYSUITE_API_TOKEN: process.env.PAYSUITE_API_TOKEN,
+    PAYSUITE_CALLBACK_BASE_URL: process.env.PAYSUITE_CALLBACK_BASE_URL,
+    STORAGE_PROVIDER: process.env.STORAGE_PROVIDER,
   STORAGE_LOCAL_ROOT: process.env.STORAGE_LOCAL_ROOT,
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
-  R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
-  R2_BUCKET: process.env.R2_BUCKET,
-  R2_PUBLIC_BASE_URL: process.env.R2_PUBLIC_BASE_URL,
-});
+    R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
+    R2_BUCKET: process.env.R2_BUCKET,
+    R2_PUBLIC_BASE_URL: process.env.R2_PUBLIC_BASE_URL,
+    PAYMENT_WEBHOOK_SECRET: process.env.PAYMENT_WEBHOOK_SECRET,
+  });
 
 if (!parsedEnv.success) {
   throw new Error(
@@ -105,7 +131,10 @@ export const env = {
     parsedEnv.data.APP_URL ??
     parsedEnv.data.NEXTAUTH_URL ??
     "http://localhost:3000",
+  PAYMENT_GATEWAY: parsedEnv.data.PAYMENT_GATEWAY ?? "SIMULATED",
   PAYMENT_DEFAULT_PROVIDER: parsedEnv.data.PAYMENT_DEFAULT_PROVIDER ?? "SIMULATED",
+  PAYSUITE_API_BASE_URL:
+    parsedEnv.data.PAYSUITE_API_BASE_URL ?? "https://paysuite.tech",
   STORAGE_PROVIDER: parsedEnv.data.STORAGE_PROVIDER ?? "LOCAL",
   STORAGE_LOCAL_ROOT: parsedEnv.data.STORAGE_LOCAL_ROOT ?? ".storage",
   AI_PROVIDER: parsedEnv.data.AI_PROVIDER ?? "openrouter",

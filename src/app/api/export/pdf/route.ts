@@ -4,8 +4,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { apiError, handleApiError } from "@/lib/api";
-import { CreditLedgerService as _CreditLedgerService } from "@/lib/credit-ledger";
-import { CREDIT_DEFAULTS as _CREDIT_DEFAULTS } from "@/lib/credits";
 import { DocumentExportService } from "@/lib/document-export";
 import { subscriptionService } from "@/lib/subscription";
 

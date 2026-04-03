@@ -222,13 +222,13 @@ export function InlineWorkCreator() {
           <p className="font-medium">Limite de trabalhos atingido este mês.</p>
           <p className="mt-1 text-xs opacity-80">
             Faz{" "}
-              <Link href="/app/credits" className="font-semibold text-warning underline underline-offset-2 hover:no-underline">
-              upgrade do pacote
-              </Link>{" "}
-            ou{" "}
-            <Link href="/app/credits" className="font-semibold text-warning underline underline-offset-2 hover:no-underline">
-              compra trabalhos extras
-            </Link>
+              <Link href="/app/subscription" className="font-semibold text-warning underline underline-offset-2 hover:no-underline">
+               upgrade do pacote
+               </Link>{" "}
+             ou{" "}
+            <Link href="/app/subscription" className="font-semibold text-warning underline underline-offset-2 hover:no-underline">
+               compra trabalhos extras
+             </Link>
             .
           </p>
         </div>

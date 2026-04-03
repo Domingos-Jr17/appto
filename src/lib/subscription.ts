@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
-import { SubscriptionStatus, PackageType } from "@prisma/client";
+import { SubscriptionStatus, PackageType, type PrismaClient } from "@prisma/client";
+import { BILLING_PLANS, EXTRA_WORKS } from "@/lib/billing";
 
 export interface PackageDetails {
   key: PackageType;
@@ -14,77 +15,31 @@ export interface PackageDetails {
   hasPdfExport: boolean;
 }
 
-export const PACKAGE_PRICES: Record<PackageType, Omit<PackageDetails, "key">> = {
-  FREE: {
-    name: "Free",
-    description: "Para experimentar",
-    price: 0,
-    worksPerMonth: 1,
-    popular: false,
-    hasBasicAI: true,
-    hasAdvancedAI: true,
-    hasPdfExport: false,
-    features: [
-      "1 trabalho por mês",
-      "Gerar referências",
-      "Exportar DOCX",
-    ],
-  },
-  STARTER: {
-    name: "Starter",
-    description: "Uso regular",
-    price: 100,
-    worksPerMonth: 4,
-    popular: true,
-    hasBasicAI: true,
-    hasAdvancedAI: true,
-    hasPdfExport: false,
-    features: [
-      "4 trabalhos por mês",
-      "Gerar referências",
-      "Melhorar texto",
-      "Sugestões",
-      "Exportar DOCX",
-    ],
-  },
-  PRO: {
-    name: "Pro",
-    description: "Uso intensivo",
-    price: 200,
-    worksPerMonth: 10,
-    popular: false,
-    hasBasicAI: true,
-    hasAdvancedAI: true,
-    hasPdfExport: true,
-    features: [
-      "10 trabalhos por mês",
-      "AI completa",
-      "Exportar PDF",
-      "Suporte prioritário",
-    ],
-  },
-};
+export const PACKAGE_PRICES: Record<PackageType, Omit<PackageDetails, "key">> = BILLING_PLANS;
 
 export type AIAction = "generate" | "improve" | "suggest" | "references" | "outline" | "chat" | "summarize" | "translate" | "citations" | "plagiarism-check" | "generate-section" | "generate-complete";
 
+export const FREE_AI_ACTIONS: AIAction[] = ["references", "outline"];
 export const BASIC_AI_ACTIONS: AIAction[] = ["generate", "improve", "suggest", "references", "outline", "chat", "summarize", "translate"];
 export const ADVANCED_AI_ACTIONS: AIAction[] = ["citations", "plagiarism-check", "generate-section", "generate-complete"];
 
-export const EXTRA_WORK_PRICE = 50;
+export const EXTRA_WORK_PRICE = EXTRA_WORKS.price;
 
 export class SubscriptionService {
+  constructor(private readonly dbClient: PrismaClient | any = db) {}
+
   async getOrCreate(userId: string) {
-    let subscription = await db.subscription.findUnique({
+    let subscription = await this.dbClient.subscription.findUnique({
       where: { userId },
     });
 
     if (!subscription) {
-      subscription = await db.subscription.create({
+      subscription = await this.dbClient.subscription.create({
         data: {
           userId,
           package: PackageType.FREE,
           status: SubscriptionStatus.ACTIVE,
-          worksPerMonth: 1,
+          worksPerMonth: PACKAGE_PRICES.FREE.worksPerMonth,
           worksUsed: 0,
           lastUsageReset: new Date(),
         },
@@ -104,7 +59,7 @@ export class SubscriptionService {
     );
 
     if (daysSinceReset >= 30) {
-      await db.subscription.update({
+      await this.dbClient.subscription.update({
         where: { userId },
         data: {
           worksUsed: 0,
@@ -119,7 +74,7 @@ export class SubscriptionService {
 
   async getAvailableExtraWorks(userId: string): Promise<number> {
     const now = new Date();
-    const purchases = await db.workPurchase.findMany({
+    const purchases = await this.dbClient.workPurchase.findMany({
       where: {
         userId,
         expiresAt: { gt: now },
@@ -153,14 +108,23 @@ export class SubscriptionService {
 
   async canUseAIAction(userId: string, action: AIAction): Promise<{ allowed: boolean; reason?: string }> {
     const subscription = await this.getOrCreate(userId);
-    const planDetails = PACKAGE_PRICES[subscription.package];
+    const planDetails = PACKAGE_PRICES[subscription.package as PackageType];
 
     if (subscription.status !== SubscriptionStatus.ACTIVE) {
       return { allowed: false, reason: "Subscription inativa" };
     }
 
+    const isFreeAction = FREE_AI_ACTIONS.includes(action);
     const isBasicAction = BASIC_AI_ACTIONS.includes(action);
     const isAdvancedAction = ADVANCED_AI_ACTIONS.includes(action);
+
+    if (subscription.package === PackageType.FREE) {
+      if (isFreeAction) {
+        return { allowed: true };
+      }
+
+      return { allowed: false, reason: "Funcionalidade disponível apenas em STARTER ou PRO" };
+    }
 
     if (isBasicAction && planDetails.hasBasicAI) {
       return { allowed: true };
@@ -179,7 +143,7 @@ export class SubscriptionService {
 
   async canExportPdf(userId: string): Promise<{ allowed: boolean; reason?: string }> {
     const subscription = await this.getOrCreate(userId);
-    const planDetails = PACKAGE_PRICES[subscription.package];
+    const planDetails = PACKAGE_PRICES[subscription.package as PackageType];
 
     if (subscription.status !== SubscriptionStatus.ACTIVE) {
       return { allowed: false, reason: "Subscription inativa" };
@@ -202,10 +166,34 @@ export class SubscriptionService {
   async consumeWork(userId: string): Promise<void> {
     const subscription = await this.checkAndResetMonthlyUsage(userId);
 
+    const extraWorks = await this.getAvailableExtraWorks(userId);
+
+    if (extraWorks > 0) {
+      const now = new Date();
+      const purchases = await this.dbClient.workPurchase.findMany({
+        where: {
+          userId,
+          expiresAt: { gt: now },
+        },
+        orderBy: { expiresAt: "asc" },
+      });
+
+      for (const p of purchases) {
+        const available = p.quantity - (p.used || 0);
+        if (available > 0) {
+          await this.dbClient.workPurchase.update({
+            where: { id: p.id },
+            data: { used: { increment: 1 } },
+          });
+          return;
+        }
+      }
+    }
+
     const planRemaining = subscription.worksPerMonth - subscription.worksUsed;
 
     if (planRemaining > 0) {
-      await db.subscription.update({
+      await this.dbClient.subscription.update({
         where: { userId },
         data: {
           worksUsed: { increment: 1 },
@@ -214,39 +202,33 @@ export class SubscriptionService {
       return;
     }
 
-    const extraWorks = await this.getAvailableExtraWorks(userId);
-    if (extraWorks <= 0) {
-      throw new Error("Limite de trabalhos atingido");
-    }
-
-    const now = new Date();
-    const purchases = await db.workPurchase.findMany({
-      where: {
-        userId,
-        expiresAt: { gt: now },
-      },
-      orderBy: { expiresAt: "asc" },
-    });
-
-    for (const p of purchases) {
-      const available = p.quantity - (p.used || 0);
-      if (available > 0) {
-        await db.workPurchase.update({
-          where: { id: p.id },
-          data: { used: { increment: 1 } },
-        });
-        return;
-      }
-    }
-
     throw new Error("Limite de trabalhos atingido");
   }
 
   async refundWork(userId: string): Promise<void> {
-    const subscription = await this.getOrCreate(userId);
+    const now = new Date();
+    const purchaseToRefund = await this.dbClient.workPurchase.findFirst({
+      where: {
+        userId,
+        used: { gt: 0 },
+        expiresAt: { gt: now },
+      },
+      orderBy: { expiresAt: "desc" },
+    });
 
+    if (purchaseToRefund) {
+      await this.dbClient.workPurchase.update({
+        where: { id: purchaseToRefund.id },
+        data: {
+          used: { decrement: 1 },
+        },
+      });
+      return;
+    }
+
+    const subscription = await this.getOrCreate(userId);
     if (subscription.worksUsed > 0) {
-      await db.subscription.update({
+      await this.dbClient.subscription.update({
         where: { userId },
         data: {
           worksUsed: { decrement: 1 },
@@ -262,7 +244,7 @@ export class SubscriptionService {
     }
 
     const currentSubscription = await this.getOrCreate(userId);
-    const currentPackageDetails = PACKAGE_PRICES[currentSubscription.package];
+    const currentPackageDetails = PACKAGE_PRICES[currentSubscription.package as PackageType];
 
     let newWorksUsed = 0;
 
@@ -278,7 +260,7 @@ export class SubscriptionService {
           const expiresAt = new Date(currentSubscription.lastUsageReset);
           expiresAt.setMonth(expiresAt.getMonth() + 1);
 
-          await db.workPurchase.create({
+          await this.dbClient.workPurchase.create({
             data: {
               userId,
               quantity: excessWorks,
@@ -287,13 +269,15 @@ export class SubscriptionService {
               expiresAt,
             },
           });
-        }
 
-        newWorksUsed = 0;
+          newWorksUsed = 0;
+        } else {
+          newWorksUsed = currentSubscription.worksUsed;
+        }
       }
     }
 
-    await db.subscription.update({
+    await this.dbClient.subscription.update({
       where: { userId },
       data: {
         package: packageType,
@@ -307,7 +291,7 @@ export class SubscriptionService {
   }
 
   async cancelSubscription(userId: string): Promise<void> {
-    await db.subscription.update({
+    await this.dbClient.subscription.update({
       where: { userId },
       data: {
         status: SubscriptionStatus.CANCELLED,
@@ -318,7 +302,7 @@ export class SubscriptionService {
 
   async getSubscriptionStatus(userId: string) {
     const subscription = await this.checkAndResetMonthlyUsage(userId);
-    const planDetails = PACKAGE_PRICES[subscription.package];
+    const planDetails = PACKAGE_PRICES[subscription.package as PackageType];
     const extraWorks = await this.getAvailableExtraWorks(userId);
     const planRemaining = subscription.worksPerMonth - subscription.worksUsed;
 

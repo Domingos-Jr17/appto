@@ -1,11 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createHmac, randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
+import { NextRequest } from "next/server";
+import { PackageType, PaymentStatus } from "@prisma/client";
+
+import { apiError, apiSuccess, handleApiError } from "@/lib/api";
 import { db } from "@/lib/db";
-import { apiSuccess, apiError, handleApiError, parseBody } from "@/lib/api";
-import { paymentCallbackSchema } from "@/lib/validators";
-import { PaymentService, PackageKey } from "@/lib/payments";
-import { PackageType } from "@prisma/client";
 import { env } from "@/lib/env";
+import { normalizePaymentCallback, verifyWebhookSignature } from "@/lib/payment-gateway";
+import { PaymentService } from "@/lib/payments";
+
+function toJsonValue(value: unknown) {
+  return JSON.parse(JSON.stringify(value ?? null));
+}
 
 interface AuditLogEntry {
   id: string;
@@ -15,7 +20,7 @@ interface AuditLogEntry {
   status: string;
   userId?: string;
   previousStatus?: string;
-  action: "VERIFIED" | "NOT_FOUND" | "CONFIRMED" | "UPDATED" | "FAILED";
+  action: "VERIFIED" | "NOT_FOUND" | "CONFIRMED" | "UPDATED" | "FAILED" | "DUPLICATE";
   details?: string;
 }
 
@@ -26,7 +31,7 @@ function createAuditEntry(
   action: AuditLogEntry["action"],
   userId?: string,
   previousStatus?: string,
-  details?: string
+  details?: string,
 ): AuditLogEntry {
   return {
     id: randomUUID(),
@@ -42,221 +47,204 @@ function createAuditEntry(
 }
 
 function logAudit(entry: AuditLogEntry) {
-  const logMessage = JSON.stringify({
-    service: "payment-callback",
-    ...entry,
-  });
-  console.log(`[AUDIT] ${logMessage}`);
-}
-
-function verifyWebhookSignature(
-  payload: string,
-  signature: string,
-  secret: string | undefined
-): boolean {
-  if (!secret) {
-    console.warn("PAYMENT_WEBHOOK_SECRET not configured - rejecting callback");
-    return false;
-  }
-
-  const expectedSignature = createHmac("sha256", secret)
-    .update(payload)
-    .digest("hex");
-
-  try {
-    const providedSig = Buffer.from(signature, "hex");
-    const expectedSig = Buffer.from(expectedSignature, "hex");
-
-    if (providedSig.length !== expectedSig.length) {
-      return false;
-    }
-
-    return crypto.timingSafeEqual(providedSig, expectedSig);
-  } catch {
-    return false;
-  }
+  console.log(
+    `[AUDIT] ${JSON.stringify({
+      service: "payment-callback",
+      ...entry,
+    })}`,
+  );
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ provider: string }> }
+  { params }: { params: Promise<{ provider: string }> },
 ) {
   try {
     const { provider } = await params;
     const rawBody = await request.text();
-    const { paymentId, providerReference, status, providerPayload, signature } =
-      await parseBody(request, paymentCallbackSchema);
+    const signatureHeader = request.headers.get("x-webhook-signature");
+    const parsedBody = JSON.parse(rawBody || "{}");
+    const normalized = normalizePaymentCallback(parsedBody, {
+      signature: signatureHeader ?? parsedBody?.signature,
+      rawBody,
+    });
 
+    const mustVerifySignature = env.PAYMENT_GATEWAY === "PAYSUITE" || provider !== "simulated";
     if (
-      !verifyWebhookSignature(
-        rawBody,
-        signature,
-        env.PAYMENT_WEBHOOK_SECRET
-      )
+      mustVerifySignature &&
+      !verifyWebhookSignature(rawBody, normalized.signature, env.PAYMENT_WEBHOOK_SECRET)
     ) {
       logAudit(
         createAuditEntry(
-          paymentId,
+          normalized.paymentId,
           provider,
-          status,
+          normalized.status,
           "FAILED",
           undefined,
           undefined,
-          "Invalid webhook signature"
-        )
+          "Invalid webhook signature",
+        ),
       );
-      return NextResponse.json({ error: "Assinatura inválida" }, { status: 401 });
+      return apiError("Assinatura inválida", 401);
     }
 
-    logAudit(
-      createAuditEntry(
-        paymentId,
-        provider,
-        status,
-        "VERIFIED"
-      )
-    );
-
     const existingPayment = await db.paymentTransaction.findUnique({
-      where: { id: paymentId },
-      select: { id: true, userId: true, status: true, provider: true, payloadJson: true },
+      where: { id: normalized.paymentId },
     });
 
     if (!existingPayment) {
       logAudit(
         createAuditEntry(
-          paymentId,
+          normalized.paymentId,
           provider,
-          status,
+          normalized.status,
           "NOT_FOUND",
           undefined,
           undefined,
-          "Payment not found in database"
-        )
+          "Payment not found in database",
+        ),
       );
-      console.error(`[Payment Callback] Payment not found: ${paymentId}`);
-      return NextResponse.json({ error: "Payment não encontrado" }, { status: 404 });
+      return apiError("Pagamento não encontrado", 404);
+    }
+
+    if (
+      existingPayment.status === PaymentStatus.CONFIRMED &&
+      normalized.status === PaymentStatus.CONFIRMED
+    ) {
+      logAudit(
+        createAuditEntry(
+          normalized.paymentId,
+          provider,
+          normalized.status,
+          "DUPLICATE",
+          existingPayment.userId,
+          existingPayment.status,
+          normalized.requestId
+            ? `Duplicate confirmed callback ignored (${normalized.requestId})`
+            : "Duplicate confirmed callback ignored",
+        ),
+      );
+      return apiSuccess({ payment: existingPayment, duplicate: true });
     }
 
     logAudit(
       createAuditEntry(
-        paymentId,
+        normalized.paymentId,
         provider,
-        status,
+        normalized.status,
         "VERIFIED",
         existingPayment.userId,
         existingPayment.status,
-        "Processing payment"
-      )
+        normalized.requestId ? `Verified callback ${normalized.requestId}` : "Verified callback",
+      ),
     );
 
-    console.log(`[Payment Callback] Processing payment ${paymentId} for user ${existingPayment.userId}, status: ${status}`);
-
     const paymentService = new PaymentService(db);
+    const payload =
+      existingPayment.payloadJson && typeof existingPayment.payloadJson === "object"
+        ? (existingPayment.payloadJson as Record<string, unknown>)
+        : {};
 
-    if (status === "CONFIRMED") {
-      const paymentService = new PaymentService(db);
-
-      const payload = existingPayment.payloadJson as Record<string, unknown> | null;
-      const purchaseType = payload?.purchaseType as string | undefined;
+    if (normalized.status === PaymentStatus.CONFIRMED) {
+      const purchaseType = payload.purchaseType as string | undefined;
 
       if (purchaseType === "extra_work") {
-        const quantity = (payload?.quantity as number) || 1;
+        const quantity = Number(payload.quantity || 1);
         const payment = await paymentService.confirmExtraWorkPayment(
-          paymentId,
-          providerReference,
-          quantity
+          normalized.paymentId,
+          normalized.providerReference,
+          quantity,
         );
 
         logAudit(
           createAuditEntry(
-            paymentId,
+            normalized.paymentId,
             provider,
-            status,
+            normalized.status,
             "CONFIRMED",
             existingPayment.userId,
             existingPayment.status,
-            `Extra work payment confirmed: ${quantity} works`
-          )
+            `Extra work payment confirmed: ${quantity} work(s)`,
+          ),
         );
 
-        console.log(`[Payment Callback] Extra work confirmed: ${paymentId}, quantity: ${quantity}`);
         return apiSuccess({ payment });
       }
 
       if (purchaseType === "subscription") {
-        const packageTypeRaw = (payload?.package as string) || "STARTER";
+        const packageTypeRaw = String(payload.package || "STARTER");
         const packageType = PackageType[packageTypeRaw as keyof typeof PackageType];
-        if (!packageType) {
-          console.error(`[Payment Callback] Invalid package type: ${packageTypeRaw}`);
+        if (!packageType || packageType === PackageType.FREE) {
           return apiError("Pacote inválido", 400);
         }
-        
+
         const payment = await paymentService.confirmPackagePayment(
-          paymentId,
-          providerReference,
-          packageType
+          normalized.paymentId,
+          normalized.providerReference,
+          packageType,
         );
 
         logAudit(
           createAuditEntry(
-            paymentId,
+            normalized.paymentId,
             provider,
-            status,
+            normalized.status,
             "CONFIRMED",
             existingPayment.userId,
             existingPayment.status,
-            `Package upgrade confirmed: ${packageType}`
-          )
+            `Package payment confirmed: ${packageType}`,
+          ),
         );
 
-        console.log(`[Payment Callback] Package upgrade confirmed: ${paymentId}, package: ${packageType}`);
         return apiSuccess({ payment });
       }
 
       const payment = await paymentService.confirmPayment(
-        paymentId,
-        providerReference,
-        providerPayload
+        normalized.paymentId,
+        normalized.providerReference,
+        normalized.providerPayload,
       );
 
       logAudit(
         createAuditEntry(
-          paymentId,
+          normalized.paymentId,
           provider,
-          status,
+          normalized.status,
           "CONFIRMED",
           existingPayment.userId,
           existingPayment.status,
-          "Payment confirmed successfully"
-        )
+          "Legacy payment confirmed",
+        ),
       );
 
-      console.log(`[Payment Callback] Payment confirmed: ${paymentId}`);
       return apiSuccess({ payment });
     }
 
     const payment = await db.paymentTransaction.update({
-      where: { id: paymentId },
+      where: { id: normalized.paymentId },
       data: {
-        status,
-        payloadJson: providerPayload ? { providerPayload } : undefined,
+        status: normalized.status,
+        payloadJson: {
+          ...payload,
+          callbackRequestId: normalized.requestId,
+          lastCallbackStatus: normalized.status,
+          lastCallbackPayload: toJsonValue(normalized.providerPayload),
+        },
       },
     });
 
     logAudit(
       createAuditEntry(
-        paymentId,
+        normalized.paymentId,
         provider,
-        status,
+        normalized.status,
         "UPDATED",
         existingPayment.userId,
         existingPayment.status,
-        `Status changed to ${status}`
-      )
+        `Status changed to ${normalized.status}`,
+      ),
     );
 
-    console.log(`[Payment Callback] Payment status updated: ${paymentId} -> ${status}`);
     return apiSuccess({ payment });
   } catch (error) {
     return handleApiError(error);

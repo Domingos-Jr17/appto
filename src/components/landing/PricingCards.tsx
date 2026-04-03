@@ -6,56 +6,19 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { BILLING_PLAN_DISPLAY, EXTRA_WORKS } from "@/lib/billing";
 
-const packages = [
-  {
-    name: "Pacote Gratuito",
-    price: "0",
-    currency: "MZN",
-    period: "para sempre",
-    description: "Perfeito para experimentar o aptto",
-    features: [
-      { text: "150 créditos", included: true },
-      { text: "3 gerações/dia", included: true },
-      { text: "1 exportação com marca de água", included: true },
-      { text: "Exportação ilimitada", included: false },
-    ],
-    cta: "Começar Grátis",
-    highlighted: false,
-  },
-  {
-    name: "Pacote Estudante",
-    price: "350",
-    currency: "MZN",
-    period: "/mês",
-    description: "Ideal para trabalhos académicos regulares",
-    features: [
-      { text: "12.000 créditos", included: true },
-      { text: "Exportação DOCX", included: true },
-      { text: "Sem marca de água", included: true },
-      { text: "Modelos avançados", included: false },
-    ],
-    cta: "Escolher Estudante",
-    highlighted: true,
-    badge: "Mais Popular",
-  },
-  {
-    name: "Pacote Académico",
-    price: "900",
-    currency: "MZN",
-    period: "/mês",
-    description: "Para equipas e utilizadores intensivos em fase piloto",
-    features: [
-      { text: "60.000 créditos", included: true },
-      { text: "Fluxo de projecto avançado", included: true },
-      { text: "Modelos avançados", included: true },
-      { text: "Sem limites diários", included: true },
-      { text: "Suporte prioritário", included: true },
-    ],
-    cta: "Escolher Académico",
-    highlighted: false,
-  },
-];
+const packages = BILLING_PLAN_DISPLAY.map((plan) => ({
+  name: `Pacote ${plan.name}`,
+  price: String(plan.price),
+  currency: "MZN",
+  period: plan.price > 0 ? "/mês" : "para sempre",
+  description: plan.description,
+  features: plan.features.map((text) => ({ text, included: true })),
+  cta: plan.key === "FREE" ? "Começar Grátis" : `Escolher ${plan.name}`,
+  highlighted: plan.popular,
+  badge: plan.popular ? "Mais Popular" : undefined,
+}));
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -119,7 +82,7 @@ export function PricingCards() {
             Pacotes que <span className="text-primary">cabem no seu bolso</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Comece gratuitamente e evolua conforme as suas necessidades académicas
+            Comece gratuitamente, faça upgrade quando precisar e compre trabalhos extras por {EXTRA_WORKS.price} MZN cada
           </p>
         </motion.div>
 

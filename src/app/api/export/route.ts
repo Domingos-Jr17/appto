@@ -3,8 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { apiError, handleApiError } from "@/lib/api";
-import { CreditLedgerService } from "@/lib/credit-ledger";
-import { CREDIT_DEFAULTS } from "@/lib/credits";
 import { DocumentExportService } from "@/lib/document-export";
 
 async function getExportModel(projectId: string, userId: string) {
@@ -43,14 +41,6 @@ export async function GET(request: NextRequest) {
     }
 
     const model = await getExportModel(projectId, session.user.id);
-    const ledger = new CreditLedgerService(db);
-    await ledger.charge(
-      session.user.id,
-      CREDIT_DEFAULTS.exportDocx,
-      `Exportação DOCX: ${model.title}`,
-      { projectId, format: "docx" }
-    );
-
     const buffer = await DocumentExportService.generateDocx(model);
 
     return new NextResponse(new Uint8Array(buffer), {

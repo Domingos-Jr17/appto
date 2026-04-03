@@ -67,10 +67,11 @@ appto-grad is a Next.js 16 App Router application for academic writing assistanc
 - Files: `src/lib/zai.ts`, `src/lib/ai-cache.ts`, `src/lib/knowledge.ts`, `src/app/api/ai/`
 
 ### Credits & Payments
-- Credit balance per user
-- Transaction ledger (purchase, usage, bonus, refund, subscription)
-- Payment providers: SIMULATED, MPESA, EMOLA
-- Subscription plans: FREE, STUDENT, ACADEMIC
+- Canonical billing model: FREE, STARTER, PRO plus extra works
+- Subscription tracks monthly work allowance and resets
+- WorkPurchase stores paid extra works with expiry
+- PaymentTransaction stores checkout state, callbacks and audit trail
+- Payment methods: SIMULATED (dev/beta), MPESA, EMOLA via gateway configuration
 - Files: `src/lib/credits.ts`, `src/lib/credit-ledger.ts`, `src/lib/payments.ts`
 
 ### File Storage

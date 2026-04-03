@@ -78,9 +78,9 @@ const PLAN_PROMPTS = {
 Responda sempre em Português de Moçambique.
 Mantenha um tom formal mas acessível.`,
 
-  STUDENT: EDUCATION_PROMPTS.HIGHER_EDUCATION,
+  STARTER: EDUCATION_PROMPTS.HIGHER_EDUCATION,
 
-  ACADEMIC: `Você é um assistente académico avançado, especializado em pesquisa e escrita académica de alto nível.
+  PRO: `Você é um assistente académico avançado, especializado em pesquisa e escrita académica de alto nível.
 
 Suas capacidades:
 - Análise crítica de literatura científica
@@ -107,7 +107,7 @@ function getSystemPrompt(packageValue: string, educationLevel?: string): string 
     return EDUCATION_PROMPTS[educationLevel as keyof typeof EDUCATION_PROMPTS];
   }
   // Fall back to package-based prompt
-  return PLAN_PROMPTS[packageValue as keyof typeof PLAN_PROMPTS] || PLAN_PROMPTS.STUDENT;
+  return PLAN_PROMPTS[packageValue as keyof typeof PLAN_PROMPTS] || PLAN_PROMPTS.STARTER;
 }
 
 function buildProjectContext(project: {

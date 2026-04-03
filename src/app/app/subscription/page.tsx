@@ -20,6 +20,8 @@ interface PackageOption {
   features: string[];
 }
 
+type PaymentMethod = "MPESA" | "EMOLA";
+
 interface SubscriptionData {
   subscription: {
     package: string;
@@ -37,14 +39,15 @@ interface SubscriptionData {
   }>;
   plans: PackageOption[];
   extraWorkPrice: number;
+  paymentGateway?: "SIMULATED" | "PAYSUITE";
+  paymentDefaultProvider?: "SIMULATED" | "MPESA" | "EMOLA";
   transactions: Array<{
     id: string;
     moneyAmount: number;
     creditsAmount: number;
-    type: string;
     status: string;
     createdAt: string;
-    payloadJson: any;
+    payloadJson: Record<string, unknown> | null;
   }>;
   nextResetDate: string | null;
 }
@@ -55,6 +58,7 @@ export default function SubscriptionPage() {
   const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null);
   const [extraQuantity, setExtraQuantity] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("MPESA");
 
   const fetchSubscription = React.useCallback(async () => {
     try {
@@ -92,14 +96,27 @@ export default function SubscriptionPage() {
       const res = await fetch("/api/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ package: pkgKey }),
+        body: JSON.stringify({ package: pkgKey, provider: paymentMethod }),
       });
       const data = await res.json();
 
       if (data.success) {
+        const checkoutUrl = data.payment?.payloadJson?.checkoutUrl;
+        const checkoutInstructions = data.payment?.payloadJson?.checkoutInstructions;
+
+        if (data.payment?.status === "PENDING" && typeof checkoutUrl === "string") {
+          toast({
+            title: "Checkout iniciado",
+            description: checkoutInstructions || `Continue o pagamento do pacote ${getPackageLabel(pkgKey)}.`,
+          });
+          window.location.href = checkoutUrl;
+          return;
+        }
+
         toast({
           title: "Sucesso",
-          description: `Pacote ${getPackageLabel(pkgKey)} ativado com sucesso!`,
+          description:
+            checkoutInstructions || `Pacote ${getPackageLabel(pkgKey)} ativado com sucesso!`,
         });
         fetchSubscription();
       } else {
@@ -126,14 +143,28 @@ export default function SubscriptionPage() {
       const res = await fetch("/api/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity: extraQuantity }),
+        body: JSON.stringify({ quantity: extraQuantity, provider: paymentMethod }),
       });
       const data = await res.json();
 
       if (data.success) {
+        const checkoutUrl = data.payment?.payloadJson?.checkoutUrl;
+        const checkoutInstructions = data.payment?.payloadJson?.checkoutInstructions;
+
+        if (data.payment?.status === "PENDING" && typeof checkoutUrl === "string") {
+          toast({
+            title: "Checkout iniciado",
+            description:
+              checkoutInstructions || `Continue o pagamento de ${extraQuantity} trabalho(s) extra(s).`,
+          });
+          window.location.href = checkoutUrl;
+          return;
+        }
+
         toast({
           title: "Sucesso",
-          description: `${extraQuantity} trabalho(s) extra(s) adicionado(s)!`,
+          description:
+            checkoutInstructions || `${extraQuantity} trabalho(s) extra(s) adicionado(s)!`,
         });
         fetchSubscription();
         setExtraQuantity(1);
@@ -172,6 +203,7 @@ export default function SubscriptionPage() {
   const extraWorks = subscriptionData?.extraWorks || [];
   const transactions = subscriptionData?.transactions || [];
   const nextResetDate = subscriptionData?.nextResetDate;
+  const paymentGateway = subscriptionData?.paymentGateway || "SIMULATED";
 
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return "-";
@@ -182,7 +214,7 @@ export default function SubscriptionPage() {
     const payload = tx.payloadJson || {};
     if (payload.package) return `Pacote ${getPackageLabel(payload.package)}`;
     if (payload.quantity) return `${payload.quantity} trabalho(s) extra(s)`;
-    if (tx.creditsAmount) return `${Math.abs(tx.creditsAmount)} créditos`;
+    if (tx.moneyAmount) return `${tx.moneyAmount} MZN`;
     return "Transação";
   };
 
@@ -232,6 +264,37 @@ export default function SubscriptionPage() {
               Próximo reset: {formatDate(nextResetDate)}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Método de pagamento</CardTitle>
+          <CardDescription>
+            Escolha entre M-Pesa e e-Mola. O ambiente actual está em modo {paymentGateway === "PAYSUITE" ? "produção" : "sandbox"}.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { key: "MPESA", label: "M-Pesa", helper: "Vodacom" },
+              { key: "EMOLA", label: "e-Mola", helper: "Movitel" },
+            ].map((method) => (
+              <button
+                key={method.key}
+                type="button"
+                onClick={() => setPaymentMethod(method.key as PaymentMethod)}
+                className={`rounded-xl border px-4 py-3 text-left transition ${
+                  paymentMethod === method.key
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:border-primary/40"
+                }`}
+              >
+                <div className="font-medium">{method.label}</div>
+                <div className="text-sm text-muted-foreground">{method.helper}</div>
+              </button>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

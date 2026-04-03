@@ -1,3 +1,5 @@
+import { BILLING_PLAN_DISPLAY, BILLING_PLANS, EXTRA_WORKS } from "@/lib/billing";
+
 export const AI_ACTION_CREDIT_COSTS = {
     generate: 10,
     improve: 5,
@@ -24,11 +26,11 @@ export const CREDIT_DEFAULTS = {
 } as const;
 
 export const PACKAGE_PRICING = {
-    STARTER: { price: 100, works: 4 },
-    PRO: { price: 200, works: 10 },
+    STARTER: { price: BILLING_PLANS.STARTER.price, works: BILLING_PLANS.STARTER.worksPerMonth },
+    PRO: { price: BILLING_PLANS.PRO.price, works: BILLING_PLANS.PRO.worksPerMonth },
 } as const;
 
-export const EXTRA_WORK_PRICE = 50;
+export const EXTRA_WORK_PRICE = EXTRA_WORKS.price;
 
 export const CREDIT_PACKAGES = {
     starter: { credits: 500, price: 100, currency: "MZN" },
@@ -125,47 +127,12 @@ export interface PlanDisplay {
     features: string[];
 }
 
-export const PLAN_DISPLAY: PlanDisplay[] = [
-    {
-        key: "FREE",
-        name: "Free",
-        description: "Para experimentar",
-        price: 0,
-        worksPerMonth: 1,
-        popular: false,
-        features: [
-            "1 trabalho por mês",
-            "Gerar referências",
-            "Exportar DOCX",
-        ],
-    },
-    {
-        key: "STARTER",
-        name: "Starter",
-        description: "Uso regular",
-        price: 100,
-        worksPerMonth: 4,
-        popular: true,
-        features: [
-            "4 trabalhos por mês",
-            "Gerar referências",
-            "Melhorar texto",
-            "Sugestões",
-            "Exportar DOCX",
-        ],
-    },
-    {
-        key: "PRO",
-        name: "Pro",
-        description: "Uso intensivo",
-        price: 200,
-        worksPerMonth: 10,
-        popular: false,
-        features: [
-            "10 trabalhos por mês",
-            "AI completa",
-            "Exportar PDF",
-            "Suporte prioritário",
-        ],
-    },
-];
+export const PLAN_DISPLAY: PlanDisplay[] = BILLING_PLAN_DISPLAY.map((plan) => ({
+    key: plan.key,
+    name: plan.name,
+    description: plan.description,
+    price: plan.price,
+    worksPerMonth: plan.worksPerMonth,
+    popular: plan.popular,
+    features: plan.features,
+}));

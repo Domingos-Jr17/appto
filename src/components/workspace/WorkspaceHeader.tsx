@@ -20,6 +20,7 @@ interface WorkspaceHeaderProps {
   allDone: boolean;
   sections?: WorkSection[];
   subscriptionStatus?: { plan: string; remaining: number; total: number };
+  coverIncomplete?: boolean;
   onGenerate: () => void;
   onDownload: () => void;
   onEditCover: () => void;
@@ -36,6 +37,7 @@ export function WorkspaceHeader({
   allDone,
   sections = [],
   subscriptionStatus,
+  coverIncomplete = false,
   onGenerate,
   onDownload,
   onEditCover,
@@ -227,11 +229,19 @@ export function WorkspaceHeader({
         <Button
           variant="ghost"
           size="sm"
-          className="shrink-0 rounded-2xl px-2 text-xs text-muted-foreground hover:text-foreground"
+          className={cn(
+            "shrink-0 rounded-2xl px-2 text-xs transition-colors hover:text-foreground",
+            coverIncomplete
+              ? "text-warning/80 hover:text-warning"
+              : "text-muted-foreground"
+          )}
           onClick={onEditCover}
         >
           <ImageIcon className="mr-1 h-3.5 w-3.5" />
           Capa
+          {coverIncomplete && (
+            <span className="ml-1 h-1.5 w-1.5 rounded-full bg-warning" />
+          )}
         </Button>
         {hasContent && (
           <GenerateButton

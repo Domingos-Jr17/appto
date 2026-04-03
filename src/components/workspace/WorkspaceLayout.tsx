@@ -7,10 +7,10 @@ import { WorkspaceHeader } from "./WorkspaceHeader";
 import { DocumentPreview } from "./DocumentPreview";
 import { CoverModal } from "./CoverModal";
 import { EditorLink } from "./EditorLink";
-import type { WorkspaceData } from "@/types/workspace";
-import type { AcademicEducationLevel, ProjectBrief } from "@/types/editor";
+import type { WorkspaceData, WorkBrief } from "@/types/workspace";
+import type { AcademicEducationLevel } from "@/types/editor";
 
-function isCoverIncomplete(brief?: ProjectBrief | null): boolean {
+function isCoverIncomplete(brief?: WorkBrief | null): boolean {
   if (!brief) return true;
   const essentials = [brief.institutionName, brief.studentName, brief.advisorName].filter(Boolean);
   return essentials.length < 2;

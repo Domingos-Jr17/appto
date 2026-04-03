@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { ChevronDown, FileText, Sparkles, Loader2 } from "lucide-react";
+import { ChevronDown, FileText, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { getTemplateLabel } from "@/lib/cover-template-config";
 import { GenerateWorkProgress } from "@/components/work-creation/GenerateWorkProgress";
@@ -170,34 +175,62 @@ export function InlineWorkCreator() {
       </div>
 
       {/* Generate button */}
-      <Button
-        onClick={handleCreate}
-        disabled={
-          !workForm.title.trim() ||
-          isCreating ||
-          (subscriptionStatus ? !subscriptionStatus.canGenerate : false)
-        }
-        size="lg"
-        className="h-14 w-full gap-2 rounded-2xl text-base"
-      >
-        {isCreating ? (
-          <>
-            <Loader2 className="h-5 w-5 animate-spin" />
-            A criar...
-          </>
-        ) : (
-          <>
-            <Sparkles className="h-5 w-5" />
-            Gerar trabalho
-          </>
-        )}
-      </Button>
+      {subscriptionStatus && !subscriptionStatus.canGenerate ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              disabled
+              size="lg"
+              className="h-14 w-full gap-2 rounded-2xl text-base opacity-60"
+            >
+              <AlertCircle className="h-5 w-5" />
+              Sem trabalhos disponíveis
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs text-center">
+            O teu limite de trabalhos foi atingido. Faz upgrade do plano ou compra trabalhos extras.
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <Button
+          onClick={handleCreate}
+          disabled={
+            !workForm.title.trim() ||
+            isCreating ||
+            (subscriptionStatus ? !subscriptionStatus.canGenerate : false)
+          }
+          size="lg"
+          className="h-14 w-full gap-2 rounded-2xl text-base"
+        >
+          {isCreating ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              A criar...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-5 w-5" />
+              Gerar trabalho
+            </>
+          )}
+        </Button>
+      )}
 
       {/* Subscription hint — only when limit reached */}
       {subscriptionStatus && !subscriptionStatus.canGenerate && (
         <div className="rounded-2xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
-          Limite de trabalhos atingido este mês. Faz upgrade do plano ou
-          compra trabalhos extras.
+          <p className="font-medium">Limite de trabalhos atingido este mês.</p>
+          <p className="mt-1 text-xs opacity-80">
+            Faz{" "}
+            <Link href="/app/credits" className="font-semibold text-warning underline underline-offset-2 hover:no-underline">
+              upgrade do plano
+            </Link>{" "}
+            ou{" "}
+            <Link href="/app/credits" className="font-semibold text-warning underline underline-offset-2 hover:no-underline">
+              compra trabalhos extras
+            </Link>
+            .
+          </p>
         </div>
       )}
 

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, randomUUID } from "crypto";
 import { db } from "@/lib/db";
-import { apiSuccess, handleApiError, parseBody } from "@/lib/api";
+import { apiSuccess, apiError, handleApiError, parseBody } from "@/lib/api";
 import { paymentCallbackSchema } from "@/lib/validators";
-import { PaymentService, type PackageKey } from "@/lib/payments";
+import { PaymentService, PackageKey } from "@/lib/payments";
+import { PackageType } from "@prisma/client";
 import { env } from "@/lib/env";
 
 interface AuditLogEntry {
@@ -184,11 +185,17 @@ export async function POST(
       }
 
       if (purchaseType === "subscription") {
-        const packageType = (payload?.package as string) || "STARTER";
+        const packageTypeRaw = (payload?.package as string) || "STARTER";
+        const packageType = PackageType[packageTypeRaw as keyof typeof PackageType];
+        if (!packageType) {
+          console.error(`[Payment Callback] Invalid package type: ${packageTypeRaw}`);
+          return apiError("Pacote inválido", 400);
+        }
+        
         const payment = await paymentService.confirmPackagePayment(
           paymentId,
           providerReference,
-          packageType as PackageKey
+          packageType
         );
 
         logAudit(

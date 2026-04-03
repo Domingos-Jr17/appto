@@ -261,13 +261,44 @@ export class SubscriptionService {
       throw new Error("Pacote inválido");
     }
 
-    await this.getOrCreate(userId);
+    const currentSubscription = await this.getOrCreate(userId);
+    const currentPackageDetails = PACKAGE_PRICES[currentSubscription.package];
+
+    let newWorksUsed = 0;
+
+    // Se for downgrade, converter trabalhos usados em extras
+    if (currentSubscription.package !== packageType) {
+      const isDowngrade = packageDetails.worksPerMonth < currentPackageDetails.worksPerMonth;
+
+      if (isDowngrade && currentSubscription.worksUsed > 0) {
+        const excessWorks = Math.max(0, currentSubscription.worksUsed - packageDetails.worksPerMonth);
+
+        if (excessWorks > 0) {
+          // Expira no próximo reset do ciclo mensal
+          const expiresAt = new Date(currentSubscription.lastUsageReset);
+          expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+          await db.workPurchase.create({
+            data: {
+              userId,
+              quantity: excessWorks,
+              pricePaid: 0,
+              used: 0,
+              expiresAt,
+            },
+          });
+        }
+
+        newWorksUsed = 0;
+      }
+    }
 
     await db.subscription.update({
       where: { userId },
       data: {
         package: packageType,
         worksPerMonth: packageDetails.worksPerMonth,
+        worksUsed: newWorksUsed,
         status: SubscriptionStatus.ACTIVE,
         startDate: new Date(),
         endDate: null,

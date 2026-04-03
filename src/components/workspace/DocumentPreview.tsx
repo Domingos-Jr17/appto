@@ -1,19 +1,15 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import type { WorkSection } from "@/types/workspace";
 
 interface DocumentPreviewProps {
   sections: WorkSection[];
   isGenerating: boolean;
-  onGenerate: () => void;
 }
 
 export function DocumentPreview({
   sections,
   isGenerating,
-  onGenerate,
 }: DocumentPreviewProps) {
   const hasContent = sections.some(
     (s) => s.status === "done" && s.content.trim().length > 0
@@ -27,16 +23,8 @@ export function DocumentPreview({
             O teu trabalho vai aparecer aqui
           </p>
           <p className="mt-1.5 text-xs text-muted-foreground">
-            Clica em &quot;Gerar tudo&quot; para criar o conteúdo automaticamente.
+            Clica em &quot;Gerar trabalho&quot; para criar o conteúdo automaticamente.
           </p>
-          <Button
-            size="sm"
-            className="mt-6 rounded-full"
-            onClick={onGenerate}
-          >
-            <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-            Gerar tudo
-          </Button>
         </div>
       </div>
     );

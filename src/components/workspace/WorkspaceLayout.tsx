@@ -76,7 +76,6 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
             <DocumentPreview
               sections={workspace.data?.sections ?? []}
               isGenerating={workspace.isGenerating}
-              onGenerate={workspace.generateAll}
             />
           </div>
         </div>

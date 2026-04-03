@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Edit3, Check, X, Loader2, CheckCircle2, Circle } from "lucide-react";
+import { Edit3, Check, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GenerateButton } from "./GenerateButton";
@@ -126,27 +126,6 @@ export function WorkspaceHeader({
             style={{ width: `${generationProgress}%` }}
           />
         </div>
-        {sections.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-            {sections.map((section) => (
-              <div
-                key={section.id}
-                className="flex items-center gap-1.5 text-[10px] text-muted-foreground"
-              >
-                {section.status === "done" ? (
-                  <CheckCircle2 className="h-3 w-3 text-success" />
-                ) : section.status === "generating" ? (
-                  <Loader2 className="h-3 w-3 animate-spin text-warning" />
-                ) : (
-                  <Circle className="h-3 w-3 text-muted-foreground/30" />
-                )}
-                <span className="truncate max-w-[120px]">
-                  {section.title}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     );
   }

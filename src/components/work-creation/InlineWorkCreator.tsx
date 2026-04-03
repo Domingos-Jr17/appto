@@ -188,7 +188,7 @@ export function InlineWorkCreator() {
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="max-w-xs text-center">
-            O teu limite de trabalhos foi atingido. Faz upgrade do plano ou compra trabalhos extras.
+            O teu limite de trabalhos foi atingido. Faz upgrade do pacote ou compra trabalhos extras.
           </TooltipContent>
         </Tooltip>
       ) : (
@@ -222,9 +222,9 @@ export function InlineWorkCreator() {
           <p className="font-medium">Limite de trabalhos atingido este mês.</p>
           <p className="mt-1 text-xs opacity-80">
             Faz{" "}
-            <Link href="/app/credits" className="font-semibold text-warning underline underline-offset-2 hover:no-underline">
-              upgrade do plano
-            </Link>{" "}
+              <Link href="/app/credits" className="font-semibold text-warning underline underline-offset-2 hover:no-underline">
+              upgrade do pacote
+              </Link>{" "}
             ou{" "}
             <Link href="/app/credits" className="font-semibold text-warning underline underline-offset-2 hover:no-underline">
               compra trabalhos extras

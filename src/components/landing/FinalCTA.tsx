@@ -71,7 +71,7 @@ export function FinalCTA() {
                       if (element) element.scrollIntoView({ behavior: "smooth" });
                     }}
                   >
-                    Ver Planos
+                    Ver Pacotes
                   </Button>
                 </div>
 

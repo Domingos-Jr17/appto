@@ -10,7 +10,7 @@ import { env } from "@/lib/env";
 import { PaymentProvider, PlanType } from "@prisma/client";
 import { z } from "zod";
 
-const _upgradePlanSchema = z.object({
+const _activatePackageSchema = z.object({
   plan: z.enum(["STARTER", "PRO"]),
   provider: z.enum(["SIMULATED", "MPESA", "EMOLA"]).optional(),
 });
@@ -58,7 +58,7 @@ export async function GET(_request: NextRequest) {
   }
 }
 
-// POST /api/subscription - Upgrade plan or purchase extra works
+// POST /api/subscription - Activate package or purchase extra works
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -76,14 +76,14 @@ export async function POST(request: NextRequest) {
     if (plan) {
       const validPlan = PlanType[plan as keyof typeof PlanType];
       if (!validPlan) {
-        return apiError("Plano inválido", 400);
+        return apiError("Pacote inválido", 400);
       }
 
       if (validPlan === PlanType.FREE) {
-        return apiError("Não pode fazer upgrade para plano Free", 400);
+        return apiError("Não pode activar o pacote Free", 400);
       }
 
-      const payment = await paymentService.createPlanCheckout(
+      const payment = await paymentService.createPackageCheckout(
         session.user.id,
         providerValue,
         validPlan
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       return apiSuccess({
         success: true,
         payment,
-        message: `Plano ${plan} ativado com sucesso`,
+        message: `Pacote ${plan} ativado com sucesso`,
       });
     }
 

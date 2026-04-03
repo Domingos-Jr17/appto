@@ -187,26 +187,26 @@ export async function POST(request: NextRequest) {
     
     if (!aiAllowed) {
       return NextResponse.json(
-        { error: aiReason || "Ação não disponível no seu plano" },
+        { error: aiReason || "Ação não disponível no seu pacote" },
         { status: 403 }
       );
     }
 
-    // Get user's plan features for logging/audit purposes
+    // Get user's package features for logging/audit purposes
     const subscription = await db.subscription.findUnique({
       where: { userId: session.user.id },
     });
-    const planFeatures = subscriptionService.getPlanFeatures(subscription?.plan || "FREE");
+    const packageFeatures = subscriptionService.getPackageFeatures(subscription?.plan || "FREE");
 
     // Get user's credits for display (no deduction needed as all plans include AI)
     const userCredits = await db.credit.findUnique({ where: { userId: session.user.id } });
 
-    // Get user's plan and education level for appropriate system prompt
+    // Get user's package and education level for appropriate system prompt
     const user = await db.user.findUnique({
       where: { id: session.user.id },
       select: { educationLevel: true },
     });
-    const userPlan = subscription?.plan || "FREE";
+    const userPackage = subscription?.plan || "FREE";
     const educationLevel = user?.educationLevel || undefined;
 
     const projectContext = projectId
@@ -260,7 +260,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const systemPrompt = getSystemPrompt(userPlan, educationLevel);
+    const systemPrompt = getSystemPrompt(userPackage, educationLevel);
 
     const citationStyle = projectContext?.brief?.citationStyle || "ABNT";
 
@@ -356,7 +356,7 @@ export async function POST(request: NextRequest) {
       success: true,
       response,
       remainingCredits: userCredits?.balance || 0,
-      plan: planFeatures.key,
+      plan: packageFeatures.key,
     });
   } catch (error) {
     logger.error("AI generation error", { error: String(error) });

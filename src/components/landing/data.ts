@@ -131,9 +131,9 @@ const landingFeatures: LandingItem<{
     {
         id: 12,
         icon: "CreditCard",
-        title: "Planos Flexíveis",
+        title: "Pacotes Flexíveis",
         description:
-            "Planos pensados para estudantes moçambicanos. Desde o gratuito até ao académico intensivo.",
+            "Pacotes pensados para estudantes moçambicanos. Desde o gratuito até ao académico intensivo.",
         highlight: false,
     },
 ];
@@ -305,7 +305,7 @@ export const faqs = [
     },
     {
         question: "Como funcionam os créditos?",
-        answer: "Cada acção na plataforma consome créditos (gerar texto, estruturar, exportar). Os créditos são transparentes - você sempre sabe quanto custa antes de executar. Pode recarregar ou fazer upgrade de plano quando precisar.",
+        answer: "Cada acção na plataforma consome créditos (gerar texto, estruturar, exportar). Os créditos são transparentes - você sempre sabe quanto custa antes de executar. Pode recarregar ou fazer upgrade de pacote quando precisar.",
     },
     {
         question: "Posso exportar em DOCX e PDF?",

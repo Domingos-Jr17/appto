@@ -100,7 +100,7 @@ export function BalanceCard({
                     onClick={() => router.push("/app/subscription")}
                 >
                     <Sparkles className="h-4 w-4" />
-                    Ver Planos
+                    Ver pacotes mensais
                 </Button>
             </CardContent>
         </Card>

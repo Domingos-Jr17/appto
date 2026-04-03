@@ -77,7 +77,7 @@ export function PaymentMethods({ className }: PaymentMethodsProps) {
       {/* Package Selection */}
       <Card className="border-border/60 bg-card/80 backdrop-blur-xl">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium">Escolha um Pacote</CardTitle>
+          <CardTitle className="text-base font-medium">Escolha um pacote de créditos</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3">

@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 
-interface Plan {
+interface PackageOption {
   key: "FREE" | "STARTER" | "PRO";
   name: string;
   description: string;
@@ -35,7 +35,7 @@ interface SubscriptionData {
     used: number;
     expiresAt: string;
   }>;
-  plans: Plan[];
+  plans: PackageOption[];
   extraWorkPrice: number;
   transactions: Array<{
     id: string;
@@ -76,7 +76,17 @@ export default function SubscriptionPage() {
     fetchSubscription();
   }, [fetchSubscription]);
 
-  const handlePurchasePlan = async (planKey: string) => {
+  const getPackageLabel = React.useCallback((packageKey: string) => {
+    const labels: Record<string, string> = {
+      FREE: "Free",
+      STARTER: "Starter",
+      PRO: "Pro",
+    };
+
+    return labels[packageKey] || packageKey;
+  }, []);
+
+  const handlePurchasePackage = async (planKey: string) => {
     setIsPurchasing(planKey);
     try {
       const res = await fetch("/api/subscription", {
@@ -89,13 +99,13 @@ export default function SubscriptionPage() {
       if (data.success) {
         toast({
           title: "Sucesso",
-          description: `Plano ${planKey} ativado com sucesso!`,
+          description: `Pacote ${getPackageLabel(planKey)} ativado com sucesso!`,
         });
         fetchSubscription();
       } else {
         toast({
           title: "Erro",
-          description: data.error || "Erro ao ativar plano",
+          description: data.error || "Erro ao ativar pacote",
           variant: "destructive",
         });
       }
@@ -157,7 +167,7 @@ export default function SubscriptionPage() {
   const currentRemaining = subscriptionData?.subscription?.remaining || 0;
   const currentUsed = subscriptionData?.subscription?.worksUsed || 0;
   const currentLimit = subscriptionData?.subscription?.worksPerMonth || 1;
-  const plans = subscriptionData?.plans || [];
+  const packages = subscriptionData?.plans || [];
   const extraWorkPrice = subscriptionData?.extraWorkPrice || 50;
   const extraWorks = subscriptionData?.extraWorks || [];
   const transactions = subscriptionData?.transactions || [];
@@ -170,7 +180,7 @@ export default function SubscriptionPage() {
 
   const getTransactionLabel = (tx: any) => {
     const payload = tx.payloadJson || {};
-    if (payload.plan) return `Plano ${payload.plan}`;
+    if (payload.plan) return `Pacote ${getPackageLabel(payload.plan)}`;
     if (payload.quantity) return `${payload.quantity} trabalho(s) extra(s)`;
     if (tx.creditsAmount) return `${Math.abs(tx.creditsAmount)} créditos`;
     return "Transação";
@@ -179,9 +189,9 @@ export default function SubscriptionPage() {
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Planos e Subscrição</h1>
+        <h1 className="text-3xl font-bold">Pacotes e Subscrição</h1>
         <p className="text-muted-foreground mt-2">
-          Escolha o plano ideal para as suas necessidades
+          Escolha o pacote ideal para as suas necessidades
         </p>
       </div>
 
@@ -196,8 +206,8 @@ export default function SubscriptionPage() {
         <CardContent>
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex-1">
-              <div className="text-sm text-muted-foreground">Plano atual</div>
-              <div className="text-2xl font-bold">{currentPlan}</div>
+              <div className="text-sm text-muted-foreground">Pacote atual</div>
+              <div className="text-2xl font-bold">{getPackageLabel(currentPlan)}</div>
             </div>
             <div className="flex-1">
               <div className="text-sm text-muted-foreground">Trabalhos usados</div>
@@ -213,7 +223,7 @@ export default function SubscriptionPage() {
           {currentRemaining === 0 && (
             <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-sm text-yellow-800">
-                Alcançou o limite de trabalhos deste mês. faça upgrade do plano ou compre trabalhos extras.
+                Alcançou o limite de trabalhos deste mês. Faça upgrade do pacote ou compre trabalhos extras.
               </p>
             </div>
           )}
@@ -225,15 +235,15 @@ export default function SubscriptionPage() {
         </CardContent>
       </Card>
 
-      {/* Plans */}
+      {/* Packages */}
       <div className="grid md:grid-cols-3 gap-6 mb-8">
-        {plans.map((plan) => {
-          const isCurrentPlan = plan.key === currentPlan;
-          const isPopular = plan.popular;
+        {packages.map((pkg) => {
+          const isCurrentPlan = pkg.key === currentPlan;
+          const isPopular = pkg.popular;
 
           return (
             <Card
-              key={plan.key}
+              key={pkg.key}
               className={`relative ${isPopular ? "border-primary shadow-lg" : ""}`}
             >
               {isPopular && (
@@ -243,22 +253,22 @@ export default function SubscriptionPage() {
                 </Badge>
               )}
               <CardHeader>
-                <CardTitle>{plan.name}</CardTitle>
-                <CardDescription>{plan.description}</CardDescription>
+                <CardTitle>{pkg.name}</CardTitle>
+                <CardDescription>{pkg.description}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="mb-4">
-                  <span className="text-4xl font-bold">{plan.price}</span>
+                  <span className="text-4xl font-bold">{pkg.price}</span>
                   <span className="text-muted-foreground"> MZN</span>
-                  {plan.price > 0 && (
+                  {pkg.price > 0 && (
                     <span className="text-sm text-muted-foreground">/mês</span>
                   )}
                 </div>
                 <div className="text-lg font-semibold mb-4">
-                  {plan.worksPerMonth} trabalho{plan.worksPerMonth !== 1 ? "s" : ""}/mês
+                  {pkg.worksPerMonth} trabalho{pkg.worksPerMonth !== 1 ? "s" : ""}/mês
                 </div>
                 <ul className="space-y-2">
-                  {plan.features.map((feature, i) => (
+                  {pkg.features.map((feature, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
                       <Check className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
                       {feature}
@@ -269,22 +279,22 @@ export default function SubscriptionPage() {
               <CardFooter>
                 {isCurrentPlan ? (
                   <Button disabled className="w-full" variant="secondary">
-                    Plano Atual
+                    Pacote Atual
                   </Button>
-                ) : plan.key === "FREE" ? (
+                ) : pkg.key === "FREE" ? (
                   <Button disabled className="w-full" variant="outline">
                     Grátis
                   </Button>
                 ) : (
                   <Button
                     className="w-full"
-                    onClick={() => handlePurchasePlan(plan.key)}
-                    disabled={isPurchasing === plan.key}
+                    onClick={() => handlePurchasePackage(pkg.key)}
+                    disabled={isPurchasing === pkg.key}
                   >
-                    {isPurchasing === plan.key ? (
+                    {isPurchasing === pkg.key ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     ) : null}
-                    Ativar {plan.name}
+                    Ativar {pkg.name}
                   </Button>
                 )}
               </CardFooter>

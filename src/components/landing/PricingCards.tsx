@@ -7,9 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const plans = [
+const packages = [
   {
-    name: "Plano Gratuito",
+    name: "Pacote Gratuito",
     price: "0",
     currency: "MZN",
     period: "para sempre",
@@ -24,7 +24,7 @@ const plans = [
     highlighted: false,
   },
   {
-    name: "Plano Estudante",
+    name: "Pacote Estudante",
     price: "350",
     currency: "MZN",
     period: "/mês",
@@ -40,7 +40,7 @@ const plans = [
     badge: "Mais Popular",
   },
   {
-    name: "Plano Académico",
+    name: "Pacote Académico",
     price: "900",
     currency: "MZN",
     period: "/mês",
@@ -116,7 +116,7 @@ export function PricingCards() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Planos que <span className="text-primary">cabem no seu bolso</span>
+            Pacotes que <span className="text-primary">cabem no seu bolso</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Comece gratuitamente e evolua conforme as suas necessidades académicas
@@ -131,7 +131,7 @@ export function PricingCards() {
           viewport={{ once: true, margin: "-100px" }}
           className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8"
         >
-          {plans.map((plan, planIndex) => (
+          {packages.map((plan, planIndex) => (
             <motion.div
               key={plan.name}
               variants={cardVariants}

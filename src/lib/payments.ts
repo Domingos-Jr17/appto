@@ -23,7 +23,7 @@ export type PurchaseType = "subscription" | "extra_work";
 export interface PaymentProviderContract {
   provider: PaymentProviderEnum;
   createCheckout(input: { paymentId: string; packageKey: CreditPackageKey }): Promise<CheckoutResult>;
-  createPlanCheckout(input: { paymentId: string; plan: PlanKey }): Promise<CheckoutResult>;
+  createPackageCheckout(input: { paymentId: string; plan: PlanKey }): Promise<CheckoutResult>;
   createExtraWorkCheckout(input: { paymentId: string; quantity: number }): Promise<CheckoutResult>;
   parseCallback(payload: unknown): Promise<{ providerReference: string; status: PaymentStatus; providerPayload?: unknown }>;
 }
@@ -39,12 +39,12 @@ class SimulatedPaymentProvider implements PaymentProviderContract {
     };
   }
 
-  async createPlanCheckout(input: { paymentId: string; plan: PlanKey }): Promise<CheckoutResult> {
-    const planName = input.plan;
+  async createPackageCheckout(input: { paymentId: string; plan: PlanKey }): Promise<CheckoutResult> {
+    const packageName = input.plan;
     return {
       providerReference: `sim-plan-${input.paymentId}`,
       status: PaymentStatus.CONFIRMED,
-      instructions: `Pagamento sandbox confirmado para o plano ${planName}.`,
+      instructions: `Pagamento sandbox confirmado para o pacote ${packageName}.`,
     };
   }
 
@@ -77,7 +77,7 @@ export function getPaymentProvider(provider: PaymentProviderEnum): PaymentProvid
         async createCheckout() {
           throw new Error(`Provider ${provider} ainda não está configurado.`);
         },
-        async createPlanCheckout() {
+        async createPackageCheckout() {
           throw new Error(`Provider ${provider} ainda não está configurado.`);
         },
         async createExtraWorkCheckout() {
@@ -138,7 +138,7 @@ export class PaymentService {
     });
   }
 
-  async createPlanCheckout(userId: string, provider: PaymentProviderEnum, plan: PlanKey) {
+  async createPackageCheckout(userId: string, provider: PaymentProviderEnum, plan: PlanKey) {
     const planPricing = PLAN_PRICING[plan];
     const payment = await this.db.paymentTransaction.create({
       data: {
@@ -153,7 +153,7 @@ export class PaymentService {
       },
     });
 
-    const checkout = await getPaymentProvider(provider).createPlanCheckout({
+    const checkout = await getPaymentProvider(provider).createPackageCheckout({
       paymentId: payment.id,
       plan,
     });
@@ -172,7 +172,7 @@ export class PaymentService {
     });
 
     if (checkout.status === PaymentStatus.CONFIRMED) {
-      await this.confirmPlanPayment(payment.id, checkout.providerReference, plan);
+      await this.confirmPackagePayment(payment.id, checkout.providerReference, plan);
     }
 
     return this.db.paymentTransaction.findUniqueOrThrow({
@@ -222,7 +222,7 @@ export class PaymentService {
     });
   }
 
-  async confirmPlanPayment(paymentId: string, providerReference: string, plan: PlanType) {
+  async confirmPackagePayment(paymentId: string, providerReference: string, plan: PlanType) {
     const payment = await this.db.paymentTransaction.findUnique({
       where: { id: paymentId },
     });
@@ -236,7 +236,7 @@ export class PaymentService {
     }
 
     const subscriptionService = new SubscriptionService();
-    await subscriptionService.upgradePlan(payment.userId, plan);
+    await subscriptionService.activatePackage(payment.userId, plan);
 
     return this.db.paymentTransaction.update({
       where: { id: paymentId },
@@ -257,22 +257,29 @@ export class PaymentService {
       throw new Error("Pagamento não encontrado.");
     }
 
+    const existingPurchase = await this.db.workPurchase.findFirst({
+      where: { userId: payment.userId, pricePaid: payment.moneyAmount },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!existingPurchase || existingPurchase.quantity !== quantity) {
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + 3);
+
+      await this.db.workPurchase.create({
+        data: {
+          userId: payment.userId,
+          quantity,
+          pricePaid: payment.moneyAmount,
+          used: 0,
+          expiresAt,
+        },
+      });
+    }
+
     if (payment.status === PaymentStatus.CONFIRMED) {
       return payment;
     }
-
-    const expiresAt = new Date();
-    expiresAt.setMonth(expiresAt.getMonth() + 3);
-
-    await this.db.workPurchase.create({
-      data: {
-        userId: payment.userId,
-        quantity,
-        pricePaid: payment.moneyAmount,
-        used: 0,
-        expiresAt,
-      },
-    });
 
     return this.db.paymentTransaction.update({
       where: { id: paymentId },

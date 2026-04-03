@@ -132,11 +132,11 @@ export function AccountSection() {
     });
   };
 
-  const getPlanLabel = (plan: string) => {
+  const getPackageLabel = (plan: string) => {
     const labels: Record<string, string> = {
-      FREE: "Gratuito",
-      STUDENT: "Estudante",
-      ACADEMIC: "Académico",
+      FREE: "Free",
+      STARTER: "Starter",
+      PRO: "Pro",
     };
     return labels[plan] || plan;
   };
@@ -177,9 +177,9 @@ export function AccountSection() {
                 <Package className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Plano</p>
+                <p className="text-sm text-muted-foreground">Pacote</p>
                 <p className="font-semibold">
-                  {user?.subscription ? getPlanLabel(user.subscription.plan) : "Gratuito"}
+                  {user?.subscription ? getPackageLabel(user.subscription.plan) : "Gratuito"}
                 </p>
               </div>
             </div>

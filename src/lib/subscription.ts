@@ -192,7 +192,7 @@ export class SubscriptionService {
     return { allowed: false, reason: "Export PDF disponível apenas em PRO" };
   }
 
-  getPlanFeatures(plan: PlanType): PlanDetails {
+  getPackageFeatures(plan: PlanType): PlanDetails {
     return {
       key: plan,
       ...PLAN_PRICES[plan],
@@ -255,10 +255,10 @@ export class SubscriptionService {
     }
   }
 
-  async upgradePlan(userId: string, plan: PlanType): Promise<void> {
-    const planDetails = PLAN_PRICES[plan];
-    if (!planDetails) {
-      throw new Error("Plano inválido");
+  async activatePackage(userId: string, plan: PlanType): Promise<void> {
+    const packageDetails = PLAN_PRICES[plan];
+    if (!packageDetails) {
+      throw new Error("Pacote inválido");
     }
 
     await this.getOrCreate(userId);
@@ -267,7 +267,7 @@ export class SubscriptionService {
       where: { userId },
       data: {
         plan,
-        worksPerMonth: planDetails.worksPerMonth,
+        worksPerMonth: packageDetails.worksPerMonth,
         status: SubscriptionStatus.ACTIVE,
         startDate: new Date(),
         endDate: null,

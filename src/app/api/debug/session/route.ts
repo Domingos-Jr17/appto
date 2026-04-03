@@ -35,6 +35,8 @@ export async function GET(_request: NextRequest) {
         status: subStatus.status,
         worksPerMonth: subStatus.worksPerMonth,
         worksUsed: subStatus.worksUsed,
+        planRemaining: subStatus.planRemaining,
+        extraWorks: subStatus.extraWorks,
         remaining: subStatus.remaining,
       },
     });

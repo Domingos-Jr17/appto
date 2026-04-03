@@ -117,6 +117,22 @@ export class SubscriptionService {
     return subscription;
   }
 
+  async getAvailableExtraWorks(userId: string): Promise<number> {
+    const now = new Date();
+    const purchases = await db.workPurchase.findMany({
+      where: {
+        userId,
+        expiresAt: { gt: now },
+      },
+    });
+
+    let total = 0;
+    for (const p of purchases) {
+      total += p.quantity - (p.used || 0);
+    }
+    return Math.max(0, total);
+  }
+
   async canGenerateWork(userId: string): Promise<{ allowed: boolean; reason?: string; remaining: number }> {
     const subscription = await this.checkAndResetMonthlyUsage(userId);
 
@@ -124,7 +140,9 @@ export class SubscriptionService {
       return { allowed: false, reason: "Subscription inativa", remaining: 0 };
     }
 
-    const remaining = subscription.worksPerMonth - subscription.worksUsed;
+    const planRemaining = subscription.worksPerMonth - subscription.worksUsed;
+    const extraWorks = await this.getAvailableExtraWorks(userId);
+    const remaining = planRemaining + extraWorks;
 
     if (remaining <= 0) {
       return { allowed: false, reason: "Limite de trabalhos atingido", remaining: 0 };
@@ -184,18 +202,44 @@ export class SubscriptionService {
   async consumeWork(userId: string): Promise<void> {
     const subscription = await this.checkAndResetMonthlyUsage(userId);
 
-    const remaining = subscription.worksPerMonth - subscription.worksUsed;
+    const planRemaining = subscription.worksPerMonth - subscription.worksUsed;
 
-    if (remaining <= 0) {
+    if (planRemaining > 0) {
+      await db.subscription.update({
+        where: { userId },
+        data: {
+          worksUsed: { increment: 1 },
+        },
+      });
+      return;
+    }
+
+    const extraWorks = await this.getAvailableExtraWorks(userId);
+    if (extraWorks <= 0) {
       throw new Error("Limite de trabalhos atingido");
     }
 
-    await db.subscription.update({
-      where: { userId },
-      data: {
-        worksUsed: { increment: 1 },
+    const now = new Date();
+    const purchases = await db.workPurchase.findMany({
+      where: {
+        userId,
+        expiresAt: { gt: now },
       },
+      orderBy: { expiresAt: "asc" },
     });
+
+    for (const p of purchases) {
+      const available = p.quantity - (p.used || 0);
+      if (available > 0) {
+        await db.workPurchase.update({
+          where: { id: p.id },
+          data: { used: { increment: 1 } },
+        });
+        return;
+      }
+    }
+
+    throw new Error("Limite de trabalhos atingido");
   }
 
   async refundWork(userId: string): Promise<void> {
@@ -244,13 +288,17 @@ export class SubscriptionService {
   async getSubscriptionStatus(userId: string) {
     const subscription = await this.checkAndResetMonthlyUsage(userId);
     const planDetails = PLAN_PRICES[subscription.plan];
+    const extraWorks = await this.getAvailableExtraWorks(userId);
+    const planRemaining = subscription.worksPerMonth - subscription.worksUsed;
 
     return {
       plan: subscription.plan,
       status: subscription.status,
       worksPerMonth: subscription.worksPerMonth,
       worksUsed: subscription.worksUsed,
-      remaining: subscription.worksPerMonth - subscription.worksUsed,
+      planRemaining,
+      extraWorks,
+      remaining: planRemaining + extraWorks,
       lastReset: subscription.lastUsageReset,
       name: planDetails.name,
       description: planDetails.description,

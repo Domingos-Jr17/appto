@@ -118,7 +118,7 @@ export async function POST(
 
     const existingPayment = await db.paymentTransaction.findUnique({
       where: { id: paymentId },
-      select: { id: true, userId: true, status: true, provider: true },
+      select: { id: true, userId: true, status: true, provider: true, payloadJson: true },
     });
 
     if (!existingPayment) {
@@ -154,6 +154,35 @@ export async function POST(
     const paymentService = new PaymentService(db);
 
     if (status === "CONFIRMED") {
+      const paymentService = new PaymentService(db);
+
+      const payload = existingPayment.payloadJson as Record<string, unknown> | null;
+      const purchaseType = payload?.purchaseType as string | undefined;
+
+      if (purchaseType === "extra_work") {
+        const quantity = (payload?.quantity as number) || 1;
+        const payment = await paymentService.confirmExtraWorkPayment(
+          paymentId,
+          providerReference,
+          quantity
+        );
+
+        logAudit(
+          createAuditEntry(
+            paymentId,
+            provider,
+            status,
+            "CONFIRMED",
+            existingPayment.userId,
+            existingPayment.status,
+            `Extra work payment confirmed: ${quantity} works`
+          )
+        );
+
+        console.log(`[Payment Callback] Extra work confirmed: ${paymentId}, quantity: ${quantity}`);
+        return apiSuccess({ payment });
+      }
+
       const payment = await paymentService.confirmPayment(
         paymentId,
         providerReference,

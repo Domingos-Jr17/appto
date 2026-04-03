@@ -19,7 +19,7 @@ interface WorkspaceHeaderProps {
   isGenerating: boolean;
   allDone: boolean;
   sections?: WorkSection[];
-  subscriptionStatus?: { plan: string; remaining: number; total: number };
+  subscriptionStatus?: { package: string; remaining: number; total: number };
   coverIncomplete?: boolean;
   onGenerate: () => void;
   onDownload: () => void;

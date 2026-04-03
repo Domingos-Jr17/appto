@@ -10,7 +10,7 @@ interface AccountData {
   credits: number;
   twoFactorEnabled: boolean;
   subscription: {
-    plan: string;
+    package: string;
     status: string;
   } | null;
   createdAt: string;

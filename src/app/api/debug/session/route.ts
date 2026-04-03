@@ -33,7 +33,7 @@ export async function GET(_request: NextRequest) {
         remaining: subscription.remaining,
       },
       subStatus: {
-        plan: subStatus.plan,
+        package: subStatus.package,
         status: subStatus.status,
         worksPerMonth: subStatus.worksPerMonth,
         worksUsed: subStatus.worksUsed,

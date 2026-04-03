@@ -132,13 +132,13 @@ export function AccountSection() {
     });
   };
 
-  const getPackageLabel = (plan: string) => {
+  const getPackageLabel = (pkg: string) => {
     const labels: Record<string, string> = {
       FREE: "Free",
       STARTER: "Starter",
       PRO: "Pro",
     };
-    return labels[plan] || plan;
+    return labels[pkg] || pkg;
   };
 
   if (isLoading) {
@@ -179,7 +179,7 @@ export function AccountSection() {
               <div>
                 <p className="text-sm text-muted-foreground">Pacote</p>
                 <p className="font-semibold">
-                  {user?.subscription ? getPackageLabel(user.subscription.plan) : "Gratuito"}
+                  {user?.subscription ? getPackageLabel(user.subscription.package) : "Gratuito"}
                 </p>
               </div>
             </div>

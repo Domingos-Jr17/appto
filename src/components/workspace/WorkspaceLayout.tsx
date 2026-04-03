@@ -24,7 +24,7 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
   const workspace = useWorkspace({ initialData });
   const [coverSheetOpen, setCoverSheetOpen] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<{
-    plan: string;
+    package: string;
     remaining: number;
     total: number;
   } | null>(null);
@@ -36,7 +36,7 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
         if (data.success && data.data.subscription) {
           const sub = data.data.subscription;
           setSubscriptionStatus({
-            plan: sub.plan,
+            package: sub.package,
             remaining: sub.remaining,
             total: sub.worksPerMonth,
           });

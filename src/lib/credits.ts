@@ -23,7 +23,7 @@ export const CREDIT_DEFAULTS = {
     freeWorksPerMonth: 1,
 } as const;
 
-export const PLAN_PRICING = {
+export const PACKAGE_PRICING = {
     STARTER: { price: 100, works: 4 },
     PRO: { price: 200, works: 10 },
 } as const;

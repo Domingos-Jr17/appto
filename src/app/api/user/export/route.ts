@@ -71,7 +71,7 @@ export async function GET() {
         createdAt: t.createdAt,
       })),
       subscription: user.subscription ? {
-        plan: user.subscription.plan,
+        package: user.subscription.package,
         status: user.subscription.status,
         startDate: user.subscription.startDate,
       } : null,

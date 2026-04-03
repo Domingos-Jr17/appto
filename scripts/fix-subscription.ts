@@ -28,7 +28,7 @@ async function main() {
     console.log("✅ Created work_purchases table");
 
     // Verify final state
-    const subscriptions = await prisma.$queryRaw`SELECT id, plan, works_per_month, works_used FROM subscriptions`;
+    const subscriptions = await prisma.$queryRaw`SELECT id, package, works_per_month, works_used FROM subscriptions`;
     console.log("\n📊 Current subscriptions:", subscriptions);
 
     console.log("\n🎉 Migration complete!");

@@ -59,7 +59,7 @@ export async function GET() {
       usedCredits: user.credits?.used || 0,
       subscription: user.subscription
         ? {
-            plan: user.subscription.plan,
+            package: user.subscription.package,
             status: user.subscription.status,
           }
         : null,

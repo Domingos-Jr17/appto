@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
-import { SubscriptionStatus, PlanType } from "@prisma/client";
+import { SubscriptionStatus, PackageType } from "@prisma/client";
 
-export interface PlanDetails {
-  key: PlanType;
+export interface PackageDetails {
+  key: PackageType;
   name: string;
   description: string;
   price: number;
@@ -14,7 +14,7 @@ export interface PlanDetails {
   hasPdfExport: boolean;
 }
 
-export const PLAN_PRICES: Record<PlanType, Omit<PlanDetails, "key">> = {
+export const PACKAGE_PRICES: Record<PackageType, Omit<PackageDetails, "key">> = {
   FREE: {
     name: "Free",
     description: "Para experimentar",
@@ -82,7 +82,7 @@ export class SubscriptionService {
       subscription = await db.subscription.create({
         data: {
           userId,
-          plan: PlanType.FREE,
+          package: PackageType.FREE,
           status: SubscriptionStatus.ACTIVE,
           worksPerMonth: 1,
           worksUsed: 0,
@@ -153,7 +153,7 @@ export class SubscriptionService {
 
   async canUseAIAction(userId: string, action: AIAction): Promise<{ allowed: boolean; reason?: string }> {
     const subscription = await this.getOrCreate(userId);
-    const planDetails = PLAN_PRICES[subscription.plan];
+    const planDetails = PACKAGE_PRICES[subscription.package];
 
     if (subscription.status !== SubscriptionStatus.ACTIVE) {
       return { allowed: false, reason: "Subscription inativa" };
@@ -179,7 +179,7 @@ export class SubscriptionService {
 
   async canExportPdf(userId: string): Promise<{ allowed: boolean; reason?: string }> {
     const subscription = await this.getOrCreate(userId);
-    const planDetails = PLAN_PRICES[subscription.plan];
+    const planDetails = PACKAGE_PRICES[subscription.package];
 
     if (subscription.status !== SubscriptionStatus.ACTIVE) {
       return { allowed: false, reason: "Subscription inativa" };
@@ -192,10 +192,10 @@ export class SubscriptionService {
     return { allowed: false, reason: "Export PDF disponível apenas em PRO" };
   }
 
-  getPackageFeatures(plan: PlanType): PlanDetails {
+  getPackageFeatures(packageType: PackageType): PackageDetails {
     return {
-      key: plan,
-      ...PLAN_PRICES[plan],
+      key: packageType,
+      ...PACKAGE_PRICES[packageType],
     };
   }
 
@@ -255,8 +255,8 @@ export class SubscriptionService {
     }
   }
 
-  async activatePackage(userId: string, plan: PlanType): Promise<void> {
-    const packageDetails = PLAN_PRICES[plan];
+  async activatePackage(userId: string, packageType: PackageType): Promise<void> {
+    const packageDetails = PACKAGE_PRICES[packageType];
     if (!packageDetails) {
       throw new Error("Pacote inválido");
     }
@@ -266,7 +266,7 @@ export class SubscriptionService {
     await db.subscription.update({
       where: { userId },
       data: {
-        plan,
+        package: packageType,
         worksPerMonth: packageDetails.worksPerMonth,
         status: SubscriptionStatus.ACTIVE,
         startDate: new Date(),
@@ -287,12 +287,12 @@ export class SubscriptionService {
 
   async getSubscriptionStatus(userId: string) {
     const subscription = await this.checkAndResetMonthlyUsage(userId);
-    const planDetails = PLAN_PRICES[subscription.plan];
+    const planDetails = PACKAGE_PRICES[subscription.package];
     const extraWorks = await this.getAvailableExtraWorks(userId);
     const planRemaining = subscription.worksPerMonth - subscription.worksUsed;
 
     return {
-      plan: subscription.plan,
+      package: subscription.package,
       status: subscription.status,
       worksPerMonth: subscription.worksPerMonth,
       worksUsed: subscription.worksUsed,

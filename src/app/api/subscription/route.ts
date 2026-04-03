@@ -3,15 +3,15 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { apiError, apiSuccess, handleApiError, parseBody as _parseBody } from "@/lib/api";
-import { PLAN_DISPLAY, PLAN_PRICING as _PLAN_PRICING, EXTRA_WORK_PRICE } from "@/lib/credits";
+import { PLAN_DISPLAY, PACKAGE_PRICING as _PACKAGE_PRICING, EXTRA_WORK_PRICE } from "@/lib/credits";
 import { PaymentService } from "@/lib/payments";
 import { subscriptionService } from "@/lib/subscription";
 import { env } from "@/lib/env";
-import { PaymentProvider, PlanType } from "@prisma/client";
+import { PaymentProvider, PackageType } from "@prisma/client";
 import { z } from "zod";
 
 const _activatePackageSchema = z.object({
-  plan: z.enum(["STARTER", "PRO"]),
+  package: z.enum(["STARTER", "PRO"]),
   provider: z.enum(["SIMULATED", "MPESA", "EMOLA"]).optional(),
 });
 
@@ -68,31 +68,31 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { plan, quantity, provider } = body;
+    const { package: packageValue, quantity, provider } = body;
 
     const paymentService = new PaymentService(db);
     const providerValue = (provider ?? env.PAYMENT_DEFAULT_PROVIDER) as PaymentProvider;
 
-    if (plan) {
-      const validPlan = PlanType[plan as keyof typeof PlanType];
-      if (!validPlan) {
+    if (packageValue) {
+      const validPackage = PackageType[packageValue as keyof typeof PackageType];
+      if (!validPackage) {
         return apiError("Pacote inválido", 400);
       }
 
-      if (validPlan === PlanType.FREE) {
+      if (validPackage === PackageType.FREE) {
         return apiError("Não pode activar o pacote Free", 400);
       }
 
       const payment = await paymentService.createPackageCheckout(
         session.user.id,
         providerValue,
-        validPlan
+        validPackage
       );
 
       return apiSuccess({
         success: true,
         payment,
-        message: `Pacote ${plan} ativado com sucesso`,
+        message: `Pacote ${packageValue} ativado com sucesso`,
       });
     }
 
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return apiError("Parâmetros inválidos. Forneça 'plan' ou 'quantity'", 400);
+    return apiError("Parâmetros inválidos. Forneça 'package' ou 'quantity'", 400);
   } catch (error) {
     console.error("Subscription POST error:", error);
     return handleApiError(error, "Erro ao processarSubscription");

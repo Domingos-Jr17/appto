@@ -227,7 +227,7 @@ export const authOptions: NextAuthOptions = {
         await db.subscription.create({
           data: {
             userId: user.id,
-            plan: "FREE",
+            package: "FREE",
             status: "ACTIVE",
             worksPerMonth: 1,
           },

@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       await tx.subscription.create({
         data: {
           userId: createdUser.id,
-          plan: "FREE",
+          package: "FREE",
           status: "ACTIVE",
           worksPerMonth: 1,
         },

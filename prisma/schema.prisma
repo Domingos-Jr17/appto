@@ -365,7 +365,7 @@ enum TransactionType {
 model Subscription {
   id              String             @id @default(cuid())
   userId          String             @unique
-  plan            PlanType           @default(FREE)
+  package         PackageType        @default(FREE)
   status          SubscriptionStatus @default(ACTIVE)
   worksPerMonth   Int                @default(1)
   worksUsed       Int                @default(0)
@@ -394,7 +394,7 @@ model WorkPurchase {
   @@map("work_purchases")
 }
 
-enum PlanType {
+enum PackageType {
   FREE
   STARTER
   PRO

@@ -22,7 +22,7 @@ interface PackageOption {
 
 interface SubscriptionData {
   subscription: {
-    plan: string;
+    package: string;
     status: string;
     worksPerMonth: number;
     worksUsed: number;
@@ -86,20 +86,20 @@ export default function SubscriptionPage() {
     return labels[packageKey] || packageKey;
   }, []);
 
-  const handlePurchasePackage = async (planKey: string) => {
-    setIsPurchasing(planKey);
+  const handlePurchasePackage = async (pkgKey: string) => {
+    setIsPurchasing(pkgKey);
     try {
       const res = await fetch("/api/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planKey }),
+        body: JSON.stringify({ package: pkgKey }),
       });
       const data = await res.json();
 
       if (data.success) {
         toast({
           title: "Sucesso",
-          description: `Pacote ${getPackageLabel(planKey)} ativado com sucesso!`,
+          description: `Pacote ${getPackageLabel(pkgKey)} ativado com sucesso!`,
         });
         fetchSubscription();
       } else {
@@ -163,7 +163,7 @@ export default function SubscriptionPage() {
     );
   }
 
-  const currentPlan = subscriptionData?.subscription?.plan || "FREE";
+  const currentPlan = subscriptionData?.subscription?.package || "FREE";
   const currentRemaining = subscriptionData?.subscription?.remaining || 0;
   const currentUsed = subscriptionData?.subscription?.worksUsed || 0;
   const currentLimit = subscriptionData?.subscription?.worksPerMonth || 1;
@@ -180,7 +180,7 @@ export default function SubscriptionPage() {
 
   const getTransactionLabel = (tx: any) => {
     const payload = tx.payloadJson || {};
-    if (payload.plan) return `Pacote ${getPackageLabel(payload.plan)}`;
+    if (payload.package) return `Pacote ${getPackageLabel(payload.package)}`;
     if (payload.quantity) return `${payload.quantity} trabalho(s) extra(s)`;
     if (tx.creditsAmount) return `${Math.abs(tx.creditsAmount)} créditos`;
     return "Transação";

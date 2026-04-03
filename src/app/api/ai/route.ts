@@ -101,13 +101,13 @@ Padrões de qualidade:
 Sempre forneça respostas detalhadas, fundamentadas e com referências.`,
 };
 
-function getSystemPrompt(plan: string, educationLevel?: string): string {
+function getSystemPrompt(packageValue: string, educationLevel?: string): string {
   // First, try to get education-level specific prompt
   if (educationLevel && educationLevel in EDUCATION_PROMPTS) {
     return EDUCATION_PROMPTS[educationLevel as keyof typeof EDUCATION_PROMPTS];
   }
-  // Fall back to plan-based prompt
-  return PLAN_PROMPTS[plan as keyof typeof PLAN_PROMPTS] || PLAN_PROMPTS.STUDENT;
+  // Fall back to package-based prompt
+  return PLAN_PROMPTS[packageValue as keyof typeof PLAN_PROMPTS] || PLAN_PROMPTS.STUDENT;
 }
 
 function buildProjectContext(project: {
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
     const subscription = await db.subscription.findUnique({
       where: { userId: session.user.id },
     });
-    const packageFeatures = subscriptionService.getPackageFeatures(subscription?.plan || "FREE");
+    const packageFeatures = subscriptionService.getPackageFeatures(subscription?.package || "FREE");
 
     // Get user's credits for display (no deduction needed as all plans include AI)
     const userCredits = await db.credit.findUnique({ where: { userId: session.user.id } });
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
       where: { id: session.user.id },
       select: { educationLevel: true },
     });
-    const userPackage = subscription?.plan || "FREE";
+    const userPackage = subscription?.package || "FREE";
     const educationLevel = user?.educationLevel || undefined;
 
     const projectContext = projectId
@@ -356,7 +356,7 @@ export async function POST(request: NextRequest) {
       success: true,
       response,
       remainingCredits: userCredits?.balance || 0,
-      plan: packageFeatures.key,
+      package: packageFeatures.key,
     });
   } catch (error) {
     logger.error("AI generation error", { error: String(error) });

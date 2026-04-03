@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
-import { PaymentProvider as PaymentProviderEnum, PaymentStatus, PlanType, type Prisma, type PrismaClient } from "@prisma/client";
-import { CREDIT_PACKAGES, PLAN_PRICING, EXTRA_WORK_PRICE, type CreditPackageKey } from "@/lib/credits";
+import { PaymentProvider as PaymentProviderEnum, PaymentStatus, PackageType, type Prisma, type PrismaClient } from "@prisma/client";
+import { CREDIT_PACKAGES, PACKAGE_PRICING, EXTRA_WORK_PRICE, type CreditPackageKey } from "@/lib/credits";
 import { CreditLedgerService } from "@/lib/credit-ledger";
 import { SubscriptionService } from "@/lib/subscription";
 
@@ -17,13 +17,13 @@ export interface CheckoutResult {
   checkoutUrl?: string;
 }
 
-export type PlanKey = "STARTER" | "PRO";
+export type PackageKey = "STARTER" | "PRO";
 export type PurchaseType = "subscription" | "extra_work";
 
 export interface PaymentProviderContract {
   provider: PaymentProviderEnum;
   createCheckout(input: { paymentId: string; packageKey: CreditPackageKey }): Promise<CheckoutResult>;
-  createPackageCheckout(input: { paymentId: string; plan: PlanKey }): Promise<CheckoutResult>;
+  createPackageCheckout(input: { paymentId: string; packageType: PackageKey }): Promise<CheckoutResult>;
   createExtraWorkCheckout(input: { paymentId: string; quantity: number }): Promise<CheckoutResult>;
   parseCallback(payload: unknown): Promise<{ providerReference: string; status: PaymentStatus; providerPayload?: unknown }>;
 }
@@ -39,10 +39,10 @@ class SimulatedPaymentProvider implements PaymentProviderContract {
     };
   }
 
-  async createPackageCheckout(input: { paymentId: string; plan: PlanKey }): Promise<CheckoutResult> {
-    const packageName = input.plan;
+  async createPackageCheckout(input: { paymentId: string; packageType: PackageKey }): Promise<CheckoutResult> {
+    const packageName = input.packageType;
     return {
-      providerReference: `sim-plan-${input.paymentId}`,
+      providerReference: `sim-package-${input.paymentId}`,
       status: PaymentStatus.CONFIRMED,
       instructions: `Pagamento sandbox confirmado para o pacote ${packageName}.`,
     };
@@ -138,24 +138,24 @@ export class PaymentService {
     });
   }
 
-  async createPackageCheckout(userId: string, provider: PaymentProviderEnum, plan: PlanKey) {
-    const planPricing = PLAN_PRICING[plan];
+  async createPackageCheckout(userId: string, provider: PaymentProviderEnum, packageType: PackageKey) {
+    const packagePricing = PACKAGE_PRICING[packageType];
     const payment = await this.db.paymentTransaction.create({
       data: {
         userId,
         provider,
         providerReference: crypto.randomUUID(),
         status: PaymentStatus.PENDING,
-        creditsAmount: planPricing.works,
-        moneyAmount: planPricing.price,
+        creditsAmount: packagePricing.works,
+        moneyAmount: packagePricing.price,
         currency: "MZN",
-        payloadJson: { purchaseType: "subscription", plan },
+        payloadJson: { purchaseType: "subscription", package: packageType },
       },
     });
 
     const checkout = await getPaymentProvider(provider).createPackageCheckout({
       paymentId: payment.id,
-      plan,
+      packageType: packageType,
     });
 
     await this.db.paymentTransaction.update({
@@ -165,14 +165,14 @@ export class PaymentService {
         status: checkout.status,
         payloadJson: {
           purchaseType: "subscription",
-          plan,
+          package: packageType,
           checkoutInstructions: checkout.instructions,
         },
       },
     });
 
     if (checkout.status === PaymentStatus.CONFIRMED) {
-      await this.confirmPackagePayment(payment.id, checkout.providerReference, plan);
+      await this.confirmPackagePayment(payment.id, checkout.providerReference, packageType);
     }
 
     return this.db.paymentTransaction.findUniqueOrThrow({
@@ -222,7 +222,7 @@ export class PaymentService {
     });
   }
 
-  async confirmPackagePayment(paymentId: string, providerReference: string, plan: PlanType) {
+  async confirmPackagePayment(paymentId: string, providerReference: string, packageType: PackageType) {
     const payment = await this.db.paymentTransaction.findUnique({
       where: { id: paymentId },
     });
@@ -236,14 +236,14 @@ export class PaymentService {
     }
 
     const subscriptionService = new SubscriptionService();
-    await subscriptionService.activatePackage(payment.userId, plan);
+    await subscriptionService.activatePackage(payment.userId, packageType);
 
     return this.db.paymentTransaction.update({
       where: { id: paymentId },
       data: {
         status: PaymentStatus.CONFIRMED,
         confirmedAt: new Date(),
-        payloadJson: { plan },
+        payloadJson: { package: packageType },
       },
     });
   }

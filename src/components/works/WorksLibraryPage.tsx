@@ -216,9 +216,7 @@ export function WorksLibraryPage() {
                             Os meus trabalhos
                         </h2>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            {workCounts.all} no total · {workCounts.inProgress}{" "}
-                            em curso · {workCounts.completed} concluídos ·{" "}
-                            {workCounts.draft} rascunhos
+                            {workCounts.all} trabalho{workCounts.all !== 1 ? "s" : ""}
                         </p>
                     </div>
                 </div>

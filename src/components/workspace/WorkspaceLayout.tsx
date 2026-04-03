@@ -8,7 +8,13 @@ import { DocumentPreview } from "./DocumentPreview";
 import { CoverModal } from "./CoverModal";
 import { EditorLink } from "./EditorLink";
 import type { WorkspaceData } from "@/types/workspace";
-import type { AcademicEducationLevel } from "@/types/editor";
+import type { AcademicEducationLevel, ProjectBrief } from "@/types/editor";
+
+function isCoverIncomplete(brief?: ProjectBrief | null): boolean {
+  if (!brief) return true;
+  const essentials = [brief.institutionName, brief.studentName, brief.advisorName].filter(Boolean);
+  return essentials.length < 2;
+}
 
 interface WorkspaceLayoutProps {
   initialData: WorkspaceData;
@@ -64,6 +70,7 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
           onDownload={workspace.downloadDocx}
           onEditCover={() => setCoverSheetOpen(true)}
           onSaveTitle={workspace.updateTitle}
+          coverIncomplete={isCoverIncomplete(workspace.data?.brief)}
         />
 
         <div className="flex-1 overflow-y-auto pb-16">

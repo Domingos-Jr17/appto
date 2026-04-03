@@ -243,6 +243,12 @@ export function useWorkCreation() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Sessão expirada. Entra novamente para continuar.");
+        }
+        if (response.status === 403) {
+          throw new Error(data.error || "Limite de geração atingido. Faz upgrade do plano.");
+        }
         throw new Error(data.error || "Erro ao criar o trabalho");
       }
 

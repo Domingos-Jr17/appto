@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { ChevronDown, FileText, Sparkles } from "lucide-react";
+import { ChevronDown, FileText, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -174,13 +174,23 @@ export function InlineWorkCreator() {
         onClick={handleCreate}
         disabled={
           !workForm.title.trim() ||
+          isCreating ||
           (subscriptionStatus ? !subscriptionStatus.canGenerate : false)
         }
         size="lg"
         className="h-14 w-full gap-2 rounded-2xl text-base"
       >
-        <Sparkles className="h-5 w-5" />
-        Gerar trabalho
+        {isCreating ? (
+          <>
+            <Loader2 className="h-5 w-5 animate-spin" />
+            A criar...
+          </>
+        ) : (
+          <>
+            <Sparkles className="h-5 w-5" />
+            Gerar trabalho
+          </>
+        )}
       </Button>
 
       {/* Subscription hint — only when limit reached */}

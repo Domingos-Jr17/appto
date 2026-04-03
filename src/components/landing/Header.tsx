@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,6 +22,80 @@ export function Header() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    previousFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    document.body.style.overflow = "hidden";
+
+    const focusFirstElement = window.setTimeout(() => {
+      const dialog = mobileMenuRef.current;
+      if (!dialog) return;
+
+      const firstFocusable = dialog.querySelector<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+
+      firstFocusable?.focus();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(focusFirstElement);
+      document.body.style.overflow = originalOverflow;
+      previousFocusRef.current?.focus();
+    };
+  }, [isMobileMenuOpen]);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileMenuOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const dialog = mobileMenuRef.current;
+      if (!dialog) return;
+
+      const focusableElements = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMobileMenuOpen]);
 
   const scrollToSection = (href: string) => {
     const element = document.querySelector(href);
@@ -102,7 +178,10 @@ export function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="rounded-2xl"
+                className="h-11 w-11 rounded-2xl"
+                aria-label={isMobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+                aria-expanded={isMobileMenuOpen}
+                aria-controls="landing-mobile-menu"
               >
                 {isMobileMenuOpen ? (
                   <X className="w-5 h-5" />
@@ -135,16 +214,27 @@ export function Header() {
             />
 
             {/* Menu Panel */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="absolute right-0 top-0 h-full w-full max-w-sm bg-background border-l border-border shadow-2xl"
-            >
-              <div className="flex flex-col h-full pt-20 pb-6 px-6">
-                <nav className="flex flex-col gap-2">
-                  {navigationLinks.map((link, index) => (
+              <motion.div
+                id="landing-mobile-menu"
+                ref={mobileMenuRef}
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="landing-mobile-menu-title"
+                className="absolute right-0 top-0 h-full w-full max-w-sm border-l border-border bg-background shadow-2xl"
+              >
+                <div className="flex flex-col h-full pt-20 pb-6 px-6">
+                  <nav className="flex flex-col gap-2">
+                    <p
+                      id="landing-mobile-menu-title"
+                      className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+                    >
+                      Navegação
+                    </p>
+                    {navigationLinks.map((link, index) => (
                     <motion.button
                       key={link.href}
                       initial={{ opacity: 0, x: 20 }}

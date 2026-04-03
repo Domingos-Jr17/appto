@@ -11,7 +11,7 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    command: "bunx next dev -p 3005",
+    command: "bunx next dev --webpack -p 3005",
     url: "http://127.0.0.1:3005",
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
@@ -19,7 +19,23 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      testIgnore: /.*responsive\.mobile\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "mobile-chrome",
+      testMatch: /.*responsive\.mobile\.spec\.ts/,
+      use: { ...devices["Pixel 7"] },
+    },
+    {
+      name: "tablet-chrome",
+      testMatch: /.*responsive\.mobile\.spec\.ts/,
+      use: {
+        browserName: "chromium",
+        viewport: { width: 768, height: 1024 },
+        isMobile: true,
+        hasTouch: true,
+      },
     },
   ],
 });

@@ -33,7 +33,7 @@ export function WorkspaceSidebar({
   const progressPercent = totalSections > 0 ? Math.round((completedSections / totalSections) * 100) : 0;
 
   return (
-    <aside className="flex h-full min-h-0 w-full shrink-0 flex-col rounded-[24px] border border-border/60 bg-background lg:w-[320px] lg:rounded-none lg:border-0 lg:border-r">
+    <aside className="flex h-full min-h-0 w-full shrink-0 flex-col rounded-[24px] border border-border/60 bg-background lg:w-[280px] xl:w-[320px] lg:rounded-none lg:border-0 lg:border-r">
       <div className="shrink-0 border-b border-border/60 px-4 py-4">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline" className="rounded-full text-xs">

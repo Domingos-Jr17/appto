@@ -68,7 +68,7 @@ export function TestimonialsCarousel() {
 
         <div className="relative max-w-4xl mx-auto">
           {/* Carousel */}
-          <div className="relative h-[380px] md:h-[320px] overflow-hidden rounded-2xl">
+          <div className="relative h-[420px] sm:h-[380px] md:h-[320px] overflow-hidden rounded-2xl">
             <AnimatePresence initial={false} custom={direction}>
               <motion.div
                 key={currentIndex}
@@ -140,14 +140,14 @@ export function TestimonialsCarousel() {
           {/* Navigation buttons */}
           <button
             onClick={() => paginate(-1)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-12 w-10 h-10 rounded-full bg-card border border-border shadow-lg flex items-center justify-center hover:bg-muted transition-colors z-10"
+            className="absolute left-3 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card shadow-lg transition-colors hover:bg-muted md:left-0 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2"
             aria-label="Testemunho anterior"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             onClick={() => paginate(1)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-12 w-10 h-10 rounded-full bg-card border border-border shadow-lg flex items-center justify-center hover:bg-muted transition-colors z-10"
+            className="absolute right-3 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card shadow-lg transition-colors hover:bg-muted md:right-0 md:top-1/2 md:translate-x-1/2 md:-translate-y-1/2"
             aria-label="Próximo testemunho"
           >
             <ChevronRight className="w-5 h-5" />

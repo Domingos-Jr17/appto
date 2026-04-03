@@ -54,11 +54,11 @@ export function WorkWorkspaceLayout({
           }
         />
         <div className="min-w-0 flex-1 overflow-hidden">{document}</div>
-        {chatOpen ? (
-          <div className="shrink-0 w-[360px] border-l border-border/60 overflow-hidden">
-            {chat}
-          </div>
-        ) : null}
+         {chatOpen ? (
+           <div className="shrink-0 overflow-hidden border-l border-border/60 lg:w-[280px] xl:w-[320px] 2xl:w-[360px]">
+             {chat}
+           </div>
+         ) : null}
       </div>
 
       {/* MOBILE: tabs */}

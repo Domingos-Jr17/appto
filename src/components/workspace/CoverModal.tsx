@@ -133,7 +133,7 @@ export function CoverModal({
       <SheetContent
         key={briefKey}
         side="right"
-        className="flex flex-col w-full p-0 sm:w-[28rem] sm:top-[72px] sm:bottom-0 sm:h-auto sm:border-l sm:rounded-tl-2xl"
+        className="flex w-full max-w-full flex-col overflow-x-hidden p-0 sm:w-[30rem] sm:top-[72px] sm:bottom-0 sm:h-auto sm:border-l sm:rounded-tl-2xl"
       >
         <SheetHeader className="px-4 pt-4 pb-2 sm:pt-6">
           <SheetTitle>Editar capa</SheetTitle>
@@ -221,7 +221,7 @@ export function CoverModal({
             )}
 
             {educationLevel === "HIGHER_EDUCATION" && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="cover-faculty" className="text-xs">
                     Faculdade
@@ -249,7 +249,7 @@ export function CoverModal({
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="cover-student" className="text-xs">
                   {educationLevel === "SECONDARY" ? "Aluno" : "Estudante"}
@@ -285,7 +285,7 @@ export function CoverModal({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {educationLevel === "SECONDARY" && (
                 <>
                   <div className="space-y-1.5">

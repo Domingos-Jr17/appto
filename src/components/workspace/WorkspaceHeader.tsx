@@ -143,14 +143,14 @@ export function WorkspaceHeader({
         </Badge>
 
         {isEditing ? (
-          <div className="flex flex-1 items-center gap-1.5">
+          <div className="flex flex-1 items-center gap-2">
             <Input
               ref={inputRef}
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               onKeyDown={handleKeyDown}
               onBlur={handleBlur}
-              className="h-7 text-sm font-semibold leading-tight"
+              className="h-10 text-sm font-semibold leading-tight"
               placeholder="Título do trabalho..."
               disabled={isSaving}
               maxLength={180}
@@ -158,7 +158,7 @@ export function WorkspaceHeader({
             <Button
               size="icon"
               variant="ghost"
-              className="h-7 w-7 shrink-0 text-success"
+              className="h-11 w-11 shrink-0 rounded-2xl text-success"
               onClick={handleSave}
               disabled={isSaving}
               aria-label="Guardar título"
@@ -172,7 +172,7 @@ export function WorkspaceHeader({
             <Button
               size="icon"
               variant="ghost"
-              className="h-7 w-7 shrink-0 text-muted-foreground"
+              className="h-11 w-11 shrink-0 rounded-2xl text-muted-foreground"
               onClick={handleCancel}
               disabled={isSaving}
               aria-label="Cancelar edição"
@@ -225,12 +225,11 @@ export function WorkspaceHeader({
         </div>
       </div>
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
         <Button
           variant="ghost"
-          size="sm"
           className={cn(
-            "shrink-0 rounded-2xl px-2 text-xs transition-colors hover:text-foreground",
+            "min-h-11 shrink-0 rounded-2xl px-4 text-sm transition-colors hover:text-foreground",
             coverIncomplete
               ? "text-warning/80 hover:text-warning"
               : "text-muted-foreground"
@@ -243,13 +242,13 @@ export function WorkspaceHeader({
             <span className="ml-1 h-1.5 w-1.5 rounded-full bg-warning" />
           )}
         </Button>
-        {hasContent && (
-          <GenerateButton
-            isGenerating={isGenerating}
-            allDone={allDone}
-            onGenerate={onGenerate}
-          />
-        )}
+          {hasContent && (
+            <GenerateButton
+              isGenerating={isGenerating}
+              allDone={allDone}
+              onGenerate={onGenerate}
+            />
+          )}
         <DownloadButton
           onDownload={onDownload}
           hasContent={hasContent}

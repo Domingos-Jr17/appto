@@ -122,7 +122,7 @@ export function Footer({ className }: FooterProps) {
                   href={social.href}
                   whileHover={{ scale: 1.1, y: -2 }}
                   whileTap={{ scale: 0.95 }}
-                  className="w-9 h-9 rounded-xl bg-muted/50 flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted/50 text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
                   aria-label={social.label}
                 >
                   <Icon className="w-4 h-4" />

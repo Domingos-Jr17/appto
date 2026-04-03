@@ -152,7 +152,7 @@ export function InlineWorkCreator() {
       />
 
       {/* Education level */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {EDUCATION_LEVELS.map((level) => (
           <button
             key={level.value}
@@ -160,14 +160,14 @@ export function InlineWorkCreator() {
             onClick={() => handleEducationLevelChange(level.value)}
             aria-pressed={workForm.educationLevel === level.value}
             className={cn(
-              "rounded-xl border p-3 text-center transition-colors",
+              "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors sm:block sm:text-center",
               workForm.educationLevel === level.value
                 ? "border-primary bg-primary/5 ring-1 ring-primary/20"
                 : "border-border/60 hover:border-border",
             )}
           >
-            <div className="text-lg">{level.icon}</div>
-            <div className="mt-1 text-xs font-medium leading-tight">
+            <div className="text-lg sm:text-2xl">{level.icon}</div>
+            <div className="text-sm font-medium leading-tight sm:mt-1 sm:text-xs">
               {level.label}
             </div>
           </button>

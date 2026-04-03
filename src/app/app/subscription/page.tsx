@@ -221,8 +221,8 @@ export default function SubscriptionPage() {
             </div>
           </div>
           {currentRemaining === 0 && (
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800">
+            <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-3">
+              <p className="text-sm text-warning">
                 Alcançou o limite de trabalhos deste mês. Faça upgrade do pacote ou compre trabalhos extras.
               </p>
             </div>
@@ -270,7 +270,7 @@ export default function SubscriptionPage() {
                 <ul className="space-y-2">
                   {pkg.features.map((feature, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
-                      <Check className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                       {feature}
                     </li>
                   ))}
@@ -362,18 +362,18 @@ export default function SubscriptionPage() {
               {extraWorks.map((work) => (
                 <div
                   key={work.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <div className="font-medium">
                       {work.quantity} trabalho{work.quantity !== 1 ? "s" : ""}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground break-words">
                       Usados: {work.used} / {work.quantity} | Expira:{" "}
                       {new Date(work.expiresAt).toLocaleDateString("pt-MZ")}
                     </div>
                   </div>
-                  <Badge variant="outline">
+                  <Badge variant="outline" className="w-fit">
                     {work.quantity - work.used} restantes
                   </Badge>
                 </div>
@@ -397,26 +397,26 @@ export default function SubscriptionPage() {
               {transactions.map((tx) => (
                 <div
                   key={tx.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
                     <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                      tx.status === "CONFIRMED" ? "bg-green-100" : "bg-yellow-100"
+                      tx.status === "CONFIRMED" ? "bg-success/10" : "bg-warning/10"
                     }`}>
                       {tx.status === "CONFIRMED" ? (
-                        <ArrowUpRight className="h-4 w-4 text-green-600" />
+                        <ArrowUpRight className="h-4 w-4 text-success" />
                       ) : (
-                        <ArrowDownRight className="h-4 w-4 text-yellow-600" />
+                        <ArrowDownRight className="h-4 w-4 text-warning" />
                       )}
                     </div>
-                    <div>
-                      <div className="font-medium">{getTransactionLabel(tx)}</div>
+                    <div className="min-w-0">
+                      <div className="font-medium break-words">{getTransactionLabel(tx)}</div>
                       <div className="text-sm text-muted-foreground">
                         {format(new Date(tx.createdAt), "dd MMM yyyy, HH:mm", { locale: pt })}
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <div className="font-medium">
                       {tx.moneyAmount > 0 ? `+${tx.moneyAmount}` : tx.moneyAmount} MZN
                     </div>

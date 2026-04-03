@@ -21,7 +21,7 @@ interface FloatingBadgeProps {
 function FloatingBadge({ icon: Icon, label }: FloatingBadgeProps) {
   return (
     <div className="flex items-center gap-2">
-      <Icon className="w-4 h-4" />
+      <Icon className="h-4 w-4 shrink-0" />
       <span className="text-xs font-medium whitespace-nowrap">{label}</span>
     </div>
   );
@@ -69,7 +69,7 @@ export function ProductMockup() {
               />
             </div>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-muted/50 text-xs font-medium text-muted-foreground">
+          <div className="hidden items-center gap-2 rounded-lg bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground sm:flex">
             <span>Monografia - Direito Económico</span>
           </div>
           <div className="flex items-center gap-1">
@@ -214,9 +214,9 @@ export function ProductMockup() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
-          className="flex items-center justify-between px-4 py-3 border-t border-border/50 bg-muted/20"
+          className="flex flex-col gap-2 border-t border-border/50 bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <motion.button
               whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.98 }}
@@ -237,7 +237,7 @@ export function ProductMockup() {
           <motion.button
             whileHover={{ scale: 1.02, y: -1 }}
             whileTap={{ scale: 0.98 }}
-            className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors flex items-center gap-1.5 shadow-lg shadow-primary/20"
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-colors hover:bg-primary/90 sm:w-auto"
           >
             <Download className="w-3.5 h-3.5" />
             Exportar DOCX
@@ -247,7 +247,7 @@ export function ProductMockup() {
 
       {/* Floating badges with premium animations */}
       <motion.div
-        className="absolute -top-4 -right-4 md:-right-8"
+        className="absolute right-3 top-3 md:-right-8 md:-top-4"
         initial={{ opacity: 0, scale: 0, rotate: -20 }}
         animate={{ opacity: 1, scale: 1, rotate: 0 }}
         transition={{ delay: 1.2, duration: 0.6, type: "spring", stiffness: 200 }}
@@ -256,14 +256,14 @@ export function ProductMockup() {
           whileHover={{ scale: 1.05, y: -2 }}
           animate={{ y: [0, -8, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-blue-500/10 text-blue-600 cursor-pointer"
+          className="cursor-pointer rounded-xl border border-border/50 bg-card/90 bg-blue-500/10 px-3 py-2 text-blue-600 shadow-lg backdrop-blur-xl"
         >
           <FloatingBadge icon={Languages} label="PT-MZ Académico" />
         </motion.div>
       </motion.div>
 
       <motion.div
-        className="absolute top-1/3 -left-4 md:-left-6"
+        className="absolute left-3 top-[26%] md:-left-6 md:top-1/3"
         initial={{ opacity: 0, scale: 0, x: -30, rotate: 20 }}
         animate={{ opacity: 1, scale: 1, x: 0, rotate: 0 }}
         transition={{ delay: 1.4, duration: 0.6, type: "spring", stiffness: 200 }}
@@ -272,14 +272,14 @@ export function ProductMockup() {
           whileHover={{ scale: 1.05, y: -2 }}
           animate={{ y: [0, -6, 0] }}
           transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-          className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-emerald-500/10 text-emerald-600 cursor-pointer"
+          className="cursor-pointer rounded-xl border border-border/50 bg-card/90 bg-emerald-500/10 px-3 py-2 text-emerald-600 shadow-lg backdrop-blur-xl"
         >
           <FloatingBadge icon={BookMarked} label="ABNT Ready" />
         </motion.div>
       </motion.div>
 
       <motion.div
-        className="absolute bottom-8 -right-2 md:-right-6"
+        className="absolute bottom-20 right-3 md:bottom-8 md:-right-6"
         initial={{ opacity: 0, scale: 0, y: 30, rotate: -15 }}
         animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
         transition={{ delay: 1.6, duration: 0.6, type: "spring", stiffness: 200 }}
@@ -288,7 +288,7 @@ export function ProductMockup() {
           whileHover={{ scale: 1.05, y: -2 }}
           animate={{ y: [0, -5, 0] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-purple-500/10 text-purple-600 cursor-pointer"
+          className="cursor-pointer rounded-xl border border-border/50 bg-card/90 bg-purple-500/10 px-3 py-2 text-purple-600 shadow-lg backdrop-blur-xl"
         >
           <FloatingBadge icon={FileDown} label="DOCX Export" />
         </motion.div>
@@ -296,7 +296,7 @@ export function ProductMockup() {
 
       {isFeaturePublic("realTimeStreaming") ? (
         <motion.div
-          className="absolute bottom-1/4 -left-2 md:-left-8"
+          className="absolute bottom-[30%] left-3 md:bottom-1/4 md:-left-8"
           initial={{ opacity: 0, scale: 0, x: -30, rotate: 15 }}
           animate={{ opacity: 1, scale: 1, x: 0, rotate: 0 }}
           transition={{ delay: 1.8, duration: 0.6, type: "spring", stiffness: 200 }}
@@ -305,7 +305,7 @@ export function ProductMockup() {
             whileHover={{ scale: 1.05, y: -2 }}
             animate={{ y: [0, -7, 0] }}
             transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
-            className="px-3 py-2 rounded-xl border border-border/50 backdrop-blur-xl shadow-lg bg-card/90 bg-rose-500/10 text-rose-600 cursor-pointer"
+            className="cursor-pointer rounded-xl border border-border/50 bg-card/90 bg-rose-500/10 px-3 py-2 text-rose-600 shadow-lg backdrop-blur-xl"
           >
             <FloatingBadge icon={Zap} label="Streaming AI" />
           </motion.div>

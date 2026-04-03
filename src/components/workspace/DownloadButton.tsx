@@ -11,8 +11,7 @@ export function DownloadButton({ onDownload, hasContent }: DownloadButtonProps) 
   return (
     <Button
       variant="outline"
-      size="sm"
-      className="flex-1 rounded-2xl text-xs"
+      className="min-h-11 flex-1 rounded-2xl px-4 text-sm"
       onClick={onDownload}
       disabled={!hasContent}
     >

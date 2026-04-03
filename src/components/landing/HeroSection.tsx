@@ -39,8 +39,8 @@ export function HeroSection() {
             <Reveal delay={0.1}>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
                 O seu copiloto{" "}
-                <span className="relative inline-block">
-                  <span className="text-primary min-w-[180px] inline-block">
+                <span className="relative inline-flex min-h-[1.2em] min-w-[8ch] items-end sm:min-w-[10ch]">
+                  <span className="inline-block whitespace-nowrap text-primary">
                     {typedWord}
                   </span>
                   <span className="absolute -right-1 top-0 w-0.5 h-full bg-primary animate-pulse" />

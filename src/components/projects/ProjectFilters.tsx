@@ -2,6 +2,13 @@
 
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export type ProjectStatus = "all" | "in_progress" | "completed" | "draft" | "archived" | "review";
@@ -34,7 +41,33 @@ export function ProjectFilters({
 }: ProjectFiltersProps) {
   return (
     <div className={cn("space-y-3", className)}>
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+      <div className="grid gap-3 sm:hidden">
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Estado
+          </p>
+          <Select
+            value={status}
+            onValueChange={(value) => onStatusChange(value as ProjectStatus)}
+          >
+            <SelectTrigger
+              className="h-11 rounded-2xl border-border/60 bg-muted/30 text-sm"
+              aria-label="Filtrar trabalhos por estado"
+            >
+              <SelectValue placeholder="Filtrar por estado" />
+            </SelectTrigger>
+            <SelectContent>
+              {FILTERS.map((filter) => (
+                <SelectItem key={filter.value} value={filter.value}>
+                  {filter.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="hidden gap-2 overflow-x-auto pb-1 scrollbar-hide sm:flex">
         {FILTERS.map((filter) => (
           <button
             key={filter.value}

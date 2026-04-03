@@ -43,8 +43,7 @@ export function GenerateButton({
   return (
     <>
       <Button
-        size="sm"
-        className="flex-1 rounded-2xl text-xs"
+        className="min-h-11 flex-1 rounded-2xl px-4 text-sm"
         onClick={handleClick}
         disabled={isGenerating}
       >

@@ -3,6 +3,7 @@ import "server-only";
 import { Redis } from "@upstash/redis";
 
 import { env } from "@/lib/env";
+import { logOperationalEvent } from "@/lib/observability";
 import { MemoryRateLimiter, RateLimitError, type RateLimitResult, type RateLimiter } from "@/lib/rate-limit-core";
 
 class UpstashRateLimiter implements RateLimiter {
@@ -58,8 +59,18 @@ export async function enforceRateLimit(key: string, limit: number, windowMs: num
   const result = await getRateLimiter().limit(key, limit, windowMs);
 
   if (!result.allowed) {
+    logOperationalEvent("rate_limit_blocked", { key, limit, windowMs, current: result.current }, "warn");
     throw new RateLimitError();
   }
+
+  logOperationalEvent("rate_limit_allowed", {
+    key,
+    limit,
+    windowMs,
+    current: result.current,
+    remaining: result.remaining,
+    provider: env.RATE_LIMIT_PROVIDER,
+  });
 
   return result;
 }

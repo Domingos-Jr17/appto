@@ -1,4 +1,4 @@
-import { getAIProvider, getFriendlyAIErrorMessage } from "@/lib/ai";
+import { getFriendlyAIErrorMessage, runAIChatCompletion } from "@/lib/ai";
 import { generateCoverHTML } from "@/lib/cover-templates";
 import { db } from "@/lib/db";
 import { subscriptionService } from "@/lib/subscription";
@@ -390,9 +390,8 @@ Requisitos obrigatórios:
 - Não deixe nenhuma secção vazia
 - Produza JSON estritamente válido`;
 
-  const provider = await getAIProvider();
   const systemPrompt = getSystemPromptForEducation(brief.educationLevel);
-  const completion = await provider.chatCompletion({
+  const completion = await runAIChatCompletion({
     model: "", // Provider uses its default model
     messages: [
       { role: "system", content: systemPrompt },
@@ -461,9 +460,8 @@ export async function startWorkGenerationJob(input: {
   contentCost: number;
   baseCost: number;
 }) {
-  const { projectId, userId, title, type, brief, contentCost, baseCost } = input;
+  const { projectId, userId, title, type, brief } = input;
   const templates = getSectionTemplates(type);
-  const totalRefund = baseCost + contentCost;
 
   // Check for existing active generation job - this is the single source of truth
   const existingJob = await db.generationJob.findUnique({
@@ -569,31 +567,9 @@ export async function startWorkGenerationJob(input: {
     } catch (error) {
       const friendlyMessage = getFriendlyAIErrorMessage(error);
 
-      await db.$transaction(async (tx) => {
-        await tx.projectBrief.update({
-          where: { projectId },
-          data: { generationStatus: "FAILED" },
-        });
-
-        if (totalRefund > 0) {
-          await tx.credit.update({
-            where: { userId },
-            data: {
-              balance: { increment: totalRefund },
-              used: { decrement: totalRefund },
-            },
-          });
-
-          await tx.creditTransaction.create({
-            data: {
-              userId,
-              amount: totalRefund,
-              type: "REFUND",
-              description: `Compensação pela falha na geração do trabalho: ${title}`,
-              metadata: JSON.stringify({ projectId }),
-            },
-          });
-        }
+      await db.projectBrief.update({
+        where: { projectId },
+        data: { generationStatus: "FAILED" },
       });
 
       await subscriptionService.refundWork(userId).catch((err) => {
@@ -636,9 +612,8 @@ Requisitos obrigatórios:
 - Mantenha tom formal, coerente e plausível
 - Devolva apenas o conteúdo final da secção, sem markdown extra nem explicações`;
 
-  const provider = await getAIProvider();
   const systemPrompt = getSystemPromptForEducation(brief.educationLevel);
-  const completion = await provider.chatCompletion({
+  const completion = await runAIChatCompletion({
     model: "", // Provider uses its default model
     messages: [
       { role: "system", content: systemPrompt },

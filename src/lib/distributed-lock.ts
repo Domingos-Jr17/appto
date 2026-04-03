@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { Redis } from "@upstash/redis";
 
 import { env } from "@/lib/env";
+import { logOperationalEvent } from "@/lib/observability";
 
 export interface LockHandle {
   acquired: boolean;
@@ -24,6 +25,7 @@ export class MemoryDistributedLockManager implements DistributedLockManager {
     const current = this.locks.get(key);
 
     if (current && current.expiresAt > now) {
+      logOperationalEvent("lock_blocked", { key, provider: "MEMORY" }, "warn");
       return {
         acquired: false,
         release: async () => {},
@@ -32,6 +34,7 @@ export class MemoryDistributedLockManager implements DistributedLockManager {
 
     const token = randomUUID();
     this.locks.set(key, { token, expiresAt: now + ttlMs });
+    logOperationalEvent("lock_acquired", { key, provider: "MEMORY", ttlMs });
 
     return {
       acquired: true,
@@ -39,6 +42,7 @@ export class MemoryDistributedLockManager implements DistributedLockManager {
         const latest = this.locks.get(key);
         if (latest?.token === token) {
           this.locks.delete(key);
+          logOperationalEvent("lock_released", { key, provider: "MEMORY" });
         }
       },
     };
@@ -66,16 +70,20 @@ class UpstashDistributedLockManager implements DistributedLockManager {
     });
 
     if (acquired !== "OK") {
+      logOperationalEvent("lock_blocked", { key, provider: "UPSTASH" }, "warn");
       return {
         acquired: false,
         release: async () => {},
       };
     }
 
+    logOperationalEvent("lock_acquired", { key, provider: "UPSTASH", ttlMs });
+
     return {
       acquired: true,
       release: async () => {
         await this.releaseScript.exec([namespacedKey], [token]);
+        logOperationalEvent("lock_released", { key, provider: "UPSTASH" });
       },
     };
   }

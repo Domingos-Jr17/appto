@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { logOperationalEvent } from "@/lib/observability";
 
 // Import types from separate file to avoid circular dependency
 import type {
@@ -89,6 +90,12 @@ export async function runAIChatCompletion(request: AIChatRequest): Promise<AICha
       if (!hasAnotherProvider || !shouldFallback(error)) {
         throw error;
       }
+
+      logOperationalEvent("ai_provider_fallback", {
+        failedProvider: provider.name,
+        fallbackProvider: providers[index + 1],
+        reason: error instanceof Error ? error.message : String(error),
+      }, "warn");
     }
   }
 

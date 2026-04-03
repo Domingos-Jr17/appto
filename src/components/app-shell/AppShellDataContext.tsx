@@ -1,14 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { fetchAppProjects, fetchCreditsBalance, sortProjectsByUpdatedAt, type AppProjectRecord } from "@/lib/app-data";
+import { fetchAppProjects, sortProjectsByUpdatedAt, type AppProjectRecord } from "@/lib/app-data";
 
 interface AppShellDataContextValue {
   projects: AppProjectRecord[];
-  credits: number;
   isLoading: boolean;
   refresh: () => Promise<void>;
-  setCredits: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const AppShellDataContext = React.createContext<AppShellDataContextValue | null>(null);
@@ -18,7 +16,6 @@ const BACKGROUND_REFRESH_INTERVAL = 60 * 1000; // 1 minute
 
 export function AppShellDataProvider({ children }: { children: React.ReactNode }) {
   const [projects, setProjects] = React.useState<AppProjectRecord[]>([]);
-  const [credits, setCredits] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(true);
   const [lastFetchTime, setLastFetchTime] = React.useState<number>(0);
   const refreshRef = React.useRef<(() => Promise<void>) | null>(null);
@@ -28,17 +25,10 @@ export function AppShellDataProvider({ children }: { children: React.ReactNode }
       setIsLoading(true);
     }
 
-    const [projectsResult, creditsResult] = await Promise.allSettled([
-      fetchAppProjects(),
-      fetchCreditsBalance(),
-    ]);
+    const [projectsResult] = await Promise.allSettled([fetchAppProjects()]);
 
     if (projectsResult.status === "fulfilled") {
       setProjects(sortProjectsByUpdatedAt(projectsResult.value));
-    }
-
-    if (creditsResult.status === "fulfilled") {
-      setCredits(creditsResult.value);
     }
 
     setLastFetchTime(Date.now());
@@ -73,12 +63,10 @@ export function AppShellDataProvider({ children }: { children: React.ReactNode }
   const value = React.useMemo(
     () => ({
       projects,
-      credits,
       isLoading,
       refresh,
-      setCredits,
     }),
-    [credits, isLoading, projects, refresh]
+    [isLoading, projects, refresh]
   );
 
   return <AppShellDataContext.Provider value={value}>{children}</AppShellDataContext.Provider>;

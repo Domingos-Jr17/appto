@@ -58,9 +58,3 @@ export async function fetchAppProjects(search = "") {
   const data = await readJson<AppProjectRecord[]>(response, "Não foi possível carregar os projectos.");
   return Array.isArray(data) ? data : [];
 }
-
-export async function fetchCreditsBalance() {
-  const response = await fetch("/api/credits");
-  const data = await readJson<{ balance?: number }>(response, "Não foi possível carregar o saldo de créditos.");
-  return data.balance || 0;
-}

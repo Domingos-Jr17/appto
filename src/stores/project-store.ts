@@ -19,13 +19,10 @@ import { logger } from "@/lib/logger";
 interface ProjectStoreState {
   project: Project | null;
   sections: Section[];
-  credits: number;
   isSavingExport: "docx" | "pdf" | null;
   isLoading: boolean;
   activeProjectId: string | null;
   activeProjectVersion: number;
-
-  setCredits: (credits: number) => void;
 
   fetchProject: (projectId: string) => Promise<void>;
   createSection: (
@@ -46,13 +43,10 @@ interface ProjectStoreState {
 export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   project: null,
   sections: [],
-  credits: 0,
   isSavingExport: null,
   isLoading: true,
   activeProjectId: null,
   activeProjectVersion: 0,
-
-  setCredits: (credits) => set({ credits }),
 
   updateSectionTree: (sectionId, updater) => {
     set((state) => {
@@ -79,15 +73,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       activeProjectVersion: projectVersion,
     });
     try {
-      const [projectResponse, creditsResponse] = await Promise.all([
-        fetch(`/api/projects/${projectId}`),
-        fetch("/api/credits"),
-      ]);
+      const projectResponse = await fetch(`/api/projects/${projectId}`);
 
       if (!projectResponse.ok) throw new Error("Projecto não encontrado");
 
       const projectData = (await projectResponse.json()) as Project;
-      const creditsData = await creditsResponse.json();
 
       const currentState = get();
       if (currentState.activeProjectVersion !== projectVersion || currentState.activeProjectId !== projectId) {
@@ -99,7 +89,6 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       set({
         project: projectData,
         sections: tree,
-        credits: creditsData.balance || 0,
         activeProjectId: projectId,
         activeProjectVersion: projectVersion,
         isLoading: false,
@@ -250,10 +239,6 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       anchor.download = `${get().project?.title || "documento"}.${format}`;
       anchor.click();
       URL.revokeObjectURL(url);
-
-      const creditsResponse = await fetch("/api/credits");
-      const creditsData = await creditsResponse.json();
-      set({ credits: creditsData.balance || 0 });
     } finally {
       set({ isSavingExport: null });
     }

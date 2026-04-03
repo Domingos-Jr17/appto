@@ -6,7 +6,6 @@ import { useGenerationStream } from "@/hooks/useGenerationStream";
 import { isFeatureVisible } from "@/lib/features";
 import Link from "next/link";
 import { FolderTree } from "lucide-react";
-import { useAppShellData } from "@/components/app-shell/AppShellDataContext";
 import { DocumentPane } from "@/components/work-workspace/DocumentPane";
 import { ChatPane } from "@/components/work-workspace/ChatPane";
 import { WorkWorkspaceLayout } from "@/components/work-workspace/WorkWorkspaceLayout";
@@ -38,18 +37,15 @@ interface WorkWorkspaceRouteProps {
 
 export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
   const { toast } = useToast();
-  const { setCredits: setAppCredits } = useAppShellData();
   const initializedProjectId = useRef<string | null>(null);
 
   const project = useProjectStore((state) => state.project);
   const sections = useProjectStore((state) => state.sections);
-  const credits = useProjectStore((state) => state.credits);
   const isLoading = useProjectStore((state) => state.isLoading);
   const activeProjectStoreId = useProjectStore((state) => state.activeProjectId);
   const fetchProject = useProjectStore((state) => state.fetchProject);
   const createSection = useProjectStore((state) => state.createSection);
   const updateSectionTree = useProjectStore((state) => state.updateSectionTree);
-  const setCredits = useProjectStore((state) => state.setCredits);
   const exportDocument = useProjectStore((state) => state.exportDocument);
   const isSavingExport = useProjectStore((state) => state.isSavingExport);
 
@@ -74,10 +70,6 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
   useEffect(() => {
     void fetchProject(projectId);
   }, [fetchProject, projectId]);
-
-  useEffect(() => {
-    setAppCredits(credits);
-  }, [credits, setAppCredits]);
 
   useEffect(() => {
     clearChat(projectId);
@@ -187,7 +179,7 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
   const handleChatSubmit = useCallback(async () => {
     if (!chatPrompt.trim() || isChatLoading || !project) return;
     try {
-      await sendMessage(chatPrompt, projectId, credits, setCredits, chatContext, chatAction);
+      await sendMessage(chatPrompt, projectId, chatContext, chatAction);
     } catch (error) {
       toast({
         title: "Erro",
@@ -196,7 +188,7 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
         variant: "destructive",
       });
     }
-  }, [chatAction, chatContext, chatPrompt, credits, isChatLoading, project, projectId, sendMessage, setCredits, toast]);
+  }, [chatAction, chatContext, chatPrompt, isChatLoading, project, projectId, sendMessage, toast]);
 
   const handleExport = useCallback(async () => {
     try {

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { AssistantMessage } from "@/types/editor";
-import { AI_ACTION_CREDIT_COSTS } from "@/lib/credits";
+import { isFeatureVisible } from "@/lib/features";
 import type { AIAction } from "@/lib/subscription";
 
 interface AssistantStoreState {
@@ -15,8 +15,6 @@ interface AssistantStoreState {
   sendMessage: (
     prompt: string,
     projectId: string | null,
-    credits: number,
-    onCreditsUpdate: (balance: number) => void,
     context?: string,
     action?: AIAction
   ) => Promise<string>;
@@ -38,13 +36,10 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
       activeProjectId: projectId,
     }),
 
-  sendMessage: async (prompt, projectId, credits, onCreditsUpdate, context, action) => {
+  sendMessage: async (prompt, projectId, context, action) => {
     const resolvedAction: AIAction = action ?? "generate";
 
     if (!prompt.trim() || get().isChatLoading) return "";
-
-    const cost = AI_ACTION_CREDIT_COSTS[resolvedAction] ?? AI_ACTION_CREDIT_COSTS.generate;
-    if (credits < cost) return "";
 
     const userMessage: AssistantMessage = {
       id: crypto.randomUUID(),
@@ -53,14 +48,23 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
       createdAt: new Date(),
     };
 
+    const assistantMessageId = crypto.randomUUID();
+    const initialAssistantMessage: AssistantMessage = {
+      id: assistantMessageId,
+      role: "assistant",
+      content: "",
+      createdAt: new Date(),
+    };
+
     set((state) => ({
-      chatMessages: [...state.chatMessages, userMessage],
+      chatMessages: [...state.chatMessages, userMessage, initialAssistantMessage],
       isChatLoading: true,
       activeProjectId: projectId,
     }));
 
     try {
-      const response = await fetch("/api/ai", {
+      const endpoint = isFeatureVisible("realTimeStreaming") ? "/api/ai/stream" : "/api/ai";
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -71,19 +75,42 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
         }),
       });
 
-      const data = await response.json();
-      if (!response.ok || !data.success) {
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({ error: "Erro ao gerar conteúdo." }));
         throw new Error(data.error || "Erro ao gerar conteúdo.");
       }
 
-      onCreditsUpdate(data.remainingCredits);
+      let assistantContent = "";
 
-      const assistantMessage: AssistantMessage = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: data.response,
-        createdAt: new Date(),
-      };
+      if (endpoint === "/api/ai/stream" && response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          assistantContent += decoder.decode(value, { stream: true });
+          set((state) => ({
+            ...state,
+            chatMessages: state.chatMessages.map((message) =>
+              message.id === assistantMessageId
+                ? { ...message, content: assistantContent }
+                : message,
+            ),
+          }));
+        }
+      } else {
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error || "Erro ao gerar conteúdo.");
+        }
+        assistantContent = data.response;
+      }
+
+      if (!assistantContent.trim()) {
+        throw new Error("A IA não devolveu conteúdo.");
+      }
 
       set((state) => {
         if (state.activeProjectId !== projectId) {
@@ -91,15 +118,22 @@ export const useAssistantStore = create<AssistantStoreState>((set, get) => ({
         }
 
         return {
-          chatMessages: [...state.chatMessages, assistantMessage],
+          chatMessages: state.chatMessages.map((message) =>
+            message.id === assistantMessageId
+              ? { ...message, content: assistantContent }
+              : message,
+          ),
           isChatLoading: false,
           chatPrompt: "",
         };
       });
 
-      return data.response;
+      return assistantContent;
     } catch (error) {
-      set({ isChatLoading: false });
+      set((state) => ({
+        isChatLoading: false,
+        chatMessages: state.chatMessages.filter((message) => message.id !== assistantMessageId),
+      }));
       throw error;
     }
   },

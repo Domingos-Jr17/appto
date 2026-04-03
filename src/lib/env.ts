@@ -16,6 +16,8 @@ const envSchema = z
     ZAI_API_KEY: z.string().min(1).optional(),
     ZAI_BASE_URL: z.string().url().optional(),
     AI_PROVIDER: z.enum(["zai", "openrouter"]).optional(),
+    AI_FALLBACK_PROVIDER: z.enum(["zai", "openrouter"]).optional(),
+    AI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
     OPENROUTER_API_KEY: z.string().min(1).optional(),
     OPENROUTER_BASE_URL: z.string().url().optional(),
     OPENROUTER_MODEL: z.string().min(1).optional(),
@@ -27,6 +29,9 @@ const envSchema = z
     PAYSUITE_API_BASE_URL: z.string().url().optional(),
     PAYSUITE_API_TOKEN: z.string().min(1).optional(),
     PAYSUITE_CALLBACK_BASE_URL: z.string().url().optional(),
+    RATE_LIMIT_PROVIDER: z.enum(["MEMORY", "UPSTASH"]).optional(),
+    UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+    UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
     STORAGE_PROVIDER: z.enum(["LOCAL", "R2"]).optional(),
     STORAGE_LOCAL_ROOT: z.string().min(1).optional(),
     R2_ACCOUNT_ID: z.string().min(1).optional(),
@@ -80,6 +85,23 @@ const envSchema = z
         }
       }
     }
+
+    if (data.RATE_LIMIT_PROVIDER === "UPSTASH") {
+      const requiredKeys = [
+        "UPSTASH_REDIS_REST_URL",
+        "UPSTASH_REDIS_REST_TOKEN",
+      ] as const;
+
+      for (const key of requiredKeys) {
+        if (!data[key]) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message: `${key} is required when RATE_LIMIT_PROVIDER=UPSTASH`,
+          });
+        }
+      }
+    }
   });
 
 const parsedEnv = envSchema.safeParse({
@@ -95,6 +117,8 @@ const parsedEnv = envSchema.safeParse({
   ZAI_API_KEY: process.env.ZAI_API_KEY,
   ZAI_BASE_URL: process.env.ZAI_BASE_URL,
   AI_PROVIDER: process.env.AI_PROVIDER,
+  AI_FALLBACK_PROVIDER: process.env.AI_FALLBACK_PROVIDER,
+  AI_REQUEST_TIMEOUT_MS: process.env.AI_REQUEST_TIMEOUT_MS,
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
   OPENROUTER_BASE_URL: process.env.OPENROUTER_BASE_URL,
   OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
@@ -106,6 +130,9 @@ const parsedEnv = envSchema.safeParse({
     PAYSUITE_API_BASE_URL: process.env.PAYSUITE_API_BASE_URL,
     PAYSUITE_API_TOKEN: process.env.PAYSUITE_API_TOKEN,
     PAYSUITE_CALLBACK_BASE_URL: process.env.PAYSUITE_CALLBACK_BASE_URL,
+    RATE_LIMIT_PROVIDER: process.env.RATE_LIMIT_PROVIDER,
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     STORAGE_PROVIDER: process.env.STORAGE_PROVIDER,
   STORAGE_LOCAL_ROOT: process.env.STORAGE_LOCAL_ROOT,
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
@@ -135,9 +162,12 @@ export const env = {
   PAYMENT_DEFAULT_PROVIDER: parsedEnv.data.PAYMENT_DEFAULT_PROVIDER ?? "SIMULATED",
   PAYSUITE_API_BASE_URL:
     parsedEnv.data.PAYSUITE_API_BASE_URL ?? "https://paysuite.tech",
+  RATE_LIMIT_PROVIDER: parsedEnv.data.RATE_LIMIT_PROVIDER ?? "MEMORY",
   STORAGE_PROVIDER: parsedEnv.data.STORAGE_PROVIDER ?? "LOCAL",
   STORAGE_LOCAL_ROOT: parsedEnv.data.STORAGE_LOCAL_ROOT ?? ".storage",
   AI_PROVIDER: parsedEnv.data.AI_PROVIDER ?? "openrouter",
+  AI_FALLBACK_PROVIDER: parsedEnv.data.AI_FALLBACK_PROVIDER,
+  AI_REQUEST_TIMEOUT_MS: parsedEnv.data.AI_REQUEST_TIMEOUT_MS ?? 8_000,
   isDevelopment: parsedEnv.data.NODE_ENV === "development",
   isProduction: parsedEnv.data.NODE_ENV === "production",
 };

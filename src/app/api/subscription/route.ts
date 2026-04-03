@@ -4,7 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
 import { BILLING_PLAN_DISPLAY, EXTRA_WORKS } from "@/lib/billing";
+import { withDistributedLock } from "@/lib/distributed-lock";
 import { PaymentService } from "@/lib/payments";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { subscriptionService } from "@/lib/subscription";
 import { env } from "@/lib/env";
 import { PaymentProvider, PackageType } from "@prisma/client";
@@ -71,27 +73,48 @@ export async function POST(request: NextRequest) {
       return apiError("Não autorizado", 401);
     }
 
+    await enforceRateLimit(`subscription:${session.user.id}`, 10, 60 * 1000);
+
     const body = await parseBody(request, subscriptionActionSchema);
     const providerValue = (body.provider ?? env.PAYMENT_DEFAULT_PROVIDER) as PaymentProvider;
 
-    const paymentService = new PaymentService(db);
+    const payment = await withDistributedLock(
+      `subscription:${session.user.id}`,
+      15_000,
+      async () => {
+        const paymentService = new PaymentService(db);
+
+        if ("package" in body) {
+          const validPackage = PackageType[body.package as keyof typeof PackageType];
+          if (!validPackage) {
+            throw new Error("Pacote inválido");
+          }
+
+          if (validPackage === PackageType.FREE) {
+            throw new Error("Não pode activar o pacote Free");
+          }
+
+          return paymentService.createPackageCheckout(
+            session.user.id,
+            providerValue,
+            validPackage
+          );
+        }
+
+        if ("quantity" in body) {
+          return paymentService.createExtraWorkCheckout(
+            session.user.id,
+            providerValue,
+            body.quantity
+          );
+        }
+
+        throw new Error("Parâmetros inválidos. Forneça 'package' ou 'quantity'");
+      },
+      "Já existe uma operação de pacote/pagamento em curso. Aguarde alguns instantes.",
+    );
 
     if ("package" in body) {
-      const validPackage = PackageType[body.package as keyof typeof PackageType];
-      if (!validPackage) {
-        return apiError("Pacote inválido", 400);
-      }
-
-      if (validPackage === PackageType.FREE) {
-        return apiError("Não pode activar o pacote Free", 400);
-      }
-
-      const payment = await paymentService.createPackageCheckout(
-        session.user.id,
-        providerValue,
-        validPackage
-      );
-
       return apiSuccess({
         success: true,
         payment,
@@ -102,24 +125,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if ("quantity" in body) {
-      const payment = await paymentService.createExtraWorkCheckout(
-        session.user.id,
-        providerValue,
-        body.quantity
-      );
-
-      return apiSuccess({
-        success: true,
-        payment,
-        message:
-          payment.status === "CONFIRMED"
-            ? `${body.quantity} trabalho(s) extra(s) adicionado(s) com sucesso`
-            : `Checkout iniciado para ${body.quantity} trabalho(s) extra(s)`,
-      });
-    }
-
-    return apiError("Parâmetros inválidos. Forneça 'package' ou 'quantity'", 400);
+    return apiSuccess({
+      success: true,
+      payment,
+      message:
+        payment.status === "CONFIRMED"
+          ? `${body.quantity} trabalho(s) extra(s) adicionado(s) com sucesso`
+          : `Checkout iniciado para ${body.quantity} trabalho(s) extra(s)`,
+    });
   } catch (error) {
     console.error("Subscription POST error:", error);
     return handleApiError(error, "Erro ao processarSubscription");

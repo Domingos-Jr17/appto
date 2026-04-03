@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
 import { db } from "@/lib/db";
+import { withDistributedLock } from "@/lib/distributed-lock";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { serializeStoredFile } from "@/lib/files";
 import { DocumentExportService } from "@/lib/document-export";
 import { buildStoredFileRecord, createChecksum, uploadBufferToStorage } from "@/lib/storage";
@@ -24,106 +26,123 @@ export async function POST(
     const { id } = await params;
     const { format } = await parseBody(request, saveProjectExportSchema);
 
-    const project = await db.project.findFirst({
-      where: {
-        id,
-        userId: session.user.id,
-      },
-      include: {
-        sections: {
-          orderBy: { order: "asc" },
-        },
-      },
-    });
+    await enforceRateLimit(`export:save:${session.user.id}`, 20, 60 * 1000);
 
-    if (!project) {
-      return apiError("Projecto não encontrado", 404);
-    }
+    return await withDistributedLock(
+      `export:save:${session.user.id}:${id}:${format}`,
+      20_000,
+      async () => {
+        const project = await db.project.findFirst({
+          where: {
+            id,
+            userId: session.user.id,
+          },
+          include: {
+            brief: {
+              select: {
+                institutionName: true,
+                studentName: true,
+                city: true,
+                academicYear: true,
+              },
+            },
+            sections: {
+              orderBy: { order: "asc" },
+            },
+          },
+        });
 
-    if (format === "PDF") {
-      const { allowed, reason } = await subscriptionService.canExportPdf(session.user.id);
+        if (!project) {
+          return apiError("Projecto não encontrado", 404);
+        }
 
-      if (!allowed) {
-        return apiError(reason || "Export PDF disponível apenas em PRO", 403);
-      }
-    }
+        if (format === "PDF") {
+          const { allowed, reason } = await subscriptionService.canExportPdf(session.user.id);
 
-    const model = DocumentExportService.createModel(project);
-    const buffer =
-      format === "PDF"
-        ? await renderToBuffer(DocumentExportService.createPdfComponent(model))
-        : await DocumentExportService.generateDocx(model);
+          if (!allowed) {
+            return apiError(reason || "Export PDF disponível apenas em PRO", 403);
+          }
+        }
 
-    const fileId = crypto.randomUUID().replace(/-/g, "");
-    const mimeType =
-      format === "PDF"
-        ? "application/pdf"
-        : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-    const originalName = `${project.title}.${format === "PDF" ? "pdf" : "docx"}`;
-    const storageRecord = buildStoredFileRecord({
-      userId: session.user.id,
-      projectId: project.id,
-      fileId,
-      kind: "EXPORT",
-      originalName,
-      mimeType,
-      sizeBytes: buffer.byteLength,
-    });
+        const model = DocumentExportService.createModel(project);
+        const buffer =
+          format === "PDF"
+            ? await renderToBuffer(DocumentExportService.createPdfComponent(model))
+            : await DocumentExportService.generateDocx(model);
 
-    const createdFile = await db.storedFile.create({
-      data: {
-        id: fileId,
-        userId: session.user.id,
-        projectId: project.id,
-        kind: "EXPORT",
-        provider: storageRecord.provider,
-        bucket: storageRecord.bucket,
-        objectKey: storageRecord.objectKey,
-        mimeType,
-        sizeBytes: buffer.byteLength,
-        originalName,
-        checksum: createChecksum(buffer),
-      },
-    });
-
-    try {
-      await uploadBufferToStorage(createdFile, buffer);
-    } catch (error) {
-      await db.storedFile.update({
-        where: { id: createdFile.id },
-        data: { status: "FAILED" },
-      });
-      throw error;
-    }
-
-    const [, savedExport] = await db.$transaction([
-      db.storedFile.update({
-        where: { id: createdFile.id },
-        data: { status: "READY" },
-      }),
-      db.projectExport.create({
-        data: {
+        const fileId = crypto.randomUUID().replace(/-/g, "");
+        const mimeType =
+          format === "PDF"
+            ? "application/pdf"
+            : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        const originalName = `${project.title}.${format === "PDF" ? "pdf" : "docx"}`;
+        const storageRecord = buildStoredFileRecord({
+          userId: session.user.id,
           projectId: project.id,
-          fileId: createdFile.id,
-          format,
-          createdById: session.user.id,
-        },
-        include: {
-          file: true,
-        },
-      }),
-    ]);
+          fileId,
+          kind: "EXPORT",
+          originalName,
+          mimeType,
+          sizeBytes: buffer.byteLength,
+        });
 
-    return apiSuccess({
-      success: true,
-      creditsUsed: 0,
-      export: {
-        id: savedExport.id,
-        format: savedExport.format,
-        createdAt: savedExport.createdAt,
-        file: await serializeStoredFile(savedExport.file),
+        const createdFile = await db.storedFile.create({
+          data: {
+            id: fileId,
+            userId: session.user.id,
+            projectId: project.id,
+            kind: "EXPORT",
+            provider: storageRecord.provider,
+            bucket: storageRecord.bucket,
+            objectKey: storageRecord.objectKey,
+            mimeType,
+            sizeBytes: buffer.byteLength,
+            originalName,
+            checksum: createChecksum(buffer),
+          },
+        });
+
+        try {
+          await uploadBufferToStorage(createdFile, buffer);
+        } catch (error) {
+          await db.storedFile.update({
+            where: { id: createdFile.id },
+            data: { status: "FAILED" },
+          });
+          throw error;
+        }
+
+        const [, savedExport] = await db.$transaction([
+          db.storedFile.update({
+            where: { id: createdFile.id },
+            data: { status: "READY" },
+          }),
+          db.projectExport.create({
+            data: {
+              projectId: project.id,
+              fileId: createdFile.id,
+              format,
+              createdById: session.user.id,
+            },
+            include: {
+              file: true,
+            },
+          }),
+        ]);
+
+        return apiSuccess({
+          success: true,
+          creditsUsed: 0,
+          export: {
+            id: savedExport.id,
+            format: savedExport.format,
+            createdAt: savedExport.createdAt,
+            file: await serializeStoredFile(savedExport.file),
+          },
+        });
       },
-    });
+      "Já existe uma exportação em curso para este projecto.",
+    );
   } catch (error) {
     return handleApiError(error, "Não foi possível guardar a exportação");
   }

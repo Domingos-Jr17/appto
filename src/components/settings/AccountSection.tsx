@@ -154,7 +154,7 @@ export function AccountSection() {
             Status da Conta
           </Label>
           <p className="text-sm text-muted-foreground">
-            Informações sobre a sua conta e créditos.
+            Informações sobre a sua conta, pacote actual e gestão comercial.
           </p>
         </div>
 
@@ -205,9 +205,9 @@ export function AccountSection() {
                 <HardDrive className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Créditos</p>
+                <p className="text-sm text-muted-foreground">Facturação</p>
                 <p className="font-semibold">
-                  {user?.credits?.toLocaleString("pt-MZ") || 0} créditos
+                  Pacotes + trabalhos extras
                 </p>
               </div>
             </div>
@@ -231,7 +231,7 @@ export function AccountSection() {
         <div className="rounded-xl border border-border/60 bg-accent/50 p-4 shadow-lg backdrop-blur-xl">
           <p className="mb-4 text-sm text-muted-foreground">
             Será descarregado um ficheiro JSON com sessões, secções,
-            transacções, créditos e configurações associadas à conta.
+            transacções, pacotes, trabalhos extras e configurações associadas à conta.
           </p>
           <Button variant="outline" onClick={handleExportData} disabled={isExporting}>
             {isExporting ? (

@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const { email } = await parseBody(request, forgotPasswordSchema);
     const normalizedEmail = email.trim().toLowerCase();
 
-    enforceRateLimit(`forgot-password:${normalizedEmail}`, 5, 1000 * 60 * 10);
+    await enforceRateLimit(`forgot-password:${normalizedEmail}`, 5, 1000 * 60 * 10);
 
     const user = await db.user.findUnique({
       where: { email: normalizedEmail },

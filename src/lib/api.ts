@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
+import { RateLimitError } from "@/lib/rate-limit-core";
 
 export function apiSuccess<T>(data: T, init?: ResponseInit) {
   return NextResponse.json(data, init);
@@ -39,6 +40,10 @@ export function getZodErrorDetails(error: ZodError) {
 export function handleApiError(error: unknown, fallback = "Erro interno do servidor") {
   if (error instanceof ZodError) {
     return apiError("Pedido inválido", 400, "VALIDATION_ERROR", getZodErrorDetails(error));
+  }
+
+  if (error instanceof RateLimitError) {
+    return apiError(error.message, 429, "RATE_LIMITED");
   }
 
   if (error instanceof Error) {

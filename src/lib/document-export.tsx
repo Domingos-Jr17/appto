@@ -25,6 +25,12 @@ export interface ExportDocument {
   title: string;
   description?: string | null;
   type: string;
+  brief?: {
+    institutionName?: string | null;
+    studentName?: string | null;
+    city?: string | null;
+    academicYear?: number | null;
+  };
   sections: ExportSection[];
 }
 
@@ -55,12 +61,19 @@ export class DocumentExportService {
     title: string;
     description?: string | null;
     type: string;
+    brief?: {
+      institutionName?: string | null;
+      studentName?: string | null;
+      city?: string | null;
+      academicYear?: number | null;
+    } | null;
     sections: { id: string; title: string; content: string | null; order: number }[];
   }): ExportDocument {
     return {
       title: project.title,
       description: project.description,
       type: project.type,
+      brief: project.brief || undefined,
       sections: project.sections.map((section) => ({
         id: section.id,
         title: section.title,
@@ -76,30 +89,67 @@ export class DocumentExportService {
       new Paragraph({
         children: [
           new TextRun({
-            text: model.title,
-            bold: true,
-            size: 48,
+            text: model.brief?.institutionName || "",
+            size: 24,
+            font: "Arial",
           }),
         ],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 3000, after: 400 },
+        spacing: { after: 200 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: model.brief?.studentName || "",
+            size: 24,
+            font: "Arial",
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 2400, after: 1200 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: model.title.toUpperCase(),
+            bold: true,
+            size: 28,
+            font: "Arial",
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 400 },
       }),
     ];
 
     if (model.description) {
       children.push(
         new Paragraph({
-          children: [new TextRun({ text: model.description, size: 24 })],
+          children: [new TextRun({ text: model.description, size: 24, font: "Arial" })],
           alignment: AlignmentType.CENTER,
           spacing: { after: 400 },
         })
       );
     }
 
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: [model.brief?.city, model.brief?.academicYear].filter(Boolean).join(", "),
+            size: 24,
+            font: "Arial",
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 4200, after: 200 },
+      })
+    );
+
     children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(
       new Paragraph({
-        children: [new TextRun({ text: "Índice", bold: true, size: 32 })],
+        children: [new TextRun({ text: "Índice", bold: true, size: 28, font: "Arial" })],
         heading: HeadingLevel.HEADING_1,
       })
     );
@@ -119,6 +169,7 @@ export class DocumentExportService {
               text: section.title,
               bold: true,
               size: section.level === 1 ? 28 : 24,
+              font: "Arial",
             }),
           ],
           heading: section.level === 1 ? HeadingLevel.HEADING_1 : HeadingLevel.HEADING_2,
@@ -130,7 +181,7 @@ export class DocumentExportService {
         if (block.type === "heading" && block.text) {
           children.push(
             new Paragraph({
-              children: [new TextRun({ text: block.text, bold: true, size: 24 })],
+              children: [new TextRun({ text: block.text, bold: true, size: 24, font: "Arial" })],
               heading: block.level && block.level <= 2 ? HeadingLevel.HEADING_2 : HeadingLevel.HEADING_3,
               spacing: { before: 220, after: 120 },
             })
@@ -140,9 +191,10 @@ export class DocumentExportService {
         if (block.type === "paragraph" && block.text) {
           children.push(
             new Paragraph({
-              children: [new TextRun({ text: block.text, size: 24 })],
+              children: [new TextRun({ text: block.text, size: 24, font: "Arial" })],
               spacing: { after: 200, line: 360 },
               alignment: AlignmentType.JUSTIFIED,
+              indent: { firstLine: 709 },
             })
           );
         }
@@ -150,9 +202,9 @@ export class DocumentExportService {
         if (block.type === "quote" && block.text) {
           children.push(
             new Paragraph({
-              children: [new TextRun({ text: block.text, italics: true, size: 24 })],
-              spacing: { after: 180, line: 340 },
-              indent: { left: 520 },
+              children: [new TextRun({ text: block.text, size: 20, font: "Arial" })],
+              spacing: { after: 180, line: 240 },
+              indent: { left: 2268 },
             })
           );
         }
@@ -161,9 +213,10 @@ export class DocumentExportService {
           for (const item of block.items) {
             children.push(
               new Paragraph({
-                children: [new TextRun({ text: item, size: 24 })],
+                children: [new TextRun({ text: item, size: 24, font: "Arial" })],
                 bullet: { level: 0 },
                 spacing: { after: 120, line: 320 },
+                indent: { firstLine: 709 },
               })
             );
           }
@@ -174,6 +227,16 @@ export class DocumentExportService {
     const doc = new Document({
       sections: [
         {
+          properties: {
+            page: {
+              margin: {
+                top: 1701,
+                right: 1134,
+                bottom: 1134,
+                left: 1701,
+              },
+            },
+          },
           footers: {
             default: new Footer({
               children: [

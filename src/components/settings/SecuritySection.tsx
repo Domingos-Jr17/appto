@@ -687,7 +687,7 @@ export function SecuritySection() {
             <p className="mb-1 font-medium text-foreground">Dicas de Segurança</p>
             <ul className="space-y-1 text-muted-foreground">
               <li>Use uma senha forte e única para a sua conta.</li>
-              <li>Active o 2FA antes de adicionar créditos ou exportar documentos.</li>
+              <li>Active o 2FA antes de gerir pacotes, pagamentos ou exportar documentos.</li>
               <li>Revogue sessões antigas depois de usar computadores partilhados.</li>
               <li>Guarde os códigos de recuperação fora do browser.</li>
             </ul>

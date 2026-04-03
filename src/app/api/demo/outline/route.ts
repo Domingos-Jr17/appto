@@ -41,10 +41,10 @@ export async function POST(request: NextRequest) {
     const normalizedTopic = topic.trim();
 
     try {
-      enforceRateLimit(
-        `demo-outline:${getRequestIp(request)}`,
-        DEMO_RATE_LIMIT.limit,
-        DEMO_RATE_LIMIT.windowMs
+        await enforceRateLimit(
+          `demo-outline:${getRequestIp(request)}`,
+          DEMO_RATE_LIMIT.limit,
+          DEMO_RATE_LIMIT.windowMs
       );
     } catch (error) {
       return apiError(

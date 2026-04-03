@@ -70,7 +70,7 @@ export const authOptions: NextAuthOptions = {
 
         const normalizedEmail = credentials.email.trim().toLowerCase();
 
-        enforceRateLimit(`login:${normalizedEmail}`, 20, 60 * 1000);
+        await enforceRateLimit(`login:${normalizedEmail}`, 20, 60 * 1000);
 
         const user = await db.user.findUnique({
           where: { email: normalizedEmail },

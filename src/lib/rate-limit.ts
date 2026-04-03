@@ -1,17 +1,65 @@
-const buckets = new Map<string, { count: number; resetAt: number }>();
+import "server-only";
 
-export function enforceRateLimit(key: string, limit: number, windowMs: number) {
-  const now = Date.now();
-  const existing = buckets.get(key);
+import { Redis } from "@upstash/redis";
 
-  if (!existing || existing.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return;
+import { env } from "@/lib/env";
+import { MemoryRateLimiter, RateLimitError, type RateLimitResult, type RateLimiter } from "@/lib/rate-limit-core";
+
+class UpstashRateLimiter implements RateLimiter {
+  constructor(
+    private readonly redis: Redis,
+    private readonly prefix = "rl",
+  ) {}
+
+  async limit(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
+    const namespacedKey = `${this.prefix}:${key}`;
+    const count = await this.redis.incr(namespacedKey);
+
+    if (count === 1) {
+      await this.redis.expire(namespacedKey, Math.max(Math.ceil(windowMs / 1000), 1));
+    }
+
+    const ttlSeconds = await this.redis.ttl(namespacedKey);
+    const resetAt = Date.now() + Math.max(ttlSeconds, 0) * 1000;
+
+    return {
+      allowed: count <= limit,
+      current: count,
+      remaining: Math.max(limit - count, 0),
+      resetAt,
+    };
+  }
+}
+
+let cachedRateLimiter: RateLimiter | null = null;
+
+function createRateLimiter(): RateLimiter {
+  if (env.RATE_LIMIT_PROVIDER === "UPSTASH") {
+    const redis = new Redis({
+      url: env.UPSTASH_REDIS_REST_URL!,
+      token: env.UPSTASH_REDIS_REST_TOKEN!,
+    });
+
+    return new UpstashRateLimiter(redis);
   }
 
-  if (existing.count >= limit) {
-    throw new Error("Demasiadas tentativas. Tente novamente em instantes.");
+  return new MemoryRateLimiter();
+}
+
+export function getRateLimiter(): RateLimiter {
+  if (!cachedRateLimiter) {
+    cachedRateLimiter = createRateLimiter();
   }
 
-  existing.count += 1;
+  return cachedRateLimiter;
+}
+
+export async function enforceRateLimit(key: string, limit: number, windowMs: number) {
+  const result = await getRateLimiter().limit(key, limit, windowMs);
+
+  if (!result.allowed) {
+    throw new RateLimitError();
+  }
+
+  return result;
 }

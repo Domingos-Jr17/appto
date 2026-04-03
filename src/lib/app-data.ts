@@ -36,19 +36,6 @@ export interface CreditTransaction {
   createdAt: string;
 }
 
-export interface CreditPackage {
-  credits: number;
-  price: number;
-  currency: string;
-}
-
-export interface CreditDetailsRecord {
-  balance: number;
-  used: number;
-  transactions: CreditTransaction[];
-  packages: Record<string, CreditPackage>;
-}
-
 async function readJson<T>(response: Response, fallbackMessage: string): Promise<T> {
   const data = (await response.json()) as T & { error?: string };
 
@@ -76,9 +63,4 @@ export async function fetchCreditsBalance() {
   const response = await fetch("/api/credits");
   const data = await readJson<{ balance?: number }>(response, "Não foi possível carregar o saldo de créditos.");
   return data.balance || 0;
-}
-
-export async function fetchCreditDetails() {
-  const response = await fetch("/api/credits?transactions=true");
-  return readJson<CreditDetailsRecord>(response, "Não foi possível carregar os créditos.");
 }

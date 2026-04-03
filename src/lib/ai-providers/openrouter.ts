@@ -140,6 +140,7 @@ export class OpenRouterProvider implements AIProvider {
             "HTTP-Referer": "https://aptto.mz",
             "X-Title": "aptto",
           },
+          signal: body.signal,
           body: JSON.stringify(sanitizeRequestBody(body, config.model)),
         });
 

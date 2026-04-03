@@ -11,6 +11,7 @@ export interface AIChatRequest {
   max_tokens?: number;
   top_p?: number;
   thinking?: unknown;
+  signal?: AbortSignal;
 }
 
 export interface AIChatResponse {

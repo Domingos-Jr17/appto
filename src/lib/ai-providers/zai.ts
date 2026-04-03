@@ -137,6 +137,7 @@ export class ZAIProvider implements AIProvider {
             "Accept-Language": "en-US,en",
             "Content-Type": "application/json",
           },
+          signal: body.signal,
           body: JSON.stringify(sanitizeRequestBody(body, config.model)),
         });
 

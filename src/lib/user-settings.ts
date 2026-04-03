@@ -41,7 +41,7 @@ export const SETTINGS_TABS = [
   {
     value: "conta",
     label: "Conta",
-    description: "Gestão da conta e créditos",
+    description: "Gestão da conta, pacotes e facturação",
   },
 ] as const;
 

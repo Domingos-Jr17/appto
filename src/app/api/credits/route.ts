@@ -2,14 +2,10 @@ import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
-import { CREDIT_PACKAGES, CREDIT_DEFAULTS } from "@/lib/credits";
-import { paymentCheckoutSchema } from "@/lib/validators";
-import { PaymentService } from "@/lib/payments";
-import { env } from "@/lib/env";
-import { PaymentProvider } from "@prisma/client";
+import { apiError, apiSuccess, handleApiError } from "@/lib/api";
+import { CREDIT_DEFAULTS } from "@/lib/credits";
 
-// GET /api/credits - Get user's credit balance and transactions
+// GET /api/credits - Legacy internal credits endpoint
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -38,7 +34,8 @@ export async function GET(request: NextRequest) {
         balance: newCredits.balance,
         used: newCredits.used,
         transactions: [],
-        packages: CREDIT_PACKAGES,
+        archived: true,
+        note: "O fluxo público de créditos foi arquivado. Use pacotes e trabalhos extras em /app/subscription.",
       });
     }
 
@@ -54,7 +51,8 @@ export async function GET(request: NextRequest) {
       balance: credits.balance,
       used: credits.used,
       transactions,
-      packages: CREDIT_PACKAGES,
+      archived: true,
+      note: "O fluxo público de créditos foi arquivado. Use pacotes e trabalhos extras em /app/subscription.",
     });
   } catch (error) {
     console.error("Get credits error:", error);
@@ -63,32 +61,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
-    }
-
-    const { packageKey, provider } = await parseBody(request, paymentCheckoutSchema);
-    const paymentService = new PaymentService(db);
-    const payment = await paymentService.createCheckout(
-      session.user.id,
-      (provider ?? env.PAYMENT_DEFAULT_PROVIDER) as PaymentProvider,
-      packageKey
-    );
-    const credits = await db.credit.findUnique({
-      where: { userId: session.user.id },
-    });
-
-    return apiSuccess({
-      success: true,
-      payment,
-      balance: credits?.balance ?? 0,
-      packages: CREDIT_PACKAGES,
-    });
-  } catch (error) {
-    console.error("Purchase credits error:", error);
-    return handleApiError(error, "Erro ao processar pagamento");
-  }
+  void request;
+  return apiError(
+    "A compra pública de créditos foi arquivada. Use /app/subscription para gerir pacotes e trabalhos extras.",
+    410,
+  );
 }

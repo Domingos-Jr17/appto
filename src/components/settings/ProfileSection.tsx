@@ -278,9 +278,9 @@ export function ProfileSection() {
             <p className="font-medium capitalize">{user?.role || "Estudante"}</p>
           </div>
           <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
-            <p className="text-sm text-muted-foreground">Créditos Disponíveis</p>
+            <p className="text-sm text-muted-foreground">Modelo Comercial</p>
             <p className="font-medium">
-              {user?.credits?.toLocaleString("pt-MZ") || 0} créditos
+              Pacotes mensais e trabalhos extras
             </p>
           </div>
         </div>

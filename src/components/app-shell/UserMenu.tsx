@@ -88,9 +88,9 @@ export function UserMenu({
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/app/credits">
+          <Link href="/app/subscription">
             <CreditCard className="mr-2 h-4 w-4" />
-            Créditos
+            Pacotes
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

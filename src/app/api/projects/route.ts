@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { ZodError } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getWorkGenerationStatus } from "@/lib/work-generation-jobs";
+import { getWorkGenerationStatus, getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
 import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
 import { getSectionsForEducationLevel } from "@/lib/project-templates";
 import { subscriptionService } from "@/lib/subscription";
@@ -47,7 +47,7 @@ function serializeBrief(
   };
 }
 
-function serializeProject(project: {
+async function serializeProject(project: {
   id: string;
   title: string;
   description: string | null;
@@ -90,7 +90,7 @@ function serializeProject(project: {
 }) {
   const lastEditedSection = getLastEditedSection(project.sections);
   const sectionSummary = getSectionSummary(project.sections);
-  const liveGeneration = getWorkGenerationStatus(project.id);
+  const liveGeneration = await getWorkGenerationStatusAsync(project.id);
 
   return {
     ...project,
@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(projects.map(serializeProject));
+    return NextResponse.json(await Promise.all(projects.map(serializeProject)));
   } catch (error) {
     console.error("Get projects error:", error);
     return NextResponse.json(
@@ -289,7 +289,8 @@ export async function POST(request: NextRequest) {
         },
       });
 
-    return NextResponse.json(completeProject ? serializeProject(completeProject) : completeProject, { status: 201 });
+    const serializedProject = completeProject ? await serializeProject(completeProject) : completeProject;
+    return NextResponse.json(serializedProject, { status: 201 });
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json({ error: "Payload inválido", details: error.flatten() }, { status: 400 });

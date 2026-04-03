@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { deleteStoredObject } from "@/lib/storage";
 import { normalizeStoredContent } from "@/lib/content";
-import { getWorkGenerationStatus } from "@/lib/work-generation-jobs";
+import { getWorkGenerationStatus, getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
 import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
 import { updateProjectSchema } from "@/lib/validators";
 
@@ -47,7 +47,7 @@ function serializeBrief(
   };
 }
 
-function serializeProject(project: {
+async function serializeProject(project: {
   id: string;
   title: string;
   description: string | null;
@@ -95,7 +95,7 @@ function serializeProject(project: {
   }));
   const lastEditedSection = getLastEditedSection(sections);
   const sectionSummary = getSectionSummary(sections);
-  const liveGeneration = getWorkGenerationStatus(project.id);
+  const liveGeneration = await getWorkGenerationStatusAsync(project.id);
 
   return {
     ...project,

@@ -147,10 +147,17 @@ export function getWorkGenerationStatus(projectId: string): WorkGenerationJobSta
   const inMemory = jobs.get(projectId);
   if (inMemory) return inMemory;
   
+  // Fall through to DB lookup is handled by getWorkGenerationStatusAsync
+  // This function returns only in-memory for sync contexts; use async for DB fallback
   return null;
 }
 
 export async function getWorkGenerationStatusAsync(projectId: string): Promise<WorkGenerationJobStatus | null> {
+  // First check in-memory
+  const inMemory = jobs.get(projectId);
+  if (inMemory) return inMemory;
+  
+  // Then check database
   const dbJob = await db.generationJob.findUnique({
     where: { projectId },
     select: { status: true, progress: true, step: true, error: true },
@@ -458,15 +465,17 @@ export async function startWorkGenerationJob(input: {
   const templates = getSectionTemplates(type);
   const totalRefund = baseCost + contentCost;
 
-  const existingBrief = await db.projectBrief.findUnique({
+  // Check for existing active generation job - this is the single source of truth
+  const existingJob = await db.generationJob.findUnique({
     where: { projectId },
-    select: { generationStatus: true },
+    select: { id: true, status: true },
   });
 
-  if (existingBrief?.generationStatus === "GENERATING") {
+  if (existingJob && existingJob.status === "GENERATING") {
     throw new Error("Geração já está em curso para este trabalho.");
   }
 
+  // Create/update the job record first - this is the single source of truth for generation status
   await db.generationJob.upsert({
     where: { projectId },
     create: {
@@ -494,6 +503,7 @@ export async function startWorkGenerationJob(input: {
 
   void (async () => {
     try {
+      // Now update the brief status - this is the only place that should set GENERATING
       await db.projectBrief.update({
         where: { projectId },
         data: { generationStatus: "GENERATING" },

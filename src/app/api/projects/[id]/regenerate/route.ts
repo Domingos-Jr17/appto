@@ -46,31 +46,20 @@ export async function POST(
       );
     }
 
-    await db.$transaction(async (tx) => {
-      await tx.projectBrief.update({
-        where: { projectId: id },
-        data: { generationStatus: "GENERATING" },
-      });
-
-      await tx.credit.update({
-        where: { userId: session.user.id },
-        data: {
-          balance: { decrement: contentCost },
-          used: { increment: contentCost },
-        },
-      });
-
-      await tx.creditTransaction.create({
-        data: {
-          userId: session.user.id,
-          amount: -contentCost,
-          type: "USAGE",
-          description: `Regeneração do trabalho: ${project.title}`,
-          metadata: JSON.stringify({ projectId: id, mode: "regenerate-work" }),
-        },
-      });
+    // Check for existing active generation job
+    const existingJob = await db.generationJob.findUnique({
+      where: { projectId: id },
+      select: { id: true, status: true },
     });
 
+    if (existingJob && existingJob.status === "GENERATING") {
+      return NextResponse.json(
+        { error: "Geração já está em curso para este trabalho." },
+        { status: 409 }
+      );
+    }
+
+    // Start the generation job first - it will handle status updates and credit consumption
     await startWorkGenerationJob({
       projectId: id,
       userId: session.user.id,

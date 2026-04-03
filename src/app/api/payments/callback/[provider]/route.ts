@@ -3,7 +3,7 @@ import { createHmac, randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import { apiSuccess, handleApiError, parseBody } from "@/lib/api";
 import { paymentCallbackSchema } from "@/lib/validators";
-import { PaymentService } from "@/lib/payments";
+import { PaymentService, type PackageKey } from "@/lib/payments";
 import { env } from "@/lib/env";
 
 interface AuditLogEntry {
@@ -180,6 +180,30 @@ export async function POST(
         );
 
         console.log(`[Payment Callback] Extra work confirmed: ${paymentId}, quantity: ${quantity}`);
+        return apiSuccess({ payment });
+      }
+
+      if (purchaseType === "subscription") {
+        const packageType = (payload?.package as string) || "STARTER";
+        const payment = await paymentService.confirmPackagePayment(
+          paymentId,
+          providerReference,
+          packageType as PackageKey
+        );
+
+        logAudit(
+          createAuditEntry(
+            paymentId,
+            provider,
+            status,
+            "CONFIRMED",
+            existingPayment.userId,
+            existingPayment.status,
+            `Package upgrade confirmed: ${packageType}`
+          )
+        );
+
+        console.log(`[Payment Callback] Package upgrade confirmed: ${paymentId}, package: ${packageType}`);
         return apiSuccess({ payment });
       }
 

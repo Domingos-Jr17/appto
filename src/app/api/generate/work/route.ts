@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
           brief: {
             create: {
               workType: type,
-              generationStatus: generateContent ? "GENERATING" : "BRIEFING",
+              generationStatus: generateContent ? "BRIEFING" : "BRIEFING",
               institutionName: brief.institutionName,
               courseName: brief.courseName,
               subjectName: brief.subjectName,
@@ -122,9 +122,9 @@ export async function POST(request: NextRequest) {
         select: { generationStatus: true },
       });
 
-      if (existingBrief?.generationStatus === "GENERATING") {
+      if (existingBrief?.generationStatus === "GENERATING" || existingBrief?.generationStatus === "READY") {
         return NextResponse.json(
-          { error: "Geração já está em curso para este trabalho." },
+          { error: "Geração já está em curso ou concluída para este trabalho." },
           { status: 409 }
         );
       }

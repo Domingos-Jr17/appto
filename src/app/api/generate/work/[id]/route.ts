@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getWorkGenerationStatus } from "@/lib/work-generation-jobs";
+import { getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
 
 export async function GET(
   _request: Request,
@@ -29,7 +29,7 @@ export async function GET(
     return NextResponse.json({ error: "Trabalho não encontrado" }, { status: 404 });
   }
 
-  const liveJob = getWorkGenerationStatus(id);
+  const liveJob = await getWorkGenerationStatusAsync(id);
 
   if (liveJob) {
     return NextResponse.json({

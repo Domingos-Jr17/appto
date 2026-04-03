@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn, formatRelativeTime } from "@/lib/utils";
+import { getTemplateLabel } from "@/lib/cover-template-config";
 import { GenerateWorkProgress } from "@/components/work-creation/GenerateWorkProgress";
 import { EducationFields } from "@/components/work-creation/EducationFields";
 import {
@@ -47,17 +48,6 @@ const EDUCATION_LEVELS: {
   { value: "TECHNICAL", label: "Técnico", icon: "🔧" },
   { value: "HIGHER_EDUCATION", label: "Superior", icon: "🎓" },
 ];
-
-const TEMPLATE_LABELS: Record<string, string> = {
-  UEM_STANDARD: "UEM Standard",
-  UCM_STANDARD: "UCM Standard",
-  ISRI: "ISRI",
-  ABNT_GENERIC: "ABNT Genérica",
-  MODERNA: "Moderna",
-  CLASSICA: "Clássica",
-  SCHOOL_MOZ: "Escola Moçambique",
-  DISCIPLINARY_MOZ: "Disciplinar",
-};
 
 const TRANSITION = {
   initial: { opacity: 0, y: 8 },
@@ -212,7 +202,7 @@ export function InlineWorkCreator() {
             {/* Subscription hint */}
             {subscriptionStatus && !subscriptionStatus.canGenerate && (
               <div className="rounded-2xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
-                Limite de trabalhos atingido este mês. Faça upgrade do plano ou
+                Limite de trabalhos atingido este mês. Faz upgrade do plano ou
                 compre trabalhos extras.
               </div>
             )}
@@ -351,7 +341,7 @@ export function InlineWorkCreator() {
                     <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-2.5 flex items-center gap-2">
                       <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
                       <p className="text-xs text-muted-foreground">
-                        Capa: <span className="font-medium text-foreground">{TEMPLATE_LABELS[workForm.coverTemplate]}</span>
+                        Capa: <span className="font-medium text-foreground">{getTemplateLabel(workForm.coverTemplate)}</span>
                         {levelInfo ? ` (${levelInfo.label})` : ""}
                       </p>
                     </div>
@@ -493,28 +483,18 @@ export function InlineWorkCreator() {
             </Accordion>
 
             {/* Subscription info */}
-            <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
               {subscriptionStatus ? (
                 <>
-                  Tem{" "}
-                  <span className="font-medium text-foreground">
-                    {subscriptionStatus.remaining} trabalho
-                    {subscriptionStatus.remaining !== 1 ? "s" : ""}
-                  </span>{" "}
-                  disponível{subscriptionStatus.remaining !== 1 ? "is" : ""}{" "}
-                  este mês.
+                  {subscriptionStatus.remaining}/{subscriptionStatus.worksPerMonth} trabalhos este mês
                   {!subscriptionStatus.canGenerate && (
-                    <span className="mt-1 block font-medium text-warning">
-                      Limite atingido. Faça upgrade do plano ou compre
-                      trabalhos extras.
+                    <span className="ml-1 text-warning">
+                      · <Link href="/app/subscription" className="underline">Fazer upgrade</Link>
                     </span>
                   )}
                 </>
               ) : (
-                <>
-                  A geração completa deste trabalho usa 1 dos seus trabalhos
-                  mensais disponíveis.
-                </>
+                "Usa 1 trabalho mensal disponível"
               )}
             </div>
 

@@ -99,8 +99,10 @@ export function WorkspaceHeader({
     }
   };
 
+  const hasContent = sections.some((s) => s.status === "done" && s.content.trim().length > 0);
+
   if (isGenerating) {
-    return (
+  return (
       <div className="shrink-0 border-b border-warning/30 bg-warning/5 px-4 py-4">
         <div className="flex items-center gap-3">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-warning/40 border-t-warning" />
@@ -252,14 +254,16 @@ export function WorkspaceHeader({
           <Edit3 className="mr-1.5 h-3.5 w-3.5" />
           Editar capa
         </Button>
-        <GenerateButton
-          isGenerating={isGenerating}
-          allDone={allDone}
-          onGenerate={onGenerate}
-        />
+        {hasContent && (
+          <GenerateButton
+            isGenerating={isGenerating}
+            allDone={allDone}
+            onGenerate={onGenerate}
+          />
+        )}
         <DownloadButton
           onDownload={onDownload}
-          hasContent={sections.some((s) => s.status === "done" && s.content.trim().length > 0)}
+          hasContent={hasContent}
         />
       </div>
     </div>

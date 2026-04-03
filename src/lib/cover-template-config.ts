@@ -65,3 +65,8 @@ export function getTemplatesForLevel(
   if (!educationLevel) return COVER_TEMPLATES;
   return COVER_TEMPLATES.filter((t) => t.educationLevels.includes(educationLevel));
 }
+
+export function getTemplateLabel(id: string): string {
+  const tpl = COVER_TEMPLATES.find(t => t.id === id);
+  return tpl ? tpl.name : id;
+}

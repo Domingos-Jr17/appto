@@ -66,7 +66,7 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
           onSaveTitle={workspace.updateTitle}
         />
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-16">
           <div
             className={cn(
               "transition-[margin] duration-300 ease-in-out",

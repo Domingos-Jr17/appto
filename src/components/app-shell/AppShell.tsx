@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FilePlus2, X } from "lucide-react";
+import { FilePlus2, X, Trash2 } from "lucide-react";
 import { OfflineBanner } from "@/components/ui/offline-banner";
 import { cn } from "@/lib/utils";
 import { appNavItems, isNavActive } from "./app-nav";
@@ -15,13 +15,18 @@ import { AppHeader } from "./AppHeader";
 import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "@/components/ui-aptto/ThemeToggle";
 import { Button } from "@/components/ui/button";
-
-const PAGE_TITLES: Record<string, string> = {
-    "/app": "Início",
-    "/app/trabalhos": "Trabalhos",
-    "/app/credits": "Créditos",
-    "/app/settings": "Perfil",
-};
+import { useToast } from "@/hooks/use-toast";
+import { fetchWithRetry } from "@/lib/fetch-retry";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface AppShellProps {
     children: React.ReactNode;
@@ -34,25 +39,16 @@ interface AppShellProps {
 
 function AppShellChrome({ children, user }: AppShellProps) {
     const pathname = usePathname();
-    const { projects } = useAppShellData();
+    const { projects, refresh } = useAppShellData();
+    const { toast } = useToast();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+    const [editTarget, setEditTarget] = useState<string | null>(null);
+    const [editTitle, setEditTitle] = useState("");
     const prefersReducedMotion = useReducedMotion();
     const appChromeRef = useRef<HTMLDivElement>(null);
     const mobileMenuRef = useRef<HTMLDivElement>(null);
     const previousFocusRef = useRef<HTMLElement | null>(null);
-
-    const _title = useMemo(() => {
-        const staticTitle = PAGE_TITLES[pathname];
-        if (staticTitle) return staticTitle;
-
-        const trabalhosMatch = pathname.match(/^\/app\/trabalhos\/([^/]+)/);
-        if (trabalhosMatch) {
-            const project = projects.find((p) => p.id === trabalhosMatch[1]);
-            if (project) return project.title;
-        }
-
-        return "appto";
-    }, [pathname, projects]);
 
     useEffect(() => {
         if (!isMobileMenuOpen) return;
@@ -146,6 +142,73 @@ function AppShellChrome({ children, user }: AppShellProps) {
         };
     }, [isMobileMenuOpen]);
 
+    const handleDeleteProject = async (id: string) => {
+        setDeleteTarget(id);
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteTarget) return;
+        try {
+            const response = await fetchWithRetry(`/api/projects/${deleteTarget}`, {
+                method: "DELETE",
+                retries: 1,
+            });
+            if (!response.ok) throw new Error("Erro ao eliminar");
+            toast({ title: "Trabalho eliminado" });
+            await refresh();
+        } catch {
+            toast({ title: "Erro", description: "Não foi possível eliminar o trabalho.", variant: "destructive" });
+        } finally {
+            setDeleteTarget(null);
+        }
+    };
+
+    const handleArchiveProject = async (id: string) => {
+        try {
+            const currentWork = projects.find((p) => p.id === id);
+            const newStatus = currentWork?.status === "archived" ? "IN_PROGRESS" : "ARCHIVED";
+            const response = await fetchWithRetry(`/api/projects/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                retries: 1,
+                body: JSON.stringify({ status: newStatus }),
+            });
+            if (!response.ok) throw new Error("Erro ao actualizar");
+            toast({
+                title: newStatus === "ARCHIVED" ? "Trabalho arquivado" : "Trabalho restaurado",
+            });
+            await refresh();
+        } catch {
+            toast({ title: "Erro", description: "Não foi possível actualizar o trabalho.", variant: "destructive" });
+        }
+    };
+
+    const handleEditProject = async (id: string) => {
+        const project = projects.find((p) => p.id === id);
+        if (!project) return;
+        setEditTarget(id);
+        setEditTitle(project.title);
+    };
+
+    const confirmEdit = async () => {
+        if (!editTarget || !editTitle.trim()) return;
+        try {
+            const response = await fetch(`/api/projects/${editTarget}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title: editTitle.trim() }),
+            });
+            if (!response.ok) throw new Error("Erro ao renomear");
+            toast({ title: "Título actualizado" });
+            await refresh();
+        } catch {
+            toast({ title: "Erro", description: "Não foi possível renomear o trabalho.", variant: "destructive" });
+        } finally {
+            setEditTarget(null);
+            setEditTitle("");
+        }
+    };
+
     return (
         <>
             <a
@@ -160,7 +223,12 @@ function AppShellChrome({ children, user }: AppShellProps) {
                 className="h-svh w-screen flex gap-2 overflow-hidden bg-background p-2 lg:gap-3 lg:p-3"
             >
                 <div className="hidden lg:block">
-                    <AppSidebar currentPath={pathname} />
+                    <AppSidebar
+                        currentPath={pathname}
+                        onDelete={handleDeleteProject}
+                        onArchive={handleArchiveProject}
+                        onEdit={handleEditProject}
+                    />
                 </div>
 
                 <main id="main-content" className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -319,6 +387,71 @@ function AppShellChrome({ children, user }: AppShellProps) {
                     </motion.div>
                 ) : null}
             </AnimatePresence>
+
+            {/* Delete confirmation dialog */}
+            <AlertDialog
+                open={deleteTarget !== null}
+                onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <Trash2 className="h-5 w-5 text-destructive" />
+                            Eliminar trabalho?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Vais eliminar &ldquo;
+                            {projects.find((p) => p.id === deleteTarget)?.title || "este trabalho"}
+                            &rdquo;. Esta acção não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setDeleteTarget(null)}>
+                            Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            className="bg-destructive text-white hover:bg-destructive/90"
+                        >
+                            Eliminar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Rename dialog */}
+            <AlertDialog
+                open={editTarget !== null}
+                onOpenChange={(open) => { if (!open) { setEditTarget(null); setEditTitle(""); } }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Renomear trabalho</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Introduz o novo título para o trabalho.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-2">
+                        <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") confirmEdit(); }}
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            placeholder="Novo título..."
+                            autoFocus
+                        />
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => { setEditTarget(null); setEditTitle(""); }}>
+                            Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmEdit}>
+                            Guardar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

@@ -51,7 +51,6 @@ export function WorksLibraryPage() {
     const { toast } = useToast();
     const {
         projects: rawProjects,
-        credits: _credits,
         isLoading,
         refresh,
     } = useAppShellData();
@@ -59,8 +58,8 @@ export function WorksLibraryPage() {
     // UI-specific state
     const [status, setStatus] = useState<ProjectStatus>("all");
     const [search, setSearch] = useState("");
-    const [viewMode, _setViewMode] = useState<ViewMode>("grid");
-    const [sortBy, _setSortBy] = useState<SortOption>("updated");
+    const [viewMode] = useState<ViewMode>("grid");
+    const [sortBy] = useState<SortOption>("updated");
     const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
     const works = useMemo<ProjectCardData[]>(

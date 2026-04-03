@@ -16,7 +16,7 @@ export function DownloadButton({ onDownload, hasContent }: DownloadButtonProps) 
       onClick={onDownload}
       disabled={!hasContent}
     >
-      Baixar docx
+      Descarregar .docx
     </Button>
   );
 }

@@ -31,7 +31,7 @@ export default function RegisterPage() {
       return;
     }
     if (!acceptTerms) {
-      setError("Você precisa aceitar os termos de uso");
+      setError("Precisas de aceitar os termos de uso");
       return;
     }
     if (password.length < 6) {

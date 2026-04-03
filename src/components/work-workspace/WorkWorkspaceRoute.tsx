@@ -295,7 +295,7 @@ export function WorkWorkspaceRoute({ projectId }: WorkWorkspaceRouteProps) {
             <EmptyState
               icon={FolderTree}
               title="Trabalho não encontrado"
-              description="Nao foi possivel abrir este trabalho. Volte a biblioteca e tente novamente."
+              description="Não foi possível abrir este trabalho. Volte à biblioteca e tente novamente."
               action={
                 <Button asChild className="rounded-full">
                   <Link href="/app/trabalhos">Ver trabalhos</Link>

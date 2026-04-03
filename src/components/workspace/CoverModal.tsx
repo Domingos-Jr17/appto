@@ -188,7 +188,7 @@ export function CoverModal({
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="cover-institution" className="text-xs">
-                {educationLevel === "SECONDARY" ? "Escola" : "Instituição"}
+                {educationLevel === "TECHNICAL" ? "Instituto" : "Instituição"}
               </Label>
               <Input
                 id="cover-institution"
@@ -197,6 +197,8 @@ export function CoverModal({
                 placeholder={
                   educationLevel === "SECONDARY"
                     ? "Ex.: Escola Secundária Josina Machel"
+                    : educationLevel === "TECHNICAL"
+                    ? "Ex.: ISTEG"
                     : "Ex.: Universidade Eduardo Mondlane"
                 }
                 className="text-xs"
@@ -265,7 +267,7 @@ export function CoverModal({
 
               <div className="space-y-1.5">
                 <Label htmlFor="cover-advisor" className="text-xs">
-                  {educationLevel === "SECONDARY" ? "Professor" : "Orientador"}
+                  {educationLevel === "SECONDARY" ? "Professor" : educationLevel === "TECHNICAL" ? "Formador" : "Docente"}
                 </Label>
                 <Input
                   id="cover-advisor"
@@ -274,6 +276,8 @@ export function CoverModal({
                   placeholder={
                     educationLevel === "SECONDARY"
                       ? "Ex.: Prof. Bento"
+                      : educationLevel === "TECHNICAL"
+                      ? "Ex.: Form. João"
                       : "Ex.: Prof. Doutor João"
                   }
                   className="text-xs"

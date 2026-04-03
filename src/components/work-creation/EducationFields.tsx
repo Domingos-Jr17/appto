@@ -396,12 +396,12 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="advisor">Orientador</Label>
+                  <Label htmlFor="advisor">Formador(a)</Label>
                   <Input
                     id="advisor"
                     value={form.advisorName}
                     onChange={(e) => onUpdate("advisorName", e.target.value)}
-                    placeholder="Ex.: Prof. Doutor João Luís"
+                    placeholder="Ex.: Form. Carlos Bento"
                   />
                 </div>
               </div>
@@ -541,7 +541,7 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="institution">Universidade</Label>
+                <Label htmlFor="institution">Instituição</Label>
                 <Input
                   ref={firstFieldRef}
                   id="institution"
@@ -616,7 +616,7 @@ export function EducationFields({ educationLevel, form, onUpdate, onInstitutionC
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="advisor">Orientador</Label>
+                <Label htmlFor="advisor">Docente</Label>
                 <Input
                   id="advisor"
                   value={form.advisorName}

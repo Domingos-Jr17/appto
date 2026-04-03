@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { withDistributedLock } from "@/lib/distributed-lock";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { serializeStoredFile } from "@/lib/files";
-import { DocumentExportService } from "@/lib/document-export";
+import { DocumentExportService, getAbntChecklist } from "@/lib/document-export";
 import { buildStoredFileRecord, createChecksum, uploadBufferToStorage } from "@/lib/storage";
 import { subscriptionService } from "@/lib/subscription";
 import { saveProjectExportSchema } from "@/lib/validators";
@@ -42,6 +42,14 @@ export async function POST(
               select: {
                 institutionName: true,
                 studentName: true,
+                advisorName: true,
+                courseName: true,
+                subjectName: true,
+                facultyName: true,
+                departmentName: true,
+                className: true,
+                turma: true,
+                coverTemplate: true,
                 city: true,
                 academicYear: true,
               },
@@ -133,6 +141,7 @@ export async function POST(
         return apiSuccess({
           success: true,
           creditsUsed: 0,
+          abntChecklist: getAbntChecklist(project.brief?.coverTemplate),
           export: {
             id: savedExport.id,
             format: savedExport.format,

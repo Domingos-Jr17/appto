@@ -512,6 +512,7 @@ model KnowledgeChunk {
   chunkIndex    Int
   content       String
   embeddingJson String?
+  embeddingVector Unsupported("vector(128)")? @map("embedding_vector")
   metadata      Json?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { CreditCard, LogOut, Settings, UserRound } from "lucide-react";
+import { CreditCard, Database, LogOut, Settings, UserRound } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ interface UserMenuProps {
     name?: string | null;
     email?: string | null;
     image?: string | null;
+    role?: string | null;
   };
   align?: "start" | "center" | "end";
   className?: string;
@@ -93,6 +94,14 @@ export function UserMenu({
             Pacotes
           </Link>
         </DropdownMenuItem>
+        {user.role === "ADMIN" ? (
+          <DropdownMenuItem asChild>
+            <Link href="/app/admin/rag">
+              <Database className="mr-2 h-4 w-4" />
+              Admin RAG
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-destructive focus:text-destructive"

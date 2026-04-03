@@ -18,6 +18,8 @@ const envSchema = z
     AI_PROVIDER: z.enum(["zai", "openrouter"]).optional(),
     AI_FALLBACK_PROVIDER: z.enum(["zai", "openrouter"]).optional(),
     AI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
+    RAG_RETRIEVAL_MODE: z.enum(["TEXT", "VECTOR"]).optional(),
+    RAG_EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().max(1024).optional(),
     OPENROUTER_API_KEY: z.string().min(1).optional(),
     OPENROUTER_BASE_URL: z.string().url().optional(),
     OPENROUTER_MODEL: z.string().min(1).optional(),
@@ -102,6 +104,14 @@ const envSchema = z
         }
       }
     }
+
+    if (data.RAG_EMBEDDING_DIMENSIONS && data.RAG_EMBEDDING_DIMENSIONS !== 128) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["RAG_EMBEDDING_DIMENSIONS"],
+        message: "RAG_EMBEDDING_DIMENSIONS must be 128 to match the pgvector schema",
+      });
+    }
   });
 
 const parsedEnv = envSchema.safeParse({
@@ -119,6 +129,8 @@ const parsedEnv = envSchema.safeParse({
   AI_PROVIDER: process.env.AI_PROVIDER,
   AI_FALLBACK_PROVIDER: process.env.AI_FALLBACK_PROVIDER,
   AI_REQUEST_TIMEOUT_MS: process.env.AI_REQUEST_TIMEOUT_MS,
+  RAG_RETRIEVAL_MODE: process.env.RAG_RETRIEVAL_MODE,
+  RAG_EMBEDDING_DIMENSIONS: process.env.RAG_EMBEDDING_DIMENSIONS,
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
   OPENROUTER_BASE_URL: process.env.OPENROUTER_BASE_URL,
   OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
@@ -168,6 +180,8 @@ export const env = {
   AI_PROVIDER: parsedEnv.data.AI_PROVIDER ?? "openrouter",
   AI_FALLBACK_PROVIDER: parsedEnv.data.AI_FALLBACK_PROVIDER,
   AI_REQUEST_TIMEOUT_MS: parsedEnv.data.AI_REQUEST_TIMEOUT_MS ?? 8_000,
+  RAG_RETRIEVAL_MODE: parsedEnv.data.RAG_RETRIEVAL_MODE ?? "TEXT",
+  RAG_EMBEDDING_DIMENSIONS: parsedEnv.data.RAG_EMBEDDING_DIMENSIONS ?? 128,
   isDevelopment: parsedEnv.data.NODE_ENV === "development",
   isProduction: parsedEnv.data.NODE_ENV === "production",
 };

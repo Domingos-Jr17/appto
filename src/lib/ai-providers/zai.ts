@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { createTextStreamFromSse } from "@/lib/ai-stream-parser";
 import type { AIProvider, AIChatRequest, AIChatResponse } from "@/lib/ai-types";
 import { AIRequestError } from "@/lib/ai-types";
 
@@ -163,5 +164,37 @@ export class ZAIProvider implements AIProvider {
         throw error;
       }
     }
+  }
+
+  async streamChatCompletion(body: AIChatRequest): Promise<ReadableStream<Uint8Array>> {
+    const config = await loadConfig();
+    const response = await fetch(getChatCompletionsUrl(config.baseUrl), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        "Accept-Language": "en-US,en",
+        "Content-Type": "application/json",
+      },
+      signal: body.signal,
+      body: JSON.stringify({
+        ...sanitizeRequestBody(body, config.model),
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorMessage = await parseErrorResponse(response);
+      throw new AIRequestError(
+        `API request failed with status ${response.status}: ${errorMessage}`,
+        "zai",
+        response.status,
+      );
+    }
+
+    if (!response.body) {
+      throw new AIRequestError("Z.AI não devolveu body para streaming.", "zai", 502);
+    }
+
+    return createTextStreamFromSse(response.body, "zai");
   }
 }

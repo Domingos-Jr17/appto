@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { buildRagContext, splitKnowledgeContent } from "@/lib/rag";
+import { buildRagContext, computeHashedEmbedding, splitKnowledgeContent } from "@/lib/rag";
 
 describe("rag helpers", () => {
   test("splits large content into overlapping chunks", () => {
@@ -30,5 +30,14 @@ describe("rag helpers", () => {
     expect(context).toContain("Contexto RAG inicial");
     expect(context).toContain("Boletim da República");
     expect(context).toContain("Tese sobre educação");
+  });
+
+  test("builds normalized deterministic embeddings", () => {
+    const first = computeHashedEmbedding("ensino superior em moçambique", 16);
+    const second = computeHashedEmbedding("ensino superior em moçambique", 16);
+
+    expect(first).toEqual(second);
+    expect(first).toHaveLength(16);
+    expect(first.some((value) => value !== 0)).toBe(true);
   });
 });

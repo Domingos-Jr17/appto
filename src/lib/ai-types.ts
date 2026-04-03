@@ -34,6 +34,7 @@ export interface AIChatResponse {
 export interface AIProvider {
   name: string;
   chatCompletion(request: AIChatRequest): Promise<AIChatResponse>;
+  streamChatCompletion?(request: AIChatRequest): Promise<ReadableStream<Uint8Array>>;
 }
 
 export class AIRequestError extends Error {

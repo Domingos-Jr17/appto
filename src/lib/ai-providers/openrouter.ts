@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { createTextStreamFromSse } from "@/lib/ai-stream-parser";
 import type { AIProvider, AIChatRequest, AIChatResponse } from "@/lib/ai-types";
 import { AIRequestError } from "@/lib/ai-types";
 
@@ -166,5 +167,38 @@ export class OpenRouterProvider implements AIProvider {
         throw error;
       }
     }
+  }
+
+  async streamChatCompletion(body: AIChatRequest): Promise<ReadableStream<Uint8Array>> {
+    const config = await loadConfig();
+    const response = await fetch(getChatCompletionsUrl(config.baseUrl), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://aptto.mz",
+        "X-Title": "aptto",
+      },
+      signal: body.signal,
+      body: JSON.stringify({
+        ...sanitizeRequestBody(body, config.model),
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorMessage = await parseErrorResponse(response);
+      throw new AIRequestError(
+        `API request failed with status ${response.status}: ${errorMessage}`,
+        "openrouter",
+        response.status,
+      );
+    }
+
+    if (!response.body) {
+      throw new AIRequestError("OpenRouter não devolveu body para streaming.", "openrouter", 502);
+    }
+
+    return createTextStreamFromSse(response.body, "openrouter");
   }
 }

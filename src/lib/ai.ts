@@ -102,6 +102,71 @@ export async function runAIChatCompletion(request: AIChatRequest): Promise<AICha
   throw lastError instanceof Error ? lastError : new Error("A IA está indisponível neste momento.");
 }
 
+export async function runAIChatStream(request: AIChatRequest): Promise<ReadableStream<Uint8Array>> {
+  const providers = getProviderCandidates();
+  let lastError: unknown;
+
+  for (let index = 0; index < providers.length; index += 1) {
+    const provider = await instantiateProvider(providers[index]!);
+
+    if (!provider.streamChatCompletion) {
+      lastError = new AIRequestError("Streaming não suportado por este provider", provider.name, 501);
+      continue;
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), env.AI_REQUEST_TIMEOUT_MS);
+
+    try {
+      const providerStream = await provider.streamChatCompletion({
+        ...request,
+        stream: true,
+        signal: controller.signal,
+      });
+
+      const reader = providerStream.getReader();
+      return new ReadableStream<Uint8Array>({
+        async start(controllerStream) {
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              if (value) {
+                controllerStream.enqueue(value);
+              }
+            }
+            controllerStream.close();
+          } catch (error) {
+            controllerStream.error(error);
+          } finally {
+            clearTimeout(timeout);
+            reader.releaseLock();
+          }
+        },
+        cancel() {
+          clearTimeout(timeout);
+          controller.abort();
+        },
+      });
+    } catch (error) {
+      lastError = error;
+      const hasAnotherProvider = index < providers.length - 1;
+      if (!hasAnotherProvider || !shouldFallback(error)) {
+        throw error;
+      }
+
+      logOperationalEvent("ai_provider_fallback", {
+        failedProvider: provider.name,
+        fallbackProvider: providers[index + 1],
+        reason: error instanceof Error ? error.message : String(error),
+        mode: "stream",
+      }, "warn");
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("A IA está indisponível neste momento.");
+}
+
 // ─── Error Helpers ───────────────────────────────────────────────────────────
 
 function parseStatusFromMessage(message: string) {

@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
 import { generateCacheKey, getCachedResponse, setCachedResponse } from "@/lib/ai-cache";
 import { buildActionPrompt, buildSystemPrompt, PROMPT_VERSION } from "@/lib/ai-prompts";
-import { runAIChatCompletion } from "@/lib/ai";
+import { runAIChatCompletion, runAIChatStream } from "@/lib/ai";
+import type { AIChatRequest } from "@/lib/ai-types";
 import { buildRagContext, RagService } from "@/lib/rag";
 import { subscriptionService, type AIAction } from "@/lib/subscription";
 
@@ -14,8 +15,27 @@ interface ProcessAiRequestInput {
   useCache?: boolean;
 }
 
+interface PreparedAiRequest {
+  request: AIChatRequest;
+  cacheKey: string;
+  cachedResponse: string | null;
+  packageKey: string;
+  promptVersion: string;
+  remainingWorks: number;
+  sources: Awaited<ReturnType<RagService["search"]>>;
+}
+
 interface ProcessAiRequestResult {
   response: string;
+  cached: boolean;
+  packageKey: string;
+  promptVersion: string;
+  remainingWorks: number;
+  sources: Awaited<ReturnType<RagService["search"]>>;
+}
+
+interface StreamAiRequestResult {
+  stream: ReadableStream<Uint8Array>;
   cached: boolean;
   packageKey: string;
   promptVersion: string;
@@ -73,7 +93,7 @@ function buildProjectContext(project: {
     .join("\n");
 }
 
-export async function processAiRequest(input: ProcessAiRequestInput): Promise<ProcessAiRequestResult> {
+async function prepareAiRequest(input: ProcessAiRequestInput): Promise<PreparedAiRequest> {
   const { userId, action, text, context, projectId, useCache = true } = input;
 
   const { allowed, reason } = await subscriptionService.canUseAIAction(userId, action);
@@ -134,20 +154,6 @@ export async function processAiRequest(input: ProcessAiRequestInput): Promise<Pr
       .join("::"),
   );
 
-  if (useCache) {
-    const cachedResponse = getCachedResponse(cacheKey);
-    if (cachedResponse) {
-      return {
-        response: cachedResponse,
-        cached: true,
-        packageKey: userPackage,
-        promptVersion: PROMPT_VERSION,
-        remainingWorks: await subscriptionService.canGenerateWork(userId).then((result) => result.remaining),
-        sources,
-      };
-    }
-  }
-
   const systemPrompt = buildSystemPrompt(userPackage, educationLevel);
   const prompt = buildActionPrompt({
     action,
@@ -156,32 +162,117 @@ export async function processAiRequest(input: ProcessAiRequestInput): Promise<Pr
     citationStyle,
   });
   const isStructuredAction = action === "generate" || action === "generate-section" || action === "generate-complete";
-  const temperature = isStructuredAction ? 0 : 0.3;
-  const maxTokens = action === "generate-complete" ? 8000 : action === "generate-section" ? 4000 : 2000;
 
-  const completion = await runAIChatCompletion({
-    model: "",
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: prompt },
-    ],
-    temperature,
-    max_tokens: maxTokens,
-  });
+  return {
+    request: {
+      model: "",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt },
+      ],
+      temperature: isStructuredAction ? 0 : 0.3,
+      max_tokens: action === "generate-complete" ? 8000 : action === "generate-section" ? 4000 : 2000,
+    },
+    cacheKey,
+    cachedResponse: useCache ? getCachedResponse(cacheKey) : null,
+    packageKey: userPackage,
+    promptVersion: PROMPT_VERSION,
+    remainingWorks: await subscriptionService.canGenerateWork(userId).then((result) => result.remaining),
+    sources,
+  };
+}
 
+export async function processAiRequest(input: ProcessAiRequestInput): Promise<ProcessAiRequestResult> {
+  const prepared = await prepareAiRequest(input);
+
+  if (prepared.cachedResponse) {
+    return {
+      response: prepared.cachedResponse,
+      cached: true,
+      packageKey: prepared.packageKey,
+      promptVersion: prepared.promptVersion,
+      remainingWorks: prepared.remainingWorks,
+      sources: prepared.sources,
+    };
+  }
+
+  const completion = await runAIChatCompletion(prepared.request);
   const response = completion.choices[0]?.message?.content || "";
   if (!response) {
     throw new Error("Erro ao gerar resposta");
   }
 
-  setCachedResponse(cacheKey, response);
+  setCachedResponse(prepared.cacheKey, response);
 
   return {
     response,
     cached: false,
-    packageKey: userPackage,
-    promptVersion: PROMPT_VERSION,
-    remainingWorks: await subscriptionService.canGenerateWork(userId).then((result) => result.remaining),
-    sources,
+    packageKey: prepared.packageKey,
+    promptVersion: prepared.promptVersion,
+    remainingWorks: prepared.remainingWorks,
+    sources: prepared.sources,
+  };
+}
+
+export async function streamAiRequest(input: ProcessAiRequestInput): Promise<StreamAiRequestResult> {
+  const prepared = await prepareAiRequest(input);
+  const encoder = new TextEncoder();
+
+  if (prepared.cachedResponse) {
+    return {
+      stream: new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(encoder.encode(prepared.cachedResponse || ""));
+          controller.close();
+        },
+      }),
+      cached: true,
+      packageKey: prepared.packageKey,
+      promptVersion: prepared.promptVersion,
+      remainingWorks: prepared.remainingWorks,
+      sources: prepared.sources,
+    };
+  }
+
+  const providerStream = await runAIChatStream({
+    ...prepared.request,
+    stream: true,
+  });
+
+  const reader = providerStream.getReader();
+  const decoder = new TextDecoder();
+  let fullResponse = "";
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          fullResponse += decoder.decode(value, { stream: true });
+          controller.enqueue(value);
+        }
+
+        if (fullResponse.trim()) {
+          setCachedResponse(prepared.cacheKey, fullResponse);
+        }
+
+        controller.close();
+      } catch (error) {
+        controller.error(error);
+      } finally {
+        reader.releaseLock();
+      }
+    },
+  });
+
+  return {
+    stream,
+    cached: false,
+    packageKey: prepared.packageKey,
+    promptVersion: prepared.promptVersion,
+    remainingWorks: prepared.remainingWorks,
+    sources: prepared.sources,
   };
 }

@@ -421,6 +421,7 @@ export function validateGeneratedWorkContent(
   parsed: ParsedGeneratedWorkContent,
   profile: WorkGenerationProfile,
   theme?: string,
+  thematicCoverageThreshold = 0.4,
 ) {
   const issues: string[] = [];
 
@@ -465,9 +466,33 @@ export function validateGeneratedWorkContent(
       const matches = themeWords.filter((word) => fullText.includes(word));
       const coverage = matches.length / themeWords.length;
 
-      if (coverage < 0.4) {
+      if (coverage < thematicCoverageThreshold) {
         issues.push(
           `O conteúdo gerado menciona apenas ${matches.length} de ${themeWords.length} palavras-chave do tema "${theme}". Verifique se o texto está coerente com o tema pedido.`,
+        );
+      }
+    }
+  }
+
+  const sectionTexts = parsed.sections.map((s) => s.content.toLowerCase());
+  for (let i = 0; i < sectionTexts.length; i += 1) {
+    for (let j = i + 1; j < sectionTexts.length; j += 1) {
+      const sentencesA = sectionTexts[i].split(/[.!?]+/).map((s) => s.trim()).filter((s) => s.length > 30);
+      const sentencesB = sectionTexts[j].split(/[.!?]+/).map((s) => s.trim()).filter((s) => s.length > 30);
+
+      const repeated = sentencesA.filter((sentenceA) =>
+        sentencesB.some((sentenceB) => {
+          const wordsA = new Set(sentenceA.split(/\s+/));
+          const wordsB = new Set(sentenceB.split(/\s+/));
+          const overlap = [...wordsA].filter((w) => wordsB.has(w)).length;
+          const minWords = Math.min(wordsA.size, wordsB.size);
+          return minWords > 5 && overlap / minWords > 0.7;
+        }),
+      );
+
+      if (repeated.length > 0) {
+        issues.push(
+          `Repetição detectada entre "${parsed.sections[i]?.title}" e "${parsed.sections[j]?.title}": ${repeated.length} frase(s) com mais de 70% de sobreposição.`,
         );
       }
     }
@@ -481,6 +506,7 @@ export function parseGeneratedWorkContent(
   templates: SectionTemplate[],
   profile: WorkGenerationProfile,
   theme?: string,
+  thematicCoverageThreshold?: number,
 ): ParsedGeneratedWorkContent {
   const parsed = JSON.parse(extractJSONObject(rawContent)) as GeneratedWorkContentPayload;
   const abstract = typeof parsed.abstract === "string" ? parsed.abstract.trim() : "";
@@ -513,7 +539,7 @@ export function parseGeneratedWorkContent(
   });
 
   const result = { abstract, sections };
-  const issues = validateGeneratedWorkContent(result, profile, theme);
+  const issues = validateGeneratedWorkContent(result, profile, theme, thematicCoverageThreshold);
 
   if (issues.length > 0) {
     throw new Error(issues.join(" "));

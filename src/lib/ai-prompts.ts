@@ -164,6 +164,6 @@ export function buildActionPrompt({ action, text, mergedContext, citationStyle }
 
     case "chat":
     default:
-      return `${userText}${contextBlock}`;
+      return `Responda ao pedido abaixo em Português académico de Moçambique.\n\n${userText}${contextBlock}\n\nMantenha rigor, clareza e neutralidade. Nunca invente dados ou referências.`;
   }
 }

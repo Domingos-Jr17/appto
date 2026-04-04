@@ -133,6 +133,17 @@ export function InlineWorkCreator() {
         <h2 className="text-3xl font-semibold tracking-tight">
           Que tema pode a Aptto criar para ti hoje?
         </h2>
+        {subscriptionStatus && (
+          <p className="text-xs text-muted-foreground">
+            {subscriptionStatus.canGenerate ? (
+              <>
+                Tens <span className="font-semibold text-foreground">{subscriptionStatus.remaining}</span> {subscriptionStatus.remaining === 1 ? "trabalho disponível" : "trabalhos disponíveis"} este mês
+              </>
+            ) : (
+              <span className="text-warning font-medium">Limite de trabalhos atingido</span>
+            )}
+          </p>
+        )}
       </div>
 
       {/* Theme */}
@@ -338,8 +349,8 @@ export function InlineWorkCreator() {
               <Label htmlFor="methodology">Metodologia ou orientação</Label>
               <p className="text-xs text-muted-foreground">
                 {workForm.educationLevel === "SECONDARY"
-                  ? "Preencha apenas se o professor pediu."
-                  : "Descreva a abordagem a seguir."}
+                  ? "Preenche apenas se o professor pediu."
+                  : "Descreve a abordagem a seguir."}
               </p>
               <Textarea
                 id="methodology"
@@ -354,7 +365,7 @@ export function InlineWorkCreator() {
               <Label htmlFor="research-question">Pergunta de investigação</Label>
               <p className="text-xs text-muted-foreground">
                 {workForm.educationLevel === "SECONDARY"
-                  ? "Preencha apenas se o professor pediu."
+                  ? "Preenche apenas se o professor pediu."
                   : "A pergunta central que o trabalho vai responder."}
               </p>
               <Textarea

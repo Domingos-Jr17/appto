@@ -6,6 +6,7 @@ import path from "node:path";
 import { S3Client, PutObjectCommand, HeadObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { StoredFile, StoredFileKind, StorageProvider } from "@prisma/client";
+import { ApiRouteError } from "@/lib/api";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -177,19 +178,19 @@ export function validateFileUpload(input: {
   const rules = FILE_RULES[input.kind];
 
   if (!rules) {
-    throw new Error("Tipo de ficheiro não suportado");
+    throw new ApiRouteError("Tipo de ficheiro não suportado", 400, "UNSUPPORTED_FILE_TYPE");
   }
 
   if (input.sizeBytes > rules.maxSizeBytes) {
-    throw new Error("O ficheiro excede o tamanho permitido");
+    throw new ApiRouteError("O ficheiro excede o tamanho permitido", 400, "FILE_TOO_LARGE");
   }
 
   if (!rules.mimeTypes.includes(input.mimeType)) {
-    throw new Error("Tipo de ficheiro não permitido");
+    throw new ApiRouteError("Tipo de ficheiro não permitido", 400, "FILE_TYPE_NOT_ALLOWED");
   }
 
   if (rules.requiresProject && !input.projectId) {
-    throw new Error("Este tipo de ficheiro requer um projecto");
+    throw new ApiRouteError("Este tipo de ficheiro requer um projecto", 400, "PROJECT_REQUIRED");
   }
 }
 
@@ -244,7 +245,7 @@ export async function createUploadIntent(file: StoredFile): Promise<UploadIntent
 
 export async function writeLocalUpload(file: StoredFile, bytes: Uint8Array) {
   if (bytes.byteLength > Math.min(file.sizeBytes, MAX_LOCAL_UPLOAD_SIZE)) {
-    throw new Error("O ficheiro recebido excede o tamanho permitido");
+    throw new ApiRouteError("O ficheiro recebido excede o tamanho permitido", 400, "FILE_TOO_LARGE");
   }
 
   const absolutePath = getLocalPath(file.objectKey);
@@ -255,17 +256,19 @@ export async function writeLocalUpload(file: StoredFile, bytes: Uint8Array) {
 export async function finalizeUploadedFile(file: StoredFile) {
   if (file.provider === "LOCAL") {
     const absolutePath = getLocalPath(file.objectKey);
-    await fs.access(absolutePath);
-    return;
+    const stat = await fs.stat(absolutePath);
+    return { contentLength: stat.size };
   }
 
   const client = getR2Client();
-  await client.send(
+  const head = await client.send(
     new HeadObjectCommand({
       Bucket: file.bucket,
       Key: file.objectKey,
     })
   );
+
+  return { contentLength: Number(head.ContentLength || 0) };
 }
 
 export async function uploadBufferToStorage(file: StoredFile, buffer: Buffer | Uint8Array) {
@@ -381,6 +384,28 @@ export async function getStoredFileDownloadUrl(file: StoredFile, expiresInSecond
     }),
     { expiresIn: expiresInSeconds }
   );
+}
+
+export async function readStoredFileBytes(file: StoredFile) {
+  if (file.provider === "LOCAL") {
+    const absolutePath = getLocalPath(file.objectKey);
+    return fs.readFile(absolutePath);
+  }
+
+  const client = getR2Client();
+  const response = await client.send(
+    new GetObjectCommand({
+      Bucket: file.bucket,
+      Key: file.objectKey,
+    }),
+  );
+
+  if (!response.Body) {
+    throw new ApiRouteError("O objecto armazenado não pôde ser lido.", 500, "FILE_READ_FAILED");
+  }
+
+  const bytes = await response.Body.transformToByteArray();
+  return Buffer.from(bytes);
 }
 
 export async function getStoredFileContentResponse(file: StoredFile) {

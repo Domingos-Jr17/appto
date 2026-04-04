@@ -5,6 +5,14 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { trackProductEvent } from "@/lib/product-events";
 import { subscriptionService } from "@/lib/subscription";
+import {
+  buildBriefContext,
+  buildWorkGenerationPrompt,
+  buildWorkRegenerationRepairPrompt,
+  getWorkGenerationProfile,
+  parseGeneratedWorkContent,
+  type SectionTemplate,
+} from "@/lib/work-generation-prompts";
 import type { CitationStyle, CoverTemplate, WorkBriefInput } from "@/types/editor";
 
 type JobStatus = "GENERATING" | "READY" | "FAILED";
@@ -15,21 +23,6 @@ export interface WorkGenerationJobStatus {
   progress: number;
   step: string;
   error?: string;
-}
-
-interface SectionTemplate {
-  title: string;
-  order: number;
-}
-
-interface GeneratedSection {
-  title: string;
-  content: string;
-}
-
-interface GeneratedWorkContent {
-  abstract: string;
-  sections: GeneratedSection[];
 }
 
 const SYSTEM_PROMPT = `Você é um especialista em escrita académica para estudantes moçambicanos.
@@ -135,6 +128,18 @@ const SECTION_TEMPLATES: Record<string, SectionTemplate[]> = {
   ],
 };
 
+const SCHOOL_CONTEXT_TYPES = new Set([
+  "SCHOOL_WORK",
+  "RESEARCH_PROJECT",
+  "PRACTICAL_WORK",
+  "INTERNSHIP_REPORT",
+  "TCC",
+]);
+
+function isSchoolGenerationContext(type: string, educationLevel?: string | null) {
+  return educationLevel === "SECONDARY" || educationLevel === "TECHNICAL" || (!educationLevel && SCHOOL_CONTEXT_TYPES.has(type));
+}
+
 const jobStore = globalThis as typeof globalThis & {
   __apptoWorkGenerationJobs?: Map<string, WorkGenerationJobStatus>;
 };
@@ -143,7 +148,13 @@ const jobs = jobStore.__apptoWorkGenerationJobs ?? new Map<string, WorkGeneratio
 jobStore.__apptoWorkGenerationJobs = jobs;
 const JOB_RECLAIM_AFTER_MS = 10 * 60_000;
 
-export function getSectionTemplates(type: string) {
+export function getSectionTemplates(type: string, educationLevel?: string | null) {
+  const schoolContext = isSchoolGenerationContext(type, educationLevel);
+
+  if (schoolContext && SCHOOL_CONTEXT_TYPES.has(type)) {
+    return SECTION_TEMPLATES.SCHOOL_WORK;
+  }
+
   return SECTION_TEMPLATES[type] || SECTION_TEMPLATES.MONOGRAPHY;
 }
 
@@ -302,152 +313,68 @@ export function generateCover(title: string, type: string, brief: WorkBriefInput
     .trim();
 }
 
-function extractJSONObject(rawContent: string) {
-  const trimmed = rawContent.trim();
-  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = fencedMatch?.[1]?.trim() || trimmed;
-  const firstBrace = candidate.indexOf("{");
-  const lastBrace = candidate.lastIndexOf("}");
-
-  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
-    throw new Error("A IA não devolveu JSON válido para o trabalho.");
-  }
-
-  return candidate.slice(firstBrace, lastBrace + 1);
-}
-
-function parseGeneratedWorkContent(rawContent: string, templates: SectionTemplate[]) {
-  const parsed = JSON.parse(extractJSONObject(rawContent)) as Partial<GeneratedWorkContent>;
-
-  if (!parsed.abstract || typeof parsed.abstract !== "string") {
-    throw new Error("A IA não devolveu um resumo válido.");
-  }
-
-  if (!Array.isArray(parsed.sections)) {
-    throw new Error("A IA não devolveu as secções esperadas.");
-  }
-
-  const sectionsByTitle = new Map(
-    parsed.sections
-      .filter(
-        (section): section is GeneratedSection =>
-          Boolean(section && typeof section.title === "string" && typeof section.content === "string")
-      )
-      .map((section) => [section.title.trim(), section.content.trim()])
-  );
-
-  const sections = templates.map((section) => {
-    const content = sectionsByTitle.get(section.title);
-
-    if (!content) {
-      throw new Error(`A IA não devolveu conteúdo para a secção "${section.title}".`);
-    }
-
-    return { title: section.title, content };
-  });
-
-  return {
-    abstract: parsed.abstract.trim(),
-    sections,
-  };
-}
-
-function buildBriefContext(brief: WorkBriefInput) {
-  return [
-    ["Instituição", brief.institutionName],
-    ["Faculdade", brief.facultyName],
-    ["Departamento", brief.departmentName],
-    ["Curso", brief.courseName],
-    ["Disciplina", brief.subjectName],
-    ["Nível académico", brief.educationLevel],
-    ["Classe", brief.className],
-    ["Turma", brief.turma],
-    ["Semestre", brief.semester],
-    ["Professor/Orientador", brief.advisorName],
-    ["Estudante", brief.studentName],
-    ["Nº de Estudante", brief.studentNumber],
-    ["Cidade", brief.city],
-    ["Ano académico", brief.academicYear?.toString()],
-    ["Prazo", brief.dueDate],
-    ["Tema", brief.theme],
-    ["Subtítulo", brief.subtitle],
-    ["Objetivo", brief.objective],
-    ["Pergunta de investigação", brief.researchQuestion],
-    ["Metodologia", brief.methodology],
-    ["Palavras-chave", brief.keywords],
-    ["Referências iniciais", brief.referencesSeed],
-    ["Norma de citação", brief.citationStyle],
-    ["Idioma", brief.language],
-    ["Instruções adicionais", brief.additionalInstructions],
-  ]
-    .filter(([, value]) => Boolean(value))
-    .map(([label, value]) => `- ${label}: ${value}`)
-    .join("\n");
-}
-
 async function generateCompleteWorkContent(
   title: string,
   type: string,
   brief: WorkBriefInput,
   templates: SectionTemplate[]
 ) {
-  const orderedTitles = templates.map((section) => section.title).join(", ");
-  const isSchool = brief.educationLevel === "SECONDARY" || brief.educationLevel === "TECHNICAL";
-  const abstractRequirement = isSchool
-    ? "O resumo é opcional; se incluído, deve ter entre 80 e 140 palavras"
-    : "O resumo deve ter entre 140 e 220 palavras";
-  const sectionWords = isSchool ? "entre 150 e 280" : "entre 220 e 380";
-  const citationNote = isSchool
-    ? `As citações no texto são opcionais; se usar, siga a norma ${brief.citationStyle || "ABNT"}`
-    : `Respeite a norma ${brief.citationStyle || "ABNT"}`;
-  const factualNote = brief.referencesSeed
-    ? "Use as referências iniciais apenas como ponto de partida e não invente metadados adicionais sem base explícita."
-    : "Não fabrique referências bibliográficas, leis, dados estatísticos ou autores específicos sem base no briefing.";
-
-  const prompt = `Gere um trabalho académico sobre "${title}".
-
-Tipo de trabalho: ${formatProjectType(type)}
-Contexto do briefing:
-${buildBriefContext(brief)}
-
-Responda exclusivamente com JSON válido, sem markdown.
-
-Use exactamente este formato:
-{
-  "abstract": "resumo académico",
-  "sections": [
-    ${templates.map((section) => `{ "title": "${section.title}", "content": "..." }`).join(",\n    ")}
-  ]
-}
-
-Requisitos obrigatórios:
-- Mantenha exactamente estes títulos e esta ordem: ${orderedTitles}
-- ${abstractRequirement}
-- Cada secção deve ter ${sectionWords} palavras
-- Use Português académico de Moçambique${isSchool ? " (simplificado para o ensino secundário)" : ""}
-- ${citationNote}
-- ${factualNote}
-- Use os dados do briefing para tornar o conteúdo específico e plausível
-- Não deixe nenhuma secção vazia
-- Produza JSON estritamente válido`;
-
-  const systemPrompt = getSystemPromptForEducation(brief.educationLevel);
-  const completion = await runAIChatCompletion({
-    model: "", // Provider uses its default model
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: prompt },
-    ],
-    max_tokens: 8000,
+  const profile = getWorkGenerationProfile(type, brief, templates);
+  const prompt = buildWorkGenerationPrompt({
+    title,
+    typeLabel: formatProjectType(type),
+    brief,
+    templates,
+    profile,
   });
+  const resolvedEducationLevel = isSchoolGenerationContext(type, brief.educationLevel)
+    ? (brief.educationLevel || "SECONDARY")
+    : brief.educationLevel;
+  const systemPrompt = getSystemPromptForEducation(resolvedEducationLevel);
 
-  const rawContent = completion.choices[0]?.message?.content || "";
+  let assistantReply = "";
+  let lastError: Error | null = null;
 
-  if (!rawContent) {
-    throw new Error("A IA não devolveu conteúdo para o trabalho completo.");
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const completion = await runAIChatCompletion({
+      model: "", // Provider uses its default model
+      messages:
+        attempt === 0
+          ? [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: prompt },
+            ]
+          : [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: prompt },
+              { role: "assistant", content: assistantReply },
+              {
+                role: "user",
+                content: buildWorkRegenerationRepairPrompt({
+                  issues: [lastError?.message || "A resposta anterior ficou abaixo do esperado."],
+                  profile,
+                }),
+              },
+            ],
+      temperature: 0,
+      max_tokens: 16000,
+    });
+
+    assistantReply = completion.choices[0]?.message?.content || "";
+
+    if (!assistantReply) {
+      lastError = new Error("A IA não devolveu conteúdo para o trabalho completo.");
+      continue;
+    }
+
+    try {
+      return parseGeneratedWorkContent(assistantReply, templates, profile);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+    }
   }
 
-  return parseGeneratedWorkContent(rawContent, templates);
+  throw lastError || new Error("A IA não devolveu conteúdo para o trabalho completo.");
 }
 
 function setJob(projectId: string, partial: Partial<WorkGenerationJobStatus>) {
@@ -618,7 +545,7 @@ async function processGenerationJob(projectId: string) {
   }
 
   const brief = buildWorkBriefInputFromRecord(project.brief);
-  const templates = getSectionTemplates(project.type);
+  const templates = getSectionTemplates(project.type, project.brief.educationLevel);
 
   try {
     await db.projectBrief.update({
@@ -834,7 +761,8 @@ export async function regenerateWorkSection(input: {
 }) {
   const { sectionId, title, type, brief, sectionTitle } = input;
 
-  const isSchool = brief.educationLevel === "SECONDARY" || brief.educationLevel === "TECHNICAL";
+  const isSchool = isSchoolGenerationContext(type, brief.educationLevel);
+  const resolvedEducationLevel = isSchool ? (brief.educationLevel || "SECONDARY") : brief.educationLevel;
   const wordCount = isSchool ? "entre 180 e 320" : "entre 260 e 420";
 
   const prompt = `Regere apenas a secção "${sectionTitle}" de um trabalho académico.
@@ -852,7 +780,7 @@ Requisitos obrigatórios:
 - Não invente dados factuais, leis, autores ou referências bibliográficas sem base no briefing
 - Devolva apenas o conteúdo final da secção, sem markdown extra nem explicações`;
 
-  const systemPrompt = getSystemPromptForEducation(brief.educationLevel);
+  const systemPrompt = getSystemPromptForEducation(resolvedEducationLevel);
   const completion = await runAIChatCompletion({
     model: "", // Provider uses its default model
     messages: [

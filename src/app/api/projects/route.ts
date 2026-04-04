@@ -9,7 +9,7 @@ import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
 import { batchGetWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
 import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
 import { getSectionsForEducationLevel } from "@/lib/project-templates";
-import { subscriptionService } from "@/lib/subscription";
+import { SubscriptionService, subscriptionService } from "@/lib/subscription";
 import { createProjectSchema } from "@/lib/validators";
 import type { Prisma } from "@prisma/client";
 
@@ -91,6 +91,12 @@ type ProjectWithRelations = {
   } | null;
 };
 
+function parsePositiveIntParam(value: string | null, fallback: number, max: number) {
+  const parsed = Number(value ?? fallback);
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+  return Math.min(Math.floor(parsed), max);
+}
+
 function serializeProject(
   project: ProjectWithRelations,
   generationStatusMap: Map<string, { status: string; progress: number; step: string }>,
@@ -124,6 +130,9 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search");
     const sortByInput = searchParams.get("sortBy") || "updatedAt";
     const sortOrderInput = searchParams.get("sortOrder") || "desc";
+    const page = parsePositiveIntParam(searchParams.get("page"), 1, 10_000);
+    const limit = parsePositiveIntParam(searchParams.get("limit"), 25, 100);
+    const skip = (page - 1) * limit;
 
     const sortField = (
       field: string,
@@ -154,7 +163,8 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const projects = await db.project.findMany({
+    const [projects, totalCount] = await Promise.all([
+      db.project.findMany({
       where,
       include: {
         sections: {
@@ -176,7 +186,11 @@ export async function GET(request: NextRequest) {
       orderBy: {
         [sortField(sortByInput)]: sortOrder,
       },
-    });
+      skip,
+      take: limit,
+    }),
+      db.project.count({ where }),
+    ]);
 
     // Batch fetch generation status to avoid N+1
     const projectIds = projects.map((p) => p.id);
@@ -185,7 +199,13 @@ export async function GET(request: NextRequest) {
       Array.from(statusMap.entries()).map(([id, s]) => [id, { status: s.status, progress: s.progress, step: s.step }]),
     );
 
-    return apiSuccess(projects.map((p) => serializeProject(p, generationMap)));
+    return apiSuccess(projects.map((p) => serializeProject(p, generationMap)), {
+      headers: {
+        "x-total-count": String(totalCount),
+        "x-page": String(page),
+        "x-limit": String(limit),
+      },
+    });
   } catch (error) {
     logger.error("Get projects error", { error: String(error) });
     return handleApiError(error);
@@ -213,8 +233,8 @@ export async function POST(request: NextRequest) {
 
     // Create project with default sections
     const project = await db.$transaction(async (tx) => {
-      // Consume work from subscription
-      await subscriptionService.consumeWork(session.user.id);
+      // Consume work from subscription within the same transaction
+      await new SubscriptionService(tx).consumeWork(session.user.id);
 
       // Create project
       const newProject = await tx.project.create({

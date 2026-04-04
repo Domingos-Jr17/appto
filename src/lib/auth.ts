@@ -24,26 +24,42 @@ declare module "next-auth" {
       credits: number;
       twoFactorEnabled: boolean;
     };
+    error?: "SessionInvalidated";
   }
   interface User {
     id: string;
     role: string;
     credits: number;
     twoFactorEnabled: boolean;
+    passwordChangedAt?: string | null;
   }
 }
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    role?: string;
+    credits?: number;
+    twoFactorEnabled?: boolean;
+    passwordChangedAt?: string | null;
+    invalidated?: boolean;
+  }
+}
+
+const sessionTokenCookieName = env.isProduction
+  ? "__Secure-next-auth.session-token"
+  : "next-auth.session-token";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
   secret: env.AUTH_SECRET,
   cookies: {
     sessionToken: {
-      name: "next-auth.session-token",
+      name: sessionTokenCookieName,
       options: {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
-        secure: process.env.NODE_ENV === "production",
+        secure: env.isProduction,
       },
     },
   },
@@ -154,6 +170,7 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           credits: user.credits?.balance || 0,
           twoFactorEnabled: user.twoFactorEnabled,
+          passwordChangedAt: user.passwordChangedAt?.toISOString() ?? null,
         };
       },
     }),
@@ -166,30 +183,61 @@ export const authOptions: NextAuthOptions = {
     error: "/login",
   },
   callbacks: {
-    async session({ session, user }) {
-      const fullUser = user?.id
-        ? await db.user.findUnique({
-            where: { id: user.id },
-            include: { credits: true },
-          })
-        : session.user?.email
-          ? await db.user.findUnique({
-              where: { email: session.user.email },
-              include: { credits: true },
-            })
-          : null;
-
-      if (session.user && fullUser) {
-        session.user.id = fullUser.id;
-        session.user.role = fullUser.role;
-        session.user.credits = fullUser.credits?.balance || 0;
-        session.user.twoFactorEnabled = fullUser.twoFactorEnabled;
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = user.role;
+        token.credits = user.credits;
+        token.twoFactorEnabled = user.twoFactorEnabled;
+        token.passwordChangedAt = user.passwordChangedAt ?? null;
+        token.invalidated = false;
       }
 
+      if (!token.sub) {
+        return token;
+      }
+
+      const currentUser = await db.user.findUnique({
+        where: { id: token.sub },
+        include: { credits: true },
+      });
+
+      if (!currentUser) {
+        token.invalidated = true;
+        return token;
+      }
+
+      const currentPasswordChangedAt = currentUser.passwordChangedAt?.toISOString() ?? null;
+      if ((token.passwordChangedAt ?? null) !== currentPasswordChangedAt) {
+        token.invalidated = true;
+      }
+
+      token.role = currentUser.role;
+      token.credits = currentUser.credits?.balance || 0;
+      token.twoFactorEnabled = currentUser.twoFactorEnabled;
+      token.passwordChangedAt = currentPasswordChangedAt;
+      return token;
+    },
+    async session({ session, token }) {
+      if (!session.user) {
+        return session;
+      }
+
+      if (token.invalidated || !token.sub) {
+        session.error = "SessionInvalidated";
+        session.user.id = "";
+        session.user.role = "STUDENT";
+        session.user.credits = 0;
+        session.user.twoFactorEnabled = false;
+        return session;
+      }
+
+      session.user.id = token.sub;
+      session.user.role = token.role || "STUDENT";
+      session.user.credits = token.credits || 0;
+      session.user.twoFactorEnabled = Boolean(token.twoFactorEnabled);
       return session;
     },
     async signIn({ user, account }) {
-      // For OAuth providers, create credits and subscription
       if (account?.provider !== "credentials" && user.email) {
         const existingUser = await db.user.findUnique({
           where: { email: user.email },
@@ -201,6 +249,7 @@ export const authOptions: NextAuthOptions = {
           user.role = existingUser.role;
           user.credits = existingUser.credits?.balance || 0;
           user.twoFactorEnabled = existingUser.twoFactorEnabled;
+          user.passwordChangedAt = existingUser.passwordChangedAt?.toISOString() ?? null;
           return true;
         }
       }

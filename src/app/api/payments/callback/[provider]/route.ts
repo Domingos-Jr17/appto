@@ -6,6 +6,7 @@ import { apiError, apiSuccess, handleApiError } from "@/lib/api";
 import { db } from "@/lib/db";
 import { withDistributedLock } from "@/lib/distributed-lock";
 import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
 import { normalizePaymentCallback, verifyWebhookSignature } from "@/lib/payment-gateway";
 import { PaymentService } from "@/lib/payments";
 import { trackProductEvent } from "@/lib/product-events";
@@ -50,12 +51,7 @@ function createAuditEntry(
 }
 
 function logAudit(entry: AuditLogEntry) {
-  console.log(
-    `[AUDIT] ${JSON.stringify({
-      service: "payment-callback",
-      ...entry,
-    })}`,
-  );
+  logger.info("[payment-callback] audit", { ...entry });
 }
 
 export async function POST(
@@ -134,10 +130,7 @@ export async function POST(
           return apiError("Provider inválido para este pagamento", 400);
         }
 
-        if (
-          existingPayment.status === PaymentStatus.CONFIRMED &&
-          normalized.status === PaymentStatus.CONFIRMED
-        ) {
+        if (existingPayment.status === PaymentStatus.CONFIRMED) {
           logAudit(
             createAuditEntry(
               normalized.paymentId,
@@ -147,8 +140,8 @@ export async function POST(
               existingPayment.userId,
               existingPayment.status,
               normalized.requestId
-                ? `Duplicate confirmed callback ignored (${normalized.requestId})`
-                : "Duplicate confirmed callback ignored",
+                ? `Duplicate or stale callback ignored (${normalized.requestId})`
+                : "Duplicate or stale callback ignored",
             ),
           );
           return apiSuccess({ payment: existingPayment, duplicate: true });
@@ -171,6 +164,24 @@ export async function POST(
           existingPayment.payloadJson && typeof existingPayment.payloadJson === "object"
             ? (existingPayment.payloadJson as Record<string, unknown>)
             : {};
+        const processedRequestIds = Array.isArray(payload.processedRequestIds)
+          ? payload.processedRequestIds.filter((value): value is string => typeof value === "string")
+          : [];
+
+        if (normalized.requestId && processedRequestIds.includes(normalized.requestId)) {
+          logAudit(
+            createAuditEntry(
+              normalized.paymentId,
+              provider,
+              normalized.status,
+              "DUPLICATE",
+              existingPayment.userId,
+              existingPayment.status,
+              "Duplicate callback request ignored",
+            ),
+          );
+          return apiSuccess({ payment: existingPayment, duplicate: true });
+        }
 
         if (normalized.status === PaymentStatus.CONFIRMED) {
           const purchaseType = payload.purchaseType as string | undefined;
@@ -280,6 +291,9 @@ export async function POST(
               callbackRequestId: normalized.requestId,
               lastCallbackStatus: normalized.status,
               lastCallbackPayload: toJsonValue(normalized.providerPayload),
+              processedRequestIds: normalized.requestId
+                ? Array.from(new Set([...processedRequestIds, normalized.requestId]))
+                : processedRequestIds,
             },
           },
         });

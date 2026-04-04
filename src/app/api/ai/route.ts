@@ -61,5 +61,5 @@ export async function GET(_request: NextRequest) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  return NextResponse.json(getCacheStats());
+  return NextResponse.json(await getCacheStats());
 }

@@ -1,5 +1,6 @@
 import { timingSafeEqual, createHmac } from "node:crypto";
 import { PaymentProvider, PaymentStatus } from "@prisma/client";
+import { ApiRouteError } from "@/lib/api";
 
 export type PaymentGateway = "SIMULATED" | "PAYSUITE";
 
@@ -115,7 +116,7 @@ export function normalizePaymentCallback(
     };
   }
 
-  throw new Error("Payload de callback inválido");
+  throw new ApiRouteError("Payload de callback inválido", 400, "INVALID_CALLBACK_PAYLOAD");
 }
 
 function isPaySuiteWebhookPayload(payload: unknown): payload is PaySuiteWebhookPayload {

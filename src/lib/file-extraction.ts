@@ -1,6 +1,7 @@
 import "server-only";
 
 import mammoth from "mammoth";
+import { ApiRouteError } from "@/lib/api";
 import * as pdfjsLib from "pdfjs-dist";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
@@ -40,5 +41,5 @@ export async function extractTextFromFile(buffer: Buffer, mimeType: string): Pro
     return buffer.toString("utf-8").trim();
   }
 
-  throw new Error(`Tipo de ficheiro não suportado para extração de texto: ${mimeType}`);
+  throw new ApiRouteError(`Tipo de ficheiro não suportado para extração de texto: ${mimeType}`, 400, "UNSUPPORTED_EXTRACTION_MIME");
 }

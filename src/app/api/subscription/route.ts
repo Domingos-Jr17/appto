@@ -1,17 +1,19 @@
 import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
+import { PaymentProvider, PackageType } from "@prisma/client";
+import { z } from "zod";
+
+import { apiError, apiSuccess, handleApiError, ApiRouteError, parseBody } from "@/lib/api";
 import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
 import { BILLING_PLAN_DISPLAY, EXTRA_WORKS } from "@/lib/billing";
+import { db } from "@/lib/db";
 import { withDistributedLock } from "@/lib/distributed-lock";
+import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
 import { PaymentService } from "@/lib/payments";
 import { trackProductEvent } from "@/lib/product-events";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { subscriptionService } from "@/lib/subscription";
-import { env } from "@/lib/env";
-import { PaymentProvider, PackageType } from "@prisma/client";
-import { z } from "zod";
 
 const activatePackageSchema = z.object({
   package: z.enum(["STARTER", "PRO"]),
@@ -25,7 +27,34 @@ const purchaseExtraSchema = z.object({
 
 const subscriptionActionSchema = z.union([activatePackageSchema, purchaseExtraSchema]);
 
-// GET /api/subscription - Get user's subscription status
+function serializePaymentTransaction(payment: {
+  id: string;
+  moneyAmount: number;
+  currency: string;
+  status: string;
+  provider: string;
+  createdAt: Date;
+  confirmedAt: Date | null;
+  payloadJson: unknown;
+}) {
+  const payload = payment.payloadJson && typeof payment.payloadJson === "object"
+    ? (payment.payloadJson as Record<string, unknown>)
+    : {};
+
+  return {
+    id: payment.id,
+    amount: payment.moneyAmount,
+    currency: payment.currency,
+    status: payment.status,
+    provider: payment.provider,
+    createdAt: payment.createdAt,
+    confirmedAt: payment.confirmedAt,
+    purchaseType: typeof payload.purchaseType === "string" ? payload.purchaseType : null,
+    package: typeof payload.package === "string" ? payload.package : null,
+    quantity: typeof payload.quantity === "number" ? payload.quantity : null,
+  };
+}
+
 export async function GET(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -36,36 +65,40 @@ export async function GET(_request: NextRequest) {
 
     const subscriptionStatus = await subscriptionService.getSubscriptionStatus(session.user.id);
 
-    const extraWorks = await db.workPurchase.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: "desc" },
-    });
-
-    const recentTransactions = await db.paymentTransaction.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    });
+    const [extraWorks, recentTransactions] = await Promise.all([
+      db.workPurchase.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "desc" },
+      }),
+      db.paymentTransaction.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+    ]);
 
     return apiSuccess({
       subscription: subscriptionStatus,
       extraWorks,
       plans: BILLING_PLAN_DISPLAY,
       extraWorkPrice: EXTRA_WORKS.price,
-      paymentGateway: env.PAYMENT_GATEWAY,
-      paymentDefaultProvider: env.PAYMENT_DEFAULT_PROVIDER,
-      transactions: recentTransactions,
-      nextResetDate: subscriptionStatus.lastReset 
-        ? new Date(new Date(subscriptionStatus.lastReset).getTime() + 30 * 24 * 60 * 60 * 1000)
+      transactions: recentTransactions.map(serializePaymentTransaction),
+      nextResetDate: subscriptionStatus.lastReset
+        ? new Date(
+            Date.UTC(
+              new Date(subscriptionStatus.lastReset).getUTCFullYear(),
+              new Date(subscriptionStatus.lastReset).getUTCMonth() + 1,
+              1,
+            ),
+          )
         : null,
     });
   } catch (error) {
-    console.error("Get subscription error:", error);
+    logger.error("Get subscription error", { error: String(error) });
     return handleApiError(error);
   }
 }
 
-// POST /api/subscription - Activate package or purchase extra works
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -87,30 +120,18 @@ export async function POST(request: NextRequest) {
 
         if ("package" in body) {
           const validPackage = PackageType[body.package as keyof typeof PackageType];
-          if (!validPackage) {
-            throw new Error("Pacote inválido");
+          if (!validPackage || validPackage === PackageType.FREE) {
+            throw new ApiRouteError("Pacote inválido", 400, "INVALID_PACKAGE");
           }
 
-          if (validPackage === PackageType.FREE) {
-            throw new Error("Não pode activar o pacote Free");
-          }
-
-          return paymentService.createPackageCheckout(
-            session.user.id,
-            providerValue,
-            validPackage
-          );
+          return paymentService.createPackageCheckout(session.user.id, providerValue, validPackage);
         }
 
         if ("quantity" in body) {
-          return paymentService.createExtraWorkCheckout(
-            session.user.id,
-            providerValue,
-            body.quantity
-          );
+          return paymentService.createExtraWorkCheckout(session.user.id, providerValue, body.quantity);
         }
 
-        throw new Error("Parâmetros inválidos. Forneça 'package' ou 'quantity'");
+        throw new ApiRouteError("Parâmetros inválidos. Forneça 'package' ou 'quantity'", 400, "INVALID_SUBSCRIPTION_ACTION");
       },
       "Já existe uma operação de pacote/pagamento em curso. Aguarde alguns instantes.",
     );
@@ -151,12 +172,11 @@ export async function POST(request: NextRequest) {
           : `Checkout iniciado para ${body.quantity} trabalho(s) extra(s)`,
     });
   } catch (error) {
-    console.error("Subscription POST error:", error);
-    return handleApiError(error, "Erro ao processarSubscription");
+    logger.error("Subscription POST error", { error: String(error) });
+    return handleApiError(error, "Erro ao processar subscrição");
   }
 }
 
-// DELETE /api/subscription - Cancel subscription
 export async function DELETE(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -172,7 +192,7 @@ export async function DELETE(_request: NextRequest) {
       message: "Subscription cancelada com sucesso",
     });
   } catch (error) {
-    console.error("Cancel subscription error:", error);
+    logger.error("Cancel subscription error", { error: String(error) });
     return handleApiError(error);
   }
 }

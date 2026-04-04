@@ -1,8 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
+
+import { apiError, apiSuccess, handleApiError } from "@/lib/api";
 import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
 import { normalizeStoredContent } from "@/lib/content";
+import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 interface ReorderItem {
   id: string;
@@ -15,7 +18,7 @@ export async function PATCH(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
     const body = await request.json();
@@ -23,7 +26,7 @@ export async function PATCH(request: NextRequest) {
     const items = body?.items as ReorderItem[] | undefined;
 
     if (!projectId || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: "Payload inválido" }, { status: 400 });
+      return apiError("Payload inválido", 400);
     }
 
     const project = await db.project.findFirst({
@@ -41,12 +44,12 @@ export async function PATCH(request: NextRequest) {
     });
 
     if (!project) {
-      return NextResponse.json({ error: "Projecto não encontrado" }, { status: 404 });
+      return apiError("Projecto não encontrado", 404);
     }
 
     const allowedIds = new Set(project.sections.map((section) => section.id));
     if (items.some((item) => !allowedIds.has(item.id) || (item.parentId !== null && !allowedIds.has(item.parentId)))) {
-      return NextResponse.json({ error: "Secções inválidas no reorder" }, { status: 400 });
+      return apiError("Secções inválidas no reorder", 400);
     }
 
     await db.$transaction(
@@ -57,8 +60,8 @@ export async function PATCH(request: NextRequest) {
             parentId: item.parentId,
             order: item.order,
           },
-        })
-      )
+        }),
+      ),
     );
 
     const sections = await db.documentSection.findMany({
@@ -66,14 +69,14 @@ export async function PATCH(request: NextRequest) {
       orderBy: { order: "asc" },
     });
 
-    return NextResponse.json(
+    return apiSuccess(
       sections.map((section) => ({
         ...section,
         content: normalizeStoredContent(section.content),
-      }))
+      })),
     );
   } catch (error) {
-    console.error("Reorder documents error:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    logger.error("Reorder documents error", { error: String(error) });
+    return handleApiError(error);
   }
 }

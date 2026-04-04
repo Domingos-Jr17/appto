@@ -16,14 +16,17 @@ const envSchema = z
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
     ZAI_API_KEY: z.string().min(1).optional(),
     ZAI_BASE_URL: z.string().url().optional(),
-    AI_PROVIDER: z.enum(["zai", "openrouter"]).optional(),
-    AI_FALLBACK_PROVIDER: z.enum(["zai", "openrouter"]).optional(),
+    AI_PROVIDER: z.enum(["zai", "openrouter", "google-ai"]).optional(),
+    AI_FALLBACK_PROVIDER: z.enum(["zai", "openrouter", "google-ai"]).optional(),
     AI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
     RAG_RETRIEVAL_MODE: z.enum(["TEXT", "VECTOR"]).optional(),
     RAG_EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().max(1024).optional(),
     OPENROUTER_API_KEY: z.string().min(1).optional(),
     OPENROUTER_BASE_URL: z.string().url().optional(),
     OPENROUTER_MODEL: z.string().min(1).optional(),
+    GOOGLE_AI_API_KEY: z.string().min(1).optional(),
+    GOOGLE_AI_BASE_URL: z.string().url().optional(),
+    GOOGLE_AI_MODEL: z.string().min(1).optional(),
     RESEND_API_KEY: z.string().min(1).optional(),
     RESEND_FROM_EMAIL: z.string().email().optional(),
     SENTRY_DSN: z.string().url().optional(),
@@ -33,6 +36,7 @@ const envSchema = z
     PAYSUITE_API_TOKEN: z.string().min(1).optional(),
     PAYSUITE_CALLBACK_BASE_URL: z.string().url().optional(),
     RATE_LIMIT_PROVIDER: z.enum(["MEMORY", "UPSTASH"]).optional(),
+    AI_CACHE_PROVIDER: z.enum(["MEMORY", "UPSTASH"]).optional(),
     UPSTASH_REDIS_REST_URL: z.string().url().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
     STORAGE_PROVIDER: z.enum(["LOCAL", "R2"]).optional(),
@@ -89,7 +93,7 @@ const envSchema = z
       }
     }
 
-    if (data.RATE_LIMIT_PROVIDER === "UPSTASH") {
+    if (data.RATE_LIMIT_PROVIDER === "UPSTASH" || data.AI_CACHE_PROVIDER === "UPSTASH") {
       const requiredKeys = [
         "UPSTASH_REDIS_REST_URL",
         "UPSTASH_REDIS_REST_TOKEN",
@@ -100,7 +104,7 @@ const envSchema = z
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: [key],
-            message: `${key} is required when RATE_LIMIT_PROVIDER=UPSTASH`,
+            message: `${key} is required when RATE_LIMIT_PROVIDER=UPSTASH or AI_CACHE_PROVIDER=UPSTASH`,
           });
         }
       }
@@ -133,9 +137,12 @@ const parsedEnv = envSchema.safeParse({
   AI_REQUEST_TIMEOUT_MS: process.env.AI_REQUEST_TIMEOUT_MS,
   RAG_RETRIEVAL_MODE: process.env.RAG_RETRIEVAL_MODE,
   RAG_EMBEDDING_DIMENSIONS: process.env.RAG_EMBEDDING_DIMENSIONS,
-  OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
-  OPENROUTER_BASE_URL: process.env.OPENROUTER_BASE_URL,
-  OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    OPENROUTER_BASE_URL: process.env.OPENROUTER_BASE_URL,
+    OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
+    GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
+    GOOGLE_AI_BASE_URL: process.env.GOOGLE_AI_BASE_URL,
+    GOOGLE_AI_MODEL: process.env.GOOGLE_AI_MODEL,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
     SENTRY_DSN: process.env.SENTRY_DSN,
@@ -145,6 +152,7 @@ const parsedEnv = envSchema.safeParse({
     PAYSUITE_API_TOKEN: process.env.PAYSUITE_API_TOKEN,
     PAYSUITE_CALLBACK_BASE_URL: process.env.PAYSUITE_CALLBACK_BASE_URL,
     RATE_LIMIT_PROVIDER: process.env.RATE_LIMIT_PROVIDER,
+    AI_CACHE_PROVIDER: process.env.AI_CACHE_PROVIDER,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     STORAGE_PROVIDER: process.env.STORAGE_PROVIDER,
@@ -178,6 +186,7 @@ export const env = {
   PAYSUITE_API_BASE_URL:
     parsedEnv.data.PAYSUITE_API_BASE_URL ?? "https://paysuite.tech",
   RATE_LIMIT_PROVIDER: parsedEnv.data.RATE_LIMIT_PROVIDER ?? "MEMORY",
+  AI_CACHE_PROVIDER: parsedEnv.data.AI_CACHE_PROVIDER ?? "MEMORY",
   STORAGE_PROVIDER: parsedEnv.data.STORAGE_PROVIDER ?? "LOCAL",
   STORAGE_LOCAL_ROOT: parsedEnv.data.STORAGE_LOCAL_ROOT ?? ".storage",
   AI_PROVIDER: parsedEnv.data.AI_PROVIDER ?? "openrouter",

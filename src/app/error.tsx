@@ -1,0 +1,32 @@
+"use client";
+
+import { useEffect } from "react";
+import { AlertTriangle } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+
+export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
+  return (
+    <html lang="pt">
+      <body className="flex min-h-screen items-center justify-center bg-background px-6 text-foreground">
+        <div className="max-w-md rounded-3xl border border-border/60 bg-card p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+            <AlertTriangle className="h-6 w-6" />
+          </div>
+          <h1 className="text-2xl font-semibold">Algo correu mal</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Ocorreu um erro inesperado ao carregar a aplicação. Tenta novamente ou recarrega a página.
+          </p>
+          <div className="mt-6 flex justify-center gap-3">
+            <Button onClick={reset}>Tentar novamente</Button>
+            <Button variant="outline" onClick={() => window.location.assign("/")}>Voltar ao início</Button>
+          </div>
+        </div>
+      </body>
+    </html>
+  );
+}

@@ -27,7 +27,7 @@ try {
     }
     if (!process.env[key]) process.env[key] = value;
   }
-} catch (e) {
+} catch {
   console.log("Warning: Could not load .env file");
 }
 

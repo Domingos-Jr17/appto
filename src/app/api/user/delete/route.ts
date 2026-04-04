@@ -1,26 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
-import { apiSuccess, handleApiError, parseBody, apiError } from "@/lib/api";
-import { deleteAccountSchema } from "@/lib/validators";
-import { AuthSecurityService } from "@/lib/auth-security";
 
-// DELETE /api/user/delete - Delete user account
+import { apiSuccess, handleApiError, parseBody, apiError } from "@/lib/api";
+import { authOptions } from "@/lib/auth";
+import { AuthSecurityService } from "@/lib/auth-security";
+import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
+import { deleteAccountSchema } from "@/lib/validators";
+
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
-    const { currentPassword, otpCode } = await parseBody(
-      request,
-      deleteAccountSchema
-    );
-
+    const { currentPassword, otpCode } = await parseBody(request, deleteAccountSchema);
     const userId = session.user.id;
 
     const user = await db.user.findUnique({
@@ -41,7 +38,9 @@ export async function DELETE(request: NextRequest) {
       if (!isValid) {
         return apiError("Senha actual incorreta.", 400);
       }
-    } else if (user.twoFactorEnabled) {
+    }
+
+    if (user.twoFactorEnabled) {
       if (!otpCode) {
         return apiError("É necessário um código 2FA para eliminar esta conta.", 400);
       }
@@ -59,7 +58,7 @@ export async function DELETE(request: NextRequest) {
       message: "Conta eliminada com sucesso",
     });
   } catch (error) {
-    console.error("Delete account error:", error);
+    logger.error("Delete account error", { error: String(error) });
     return handleApiError(error, "Erro ao eliminar conta");
   }
 }

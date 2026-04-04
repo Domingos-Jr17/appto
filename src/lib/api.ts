@@ -1,30 +1,72 @@
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
+
+import { logger } from "@/lib/logger";
 import { RateLimitError } from "@/lib/rate-limit-core";
 
-export function apiSuccess<T>(data: T, init?: ResponseInit) {
-  return NextResponse.json(data, init);
+export class ApiRouteError extends Error {
+  status: number;
+  code?: string;
+  details?: unknown;
+
+  constructor(message: string, status = 400, code?: string, details?: unknown) {
+    super(message);
+    this.name = "ApiRouteError";
+    this.status = status;
+    this.code = code;
+    this.details = details;
+  }
 }
 
-export function apiError(
+async function getRequestIdHeader() {
+  try {
+    const headerStore = await headers();
+    return headerStore.get("x-request-id") ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function buildHeaders(init?: ResponseInit, requestId?: string) {
+  const baseHeaders = new Headers(init?.headers);
+  if (requestId) {
+    baseHeaders.set("x-request-id", requestId);
+  }
+  return baseHeaders;
+}
+
+export async function apiSuccess<T>(data: T, init?: ResponseInit) {
+  const requestId = await getRequestIdHeader();
+  return NextResponse.json(data, {
+    ...init,
+    headers: buildHeaders(init, requestId),
+  });
+}
+
+export async function apiError(
   error: string,
   status = 400,
   code?: string,
-  details?: unknown
+  details?: unknown,
 ) {
+  const requestId = await getRequestIdHeader();
   return NextResponse.json(
     {
       error,
       code,
       ...(details !== undefined ? { details } : {}),
     },
-    { status }
+    {
+      status,
+      headers: buildHeaders(undefined, requestId),
+    },
   );
 }
 
 export async function parseBody<T extends z.ZodTypeAny>(
   request: Request,
-  schema: T
+  schema: T,
 ): Promise<z.infer<T>> {
   const body = await request.json();
   return schema.parse(body);
@@ -37,7 +79,7 @@ export function getZodErrorDetails(error: ZodError) {
   }));
 }
 
-export function handleApiError(error: unknown, fallback = "Erro interno do servidor") {
+export async function handleApiError(error: unknown, fallback = "Erro interno do servidor") {
   if (error instanceof ZodError) {
     return apiError("Pedido inválido", 400, "VALIDATION_ERROR", getZodErrorDetails(error));
   }
@@ -46,9 +88,19 @@ export function handleApiError(error: unknown, fallback = "Erro interno do servi
     return apiError(error.message, 429, "RATE_LIMITED");
   }
 
-  if (error instanceof Error) {
-    return apiError(error.message || fallback, 400);
+  if (error instanceof ApiRouteError) {
+    return apiError(error.message, error.status, error.code, error.details);
   }
 
-  return apiError(fallback, 500);
+  if (error instanceof Error) {
+    logger.error("Unhandled API error", {
+      message: error.message,
+      stack: error.stack,
+      fallback,
+    });
+    return apiError(fallback, 500, "INTERNAL_ERROR");
+  }
+
+  logger.error("Unhandled non-error API failure", { error: String(error), fallback });
+  return apiError(fallback, 500, "INTERNAL_ERROR");
 }

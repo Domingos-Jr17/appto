@@ -204,6 +204,10 @@ export const paymentCallbackSchema = z.object({
   signature: z.string().min(1),
 });
 
+export const totpSetupSchema = z.object({
+  currentPassword: z.string().min(1),
+});
+
 export const totpVerifySchema = z.object({
   code: z.string().trim().min(6).max(12),
 });

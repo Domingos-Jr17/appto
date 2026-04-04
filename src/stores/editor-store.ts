@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { AutoSaveStatus, Section } from "@/types/editor";
 import { countWordsInMarkdown } from "@/lib/content";
 
@@ -72,7 +73,7 @@ function triggerScheduleSave(
   idleTimeoutId = setTimeout(doSave, AUTO_SAVE_CONFIG.debounce + AUTO_SAVE_CONFIG.idleThreshold);
 }
 
-export const useEditorStore = create<EditorStoreState>((set, get) => ({
+export const useEditorStore = create<EditorStoreState>()(persist((set, get) => ({
   activeSectionId: null,
   sectionTitle: "",
   content: "",
@@ -129,4 +130,15 @@ export const useEditorStore = create<EditorStoreState>((set, get) => ({
       lastSaved: undefined,
     });
   },
+}), {
+  name: "appto-editor-store",
+  storage: createJSONStorage(() => sessionStorage),
+  partialize: (state) => ({
+    activeSectionId: state.activeSectionId,
+    sectionTitle: state.sectionTitle,
+    content: state.content,
+    wordCount: state.wordCount,
+    autoSaveStatus: state.autoSaveStatus,
+    lastSaved: state.lastSaved,
+  }),
 }));

@@ -14,13 +14,18 @@ import { AIRequestError } from "@/lib/ai-types";
 export type { AIProvider, AIChatRequest, AIChatResponse, AIMessage };
 export { AIRequestError };
 
-type ProviderName = "openrouter" | "zai";
+type ProviderName = "openrouter" | "zai" | "google-ai";
 
 async function instantiateProvider(provider: ProviderName): Promise<AIProvider> {
   
   if (provider === "zai") {
     const { ZAIProvider } = await import("@/lib/ai-providers/zai");
     return new ZAIProvider();
+  }
+
+  if (provider === "google-ai") {
+    const { GoogleAIProvider } = await import("@/lib/ai-providers/google-ai");
+    return new GoogleAIProvider();
   }
 
   const { OpenRouterProvider } = await import("@/lib/ai-providers/openrouter");
@@ -37,8 +42,10 @@ function getProviderCandidates(): ProviderName[] {
   const fallback = configuredFallback && configuredFallback !== primary
     ? configuredFallback
     : primary === "openrouter"
-      ? "zai"
-      : "openrouter";
+      ? "google-ai"
+      : primary === "google-ai"
+        ? "openrouter"
+        : "openrouter";
 
   return [primary, fallback];
 }

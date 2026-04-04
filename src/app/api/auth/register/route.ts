@@ -1,14 +1,20 @@
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
-import { db } from "@/lib/db";
-import { parseBody, handleApiError, apiSuccess, apiError } from "@/lib/api";
-import { trackProductEvent } from "@/lib/product-events";
-import { registerSchema } from "@/lib/validators";
+
+import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
 import { CreditLedgerService } from "@/lib/credit-ledger";
 import { CREDIT_DEFAULTS } from "@/lib/credits";
+import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
+import { trackProductEvent } from "@/lib/product-events";
+import { getClientIp } from "@/lib/request";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { registerSchema } from "@/lib/validators";
 
 export async function POST(request: NextRequest) {
   try {
+    await enforceRateLimit(`register:${getClientIp(request) ?? "unknown"}`, 5, 60 * 60 * 1000);
+
     const { name, email, password } = await parseBody(request, registerSchema);
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -17,7 +23,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingUser) {
-      return apiError("Este email já está registado", 400);
+      return apiError("Não foi possível concluir o registo com os dados informados.", 400, "REGISTRATION_FAILED");
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -38,7 +44,7 @@ export async function POST(request: NextRequest) {
         createdUser.id,
         CREDIT_DEFAULTS.initialBalance,
         "BONUS",
-        "Créditos iniciais de boas-vindas"
+        "Créditos iniciais de boas-vindas",
       );
 
       await tx.subscription.create({
@@ -72,13 +78,12 @@ export async function POST(request: NextRequest) {
         user: {
           id: user.id,
           name: user.name,
-          email: user.email,
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    console.error("Registration error:", error);
+    logger.error("Registration error", { error: String(error) });
     return handleApiError(error);
   }
 }

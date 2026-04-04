@@ -27,7 +27,9 @@ try {
     }
     if (!process.env[key]) process.env[key] = value;
   }
-} catch (e) {}
+} catch {
+  // Ignore missing .env in ad-hoc local test runs.
+}
 
 // ─── Test Scenarios ──────────────────────────────────────────────────────────
 

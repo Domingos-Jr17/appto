@@ -1,11 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { ZodError } from "zod";
+
+import { apiError, apiSuccess, handleApiError } from "@/lib/api";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { createWorkSchema } from "@/lib/validators";
-import { trackProductEvent } from "@/lib/product-events";
+import { logger } from "@/lib/logger";
 import { getSectionsForEducationLevel } from "@/lib/project-templates";
+import { trackProductEvent } from "@/lib/product-events";
+import { SubscriptionService, subscriptionService } from "@/lib/subscription";
+import { createWorkSchema } from "@/lib/validators";
 import {
   formatProjectType,
   generateCover,
@@ -13,33 +17,26 @@ import {
   serializeBrief,
   startWorkGenerationJob,
 } from "@/lib/work-generation-jobs";
-import { subscriptionService } from "@/lib/subscription";
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
     const body = createWorkSchema.parse(await request.json());
     const { title, type, description, generateContent, brief } = body;
-    const templates = getSectionTemplates(type);
+    const templates = getSectionTemplates(type, brief.educationLevel);
 
-    // Check user subscription
     const { allowed, reason } = await subscriptionService.canGenerateWork(session.user.id);
-
     if (!allowed) {
-      return NextResponse.json(
-        { error: reason, code: "LIMIT_REACHED", remaining: 0 },
-        { status: 403 }
-      );
+      return apiError(reason || "Limite de geração atingido", 403, "LIMIT_REACHED", { remaining: 0 });
     }
 
     const project = await db.$transaction(async (tx) => {
-      // Consume work from subscription
-      await subscriptionService.consumeWork(session.user.id);
+      await new SubscriptionService(tx).consumeWork(session.user.id);
 
       const createdProject = await tx.project.create({
         data: {
@@ -52,7 +49,7 @@ export async function POST(request: NextRequest) {
           brief: {
             create: {
               workType: type,
-              generationStatus: generateContent ? "BRIEFING" : "BRIEFING",
+              generationStatus: "BRIEFING",
               institutionName: brief.institutionName,
               courseName: brief.courseName,
               subjectName: brief.subjectName,
@@ -86,22 +83,19 @@ export async function POST(request: NextRequest) {
 
       const referenceOrder = Math.max(...templates.map((section) => section.order)) + 1;
       const projectSections = getSectionsForEducationLevel(brief.educationLevel, type);
-
-      // Build initial sections: cover + content sections + references
       const initialSections = [
         { title: "Capa", order: 1, content: generateCover(title, type, brief) },
         ...projectSections
-          .filter((s) => s.title !== "Capa" && s.title !== "Referências" && s.title !== "Anexos")
+          .filter((section) => section.title !== "Capa" && section.title !== "Referências" && section.title !== "Anexos")
           .map((section) => ({ title: section.title, order: section.order, content: "" })),
         ...templates.map((section) => ({ title: section.title, order: section.order, content: "" })),
         { title: "Referências", order: referenceOrder, content: brief.referencesSeed || "" },
       ];
 
-      // Deduplicate by title (keep first occurrence)
       const seen = new Set<string>();
-      const dedupedSections = initialSections.filter((s) => {
-        if (seen.has(s.title)) return false;
-        seen.add(s.title);
+      const dedupedSections = initialSections.filter((section) => {
+        if (seen.has(section.title)) return false;
+        seen.add(section.title);
         return true;
       });
 
@@ -132,10 +126,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (existingBrief?.generationStatus === "GENERATING" || existingBrief?.generationStatus === "READY") {
-        return NextResponse.json(
-          { error: "Geração já está em curso ou concluída para este trabalho." },
-          { status: 409 }
-        );
+        return apiError("Geração já está em curso ou concluída para este trabalho.", 409);
       }
 
       await startWorkGenerationJob({
@@ -157,7 +148,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(
+    return apiSuccess(
       {
         success: true,
         project: completeProject
@@ -171,19 +162,16 @@ export async function POST(request: NextRequest) {
           projectId: project.id,
           step: generateContent ? "A validar o briefing" : "Briefing criado",
         },
-        remainingWorks: await subscriptionService.canGenerateWork(session.user.id).then(r => r.remaining),
+        remainingWorks: await subscriptionService.canGenerateWork(session.user.id).then((result) => result.remaining),
         message: generateContent
           ? `A geração de ${formatProjectType(type)} começou com sucesso.`
           : "Briefing guardado e estrutura criada com sucesso.",
       },
-      { status: generateContent ? 202 : 201 }
+      { status: generateContent ? 202 : 201 },
     );
   } catch (error) {
     if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: "Payload inválido", details: error.flatten() },
-        { status: 400 }
-      );
+      return apiError("Payload inválido", 400, "VALIDATION_ERROR", error.flatten());
     }
 
     const message =
@@ -193,7 +181,7 @@ export async function POST(request: NextRequest) {
           ? error.message
           : "Erro ao gerar trabalho";
 
-    console.error("[Work Generation Error]", error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("Work generation error", { error: String(error) });
+    return handleApiError(error, message);
   }
 }

@@ -1,3 +1,4 @@
+import { ApiRouteError } from "@/lib/api";
 import { db } from "@/lib/db";
 import { generateCacheKey, getCachedResponse, setCachedResponse } from "@/lib/ai-cache";
 import { buildActionPrompt, buildSystemPrompt, PROMPT_VERSION } from "@/lib/ai-prompts";
@@ -102,7 +103,7 @@ async function prepareAiRequest(input: ProcessAiRequestInput): Promise<PreparedA
 
   const { allowed, reason } = await subscriptionService.canUseAIAction(userId, action);
   if (!allowed) {
-    throw new Error(reason || "Ação não disponível no seu pacote");
+    throw new ApiRouteError(reason || "Ação não disponível no seu pacote", 403, "AI_ACTION_NOT_ALLOWED");
   }
 
   const [subscription, user, projectContext] = await Promise.all([
@@ -158,7 +159,7 @@ async function prepareAiRequest(input: ProcessAiRequestInput): Promise<PreparedA
   });
 
   if (factualValidation.blocked) {
-    throw new Error(factualValidation.message);
+    throw new ApiRouteError(factualValidation.message || "Pedido bloqueado por validação factual.", 400, "FACTUAL_VALIDATION_BLOCKED");
   }
 
   const cacheKey = generateCacheKey(
@@ -188,7 +189,7 @@ async function prepareAiRequest(input: ProcessAiRequestInput): Promise<PreparedA
       max_tokens: action === "generate-complete" ? 8000 : action === "generate-section" ? 4000 : 2000,
     },
     cacheKey,
-    cachedResponse: useCache ? getCachedResponse(cacheKey) : null,
+    cachedResponse: useCache ? await getCachedResponse(cacheKey) : null,
     packageKey: userPackage,
     promptVersion: PROMPT_VERSION,
     remainingWorks: await subscriptionService.canGenerateWork(userId).then((result) => result.remaining),
@@ -215,10 +216,10 @@ export async function processAiRequest(input: ProcessAiRequestInput): Promise<Pr
   const completion = await runAIChatCompletion(prepared.request);
   const response = completion.choices[0]?.message?.content || "";
   if (!response) {
-    throw new Error("Erro ao gerar resposta");
+    throw new ApiRouteError("Erro ao gerar resposta", 502, "EMPTY_AI_RESPONSE");
   }
 
-  setCachedResponse(prepared.cacheKey, response);
+  await setCachedResponse(prepared.cacheKey, response);
 
   return {
     response,
@@ -273,7 +274,7 @@ export async function streamAiRequest(input: ProcessAiRequestInput): Promise<Str
         }
 
         if (fullResponse.trim()) {
-          setCachedResponse(prepared.cacheKey, fullResponse);
+          await setCachedResponse(prepared.cacheKey, fullResponse);
         }
 
         controller.close();

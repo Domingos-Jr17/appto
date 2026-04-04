@@ -51,12 +51,7 @@ export async function POST(request: NextRequest) {
     return new Response(result.stream, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
-        "Cache-Control": "no-store",
-        "X-Aptto-Package": result.packageKey,
-        "X-Aptto-Prompt-Version": result.promptVersion,
-        "X-Aptto-Remaining-Works": String(result.remainingWorks),
-        "X-Aptto-Cached": String(result.cached),
-        "X-Aptto-Warnings": encodeURIComponent(result.warnings.join(" | ")),
+        "Cache-Control": "no-store"
       },
     });
   } catch (error) {

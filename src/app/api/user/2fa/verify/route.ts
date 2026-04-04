@@ -1,10 +1,12 @@
 import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
+
 import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
-import { totpVerifySchema } from "@/lib/validators";
+import { authOptions } from "@/lib/auth";
 import { AuthSecurityService } from "@/lib/auth-security";
+import { db } from "@/lib/db";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { totpVerifySchema } from "@/lib/validators";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +15,8 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.id) {
       return apiError("Não autorizado", 401);
     }
+
+    await enforceRateLimit(`2fa-verify:${session.user.id}`, 10, 10 * 60 * 1000);
 
     const { code } = await parseBody(request, totpVerifySchema);
     const security = new AuthSecurityService(db);

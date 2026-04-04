@@ -1,32 +1,40 @@
-import { getServerSession } from "next-auth";
+import { timingSafeEqual } from "node:crypto";
+
 import { NextRequest } from "next/server";
 
-import { authOptions } from "@/lib/auth";
 import { apiError, apiSuccess, handleApiError } from "@/lib/api";
 import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
+import { getClientIp } from "@/lib/request";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { runWorkerPass } from "@/lib/worker-scheduler";
 
-async function isAuthorized(request: NextRequest) {
-  const headerSecret = request.headers.get("x-worker-secret");
-  if (env.INTERNAL_WORKER_SECRET && headerSecret === env.INTERNAL_WORKER_SECRET) {
-    return true;
+function hasValidWorkerSecret(headerSecret: string | null) {
+  if (!env.INTERNAL_WORKER_SECRET || !headerSecret) {
+    return false;
   }
 
-  const session = await getServerSession(authOptions);
-  return session?.user?.role === "ADMIN";
+  const expected = Buffer.from(env.INTERNAL_WORKER_SECRET);
+  const provided = Buffer.from(headerSecret);
+  if (expected.length !== provided.length) {
+    return false;
+  }
+
+  return timingSafeEqual(expected, provided);
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const authorized = await isAuthorized(request);
-    if (!authorized) {
+    await enforceRateLimit(`internal-worker:${getClientIp(request) ?? "unknown"}`, 30, 60 * 1000);
+
+    if (!hasValidWorkerSecret(request.headers.get("x-worker-secret"))) {
       return apiError("Não autorizado", 401);
     }
 
     const results = await runWorkerPass();
-
     return apiSuccess({ ok: true, ...results });
   } catch (error) {
+    logger.error("Internal worker execution failed", { error: String(error) });
     return handleApiError(error, "Não foi possível executar os workers.");
   }
 }

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type {
   CreateSectionOptions,
   Project,
@@ -40,7 +41,7 @@ interface ProjectStoreState {
   findSection: (sectionId: string) => Section | null;
 }
 
-export const useProjectStore = create<ProjectStoreState>((set, get) => ({
+export const useProjectStore = create<ProjectStoreState>()(persist((set, get) => ({
   project: null,
   sections: [],
   isSavingExport: null,
@@ -243,4 +244,12 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       set({ isSavingExport: null });
     }
   },
+}), {
+  name: "appto-project-store",
+  storage: createJSONStorage(() => sessionStorage),
+  partialize: (state) => ({
+    project: state.project,
+    sections: state.sections,
+    activeProjectId: state.activeProjectId,
+  }),
 }));

@@ -7,6 +7,8 @@ const RETRY_DELAYS_MS = [800, 1600, 3200];
 const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
 const DEFAULT_MODEL = "qwen/qwen3.6-plus:free";
 
+const FALLBACK_MODELS: string[] = [];
+
 interface OpenRouterConfig {
   apiKey: string;
   baseUrl: string;
@@ -162,6 +164,31 @@ export class OpenRouterProvider implements AIProvider {
           await sleep(RETRY_DELAYS_MS[attempt]);
           attempt += 1;
           continue;
+        }
+
+        if (status === 429 && FALLBACK_MODELS.length > 0) {
+          const config = await loadConfig();
+          for (const fallbackModel of FALLBACK_MODELS) {
+            try {
+              const response = await fetch(getChatCompletionsUrl(config.baseUrl), {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${config.apiKey}`,
+                  "Content-Type": "application/json",
+                  "HTTP-Referer": "https://aptto.mz",
+                  "X-Title": "aptto",
+                },
+                signal: body.signal,
+                body: JSON.stringify(sanitizeRequestBody(body, fallbackModel)),
+              });
+
+              if (response.ok) {
+                return (await response.json()) as AIChatResponse;
+              }
+            } catch {
+              // Continue to next fallback model
+            }
+          }
         }
 
         throw error;

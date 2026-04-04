@@ -34,8 +34,8 @@ describe("SubscriptionService", () => {
 
   test("consumes extra works before plan quota", async () => {
     const SubscriptionService = await loadSubscriptionService();
-    const workPurchaseUpdate = mock(async () => null);
-    const subscriptionUpdate = mock(async () => null);
+    const workPurchaseUpdateMany = mock(async () => ({ count: 1 }));
+    const subscriptionUpdateMany = mock(async () => ({ count: 0 }));
     const db = {
       subscription: {
         findUnique: mock(async () => ({
@@ -46,7 +46,7 @@ describe("SubscriptionService", () => {
           worksUsed: 1,
           lastUsageReset: new Date(),
         })),
-        update: subscriptionUpdate,
+        updateMany: subscriptionUpdateMany,
       },
       workPurchase: {
         findMany: mock(async () => [
@@ -58,15 +58,15 @@ describe("SubscriptionService", () => {
             expiresAt: new Date(Date.now() + 60_000),
           },
         ]),
-        update: workPurchaseUpdate,
+        updateMany: workPurchaseUpdateMany,
       },
     };
 
     const service = new SubscriptionService(db as never);
     await service.consumeWork("user_1");
 
-    expect(workPurchaseUpdate).toHaveBeenCalled();
-    expect(subscriptionUpdate).not.toHaveBeenCalled();
+    expect(workPurchaseUpdateMany).toHaveBeenCalled();
+    expect(subscriptionUpdateMany).not.toHaveBeenCalled();
   });
 
   test("preserves used quota on downgrade when usage still fits new plan", async () => {

@@ -1,3 +1,4 @@
+import { ApiRouteError } from "@/lib/api";
 import { db } from "@/lib/db";
 import { SubscriptionStatus, PackageType, type PrismaClient } from "@prisma/client";
 import { BILLING_PLANS, EXTRA_WORKS } from "@/lib/billing";
@@ -57,12 +58,11 @@ export class SubscriptionService {
     const subscription = await this.getOrCreate(userId);
     const now = new Date();
     const lastReset = new Date(subscription.lastUsageReset);
+    const crossedCalendarMonth =
+      now.getUTCFullYear() !== lastReset.getUTCFullYear() ||
+      now.getUTCMonth() !== lastReset.getUTCMonth();
 
-    const daysSinceReset = Math.floor(
-      (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    if (daysSinceReset >= 30) {
+    if (crossedCalendarMonth) {
       await this.dbClient.subscription.update({
         where: { userId },
         data: {
@@ -182,13 +182,16 @@ export class SubscriptionService {
         orderBy: { expiresAt: "asc" },
       });
 
-      for (const p of purchases) {
-        const available = p.quantity - (p.used || 0);
-        if (available > 0) {
-          await this.dbClient.workPurchase.update({
-            where: { id: p.id },
-            data: { used: { increment: 1 } },
-          });
+      for (const purchase of purchases) {
+        const updated = await this.dbClient.workPurchase.updateMany({
+          where: {
+            id: purchase.id,
+            used: { lt: purchase.quantity },
+          },
+          data: { used: { increment: 1 } },
+        });
+
+        if (updated.count === 1) {
           return;
         }
       }
@@ -197,16 +200,22 @@ export class SubscriptionService {
     const planRemaining = subscription.worksPerMonth - subscription.worksUsed;
 
     if (planRemaining > 0) {
-      await this.dbClient.subscription.update({
-        where: { userId },
+      const updated = await this.dbClient.subscription.updateMany({
+        where: {
+          userId,
+          worksUsed: { lt: subscription.worksPerMonth },
+        },
         data: {
           worksUsed: { increment: 1 },
         },
       });
-      return;
+
+      if (updated.count === 1) {
+        return;
+      }
     }
 
-    throw new Error("Limite de trabalhos atingido");
+    throw new ApiRouteError("Limite de trabalhos atingido", 403, "WORK_LIMIT_REACHED");
   }
 
   async refundWork(userId: string): Promise<void> {
@@ -244,7 +253,7 @@ export class SubscriptionService {
   async activatePackage(userId: string, packageType: PackageType): Promise<void> {
     const packageDetails = PACKAGE_PRICES[packageType];
     if (!packageDetails) {
-      throw new Error("Pacote inválido");
+      throw new ApiRouteError("Pacote inválido", 400, "INVALID_PACKAGE");
     }
 
     const currentSubscription = await this.getOrCreate(userId);

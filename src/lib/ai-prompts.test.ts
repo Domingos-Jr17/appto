@@ -1,13 +1,26 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
-import { PROMPT_VERSION, buildActionPrompt, buildSystemPrompt } from "@/lib/ai-prompts";
+mock.module("server-only", () => ({}));
+mock.module("@/lib/env", () => ({
+  env: { isDevelopment: true },
+}));
+mock.module("@/lib/logger", () => ({
+  logger: { warn: () => {}, info: () => {} },
+}));
+
+async function loadAiPrompts() {
+  const module = await import("@/lib/ai-prompts");
+  return module;
+}
 
 describe("ai prompts", () => {
-  test("exposes a versioned prompt set", () => {
+  test("exposes a versioned prompt set", async () => {
+    const { PROMPT_VERSION } = await loadAiPrompts();
     expect(PROMPT_VERSION).toBe("v3.1");
   });
 
-  test("includes anti-fabrication rules for references", () => {
+  test("includes anti-fabrication rules for references", async () => {
+    const { buildSystemPrompt, buildActionPrompt } = await loadAiPrompts();
     const systemPrompt = buildSystemPrompt("PRO", "HIGHER_EDUCATION");
     const prompt = buildActionPrompt({
       action: "references",
@@ -20,7 +33,8 @@ describe("ai prompts", () => {
     expect(prompt).toContain("Se não tiver dados suficientes");
   });
 
-  test("uses package-specific guidance for free users", () => {
+  test("uses package-specific guidance for free users", async () => {
+    const { buildSystemPrompt } = await loadAiPrompts();
     const prompt = buildSystemPrompt("FREE", undefined);
 
     expect(prompt).toContain("assistente educacional básico");

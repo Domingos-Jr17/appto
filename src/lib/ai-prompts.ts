@@ -1,4 +1,5 @@
 import type { AIAction } from "@/lib/subscription";
+import { getEducationPromptMarkdown, getSystemPromptMarkdown } from "@/lib/prompt-loader";
 
 export const PROMPT_VERSION = "v3.1";
 
@@ -109,6 +110,11 @@ function wrapUntrustedSection(label: string, value: string) {
 }
 
 export function buildSystemPrompt(packageValue: string, educationLevel?: string) {
+  const educationFromFiles = educationLevel ? getEducationPromptMarkdown(educationLevel) : null;
+  if (educationFromFiles) {
+    return educationFromFiles;
+  }
+
   if (educationLevel && educationLevel in EDUCATION_PROMPTS) {
     return EDUCATION_PROMPTS[educationLevel as keyof typeof EDUCATION_PROMPTS];
   }

@@ -420,6 +420,7 @@ export function extractJSONObject(rawContent: string) {
 export function validateGeneratedWorkContent(
   parsed: ParsedGeneratedWorkContent,
   profile: WorkGenerationProfile,
+  theme?: string,
 ) {
   const issues: string[] = [];
 
@@ -451,6 +452,27 @@ export function validateGeneratedWorkContent(
     );
   }
 
+  if (theme) {
+    const themeLower = theme.toLowerCase();
+    const themeWords = themeLower
+      .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+      .split(/\s+/)
+      .map((w) => w.trim())
+      .filter((w) => w.length >= 4);
+
+    if (themeWords.length > 0) {
+      const fullText = parsed.sections.map((s) => s.content.toLowerCase()).join(" ");
+      const matches = themeWords.filter((word) => fullText.includes(word));
+      const coverage = matches.length / themeWords.length;
+
+      if (coverage < 0.4) {
+        issues.push(
+          `O conteúdo gerado menciona apenas ${matches.length} de ${themeWords.length} palavras-chave do tema "${theme}". Verifique se o texto está coerente com o tema pedido.`,
+        );
+      }
+    }
+  }
+
   return issues;
 }
 
@@ -458,6 +480,7 @@ export function parseGeneratedWorkContent(
   rawContent: string,
   templates: SectionTemplate[],
   profile: WorkGenerationProfile,
+  theme?: string,
 ): ParsedGeneratedWorkContent {
   const parsed = JSON.parse(extractJSONObject(rawContent)) as GeneratedWorkContentPayload;
   const abstract = typeof parsed.abstract === "string" ? parsed.abstract.trim() : "";
@@ -490,7 +513,7 @@ export function parseGeneratedWorkContent(
   });
 
   const result = { abstract, sections };
-  const issues = validateGeneratedWorkContent(result, profile);
+  const issues = validateGeneratedWorkContent(result, profile, theme);
 
   if (issues.length > 0) {
     throw new Error(issues.join(" "));

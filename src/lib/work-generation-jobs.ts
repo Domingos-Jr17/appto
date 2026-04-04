@@ -368,7 +368,7 @@ async function generateCompleteWorkContent(
     }
 
     try {
-      return parseGeneratedWorkContent(assistantReply, templates, profile);
+      return parseGeneratedWorkContent(assistantReply, templates, profile, title);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
     }

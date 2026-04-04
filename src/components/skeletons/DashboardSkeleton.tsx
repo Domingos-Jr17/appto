@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function DashboardSkeleton() {
   return (
     <div className="space-y-6">
-      <section className="glass glass-border rounded-[28px] p-6 lg:p-8">
+      <section className="rounded-[28px] border border-border/50 bg-card/50 p-6 lg:p-8">
         <Skeleton className="h-4 w-20 rounded-full" />
         <Skeleton className="mt-4 h-10 w-2/3 rounded-xl" />
         <Skeleton className="mt-3 h-4 w-full rounded-lg" />
@@ -20,7 +20,7 @@ export function DashboardSkeleton() {
         </div>
       </section>
 
-      <section className="glass glass-border rounded-[28px] p-5">
+      <section className="rounded-[28px] border border-border/50 bg-card/50 p-5">
         <Skeleton className="h-4 w-40 rounded-full" />
         <div className="mt-4 space-y-3">
           {Array.from({ length: 2 }).map((_, index) => (

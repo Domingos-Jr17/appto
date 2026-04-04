@@ -159,7 +159,7 @@ export function AccountSection() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl border border-border/60 bg-card/50 p-4 shadow-lg backdrop-blur-xl">
+          <div className="rounded-xl border border-border/60 bg-card/50 p-4 ">
             <div className="mb-2 flex items-center gap-3">
               <div className="rounded-lg bg-success/10 p-2">
                 <CheckCircle className="h-4 w-4 text-success" />
@@ -171,7 +171,7 @@ export function AccountSection() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-card/50 p-4 shadow-lg backdrop-blur-xl">
+          <div className="rounded-xl border border-border/60 bg-card/50 p-4 ">
             <div className="mb-2 flex items-center gap-3">
               <div className="rounded-lg bg-primary/10 p-2">
                 <Package className="h-4 w-4 text-primary" />
@@ -185,7 +185,7 @@ export function AccountSection() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-card/50 p-4 shadow-lg backdrop-blur-xl">
+          <div className="rounded-xl border border-border/60 bg-card/50 p-4 ">
             <div className="mb-2 flex items-center gap-3">
               <div className="rounded-lg bg-primary/10 p-2">
                 <Calendar className="h-4 w-4 text-primary" />
@@ -199,7 +199,7 @@ export function AccountSection() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-card/50 p-4 shadow-lg backdrop-blur-xl">
+          <div className="rounded-xl border border-border/60 bg-card/50 p-4 ">
             <div className="mb-2 flex items-center gap-3">
               <div className="rounded-lg bg-primary/10 p-2">
                 <HardDrive className="h-4 w-4 text-primary" />
@@ -228,7 +228,7 @@ export function AccountSection() {
           </p>
         </div>
 
-        <div className="rounded-xl border border-border/60 bg-accent/50 p-4 shadow-lg backdrop-blur-xl">
+        <div className="rounded-xl border border-border/60 bg-accent/50 p-4 ">
           <p className="mb-4 text-sm text-muted-foreground">
             Será descarregado um ficheiro JSON com sessões, secções,
             transacções, pacotes, trabalhos extras e configurações associadas à conta.
@@ -262,7 +262,7 @@ export function AccountSection() {
           </p>
         </div>
 
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 backdrop-blur-xl">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 ">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
               <h4 className="mb-1 font-semibold text-destructive">Eliminar conta</h4>

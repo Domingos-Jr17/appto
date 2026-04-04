@@ -4,7 +4,7 @@ export function WorkspaceLoadingSkeleton() {
   return (
     <div className="flex flex-1 gap-3 bg-background p-3">
       {/* Sidebar skeleton — matches AppSidebar */}
-      <div className="glass glass-border hidden min-w-[220px] shrink-0 flex-col rounded-2xl lg:flex" style={{ width: 220 }}>
+      <div className="hidden min-w-[220px] shrink-0 flex-col rounded-2xl border border-border/50 bg-card/50 lg:flex" style={{ width: 220 }}>
         <div className="shrink-0 border-b border-border/60 px-4 pb-4 pt-5">
           <div className="flex items-center gap-3">
             <Skeleton className="h-10 w-10 shrink-0 rounded-2xl" />
@@ -28,8 +28,8 @@ export function WorkspaceLoadingSkeleton() {
       </div>
 
       {/* Chat pane skeleton — matches ChatPane */}
-      <div className="glass glass-border flex min-w-0 flex-1 flex-col rounded-2xl overflow-hidden">
-        <div className="glass-header flex items-center justify-between border-b border-border/60 px-4 py-3">
+      <div className="flex min-w-0 flex-1 flex-col rounded-2xl border border-border/50 bg-card/50 overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-4 py-3">
           <Skeleton className="h-4 w-28 rounded-lg" />
           <Skeleton className="h-8 w-32 rounded-full" />
         </div>
@@ -44,9 +44,9 @@ export function WorkspaceLoadingSkeleton() {
             </div>
           </div>
         </div>
-        <div className="glass-header border-t border-border/60 px-4 py-4">
+        <div className="border-t border-border/60 bg-muted/30 px-4 py-4">
           <div className="mx-auto max-w-3xl">
-            <div className="glass glass-border rounded-2xl p-3">
+            <div className="rounded-2xl border border-border/50 bg-background/50 p-3">
               <div className="flex gap-2">
                 <Skeleton className="h-[88px] flex-1 rounded-2xl" />
                 <Skeleton className="h-[88px] w-12 shrink-0 rounded-2xl" />
@@ -57,13 +57,13 @@ export function WorkspaceLoadingSkeleton() {
       </div>
 
       {/* Document pane skeleton — matches DocumentPane */}
-      <div className="glass glass-border hidden w-[380px] shrink-0 flex-col rounded-2xl xl:flex xl:w-[420px]">
-        <div className="glass-header flex items-center gap-2 border-b border-border/60 px-4 py-3">
+      <div className="hidden w-[380px] shrink-0 flex-col rounded-2xl border border-border/50 bg-card/50 xl:flex xl:w-[420px]">
+        <div className="flex items-center gap-2 border-b border-border/60 bg-muted/30 px-4 py-3">
           <Skeleton className="h-5 w-24 rounded-full" />
           <Skeleton className="h-5 w-20 rounded-full" />
         </div>
         <div className="flex-1 p-4 space-y-4">
-          <div className="glass glass-border rounded-2xl p-4 space-y-3">
+          <div className="rounded-2xl border border-border/50 bg-background/50 p-4 space-y-3">
             <Skeleton className="h-11 w-full rounded-2xl" />
             <Skeleton className="h-[420px] w-full rounded-xl" />
           </div>

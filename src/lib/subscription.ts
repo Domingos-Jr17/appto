@@ -168,8 +168,10 @@ export class SubscriptionService {
   }
 
   async consumeWork(userId: string): Promise<void> {
-    const subscription = await this.checkAndResetMonthlyUsage(userId);
+    // Step 1: Reset monthly usage if needed (idempotent)
+    await this.checkAndResetMonthlyUsage(userId);
 
+    // Step 2: Try to consume from extra works first (atomic)
     const extraWorks = await this.getAvailableExtraWorks(userId);
 
     if (extraWorks > 0) {
@@ -197,22 +199,18 @@ export class SubscriptionService {
       }
     }
 
-    const planRemaining = subscription.worksPerMonth - subscription.worksUsed;
+    // Step 3: Try to consume from plan (atomic — field-to-field comparison)
+    // Uses raw SQL to compare worksUsed < worksPerMonth atomically,
+    // preventing race conditions under concurrent requests.
+    const result = await this.dbClient.$executeRaw`
+      UPDATE "Subscription"
+      SET "worksUsed" = "worksUsed" + 1
+      WHERE "userId" = ${userId}
+        AND "worksUsed" < "worksPerMonth"
+    `;
 
-    if (planRemaining > 0) {
-      const updated = await this.dbClient.subscription.updateMany({
-        where: {
-          userId,
-          worksUsed: { lt: subscription.worksPerMonth },
-        },
-        data: {
-          worksUsed: { increment: 1 },
-        },
-      });
-
-      if (updated.count === 1) {
-        return;
-      }
+    if (result === 1) {
+      return;
     }
 
     throw new ApiRouteError("Limite de trabalhos atingido", 403, "WORK_LIMIT_REACHED");

@@ -1,11 +1,23 @@
 import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
+import { ZodError } from "zod";
 
 import { apiError, apiSuccess, handleApiError } from "@/lib/api";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { normalizeSettings, DEFAULT_USER_SETTINGS } from "@/lib/user-settings";
+import { z } from "zod";
+
+const updateSettingsSchema = z.object({
+  language: z.enum(["pt-MZ", "pt-BR", "en"]).optional(),
+  citationStyle: z.enum(["ABNT", "APA", "Vancouver"]).optional(),
+  fontSize: z.number().int().min(12).max(24).optional(),
+  autoSave: z.boolean().optional(),
+  aiSuggestionsEnabled: z.boolean().optional(),
+  emailNotifications: z.boolean().optional(),
+  marketingEmails: z.boolean().optional(),
+});
 
 export async function GET() {
   try {
@@ -49,7 +61,7 @@ export async function PATCH(request: NextRequest) {
       return apiError("Não autorizado", 401);
     }
 
-    const body = await request.json();
+    const body = updateSettingsSchema.parse(await request.json());
     const {
       language,
       citationStyle,
@@ -85,6 +97,9 @@ export async function PATCH(request: NextRequest) {
 
     return apiSuccess(normalizeSettings(settings));
   } catch (error) {
+    if (error instanceof ZodError) {
+      return apiError("Dados inválidos", 400, "VALIDATION_ERROR", error.flatten());
+    }
     logger.error("Update settings error", { error: String(error) });
     return handleApiError(error);
   }

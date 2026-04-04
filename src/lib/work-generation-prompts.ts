@@ -118,7 +118,7 @@ function getSectionGuidance(title: string, schoolContext: boolean, sectionCount:
 
   if (normalized.includes("desenvolvimento") && sectionCount === 3) {
     return schoolContext
-      ? "desenvolva o tema em profundidade, usando 4 a 6 subtítulos curtos em Markdown (## Título) com: conceito central, causas ou características, exemplos concretos, relação com a realidade moçambicana, desafios e caminhos; cada subtópico deve ter pelo menos 3 parágrafos desenvolvidos"
+      ? "desenvolva o tema em profundidade, usando exactamente 5 subtítulos curtos em Markdown (## Título) para garantir extensão e qualidade. Estrutura sugerida: 1) Contextualização e conceitos chave; 2) Análise dos factores ou elementos principais; 3) Impacto e relevância no contexto moçambicano; 4) Desafios actuais e perspectivas de resolução; 5) O papel do estudante e da comunidade. Cada subtópico deve ter pelo menos 3 parágrafos desenvolvidos com exemplos concretos."
       : "desenvolva a argumentação principal em profundidade, com 3 a 5 subtítulos curtos que organizem conceitos, análise e implicações";
   }
 
@@ -236,7 +236,7 @@ export function getWorkGenerationProfile(
     suggestedSubheadings:
       normalizeTitle(section.title).includes("desenvolvimento") && sectionCount === 3
         ? schoolContext
-          ? ["Enquadramento do tema", "Ideias principais", "Exemplos no contexto moçambicano", "Desafios e caminhos"]
+          ? ["Contextualização e conceitos chave", "Factores ou elementos principais", "Impacto e relevância no contexto moçambicano", "Desafios actuais e perspectivas de resolução", "O papel do estudante e da comunidade"]
           : ["Quadro conceptual", "Análise do problema", "Implicações", "Síntese crítica"]
         : undefined,
   }));

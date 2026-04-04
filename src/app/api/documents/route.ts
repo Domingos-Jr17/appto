@@ -1,40 +1,34 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { countWordsInMarkdown, normalizeStoredContent } from "@/lib/content";
-import { createDocumentSchema } from "@/lib/validators";
-import { logger } from "@/lib/logger";
 
-// GET /api/documents - Get sections by project
+import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
+import { authOptions } from "@/lib/auth";
+import { countWordsInMarkdown, normalizeStoredContent } from "@/lib/content";
+import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
+import { createDocumentSchema } from "@/lib/validators";
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get("projectId");
 
     if (!projectId) {
-      return NextResponse.json(
-        { error: "ID do projecto é obrigatório" },
-        { status: 400 }
-      );
+      return apiError("ID do projecto é obrigatório", 400);
     }
 
-    // Verify project belongs to user
     const project = await db.project.findFirst({
       where: { id: projectId, userId: session.user.id },
     });
 
     if (!project) {
-      return NextResponse.json(
-        { error: "Projecto não encontrado" },
-        { status: 404 }
-      );
+      return apiError("Projecto não encontrado", 404);
     }
 
     const sections = await db.documentSection.findMany({
@@ -42,55 +36,36 @@ export async function GET(request: NextRequest) {
       orderBy: { order: "asc" },
     });
 
-    return NextResponse.json(
+    return apiSuccess(
       sections.map((section) => ({
         ...section,
         content: normalizeStoredContent(section.content),
-      }))
+      })),
     );
   } catch (error) {
     logger.error("Get documents error", { error: String(error) });
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
-// POST /api/documents - Create a new section
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
-    const body = await request.json();
-    const parsed = createDocumentSchema.safeParse(body);
+    const { projectId, parentId, title, content, order } = await parseBody(request, createDocumentSchema);
 
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Dados inválidos", details: parsed.error.flatten().fieldErrors },
-        { status: 400 }
-      );
-    }
-
-    const { projectId, parentId, title, content, order } = parsed.data;
-
-    // Verify project belongs to user
     const project = await db.project.findFirst({
       where: { id: projectId, userId: session.user.id },
     });
 
     if (!project) {
-      return NextResponse.json(
-        { error: "Projecto não encontrado" },
-        { status: 404 }
-      );
+      return apiError("Projecto não encontrado", 404);
     }
 
-    // Calculate word count
     const normalizedContent = normalizeStoredContent(content);
     const wordCount = countWordsInMarkdown(normalizedContent);
 
@@ -105,7 +80,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Update project word count
     const totalWords = await db.documentSection.aggregate({
       where: { projectId },
       _sum: { wordCount: true },
@@ -116,18 +90,15 @@ export async function POST(request: NextRequest) {
       data: { wordCount: totalWords._sum.wordCount || 0 },
     });
 
-    return NextResponse.json(
+    return apiSuccess(
       {
         ...section,
         content: normalizeStoredContent(section.content),
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     logger.error("Create document error", { error: String(error) });
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

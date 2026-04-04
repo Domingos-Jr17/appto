@@ -1,48 +1,50 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { countWordsInMarkdown, normalizeStoredContent } from "@/lib/content";
-import { updateDocumentSchema } from "@/lib/validators";
-import { logger } from "@/lib/logger";
 
-// GET /api/documents/[id] - Get a single section
+import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
+import { authOptions } from "@/lib/auth";
+import { countWordsInMarkdown, normalizeStoredContent } from "@/lib/content";
+import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
+import { updateDocumentSchema } from "@/lib/validators";
+
+async function getSectionWithOwnership(sectionId: string, userId: string) {
+  const section = await db.documentSection.findUnique({
+    where: { id: sectionId },
+    include: {
+      project: true,
+      children: {
+        orderBy: { order: "asc" },
+      },
+    },
+  });
+
+  if (!section || section.project.userId !== userId) {
+    return null;
+  }
+
+  return section;
+}
+
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
     const { id } = await params;
-
-    const section = await db.documentSection.findUnique({
-      where: { id },
-      include: {
-        project: true,
-        children: {
-          orderBy: { order: "asc" },
-        },
-      },
-    });
+    const section = await getSectionWithOwnership(id, session.user.id);
 
     if (!section) {
-      return NextResponse.json(
-        { error: "Secção não encontrada" },
-        { status: 404 }
-      );
+      return apiError("Secção não encontrada", 404);
     }
 
-    // Verify ownership
-    if (section.project.userId !== session.user.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
-    }
-
-    return NextResponse.json({
+    return apiSuccess({
       ...section,
       content: normalizeStoredContent(section.content),
       children: section.children.map((child) => ({
@@ -52,56 +54,33 @@ export async function GET(
     });
   } catch (error) {
     logger.error("Get document error", { error: String(error) });
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
-// PUT /api/documents/[id] - Update a section
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
     const { id } = await params;
-    const body = await request.json();
-    const parsed = updateDocumentSchema.safeParse(body);
-
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Dados inválidos", details: parsed.error.flatten().fieldErrors },
-        { status: 400 }
-      );
-    }
-
-    const { title, content, order } = parsed.data;
+    const { title, content, order } = await parseBody(request, updateDocumentSchema);
 
     const existingSection = await db.documentSection.findUnique({
       where: { id },
       include: { project: true },
     });
 
-    if (!existingSection) {
-      return NextResponse.json(
-        { error: "Secção não encontrada" },
-        { status: 404 }
-      );
+    if (!existingSection || existingSection.project.userId !== session.user.id) {
+      return apiError("Secção não encontrada", 404);
     }
 
-    // Verify ownership
-    if (existingSection.project.userId !== session.user.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
-    }
-
-    // Calculate word count
     const normalizedContent =
       content !== undefined ? normalizeStoredContent(content) : undefined;
     const wordCount = countWordsInMarkdown(normalizedContent ?? existingSection.content);
@@ -115,7 +94,6 @@ export async function PUT(
       },
     });
 
-    // Update project word count
     const totalWords = await db.documentSection.aggregate({
       where: { projectId: existingSection.projectId },
       _sum: { wordCount: true },
@@ -126,29 +104,25 @@ export async function PUT(
       data: { wordCount: totalWords._sum.wordCount || 0 },
     });
 
-    return NextResponse.json({
+    return apiSuccess({
       ...section,
       content: normalizeStoredContent(section.content),
     });
   } catch (error) {
     logger.error("Update document error", { error: String(error) });
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
-// DELETE /api/documents/[id] - Delete a section
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
     const { id } = await params;
@@ -158,23 +132,14 @@ export async function DELETE(
       include: { project: true },
     });
 
-    if (!existingSection) {
-      return NextResponse.json(
-        { error: "Secção não encontrada" },
-        { status: 404 }
-      );
-    }
-
-    // Verify ownership
-    if (existingSection.project.userId !== session.user.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
+    if (!existingSection || existingSection.project.userId !== session.user.id) {
+      return apiError("Secção não encontrada", 404);
     }
 
     await db.documentSection.delete({
       where: { id },
     });
 
-    // Update project word count
     const totalWords = await db.documentSection.aggregate({
       where: { projectId: existingSection.projectId },
       _sum: { wordCount: true },
@@ -185,12 +150,9 @@ export async function DELETE(
       data: { wordCount: totalWords._sum.wordCount || 0 },
     });
 
-    return NextResponse.json({ message: "Secção eliminada com sucesso" });
+    return apiSuccess({ message: "Secção eliminada com sucesso" });
   } catch (error) {
     logger.error("Delete document error", { error: String(error) });
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

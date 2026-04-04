@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { apiError, apiSuccess } from "@/lib/api";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -11,7 +11,7 @@ export async function GET(
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    return apiError("Não autorizado", 401);
   }
 
   const { id } = await params;
@@ -26,13 +26,13 @@ export async function GET(
   });
 
   if (!project) {
-    return NextResponse.json({ error: "Trabalho não encontrado" }, { status: 404 });
+    return apiError("Trabalho não encontrado", 404);
   }
 
   const liveJob = await getWorkGenerationStatusAsync(id);
 
   if (liveJob) {
-    return NextResponse.json({
+    return apiSuccess({
       projectId: id,
       status: liveJob.status,
       progress: liveJob.progress,
@@ -52,5 +52,5 @@ export async function GET(
           ? { status: "GENERATING", progress: 15, step: "A preparar geração", ready: false }
           : { status: "BRIEFING", progress: 0, step: "Briefing criado", ready: false };
 
-  return NextResponse.json({ projectId: id, error: null, ...fallbackStatus });
+  return apiSuccess({ projectId: id, error: null, ...fallbackStatus });
 }

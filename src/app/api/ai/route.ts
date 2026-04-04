@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { apiError, apiSuccess, handleApiError } from "@/lib/api";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { getFriendlyAIErrorMessage, getFriendlyAIErrorStatus } from "@/lib/ai";
+import { getFriendlyAIErrorMessage } from "@/lib/ai";
 import { processAiRequest } from "@/lib/ai-runtime";
 import { getCacheStats } from "@/lib/ai-cache";
 import { logger } from "@/lib/logger";
@@ -13,17 +14,14 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
     const body = await request.json();
     const parsed = aiRequestSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Dados inválidos", details: parsed.error.flatten().fieldErrors },
-        { status: 400 },
-      );
+      return apiError("Dados inválidos", 400, "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
     }
 
     const result = await processAiRequest({
@@ -35,7 +33,7 @@ export async function POST(request: NextRequest) {
       useCache: parsed.data.useCache,
     });
 
-    return NextResponse.json({
+    return apiSuccess({
       success: true,
       response: result.response,
       remainingWorks: result.remainingWorks,
@@ -47,10 +45,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     logger.error("AI generation error", { error: String(error) });
-    return NextResponse.json(
-      { error: getFriendlyAIErrorMessage(error) },
-      { status: getFriendlyAIErrorStatus(error) },
-    );
+    return handleApiError(error, getFriendlyAIErrorMessage(error));
   }
 }
 
@@ -58,8 +53,8 @@ export async function GET(_request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    return apiError("Não autorizado", 401);
   }
 
-  return NextResponse.json(await getCacheStats());
+  return apiSuccess(await getCacheStats());
 }

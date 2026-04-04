@@ -339,6 +339,30 @@
     }
 }
 
+/* ===== DOCUMENT PREVIEW (A4 Academic) ===== */
+@layer utilities {
+    .doc-page {
+        --doc-bg: oklch(0.99 0.003 260);
+        --doc-text: oklch(0.14 0.015 260);
+        --doc-heading: oklch(0.1 0.015 260);
+        --doc-muted: oklch(0.45 0.015 260);
+        --doc-border: oklch(0.88 0.006 260 / 0.6);
+        --doc-page-shadow: 0 2px 8px oklch(0 0 0 / 0.06), 0 12px 40px oklch(0 0 0 / 0.08);
+        background: var(--doc-bg);
+        color: var(--doc-text);
+        box-shadow: var(--doc-page-shadow);
+    }
+
+    .dark .doc-page {
+        --doc-bg: oklch(0.18 0.01 260);
+        --doc-text: oklch(0.92 0.008 260);
+        --doc-heading: oklch(0.96 0.006 260);
+        --doc-muted: oklch(0.55 0.015 260);
+        --doc-border: oklch(0.28 0.015 260 / 0.4);
+        --doc-page-shadow: 0 2px 8px oklch(0 0 0 / 0.2), 0 12px 40px oklch(0 0 0 / 0.3);
+    }
+}
+
 /* ===== GRADIENTS ===== */
 @layer utilities {
     .gradient-primary {

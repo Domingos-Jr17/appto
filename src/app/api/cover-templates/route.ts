@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+
+import { apiError, apiSuccess } from "@/lib/api";
 import { getTemplatesForLevel } from "@/lib/cover-template-config";
 import type { AcademicEducationLevel } from "@/types/editor";
 
@@ -8,13 +10,10 @@ export async function GET(request: NextRequest) {
   const level = request.nextUrl.searchParams.get("educationLevel") as AcademicEducationLevel | null;
 
   if (level && !VALID_LEVELS.has(level)) {
-    return NextResponse.json(
-      { error: "Nível educacional inválido" },
-      { status: 400 }
-    );
+    return apiError("Nível educacional inválido", 400);
   }
 
   const templates = getTemplatesForLevel(level ?? undefined);
 
-  return NextResponse.json({ templates });
+  return apiSuccess({ templates });
 }

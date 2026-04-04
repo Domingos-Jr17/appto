@@ -30,7 +30,7 @@ export function HowItWorks() {
               <span className="text-primary">aptto</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Em quatro passos simples, transforme a sua ideia num trabalho académico bem estruturado e normalizado.
+              Em quatro passos simples, transforma a tua ideia num trabalho académico bem estruturado e normalizado.
             </p>
           </div>
         </Reveal>

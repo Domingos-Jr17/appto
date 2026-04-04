@@ -106,7 +106,7 @@ export function DemoLeadMagnet() {
             Veja o <span className="text-primary">aptto em acção</span>
           </h2>
           <p className="mx-auto max-w-xl text-lg text-muted-foreground">
-            Digite o tema do seu trabalho e receba um sumário estruturado instantaneamente
+            Introduz o tema do teu trabalho e recebes um sumário estruturado instantaneamente
           </p>
         </motion.div>
 
@@ -236,7 +236,7 @@ export function DemoLeadMagnet() {
 
                       <div className="mt-6 rounded-xl border border-primary/10 bg-primary/5 p-4 text-center backdrop-blur-xl">
                         <p className="mb-3 text-sm text-muted-foreground">
-                          Gostou? Crie sua conta gratuita para continuar no editor completo.
+                          Gostaste? Cria a tua conta gratuita para continuares no editor completo.
                         </p>
                         <Button asChild className="text-primary-foreground shadow-lg shadow-primary/25">
                           <Link href="/register">Criar conta grátis</Link>

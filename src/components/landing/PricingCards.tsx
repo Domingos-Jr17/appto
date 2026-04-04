@@ -79,7 +79,7 @@ export function PricingCards() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Pacotes que <span className="text-primary">cabem no seu bolso</span>
+            Pacotes que <span className="text-primary">cabem no teu bolso</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Comece gratuitamente, faça upgrade quando precisar e compre trabalhos extras por {EXTRA_WORKS.price} MZN cada

@@ -177,7 +177,7 @@ export function PreferencesSection() {
             Tema
           </Label>
           <p className="text-sm text-muted-foreground">
-            Escolha entre o modo claro, escuro ou siga as configurações do sistema
+            Escolhe entre o modo claro, escuro ou segue as configurações do sistema
           </p>
         </div>
         <div className="flex gap-3">

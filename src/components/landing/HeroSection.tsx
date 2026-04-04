@@ -38,7 +38,7 @@ export function HeroSection() {
             {/* Headline */}
             <Reveal delay={0.1}>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
-                O seu copiloto{" "}
+                O teu copiloto{" "}
                 <span className="relative inline-flex min-h-[1.2em] min-w-[8ch] items-end sm:min-w-[10ch]">
                   <span className="inline-block whitespace-nowrap text-primary">
                     {typedWord}

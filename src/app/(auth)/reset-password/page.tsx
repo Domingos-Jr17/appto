@@ -25,9 +25,9 @@ export default function ResetPasswordPage() {
 
   const passwordError = useMemo(() => {
     if (!password) return "";
-    if (password.length < 8) return "A senha deve ter pelo menos 8 caracteres.";
+    if (password.length < 8) return "A palavra-passe deve ter pelo menos 8 caracteres.";
     if (confirmPassword && confirmPassword !== password) {
-      return "As senhas não coincidem.";
+      return "As palavras-passe não coincidem.";
     }
     return "";
   }, [password, confirmPassword]);
@@ -57,7 +57,7 @@ export default function ResetPasswordPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Não foi possível redefinir a senha.");
+        throw new Error(data.error || "Não foi possível redefinir a palavra-passe.");
       }
 
       setIsSubmitted(true);
@@ -65,7 +65,7 @@ export default function ResetPasswordPage() {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "Não foi possível redefinir a senha."
+          : "Não foi possível redefinir a palavra-passe."
       );
     } finally {
       setIsLoading(false);
@@ -79,9 +79,9 @@ export default function ResetPasswordPage() {
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
             <CheckCircle className="h-8 w-8 text-success" />
           </div>
-          <h1 className="mb-2 text-2xl font-bold">Senha redefinida</h1>
+          <h1 className="mb-2 text-2xl font-bold">Palavra-passe redefinida</h1>
           <p className="mb-6 text-sm text-muted-foreground">
-            A sua senha foi atualizada. Faça login novamente para continuar.
+            A tua palavra-passe foi atualizada. Faz login novamente para continuares.
           </p>
           <Button asChild className="w-full">
             <Link href="/login">Ir para o login</Link>
@@ -97,9 +97,9 @@ export default function ResetPasswordPage() {
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
           <Lock className="h-6 w-6 text-primary" />
         </div>
-        <h1 className="mb-2 text-2xl font-bold">Redefinir senha</h1>
+        <h1 className="mb-2 text-2xl font-bold">Redefinir palavra-passe</h1>
         <p className="text-sm text-muted-foreground">
-          Escolha uma nova senha para a sua conta.
+          Escolhe uma nova palavra-passe para a tua conta.
         </p>
       </div>
 
@@ -111,7 +111,7 @@ export default function ResetPasswordPage() {
         ) : null}
 
         <div className="space-y-2">
-          <Label htmlFor="password">Nova senha</Label>
+          <Label htmlFor="password">Nova palavra-passe</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -133,7 +133,7 @@ export default function ResetPasswordPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirm-password">Confirmar nova senha</Label>
+          <Label htmlFor="confirm-password">Confirmar nova palavra-passe</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -163,7 +163,7 @@ export default function ResetPasswordPage() {
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
           ) : (
             <>
-              Atualizar senha
+              Atualizar palavra-passe
               <ArrowRight className="ml-1 h-4 w-4" />
             </>
           )}

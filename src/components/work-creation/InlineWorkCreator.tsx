@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { ChevronDown, FileText, Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { ChevronDown, FileText, Sparkles, Loader2, AlertCircle, BookOpen, Wrench, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,11 +39,11 @@ import { useAppShellData } from "@/components/app-shell/AppShellDataContext";
 const EDUCATION_LEVELS: {
   value: AcademicEducationLevel;
   label: string;
-  icon: string;
+  icon: React.ElementType;
 }[] = [
-  { value: "SECONDARY", label: "Secundário", icon: "📚" },
-  { value: "TECHNICAL", label: "Técnico", icon: "🔧" },
-  { value: "HIGHER_EDUCATION", label: "Superior", icon: "🎓" },
+  { value: "SECONDARY", label: "Secundário", icon: BookOpen },
+  { value: "TECHNICAL", label: "Técnico", icon: Wrench },
+  { value: "HIGHER_EDUCATION", label: "Superior", icon: GraduationCap },
 ];
 
 const TRANSITION = { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const };
@@ -177,7 +177,7 @@ export function InlineWorkCreator() {
                 : "border-border/60 hover:border-border",
             )}
           >
-            <div className="text-lg sm:text-2xl">{level.icon}</div>
+            <level.icon className="h-5 w-5 sm:h-8 sm:w-8 text-muted-foreground" />
             <div className="text-sm font-medium leading-tight sm:mt-1 sm:text-xs">
               {level.label}
             </div>

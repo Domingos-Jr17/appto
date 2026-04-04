@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 function getLoginErrorMessage(error?: string) {
   switch (error) {
     case "CredentialsSignin":
-      return "Email ou senha incorretos";
+      return "Email ou palavra-passe incorretos";
     case "TwoFactorRequired":
       return "Introduza o código do autenticador para concluir o login.";
     case "InvalidTwoFactorCode":
@@ -125,7 +125,7 @@ export default function LoginPage() {
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold mb-2">Bem-vindo de volta</h1>
         <p className="text-muted-foreground text-sm">
-          Entre na sua conta para continuar
+          Acede à tua conta para continuares
         </p>
       </div>
 
@@ -158,12 +158,12 @@ export default function LoginPage() {
         {/* Password */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Senha</Label>
+            <Label htmlFor="password">Palavra-passe</Label>
             <Link
               href="/forgot-password"
               className="text-xs text-primary hover:text-primary/80 transition-colors"
             >
-              Esqueceu a senha?
+              Esqueceste a palavra-passe?
             </Link>
           </div>
           <div className="relative">
@@ -210,7 +210,7 @@ export default function LoginPage() {
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Use o código de 6 dígitos do autenticador associado à sua conta.
+              Usa o código de 6 dígitos do autenticador associado à tua conta.
             </p>
           </div>
         )}

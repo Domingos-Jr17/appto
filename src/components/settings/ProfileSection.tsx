@@ -112,7 +112,7 @@ export function ProfileSection() {
       await update();
       toast({
         title: "Foto actualizada",
-        description: "A sua foto de perfil foi actualizada com sucesso",
+        description: "A tua foto de perfil foi atualizada com sucesso",
       });
     } catch {
       toast({
@@ -237,7 +237,7 @@ export function ProfileSection() {
             id="name"
             value={formData.name}
             onChange={(event) => handleInputChange("name", event.target.value)}
-            placeholder="Seu nome completo"
+            placeholder="O teu nome completo"
             className="max-w-md"
           />
         </div>

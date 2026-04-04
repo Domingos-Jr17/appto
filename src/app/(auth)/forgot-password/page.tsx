@@ -53,10 +53,10 @@ export default function ForgotPasswordPage() {
           <h1 className="text-2xl font-bold mb-2">Email enviado!</h1>
           <p className="text-muted-foreground text-sm mb-6">
             Se uma conta com o email <span className="text-foreground font-medium">{email}</span> existir, 
-            você receberá um link para redefinir sua senha.
+            receberás um link para redefinir a tua palavra-passe.
           </p>
           <p className="text-muted-foreground text-xs mb-6">
-            Não recebeu o email? Verifique sua caixa de spam ou tente novamente.
+            Não recebeste o email? Verifica a tua caixa de spam ou tenta novamente.
           </p>
           <Button
             variant="outline"
@@ -84,9 +84,9 @@ export default function ForgotPasswordPage() {
         <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
           <Mail className="w-6 h-6 text-primary" />
         </div>
-        <h1 className="text-2xl font-bold mb-2">Esqueceu a senha?</h1>
+        <h1 className="text-2xl font-bold mb-2">Esqueceste a palavra-passe?</h1>
         <p className="text-muted-foreground text-sm">
-          Digite seu email para receber um link de redefinição
+          Introduz o teu email para receberes um link de redefinição
         </p>
       </div>
 

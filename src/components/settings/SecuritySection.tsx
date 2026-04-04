@@ -113,15 +113,15 @@ export function SecuritySection() {
     const newErrors: Record<string, string> = {};
 
     if (!passwordForm.currentPassword) {
-      newErrors.currentPassword = "Senha actual é obrigatória";
+      newErrors.currentPassword = "Palavra-passe atual é obrigatória";
     }
     if (!passwordForm.newPassword) {
-      newErrors.newPassword = "Nova senha é obrigatória";
+      newErrors.newPassword = "Nova palavra-passe é obrigatória";
     } else if (passwordForm.newPassword.length < 8) {
-      newErrors.newPassword = "A senha deve ter pelo menos 8 caracteres";
+      newErrors.newPassword = "A palavra-passe deve ter pelo menos 8 caracteres";
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      newErrors.confirmPassword = "As senhas não coincidem";
+      newErrors.confirmPassword = "As palavras-passe não coincidem";
     }
 
     setErrors(newErrors);
@@ -145,12 +145,12 @@ export function SecuritySection() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao alterar senha");
+        throw new Error(data.error || "Erro ao alterar palavra-passe");
       }
 
       toast({
-        title: "Senha alterada",
-        description: "A sua senha foi alterada com sucesso",
+        title: "Palavra-passe alterada",
+        description: "A tua palavra-passe foi alterada com sucesso",
       });
 
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
@@ -161,7 +161,7 @@ export function SecuritySection() {
         description:
           error instanceof Error
             ? error.message
-            : "Não foi possível alterar a senha",
+            : "Não foi possível alterar a palavra-passe",
         variant: "destructive",
       });
     } finally {
@@ -318,16 +318,16 @@ export function SecuritySection() {
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
             <Lock className="h-4 w-4 text-muted-foreground" />
-            Alterar Senha
+            Alterar palavra-passe
           </Label>
           <p className="text-sm text-muted-foreground">
-            Atualize sua senha para manter sua conta segura.
+            Atualiza a tua palavra-passe para manter a tua conta segura.
           </p>
         </div>
 
         <div className="max-w-md space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="current-password">Senha atual</Label>
+            <Label htmlFor="current-password">Palavra-passe atual</Label>
             <div className="relative">
               <Input
                 id="current-password"
@@ -339,7 +339,7 @@ export function SecuritySection() {
                     currentPassword: e.target.value,
                   }))
                 }
-                placeholder="Digite sua senha atual"
+                placeholder="Introduz a tua palavra-passe atual"
                 className={errors.currentPassword ? "border-destructive" : ""}
               />
               <button
@@ -360,7 +360,7 @@ export function SecuritySection() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="new-password">Nova senha</Label>
+            <Label htmlFor="new-password">Nova palavra-passe</Label>
             <div className="relative">
               <Input
                 id="new-password"
@@ -372,7 +372,7 @@ export function SecuritySection() {
                     newPassword: e.target.value,
                   }))
                 }
-                placeholder="Digite a nova senha"
+                placeholder="Introduz a nova palavra-passe"
                 className={errors.newPassword ? "border-destructive" : ""}
               />
               <button
@@ -393,7 +393,7 @@ export function SecuritySection() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirmar nova senha</Label>
+            <Label htmlFor="confirm-password">Confirmar nova palavra-passe</Label>
             <div className="relative">
               <Input
                 id="confirm-password"
@@ -405,7 +405,7 @@ export function SecuritySection() {
                     confirmPassword: e.target.value,
                   }))
                 }
-                placeholder="Confirme a nova senha"
+                placeholder="Confirma a nova palavra-passe"
                 className={errors.confirmPassword ? "border-destructive" : ""}
               />
               <button
@@ -429,10 +429,10 @@ export function SecuritySection() {
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Alterando...
+                A alterar...
               </>
             ) : (
-              "Alterar senha"
+              "Alterar palavra-passe"
             )}
           </Button>
         </div>
@@ -522,15 +522,15 @@ export function SecuritySection() {
               <div className="space-y-1">
                 <p className="font-medium">2FA activo</p>
                 <p className="text-sm text-muted-foreground">
-                  O login exige um código do autenticador. Pode desactivar com
-                  senha atual ou código 2FA.
+                  O login exige um código do autenticador. Podes desactivar com
+                  palavra-passe atual ou código 2FA.
                 </p>
               </div>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="disable-password">Senha actual</Label>
+                <Label htmlFor="disable-password">Palavra-passe atual</Label>
                 <Input
                   id="disable-password"
                   type="password"
@@ -548,7 +548,7 @@ export function SecuritySection() {
                   onChange={(e) =>
                     setDisableCode(e.target.value.replace(/\D/g, "").slice(0, 6))
                   }
-                  placeholder="Opcional se usar senha"
+                  placeholder="Opcional se usares palavra-passe"
                 />
               </div>
             </div>
@@ -686,7 +686,7 @@ export function SecuritySection() {
           <div className="text-sm">
             <p className="mb-1 font-medium text-foreground">Dicas de Segurança</p>
             <ul className="space-y-1 text-muted-foreground">
-              <li>Use uma senha forte e única para a sua conta.</li>
+              <li>Usa uma palavra-passe forte e única para a tua conta.</li>
               <li>Active o 2FA antes de gerir pacotes, pagamentos ou exportar documentos.</li>
               <li>Revogue sessões antigas depois de usar computadores partilhados.</li>
               <li>Guarde os códigos de recuperação fora do browser.</li>

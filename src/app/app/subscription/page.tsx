@@ -203,7 +203,7 @@ export default function SubscriptionPage() {
   const extraWorks = subscriptionData?.extraWorks || [];
   const transactions = subscriptionData?.transactions || [];
   const nextResetDate = subscriptionData?.nextResetDate;
-  const paymentGateway = subscriptionData?.paymentGateway || "SIMULATED";
+  const _paymentGateway = subscriptionData?.paymentGateway || "SIMULATED";
 
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return "-";
@@ -221,9 +221,9 @@ export default function SubscriptionPage() {
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Pacotes e Subscrição</h1>
+        <h1 className="text-3xl font-bold">Pacotes</h1>
         <p className="text-muted-foreground mt-2">
-          Escolha o pacote ideal para as suas necessidades
+          Escolhe o pacote ideal para ti
         </p>
       </div>
 
@@ -232,7 +232,7 @@ export default function SubscriptionPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            A Sua Subscrição
+            O teu pacote atual
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -255,7 +255,7 @@ export default function SubscriptionPage() {
           {currentRemaining === 0 && (
             <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-3">
               <p className="text-sm text-warning">
-                Alcançou o limite de trabalhos deste mês. Faça upgrade do pacote ou compre trabalhos extras.
+                Atingiste o limite de trabalhos deste mês. Faz upgrade do pacote ou compra trabalhos extras.
               </p>
             </div>
           )}
@@ -271,7 +271,7 @@ export default function SubscriptionPage() {
         <CardHeader>
           <CardTitle>Método de pagamento</CardTitle>
           <CardDescription>
-            Escolha entre M-Pesa e e-Mola. O ambiente actual está em modo {paymentGateway === "PAYSUITE" ? "produção" : "sandbox"}.
+            Escolhe entre M-Pesa e e-Mola.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -374,7 +374,7 @@ export default function SubscriptionPage() {
             Comprar Trabalhos Extras
           </CardTitle>
           <CardDescription>
-            Precisa de mais trabalhos? Compre extras a {extraWorkPrice} MZN cada
+            Precisas de mais trabalhos? Compra extras a {extraWorkPrice} MZN cada
           </CardDescription>
         </CardHeader>
         <CardContent>

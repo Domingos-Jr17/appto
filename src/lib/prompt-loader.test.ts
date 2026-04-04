@@ -9,8 +9,8 @@ mock.module("@/lib/logger", () => ({
 }));
 
 async function loadPromptLoader() {
-  const module = await import("@/lib/prompt-loader");
-  return module;
+  const mod = await import("@/lib/prompt-loader");
+  return mod;
 }
 
 describe("prompt loader", () => {

@@ -9,8 +9,8 @@ mock.module("@/lib/logger", () => ({
 }));
 
 async function loadAiPrompts() {
-  const module = await import("@/lib/ai-prompts");
-  return module;
+  const mod = await import("@/lib/ai-prompts");
+  return mod;
 }
 
 describe("ai prompts", () => {

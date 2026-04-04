@@ -102,7 +102,7 @@ export function AccountSection() {
 
       toast({
         title: "Conta eliminada",
-        description: "A sua conta foi eliminada com sucesso",
+        description: "A tua conta foi eliminada com sucesso",
       });
 
       await signOut({ redirect: false });
@@ -154,7 +154,7 @@ export function AccountSection() {
             Status da Conta
           </Label>
           <p className="text-sm text-muted-foreground">
-            Informações sobre a sua conta, pacote actual e gestão comercial.
+            Informações sobre a tua conta, pacote atual e gestão comercial.
           </p>
         </div>
 
@@ -258,7 +258,7 @@ export function AccountSection() {
             Zona de Perigo
           </Label>
           <p className="text-sm text-muted-foreground">
-            Acções irreversíveis relacionadas à sua conta.
+            Ações irreversíveis relacionadas à tua conta.
           </p>
         </div>
 
@@ -293,7 +293,7 @@ export function AccountSection() {
 
                 <div className="py-4">
                   <p className="mb-2 text-sm text-muted-foreground">
-                    Digite <span className="font-bold text-foreground">EXCLUIR</span> para confirmar:
+                    Escreve <span className="font-bold text-foreground">EXCLUIR</span> para confirmar:
                   </p>
                   <Input
                     value={deleteConfirmation}
@@ -304,10 +304,10 @@ export function AccountSection() {
                   <div className="mt-4 grid gap-3">
                     <div className="space-y-2">
                       <Label htmlFor="delete-password">
-                        Senha actual
+                        Palavra-passe atual
                         <span className="ml-1 text-xs text-muted-foreground">
                           {user?.twoFactorEnabled
-                            ? "(ou use o código 2FA)"
+                            ? "(ou usa o código 2FA)"
                             : "(obrigatória)"}
                         </span>
                       </Label>
@@ -316,7 +316,7 @@ export function AccountSection() {
                         type="password"
                         value={deletePassword}
                         onChange={(e) => setDeletePassword(e.target.value)}
-                        placeholder="Introduza a sua senha"
+                        placeholder="Introduz a tua palavra-passe"
                       />
                     </div>
 
@@ -382,7 +382,7 @@ export function AccountSection() {
           <div className="text-sm">
             <p className="mb-1 font-medium text-foreground">Precisa de ajuda?</p>
             <p className="text-muted-foreground">
-              Se estiver a ter problemas com a sua conta, contacte o{" "}
+              Se estiveres a ter problemas com a tua conta, contacta o{" "}
               <a href="mailto:suporte@appto.mz" className="text-primary hover:underline">
                 suporte
               </a>{" "}

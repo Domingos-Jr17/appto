@@ -27,7 +27,7 @@ export default function RegisterPage() {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("As senhas não coincidem");
+      setError("As palavras-passe não coincidem");
       return;
     }
     if (!acceptTerms) {
@@ -35,7 +35,7 @@ export default function RegisterPage() {
       return;
     }
     if (password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres");
+      setError("A palavra-passe deve ter pelo menos 6 caracteres");
       return;
     }
 
@@ -109,7 +109,7 @@ export default function RegisterPage() {
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold mb-2">Criar conta</h1>
         <p className="text-muted-foreground text-sm">
-          Preencha os dados abaixo para começar
+          Preenche os dados abaixo para começares
         </p>
       </div>
 
@@ -130,7 +130,7 @@ export default function RegisterPage() {
             <Input
               id="name"
               type="text"
-              placeholder="Seu nome"
+              placeholder="O teu nome"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 transition-all duration-300"
@@ -158,7 +158,7 @@ export default function RegisterPage() {
 
         {/* Password */}
         <div className="space-y-2">
-          <Label htmlFor="password">Senha</Label>
+          <Label htmlFor="password">Palavra-passe</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -197,7 +197,7 @@ export default function RegisterPage() {
                 ))}
               </div>
               <p className="text-xs text-muted-foreground">
-                Força da senha: <span className="font-medium">{getStrengthText()}</span>
+                Força da palavra-passe: <span className="font-medium">{getStrengthText()}</span>
               </p>
             </div>
           )}
@@ -205,7 +205,7 @@ export default function RegisterPage() {
 
         {/* Confirm Password */}
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirmar senha</Label>
+          <Label htmlFor="confirmPassword">Confirmar palavra-passe</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -230,12 +230,12 @@ export default function RegisterPage() {
             </button>
           </div>
           {confirmPassword && password !== confirmPassword && (
-            <p className="text-xs text-destructive">As senhas não coincidem</p>
+            <p className="text-xs text-destructive">As palavras-passe não coincidem</p>
           )}
           {confirmPassword && password === confirmPassword && (
             <div className="flex items-center gap-1 text-xs text-success">
               <Check className="w-3 h-3" />
-              <span>Senhas coincidem</span>
+              <span>Palavras-passe coincidem</span>
             </div>
           )}
         </div>

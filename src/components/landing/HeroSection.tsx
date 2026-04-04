@@ -53,7 +53,7 @@ export function HeroSection() {
             {/* Subtitle */}
             <Reveal delay={0.2}>
               <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-lg">
-                Estruture, escreva e normalize os seus trabalhos com assistência inteligente. 
+                Estrutura, escreve e normaliza os teus trabalhos com assistência inteligente. 
                 Português académico moçambicano, referências ABNT e exportação pronta para submissão.
               </p>
             </Reveal>

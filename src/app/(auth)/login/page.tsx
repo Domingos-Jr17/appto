@@ -274,7 +274,7 @@ export default function LoginPage() {
 
       {/* Register Link */}
       <p className="text-center text-sm text-muted-foreground mt-6">
-        Não tem conta?{" "}
+        Não tens conta?{" "}
         <Link
           href="/register"
           className="text-primary hover:text-primary/80 font-medium transition-colors"

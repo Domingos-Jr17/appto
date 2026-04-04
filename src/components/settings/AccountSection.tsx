@@ -224,7 +224,7 @@ export function AccountSection() {
             Exportar Dados
           </Label>
           <p className="text-sm text-muted-foreground">
-            Baixe uma cópia de todos os seus dados.
+            Descarrega uma cópia de todos os teus dados.
           </p>
         </div>
 
@@ -267,7 +267,7 @@ export function AccountSection() {
             <div>
               <h4 className="mb-1 font-semibold text-destructive">Eliminar conta</h4>
               <p className="text-sm text-muted-foreground">
-                Todos os seus dados serão permanentemente removidos. Esta acção
+                Todos os teus dados serão permanentemente removidos. Esta acção
                 não pode ser desfeita.
               </p>
             </div>
@@ -286,7 +286,7 @@ export function AccountSection() {
                     Eliminar conta permanentemente?
                   </AlertDialogTitle>
                   <AlertDialogDescription className="text-left">
-                    Esta ação é irreversível. Todos os seus dados, incluindo
+                    Esta acção é irreversível. Todos os teus dados, incluindo
                     sessões, secções e créditos, serão permanentemente removidos.
                   </AlertDialogDescription>
                 </AlertDialogHeader>

@@ -447,7 +447,7 @@ export function SecuritySection() {
             Autenticação de Dois Fatores
           </Label>
           <p className="text-sm text-muted-foreground">
-            Proteja o login com um autenticador TOTP e códigos de recuperação.
+            Protege o login com um autenticador TOTP e códigos de recuperação.
           </p>
         </div>
 

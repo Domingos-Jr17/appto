@@ -142,7 +142,7 @@ export function ProfileSection() {
       await update();
       toast({
         title: "Perfil actualizado",
-        description: "As suas informações foram guardadas com sucesso",
+        description: "As tuas informações foram guardadas com sucesso",
       });
     } catch {
       toast({

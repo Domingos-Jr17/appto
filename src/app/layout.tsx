@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "aptto - Copiloto Académico com IA",
-  description: "Plataforma inteligente de apoio à escrita académica para estudantes moçambicanos. Estruture trabalhos, escreva em português académico, normalize referências ABNT.",
+  description: "Plataforma inteligente de apoio à escrita académica para estudantes moçambicanos. Estrutura trabalhos, escreve em português académico, normaliza referências ABNT.",
   keywords: ["aptto", "escrita académica", "IA", "Moçambique", "ABNT", "monografia", "trabalho académico"],
   authors: [{ name: "aptto" }],
   icons: {

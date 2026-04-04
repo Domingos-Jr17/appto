@@ -41,7 +41,7 @@ export function FeaturesGrid() {
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Uma plataforma completa com todas as ferramentas necessárias para criar, 
-              estruturar e normalizar os seus trabalhos académicos.
+              estruturar e normalizar os teus trabalhos académicos.
             </p>
           </div>
         </Reveal>

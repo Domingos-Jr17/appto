@@ -144,7 +144,7 @@ export function PreferencesSection() {
             Idioma
           </Label>
           <p className="text-sm text-muted-foreground">
-            Escolha o idioma da interface
+            Escolhe o idioma da interface
           </p>
         </div>
         <Select
@@ -208,7 +208,7 @@ export function PreferencesSection() {
             Tamanho da Fonte
           </Label>
           <p className="text-sm text-muted-foreground">
-            Ajuste o tamanho da fonte do editor
+            Ajusta o tamanho da fonte do editor
           </p>
         </div>
         <div className="flex items-center gap-4 max-w-md">
@@ -276,7 +276,7 @@ export function PreferencesSection() {
             Estilo de Citação Padrão
           </Label>
           <p className="text-sm text-muted-foreground">
-            Estilo de citação utilizado por padrão em seus trabalhos
+            Estilo de citação utilizado por padrão nos teus trabalhos
           </p>
         </div>
         <Select

@@ -279,7 +279,7 @@ export default function RegisterPage() {
 
       {/* Login Link */}
       <p className="text-center text-sm text-muted-foreground mt-6">
-        Já tem conta?{" "}
+        Já tens conta?{" "}
         <Link
           href="/login"
           className="text-primary hover:text-primary/80 font-medium transition-colors"

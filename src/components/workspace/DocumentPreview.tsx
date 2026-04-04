@@ -141,6 +141,9 @@ function RenderedMarkdown({ content }: { content: string }) {
         if (block.type === "list") {
           return <ListBlock key={i} items={block.items || []} />;
         }
+        if (block.type === "table") {
+          return <TableBlock key={i} headers={block.headers || []} rows={block.rows || []} />;
+        }
         return null;
       })}
     </div>
@@ -173,7 +176,7 @@ function HeadingBlock({ block }: { block: { level?: number; text?: string } }) {
 function ParagraphBlock({ text }: { text: string }) {
   return (
     <p className="mb-4 text-sm leading-7 text-[var(--doc-text)] text-justify first-letter:ml-[1.25cm]">
-      {text}
+      <InlineMarkdown text={text} />
     </p>
   );
 }
@@ -191,10 +194,83 @@ function ListBlock({ items }: { items: string[] }) {
     <ul className="mb-4 ml-6 list-disc space-y-1 text-sm text-[var(--doc-text)]">
       {items.map((item, i) => (
         <li key={i} className="leading-7">
-          {item}
+          <InlineMarkdown text={item} />
         </li>
       ))}
     </ul>
+  );
+}
+
+function TableBlock({ headers, rows }: { headers: string[]; rows: string[][] }) {
+  return (
+    <div className="mb-4 overflow-x-auto">
+      <table className="w-full border-collapse text-sm">
+        <thead>
+          <tr className="border-b-2 border-[var(--doc-border)]">
+            {headers.map((h, i) => (
+              <th key={i} className="px-3 py-2 text-left font-bold text-[var(--doc-heading)]">
+                <InlineMarkdown text={h} />
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, ri) => (
+            <tr key={ri} className="border-b border-[var(--doc-border)]">
+              {row.map((cell, ci) => (
+                <td key={ci} className="px-3 py-2 text-[var(--doc-text)]">
+                  <InlineMarkdown text={cell} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function InlineMarkdown({ text }: { text: string }) {
+  // Parse inline markdown: links, bold, italic, code
+  const parts = text.split(/(\[.+?\]\(.+?\)|\*\*.+?\*\*|_.+?_|`[^`]+`)/g);
+
+  return (
+    <>
+      {parts.map((part, i) => {
+        // Link: [text](url)
+        const linkMatch = part.match(/^\[(.+?)\]\((.+?)\)$/);
+        if (linkMatch) {
+          return (
+            <a
+              key={i}
+              href={linkMatch[2]}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--doc-heading)] underline underline-offset-2 hover:opacity-80"
+            >
+              {linkMatch[1]}
+            </a>
+          );
+        }
+        // Bold
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return <strong key={i}>{part.slice(2, -2)}</strong>;
+        }
+        // Italic
+        if (part.startsWith("_") && part.endsWith("_")) {
+          return <em key={i}>{part.slice(1, -1)}</em>;
+        }
+        // Code
+        if (part.startsWith("`") && part.endsWith("`")) {
+          return (
+            <code key={i} className="rounded bg-[var(--doc-muted)]/10 px-1 py-0.5 font-mono text-xs">
+              {part.slice(1, -1)}
+            </code>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
   );
 }
 
@@ -215,67 +291,67 @@ function CoverPreviewCard({ brief }: { brief?: WorkBrief | null }) {
   const secondaryMeta = getSecondaryMeta(brief);
 
   return (
-    <div className="mx-auto w-full max-w-[40rem] rounded-[24px] border border-slate-200/60 bg-white p-6 text-slate-900 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.55)] sm:p-8 md:p-10 dark:border-slate-700/60 dark:bg-slate-900 dark:text-slate-100 dark:shadow-[0_24px_60px_-36px_rgba(0,0,0,0.7)]">
+    <div className="mx-auto w-full max-w-[40rem] rounded-[24px] border border-[var(--doc-border)] bg-[var(--doc-bg)] p-6 text-[var(--doc-text)] shadow-[0_24px_60px_-36px_rgba(15,23,42,0.55)] sm:p-8 md:p-10">
       <div className="flex min-h-[24rem] flex-col text-center sm:min-h-[32rem]">
         <div>
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-slate-500 sm:text-xs dark:text-slate-400">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-[var(--doc-muted)] sm:text-xs">
             Pré-visualização da capa • {templateLabel}
           </p>
           <div className="mt-5 space-y-2">
-            <p className="text-sm font-semibold uppercase leading-snug sm:text-base">
+            <p className="text-sm font-semibold uppercase leading-snug sm:text-base text-[var(--doc-heading)]">
               {institution}
             </p>
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500 sm:text-sm dark:text-slate-400">
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--doc-muted)] sm:text-sm">
               {course}
             </p>
           </div>
         </div>
 
         <div className="my-auto space-y-5">
-          <div className="mx-auto h-px w-16 bg-slate-300 sm:w-24 dark:bg-slate-600" />
+          <div className="mx-auto h-px w-16 bg-[var(--doc-border)] sm:w-24" />
           <div className="space-y-3">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-500 sm:text-xs dark:text-slate-400">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-[var(--doc-muted)] sm:text-xs">
               {workType}
             </p>
-            <h3 className="text-lg font-semibold leading-tight sm:text-2xl">
+            <h3 className="text-lg font-semibold leading-tight sm:text-2xl text-[var(--doc-heading)]">
               {title}
             </h3>
           </div>
-          <div className="mx-auto h-px w-16 bg-slate-300 sm:w-24 dark:bg-slate-600" />
+          <div className="mx-auto h-px w-16 bg-[var(--doc-border)] sm:w-24" />
         </div>
 
-        <div className="space-y-3 border-t border-slate-200 pt-4 text-left text-xs text-slate-600 sm:text-sm dark:border-slate-700 dark:text-slate-300">
+        <div className="space-y-3 border-t border-[var(--doc-border)] pt-4 text-left text-xs text-[var(--doc-muted)] sm:text-sm">
           {secondaryMeta ? (
             <div className="flex items-start justify-between gap-4">
-              <span className="font-medium uppercase tracking-[0.12em] text-slate-400">
+              <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
                 Referência
               </span>
-              <span className="max-w-[70%] text-right text-slate-700 dark:text-slate-200">
+              <span className="max-w-[70%] text-right text-[var(--doc-text)]">
                 {secondaryMeta}
               </span>
             </div>
           ) : null}
           <div className="flex items-start justify-between gap-4">
-            <span className="font-medium uppercase tracking-[0.12em] text-slate-400">
+            <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
               Estudante
             </span>
-            <span className="max-w-[70%] text-right font-medium text-slate-900 dark:text-slate-50">
+            <span className="max-w-[70%] text-right font-medium text-[var(--doc-heading)]">
               {student}
             </span>
           </div>
           <div className="flex items-start justify-between gap-4">
-            <span className="font-medium uppercase tracking-[0.12em] text-slate-400">
+            <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
               Orientador
             </span>
-            <span className="max-w-[70%] text-right text-slate-700 dark:text-slate-200">
+            <span className="max-w-[70%] text-right text-[var(--doc-text)]">
               {advisor}
             </span>
           </div>
           <div className="flex items-start justify-between gap-4">
-            <span className="font-medium uppercase tracking-[0.12em] text-slate-400">
+            <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
               Local
             </span>
-            <span className="text-right text-slate-700 dark:text-slate-200">
+            <span className="text-right text-[var(--doc-text)]">
               {city} - {year}
             </span>
           </div>

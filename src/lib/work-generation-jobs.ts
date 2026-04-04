@@ -180,6 +180,39 @@ export async function getWorkGenerationStatusAsync(projectId: string): Promise<W
   return jobs.get(projectId) || null;
 }
 
+export async function batchGetWorkGenerationStatusAsync(
+  projectIds: string[],
+): Promise<Map<string, WorkGenerationJobStatus>> {
+  const result = new Map<string, WorkGenerationJobStatus>();
+
+  for (const projectId of projectIds) {
+    const inMemory = jobs.get(projectId);
+    if (inMemory) {
+      result.set(projectId, inMemory);
+    }
+  }
+
+  const missingIds = projectIds.filter((id) => !result.has(id));
+  if (missingIds.length > 0) {
+    const dbJobs = await db.generationJob.findMany({
+      where: { projectId: { in: missingIds } },
+      select: { projectId: true, status: true, progress: true, step: true, error: true },
+    });
+
+    for (const job of dbJobs) {
+      result.set(job.projectId, {
+        projectId: job.projectId,
+        status: job.status as "GENERATING" | "READY" | "FAILED",
+        progress: job.progress,
+        step: job.step || "",
+        error: job.error || undefined,
+      });
+    }
+  }
+
+  return result;
+}
+
 export function serializeBrief(brief: {
   workType: string;
   generationStatus: string;

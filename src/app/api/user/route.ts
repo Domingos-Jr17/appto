@@ -37,7 +37,6 @@ export async function GET() {
     const user = await db.user.findUnique({
       where: { id: session.user.id },
       include: {
-        credits: true,
         subscription: true,
         settings: true,
       },
@@ -55,8 +54,6 @@ export async function GET() {
       role: user.role,
       createdAt: user.createdAt,
       twoFactorEnabled: user.twoFactorEnabled,
-      credits: user.credits?.balance || 0,
-      usedCredits: user.credits?.used || 0,
       subscription: user.subscription
         ? {
             package: user.subscription.package,

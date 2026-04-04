@@ -1,41 +1,43 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { ZodError } from "zod";
+
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getWorkGenerationStatus, getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
+import { logger } from "@/lib/logger";
+import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
+import { batchGetWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
 import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
 import { getSectionsForEducationLevel } from "@/lib/project-templates";
 import { subscriptionService } from "@/lib/subscription";
 import { createProjectSchema } from "@/lib/validators";
+import type { Prisma } from "@prisma/client";
 
 function serializeBrief(
-  brief:
-    | {
-        workType: string;
-        generationStatus: string;
-        institutionName: string | null;
-        courseName: string | null;
-        subjectName: string | null;
-        educationLevel: string | null;
-        advisorName: string | null;
-        studentName: string | null;
-        city: string | null;
-        academicYear: number | null;
-        dueDate: Date | null;
-        theme: string | null;
-        subtitle: string | null;
-        objective: string | null;
-        researchQuestion: string | null;
-        methodology: string | null;
-        keywords: string | null;
-        referencesSeed: string | null;
-        citationStyle: string;
-        language: string;
-        additionalInstructions: string | null;
-        coverTemplate?: string;
-      }
-    | null
+  brief: {
+    workType: string;
+    generationStatus: string;
+    institutionName: string | null;
+    courseName: string | null;
+    subjectName: string | null;
+    educationLevel: string | null;
+    advisorName: string | null;
+    studentName: string | null;
+    city: string | null;
+    academicYear: number | null;
+    dueDate: Date | null;
+    theme: string | null;
+    subtitle: string | null;
+    objective: string | null;
+    researchQuestion: string | null;
+    methodology: string | null;
+    keywords: string | null;
+    referencesSeed: string | null;
+    citationStyle: string;
+    language: string;
+    additionalInstructions: string | null;
+    coverTemplate?: string;
+  } | null,
 ) {
   if (!brief) {
     return null;
@@ -47,7 +49,7 @@ function serializeBrief(
   };
 }
 
-async function serializeProject(project: {
+type ProjectWithRelations = {
   id: string;
   title: string;
   description: string | null;
@@ -87,10 +89,13 @@ async function serializeProject(project: {
     language: string;
     additionalInstructions: string | null;
   } | null;
-}) {
-  const lastEditedSection = getLastEditedSection(project.sections);
-  const sectionSummary = getSectionSummary(project.sections);
-  const liveGeneration = await getWorkGenerationStatusAsync(project.id);
+};
+
+function serializeProject(
+  project: ProjectWithRelations,
+  generationStatusMap: Map<string, { status: string; progress: number; step: string }>,
+) {
+  const liveGeneration = generationStatusMap.get(project.id);
 
   return {
     ...project,
@@ -98,9 +103,9 @@ async function serializeProject(project: {
     generationStatus: liveGeneration?.status || project.brief?.generationStatus || "BRIEFING",
     generationProgress: liveGeneration?.progress || (project.brief?.generationStatus === "READY" ? 100 : 0),
     generationStep: liveGeneration?.step || null,
-    resumeMode: getResumeMode(project, lastEditedSection),
-    lastEditedSection,
-    sectionSummary,
+    resumeMode: getResumeMode(project, getLastEditedSection(project.sections)),
+    lastEditedSection: getLastEditedSection(project.sections),
+    sectionSummary: getSectionSummary(project.sections),
   };
 }
 
@@ -110,7 +115,7 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
     const { searchParams } = new URL(request.url);
@@ -120,27 +125,26 @@ export async function GET(request: NextRequest) {
     const sortByInput = searchParams.get("sortBy") || "updatedAt";
     const sortOrderInput = searchParams.get("sortOrder") || "desc";
 
-    const sortBy = (
-      field: string
+    const sortField = (
+      field: string,
     ): "createdAt" | "updatedAt" | "title" => {
       if (field === "createdAt") return "createdAt";
       if (field === "updatedAt") return "updatedAt";
       if (field === "title") return "title";
       return "updatedAt";
     };
-    const sortField = sortBy(sortByInput);
     const sortOrder = sortOrderInput === "asc" ? "asc" as const : "desc" as const;
 
-    const where: any = {
+    const where: Prisma.ProjectWhereInput = {
       userId: session.user.id,
     };
 
     if (status) {
-      where.status = status;
+      (where as any).status = status;
     }
 
     if (type) {
-      where.type = type;
+      (where as any).type = type;
     }
 
     if (search) {
@@ -170,17 +174,21 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: {
-        [sortField]: sortOrder,
+        [sortField(sortByInput)]: sortOrder,
       },
     });
 
-    return NextResponse.json(await Promise.all(projects.map(serializeProject)));
-  } catch (error) {
-    console.error("Get projects error:", error);
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
+    // Batch fetch generation status to avoid N+1
+    const projectIds = projects.map((p) => p.id);
+    const statusMap = await batchGetWorkGenerationStatusAsync(projectIds);
+    const generationMap = new Map(
+      Array.from(statusMap.entries()).map(([id, s]) => [id, { status: s.status, progress: s.progress, step: s.step }]),
     );
+
+    return apiSuccess(projects.map((p) => serializeProject(p, generationMap)));
+  } catch (error) {
+    logger.error("Get projects error", { error: String(error) });
+    return handleApiError(error);
   }
 }
 
@@ -190,20 +198,17 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
-    const body = createProjectSchema.parse(await request.json());
+    const body = await parseBody(request, createProjectSchema);
     const { title, description, type = "MONOGRAPHY", brief } = body;
 
     // Check user subscription
     const { allowed, reason } = await subscriptionService.canGenerateWork(session.user.id);
 
     if (!allowed) {
-      return NextResponse.json(
-        { error: reason, code: "LIMIT_REACHED", remaining: 0 },
-        { status: 403 }
-      );
+      return apiError(reason || "Limite de trabalhos atingido", 403, "LIMIT_REACHED", { remaining: 0 });
     }
 
     // Create project with default sections
@@ -220,39 +225,39 @@ export async function POST(request: NextRequest) {
           educationLevel: brief?.educationLevel,
           userId: session.user.id,
           ...(brief
-              ? {
-                  brief: {
-                    create: {
-                      workType: type,
-                      generationStatus: "BRIEFING",
-                      institutionName: brief.institutionName,
-                      courseName: brief.courseName,
-                      subjectName: brief.subjectName,
-                      educationLevel: brief.educationLevel,
-                      advisorName: brief.advisorName,
-                      studentName: brief.studentName,
-                      city: brief.city,
-                      academicYear: brief.academicYear,
-                      dueDate: brief.dueDate ? new Date(brief.dueDate) : undefined,
-                      theme: brief.theme || title,
-                      subtitle: brief.subtitle,
-                      objective: brief.objective,
-                      researchQuestion: brief.researchQuestion,
-                      methodology: brief.methodology,
-                      keywords: brief.keywords,
-                      referencesSeed: brief.referencesSeed,
-                      citationStyle: brief.citationStyle || "ABNT",
-                      language: brief.language || "pt-MZ",
-                      additionalInstructions: brief.additionalInstructions,
-                      className: brief.className,
-                      turma: brief.turma,
-                      facultyName: brief.facultyName,
-                      departmentName: brief.departmentName,
-                      studentNumber: brief.studentNumber,
-                      semester: brief.semester,
-                    },
+            ? {
+                brief: {
+                  create: {
+                    workType: type,
+                    generationStatus: "BRIEFING",
+                    institutionName: brief.institutionName,
+                    courseName: brief.courseName,
+                    subjectName: brief.subjectName,
+                    educationLevel: brief.educationLevel,
+                    advisorName: brief.advisorName,
+                    studentName: brief.studentName,
+                    city: brief.city,
+                    academicYear: brief.academicYear,
+                    dueDate: brief.dueDate ? new Date(brief.dueDate) : undefined,
+                    theme: brief.theme || title,
+                    subtitle: brief.subtitle,
+                    objective: brief.objective,
+                    researchQuestion: brief.researchQuestion,
+                    methodology: brief.methodology,
+                    keywords: brief.keywords,
+                    referencesSeed: brief.referencesSeed,
+                    citationStyle: brief.citationStyle || "ABNT",
+                    language: brief.language || "pt-MZ",
+                    additionalInstructions: brief.additionalInstructions,
+                    className: brief.className,
+                    turma: brief.turma,
+                    facultyName: brief.facultyName,
+                    departmentName: brief.departmentName,
+                    studentNumber: brief.studentNumber,
+                    semester: brief.semester,
                   },
-                }
+                },
+              }
             : {}),
         },
       });
@@ -273,33 +278,36 @@ export async function POST(request: NextRequest) {
     // Fetch the complete project with sections
     const completeProject = await db.project.findUnique({
       where: { id: project.id },
-        include: {
-          sections: {
-            select: {
+      include: {
+        sections: {
+          select: {
             id: true,
             title: true,
             parentId: true,
             order: true,
             wordCount: true,
             updatedAt: true,
-            },
-            orderBy: { order: "asc" },
           },
-          brief: true,
+          orderBy: { order: "asc" },
         },
-      });
+        brief: true,
+      },
+    });
 
-    const serializedProject = completeProject ? await serializeProject(completeProject) : completeProject;
-    return NextResponse.json(serializedProject, { status: 201 });
+    const generationMap = await batchGetWorkGenerationStatusAsync([project.id]);
+    const serializedProject = completeProject
+      ? serializeProject(completeProject, new Map(
+          Array.from(generationMap.entries()).map(([id, s]) => [id, { status: s.status, progress: s.progress, step: s.step }]),
+        ))
+      : null;
+
+    return apiSuccess(serializedProject, { status: 201 });
   } catch (error) {
     if (error instanceof ZodError) {
-      return NextResponse.json({ error: "Payload inválido", details: error.flatten() }, { status: 400 });
+      return apiError("Payload inválido", 400, "VALIDATION_ERROR", error.flatten());
     }
 
-    console.error("Create project error:", error);
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
-    );
+    logger.error("Create project error", { error: String(error) });
+    return handleApiError(error);
   }
 }

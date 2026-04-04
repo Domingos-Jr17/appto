@@ -1,41 +1,42 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { ZodError } from "zod";
+
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { deleteStoredObject } from "@/lib/storage";
 import { normalizeStoredContent } from "@/lib/content";
-import { getWorkGenerationStatus, getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
+import { getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
 import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
 import { updateProjectSchema } from "@/lib/validators";
+import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
+import { logger } from "@/lib/logger";
 
 function serializeBrief(
-  brief:
-    | {
-        workType: string;
-        generationStatus: string;
-        institutionName: string | null;
-        courseName: string | null;
-        subjectName: string | null;
-        educationLevel: string | null;
-        advisorName: string | null;
-        studentName: string | null;
-        city: string | null;
-        academicYear: number | null;
-        dueDate: Date | null;
-        theme: string | null;
-        subtitle: string | null;
-        objective: string | null;
-        researchQuestion: string | null;
-        methodology: string | null;
-        keywords: string | null;
-        referencesSeed: string | null;
-        citationStyle: string;
-        language: string;
-        additionalInstructions: string | null;
-        coverTemplate?: string;
-      }
-    | null
+  brief: {
+    workType: string;
+    generationStatus: string;
+    institutionName: string | null;
+    courseName: string | null;
+    subjectName: string | null;
+    educationLevel: string | null;
+    advisorName: string | null;
+    studentName: string | null;
+    city: string | null;
+    academicYear: number | null;
+    dueDate: Date | null;
+    theme: string | null;
+    subtitle: string | null;
+    objective: string | null;
+    researchQuestion: string | null;
+    methodology: string | null;
+    keywords: string | null;
+    referencesSeed: string | null;
+    citationStyle: string;
+    language: string;
+    additionalInstructions: string | null;
+    coverTemplate?: string;
+  } | null,
 ) {
   if (!brief) {
     return null;
@@ -112,13 +113,13 @@ async function serializeProject(project: {
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
     const { id } = await params;
@@ -145,36 +146,36 @@ export async function GET(
     });
 
     if (!project) {
-      return NextResponse.json({ error: "Projecto não encontrado" }, { status: 404 });
+      return apiError("Projecto não encontrado", 404);
     }
 
-    return NextResponse.json(serializeProject(project));
+    return apiSuccess(await serializeProject(project));
   } catch (error) {
-    console.error("Get project error:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    logger.error("Get project error", { error: String(error) });
+    return handleApiError(error);
   }
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
     const { id } = await params;
-    const { title, description, status, type, brief } = updateProjectSchema.parse(await request.json());
+    const { title, description, status, type, brief } = await parseBody(request, updateProjectSchema);
 
     const existingProject = await db.project.findFirst({
       where: { id, userId: session.user.id },
     });
 
     if (!existingProject) {
-      return NextResponse.json({ error: "Projecto não encontrado" }, { status: 404 });
+      return apiError("Projecto não encontrado", 404);
     }
 
     const project = await db.project.update({
@@ -257,26 +258,26 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json(serializeProject(project));
+    return apiSuccess(await serializeProject(project));
   } catch (error) {
     if (error instanceof ZodError) {
-      return NextResponse.json({ error: "Payload inválido", details: error.flatten() }, { status: 400 });
+      return apiError("Payload inválido", 400, "VALIDATION_ERROR", error.flatten());
     }
 
-    console.error("Update project error:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    logger.error("Update project error", { error: String(error) });
+    return handleApiError(error);
   }
 }
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return apiError("Não autorizado", 401);
     }
 
     const { id } = await params;
@@ -285,7 +286,7 @@ export async function DELETE(
     });
 
     if (!existingProject) {
-      return NextResponse.json({ error: "Projecto não encontrado" }, { status: 404 });
+      return apiError("Projecto não encontrado", 404);
     }
 
     const storedFiles = await db.storedFile.findMany({
@@ -295,16 +296,16 @@ export async function DELETE(
     await Promise.all(
       storedFiles.map(async (file) => {
         await deleteStoredObject(file).catch(() => null);
-      })
+      }),
     );
 
     await db.project.delete({
       where: { id },
     });
 
-    return NextResponse.json({ message: "Projeto eliminado com sucesso" });
+    return apiSuccess({ message: "Projeto eliminado com sucesso" });
   } catch (error) {
-    console.error("Delete project error:", error);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    logger.error("Delete project error", { error: String(error) });
+    return handleApiError(error);
   }
 }

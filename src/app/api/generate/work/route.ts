@@ -27,7 +27,29 @@ export async function POST(request: NextRequest) {
     }
 
     const body = createWorkSchema.parse(await request.json());
-    const { title, type, description, generateContent, brief } = body;
+    const { title, type, description, generateContent, brief: rawBrief } = body;
+
+    // Fallback inteligente: adapta-se à forma como o user preencheu os dados
+    const brief = { ...rawBrief };
+    const hasFullContext = brief.objective && brief.theme;
+    const hasOnlyTheme = brief.theme && !brief.objective;
+
+    // Cenário 1: User preencheu tudo → usa os campos normalmente
+    // Cenário 2: User só preencheu o tema (ex: "Energia Solar nas zonas rurais de Gaza")
+    //   → O tema pode conter contexto extra, reforçamos nas instruções adicionais
+    if (hasOnlyTheme && description) {
+      brief.additionalInstructions = `${brief.additionalInstructions ? brief.additionalInstructions + "\n" : ""}${description}`;
+    } else if (!hasFullContext && description) {
+      // User não preencheu campos estruturados mas escreveu na descrição
+      brief.additionalInstructions = description;
+    }
+
+    // Se o tema é longo (>60 chars), provavelmente contém contexto extra
+    // Além do título. Extraímos isso para as instruções.
+    if (hasOnlyTheme && brief.theme && brief.theme.length > 60 && !brief.additionalInstructions) {
+      brief.additionalInstructions = brief.theme;
+    }
+
     const templates = getSectionTemplates(type, brief.educationLevel);
 
     const { allowed, reason } = await subscriptionService.canGenerateWork(session.user.id);

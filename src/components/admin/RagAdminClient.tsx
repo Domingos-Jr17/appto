@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Database, RefreshCcw, Search, Upload } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Database, FileText, RefreshCcw, Search, Upload, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,22 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+
+const ALLOWED_MIME_TYPES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+  "text/plain",
+];
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1] || "");
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 interface RagSourceRecord {
   id: string;
@@ -41,6 +57,9 @@ export function RagAdminClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<RagSearchResult[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [ingestionMode, setIngestionMode] = useState<"text" | "file">("text");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refreshSources = useCallback(async () => {
     setIsLoading(true);
@@ -128,6 +147,43 @@ export function RagAdminClient() {
       toast({
         title: "Erro",
         description: error instanceof Error ? error.message : "Não foi possível indexar o documento.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function ingestFile() {
+    if (!selectedSourceId || !documentTitle.trim() || !selectedFile) return;
+
+    setIsSubmitting(true);
+    try {
+      const fileBase64 = await fileToBase64(selectedFile);
+      const response = await fetch("/api/admin/rag/ingest-file", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceId: selectedSourceId,
+          title: documentTitle,
+          fileBase64,
+          mimeType: selectedFile.type,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Não foi possível ingerir o ficheiro.");
+      }
+
+      toast({ title: "Ficheiro indexado", description: `Documento ${data.document.title} foi extraído e indexado.` });
+      setDocumentTitle("");
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      await refreshSources();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Não foi possível indexar o ficheiro.",
         variant: "destructive",
       });
     } finally {
@@ -277,23 +333,89 @@ export function RagAdminClient() {
               <Label htmlFor="rag-document-title">Título do documento</Label>
               <Input id="rag-document-title" value={documentTitle} onChange={(event) => setDocumentTitle(event.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="rag-document-content">Conteúdo</Label>
-              <Textarea
-                id="rag-document-content"
-                rows={12}
-                value={documentContent}
-                onChange={(event) => setDocumentContent(event.target.value)}
-                placeholder="Cole aqui o texto limpo do documento, lei, relatório ou tese..."
-              />
+
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={ingestionMode === "text" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setIngestionMode("text")}
+              >
+                <FileText className="mr-1 h-3.5 w-3.5" /> Texto
+              </Button>
+              <Button
+                type="button"
+                variant={ingestionMode === "file" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setIngestionMode("file")}
+              >
+                <Upload className="mr-1 h-3.5 w-3.5" /> Ficheiro
+              </Button>
             </div>
-            <Button
-              type="button"
-              onClick={() => void ingestDocument()}
-              disabled={isSubmitting || !selectedSourceId || !documentTitle.trim() || !documentContent.trim()}
-            >
-              Indexar documento
-            </Button>
+
+            {ingestionMode === "text" ? (
+              <div className="space-y-2">
+                <Label htmlFor="rag-document-content">Conteúdo</Label>
+                <Textarea
+                  id="rag-document-content"
+                  rows={12}
+                  value={documentContent}
+                  onChange={(event) => setDocumentContent(event.target.value)}
+                  placeholder="Cole aqui o texto limpo do documento, lei, relatório ou tese..."
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Ficheiro</Label>
+                {selectedFile ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 p-3">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="flex-1 truncate text-sm">{selectedFile.name}</span>
+                    <span className="text-xs text-muted-foreground">{(selectedFile.size / 1024).toFixed(1)} KB</span>
+                    <button type="button" onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }} className="text-muted-foreground hover:text-foreground">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border/60 p-6 text-center">
+                    <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">PDF, DOCX ou TXT até 25 MB</p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.docx,.doc,.txt"
+                      className="mt-2 cursor-pointer text-sm"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file && ALLOWED_MIME_TYPES.includes(file.type)) {
+                          setSelectedFile(file);
+                        } else if (file) {
+                          toast({ title: "Formato inválido", description: "Apenas PDF, DOCX e TXT são aceites.", variant: "destructive" });
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {ingestionMode === "text" ? (
+              <Button
+                type="button"
+                onClick={() => void ingestDocument()}
+                disabled={isSubmitting || !selectedSourceId || !documentTitle.trim() || !documentContent.trim()}
+              >
+                Indexar documento
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={() => void ingestFile()}
+                disabled={isSubmitting || !selectedSourceId || !documentTitle.trim() || !selectedFile}
+              >
+                Indexar ficheiro
+              </Button>
+            )}
           </CardContent>
         </Card>
 

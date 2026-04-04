@@ -1,6 +1,9 @@
 import { getFriendlyAIErrorMessage, runAIChatCompletion } from "@/lib/ai";
 import { generateCoverHTML } from "@/lib/cover-templates";
 import { db } from "@/lib/db";
+import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
+import { trackProductEvent } from "@/lib/product-events";
 import { subscriptionService } from "@/lib/subscription";
 import type { CitationStyle, CoverTemplate, WorkBriefInput } from "@/types/editor";
 
@@ -138,6 +141,7 @@ const jobStore = globalThis as typeof globalThis & {
 
 const jobs = jobStore.__apptoWorkGenerationJobs ?? new Map<string, WorkGenerationJobStatus>();
 jobStore.__apptoWorkGenerationJobs = jobs;
+const JOB_RECLAIM_AFTER_MS = 10 * 60_000;
 
 export function getSectionTemplates(type: string) {
   return SECTION_TEMPLATES[type] || SECTION_TEMPLATES.MONOGRAPHY;
@@ -363,6 +367,9 @@ async function generateCompleteWorkContent(
   const citationNote = isSchool
     ? `As citações no texto são opcionais; se usar, siga a norma ${brief.citationStyle || "ABNT"}`
     : `Respeite a norma ${brief.citationStyle || "ABNT"}`;
+  const factualNote = brief.referencesSeed
+    ? "Use as referências iniciais apenas como ponto de partida e não invente metadados adicionais sem base explícita."
+    : "Não fabrique referências bibliográficas, leis, dados estatísticos ou autores específicos sem base no briefing.";
 
   const prompt = `Gere um trabalho académico sobre "${title}".
 
@@ -386,6 +393,7 @@ Requisitos obrigatórios:
 - Cada secção deve ter ${sectionWords} palavras
 - Use Português académico de Moçambique${isSchool ? " (simplificado para o ensino secundário)" : ""}
 - ${citationNote}
+- ${factualNote}
 - Use os dados do briefing para tornar o conteúdo específico e plausível
 - Não deixe nenhuma secção vazia
 - Produza JSON estritamente válido`;
@@ -460,8 +468,7 @@ export async function startWorkGenerationJob(input: {
   contentCost: number;
   baseCost: number;
 }) {
-  const { projectId, userId, title, type, brief } = input;
-  const templates = getSectionTemplates(type);
+  const { projectId, userId } = input;
 
   // Check for existing active generation job - this is the single source of truth
   const existingJob = await db.generationJob.findUnique({
@@ -481,12 +488,12 @@ export async function startWorkGenerationJob(input: {
       userId,
       status: "GENERATING",
       progress: 5,
-      step: "A validar o briefing",
+      step: "Na fila do worker",
     },
     update: {
       status: "GENERATING",
       progress: 5,
-      step: "A validar o briefing",
+      step: "Na fila do worker",
       error: null,
       startedAt: new Date(),
       completedAt: null,
@@ -496,94 +503,293 @@ export async function startWorkGenerationJob(input: {
   setJob(projectId, {
     status: "GENERATING",
     progress: 5,
-    step: "A validar o briefing",
+    step: "Na fila do worker",
   });
 
-  void (async () => {
-    try {
-      // Now update the brief status - this is the only place that should set GENERATING
-      await db.projectBrief.update({
+  await trackProductEvent({
+    name: "work_generation_queued",
+    category: "workspace",
+    userId,
+    projectId,
+  }).catch(() => null);
+
+  triggerQueuedGenerationProcessing();
+}
+
+function buildWorkBriefInputFromRecord(brief: {
+  institutionName: string | null;
+  courseName: string | null;
+  subjectName: string | null;
+  educationLevel: string | null;
+  advisorName: string | null;
+  studentName: string | null;
+  city: string | null;
+  academicYear: number | null;
+  dueDate: Date | null;
+  theme: string | null;
+  subtitle: string | null;
+  objective: string | null;
+  researchQuestion: string | null;
+  methodology: string | null;
+  keywords: string | null;
+  referencesSeed: string | null;
+  citationStyle: CitationStyle | string;
+  language: string;
+  additionalInstructions: string | null;
+  coverTemplate: string | null;
+  className: string | null;
+  turma: string | null;
+  facultyName: string | null;
+  departmentName: string | null;
+  studentNumber: string | null;
+  semester: string | null;
+}): WorkBriefInput {
+  return {
+    institutionName: brief.institutionName ?? undefined,
+    courseName: brief.courseName ?? undefined,
+    subjectName: brief.subjectName ?? undefined,
+    educationLevel: (brief.educationLevel as WorkBriefInput["educationLevel"]) ?? undefined,
+    advisorName: brief.advisorName ?? undefined,
+    studentName: brief.studentName ?? undefined,
+    city: brief.city ?? undefined,
+    academicYear: brief.academicYear ?? undefined,
+    dueDate: brief.dueDate?.toISOString().slice(0, 10),
+    theme: brief.theme ?? undefined,
+    subtitle: brief.subtitle ?? undefined,
+    objective: brief.objective ?? undefined,
+    researchQuestion: brief.researchQuestion ?? undefined,
+    methodology: brief.methodology ?? undefined,
+    keywords: brief.keywords ?? undefined,
+    referencesSeed: brief.referencesSeed ?? undefined,
+    citationStyle: (brief.citationStyle as WorkBriefInput["citationStyle"]) ?? "ABNT",
+    language: brief.language,
+    additionalInstructions: brief.additionalInstructions ?? undefined,
+    coverTemplate: (brief.coverTemplate as WorkBriefInput["coverTemplate"]) ?? undefined,
+    className: brief.className ?? undefined,
+    turma: brief.turma ?? undefined,
+    facultyName: brief.facultyName ?? undefined,
+    departmentName: brief.departmentName ?? undefined,
+    studentNumber: brief.studentNumber ?? undefined,
+    semester: brief.semester ?? undefined,
+  };
+}
+
+async function processGenerationJob(projectId: string) {
+  const project = await db.project.findUnique({
+    where: { id: projectId },
+    include: { brief: true },
+  });
+
+  if (!project?.brief) {
+    throw new Error("Projecto ou briefing não encontrado para processamento.");
+  }
+
+  const brief = buildWorkBriefInputFromRecord(project.brief);
+  const templates = getSectionTemplates(project.type);
+
+  try {
+    await db.projectBrief.update({
+      where: { projectId },
+      data: { generationStatus: "GENERATING" },
+    });
+
+    setJob(projectId, { progress: 25, step: "A gerar capa e estrutura" });
+    await setJobAsync(projectId, { progress: 25, step: "A gerar capa e estrutura", startedAt: new Date() });
+
+    const generatedContent = await generateCompleteWorkContent(project.title, project.type, brief, templates);
+    const referenceOrder = Math.max(...templates.map((section) => section.order)) + 1;
+
+    setJob(projectId, { progress: 65, step: "A escrever as secções iniciais" });
+    await setJobAsync(projectId, { progress: 65, step: "A escrever as secções iniciais", startedAt: new Date() });
+
+    await db.$transaction(async (tx) => {
+      await tx.documentSection.updateMany({
+        where: { projectId, title: "Capa" },
+        data: { content: generateCover(project.title, project.type, brief) },
+      });
+
+      await tx.documentSection.updateMany({
+        where: { projectId, title: "Resumo" },
+        data: { content: generatedContent.abstract },
+      });
+
+      await tx.documentSection.updateMany({
+        where: { projectId, title: "Referências" },
+        data: { content: brief.referencesSeed || "Adicione referências verificadas manualmente antes da submissão.", order: referenceOrder },
+      });
+
+      for (const section of generatedContent.sections) {
+        await tx.documentSection.updateMany({
+          where: { projectId, title: section.title },
+          data: { content: section.content },
+        });
+      }
+
+      const updatedSections = await tx.documentSection.findMany({
         where: { projectId },
-        data: { generationStatus: "GENERATING" },
+        select: { wordCount: true, content: true },
       });
 
-      setJob(projectId, { progress: 25, step: "A gerar capa e estrutura" });
+      const totalWords = updatedSections.reduce((sum, section) => {
+        if (typeof section.wordCount === "number" && section.wordCount > 0) return sum + section.wordCount;
+        if (section.content) return sum + section.content.split(/\s+/).filter(Boolean).length;
+        return sum;
+      }, 0);
 
-      const generatedContent = await generateCompleteWorkContent(title, type, brief, templates);
-      const referenceOrder = Math.max(...templates.map((section) => section.order)) + 1;
-
-      setJob(projectId, { progress: 65, step: "A escrever as secções iniciais" });
-
-      await db.$transaction(async (tx) => {
-        await tx.documentSection.updateMany({
-          where: { projectId, title: "Capa" },
-          data: { content: generateCover(title, type, brief) },
-        });
-
-        await tx.documentSection.updateMany({
-          where: { projectId, title: "Resumo" },
-          data: { content: generatedContent.abstract },
-        });
-
-        await tx.documentSection.updateMany({
-          where: { projectId, title: "Referências" },
-          data: { content: brief.referencesSeed || "", order: referenceOrder },
-        });
-
-        for (const section of generatedContent.sections) {
-          await tx.documentSection.updateMany({
-            where: { projectId, title: section.title },
-            data: { content: section.content },
-          });
-        }
-
-        const updatedSections = await tx.documentSection.findMany({
-          where: { projectId },
-          select: { wordCount: true, content: true },
-        });
-
-        const totalWords = updatedSections.reduce((sum, section) => {
-          if (typeof section.wordCount === "number" && section.wordCount > 0) return sum + section.wordCount;
-          if (section.content) return sum + section.content.split(/\s+/).filter(Boolean).length;
-          return sum;
-        }, 0);
-
-        await tx.project.update({
-          where: { id: projectId },
-          data: { wordCount: totalWords },
-        });
-
-        await tx.projectBrief.update({
-          where: { projectId },
-          data: { generationStatus: "READY" },
-        });
+      await tx.project.update({
+        where: { id: projectId },
+        data: { wordCount: totalWords },
       });
 
-      setJob(projectId, {
-        status: "READY",
-        progress: 100,
-        step: "Trabalho pronto para revisão",
-      });
-    } catch (error) {
-      const friendlyMessage = getFriendlyAIErrorMessage(error);
-
-      await db.projectBrief.update({
+      await tx.projectBrief.update({
         where: { projectId },
-        data: { generationStatus: "FAILED" },
+        data: { generationStatus: "READY" },
       });
+    });
 
-      await subscriptionService.refundWork(userId).catch((err) => {
-        console.error("[Work Generation] Failed to refund subscription work:", err);
-      });
+    await setJobAsync(projectId, {
+      status: "READY",
+      progress: 100,
+      step: "Trabalho pronto para revisão",
+      completedAt: new Date(),
+    });
+    setJob(projectId, {
+      status: "READY",
+      progress: 100,
+      step: "Trabalho pronto para revisão",
+    });
 
-      setJob(projectId, {
-        status: "FAILED",
-        progress: 100,
-        step: "Falha na geração",
-        error: friendlyMessage,
-      });
+    await trackProductEvent({
+      name: "work_generation_completed",
+      category: "workspace",
+      userId: project.userId,
+      projectId,
+      metadata: { type: project.type },
+    }).catch(() => null);
+  } catch (error) {
+    const friendlyMessage = getFriendlyAIErrorMessage(error);
+
+    await db.projectBrief.update({
+      where: { projectId },
+      data: { generationStatus: "FAILED" },
+    });
+
+    await subscriptionService.refundWork(project.userId).catch((err) => {
+      console.error("[Work Generation] Failed to refund subscription work:", err);
+    });
+
+    await setJobAsync(projectId, {
+      status: "FAILED",
+      progress: 100,
+      step: "Falha na geração",
+      error: friendlyMessage,
+      completedAt: new Date(),
+    });
+    setJob(projectId, {
+      status: "FAILED",
+      progress: 100,
+      step: "Falha na geração",
+      error: friendlyMessage,
+    });
+
+    await trackProductEvent({
+      name: "work_generation_failed",
+      category: "workspace",
+      userId: project.userId,
+      projectId,
+      metadata: { error: friendlyMessage },
+    }).catch(() => null);
+  }
+}
+
+async function setJobAsync(projectId: string, partial: {
+  status?: string;
+  progress?: number;
+  step?: string;
+  error?: string | null;
+  completedAt?: Date | null;
+  startedAt?: Date;
+}) {
+  await db.generationJob.update({
+    where: { projectId },
+    data: partial,
+  }).catch(() => null);
+}
+
+async function claimGenerationJob(projectId: string, startedAt: Date) {
+  const result = await db.generationJob.updateMany({
+    where: {
+      projectId,
+      status: "GENERATING",
+      startedAt,
+      completedAt: null,
+    },
+    data: {
+      step: "A processar em worker persistente",
+      startedAt: new Date(),
+      error: null,
+    },
+  });
+
+  return result.count === 1;
+}
+
+export async function processQueuedGenerationJobs(limit = 2) {
+  const staleCutoff = new Date(Date.now() - JOB_RECLAIM_AFTER_MS);
+  const candidates = await db.generationJob.findMany({
+    where: {
+      status: "GENERATING",
+      completedAt: null,
+      OR: [
+        { step: "Na fila do worker" },
+        { startedAt: { lt: staleCutoff } },
+      ],
+    },
+    orderBy: { startedAt: "asc" },
+    take: limit,
+    select: { projectId: true, startedAt: true },
+  });
+
+  let processed = 0;
+  for (const candidate of candidates) {
+    const claimed = await claimGenerationJob(candidate.projectId, candidate.startedAt);
+    if (!claimed) {
+      continue;
     }
-  })();
+
+    processed += 1;
+    logger.info("[worker] processing generation job", { projectId: candidate.projectId });
+    await processGenerationJob(candidate.projectId);
+  }
+
+  return { processed };
+}
+
+export function triggerQueuedGenerationProcessing() {
+  if (env.INTERNAL_WORKER_SECRET) {
+    void fetch(`${env.APP_URL.replace(/\/$/, "")}/api/internal/workers/run`, {
+      method: "POST",
+      headers: {
+        "x-worker-secret": env.INTERNAL_WORKER_SECRET,
+      },
+    }).catch((error) => {
+      logger.warn("[worker] remote generation trigger failed; falling back to local execution", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      queueMicrotask(() => {
+        void processQueuedGenerationJobs(1).catch(() => null);
+      });
+    });
+    return;
+  }
+
+  queueMicrotask(() => {
+    void processQueuedGenerationJobs(1).catch((error) => {
+      logger.warn("[worker] local generation trigger failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
+  });
 }
 
 export async function regenerateWorkSection(input: {
@@ -610,6 +816,7 @@ Requisitos obrigatórios:
 - Use a norma ${brief.citationStyle || "ABNT"}
 - Produza ${wordCount} palavras
 - Mantenha tom formal, coerente e plausível
+- Não invente dados factuais, leis, autores ou referências bibliográficas sem base no briefing
 - Devolva apenas o conteúdo final da secção, sem markdown extra nem explicações`;
 
   const systemPrompt = getSystemPromptForEducation(brief.educationLevel);

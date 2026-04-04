@@ -6,6 +6,7 @@ import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
 import { BILLING_PLAN_DISPLAY, EXTRA_WORKS } from "@/lib/billing";
 import { withDistributedLock } from "@/lib/distributed-lock";
 import { PaymentService } from "@/lib/payments";
+import { trackProductEvent } from "@/lib/product-events";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { subscriptionService } from "@/lib/subscription";
 import { env } from "@/lib/env";
@@ -115,6 +116,14 @@ export async function POST(request: NextRequest) {
     );
 
     if ("package" in body) {
+      await trackProductEvent({
+        name: "subscription_checkout_started",
+        category: "billing",
+        userId: session.user.id,
+        paymentId: payment.id,
+        metadata: { package: body.package, provider: providerValue },
+      }).catch(() => null);
+
       return apiSuccess({
         success: true,
         payment,
@@ -124,6 +133,14 @@ export async function POST(request: NextRequest) {
             : `Checkout iniciado para o pacote ${body.package}`,
       });
     }
+
+    await trackProductEvent({
+      name: "extra_work_checkout_started",
+      category: "billing",
+      userId: session.user.id,
+      paymentId: payment.id,
+      metadata: { quantity: body.quantity, provider: providerValue },
+    }).catch(() => null);
 
     return apiSuccess({
       success: true,

@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { apiError, apiSuccess, handleApiError } from "@/lib/api";
 import { db } from "@/lib/db";
 import { serializeStoredFile } from "@/lib/files";
-import { deleteStoredObject } from "@/lib/storage";
+import { trackProductEvent } from "@/lib/product-events";
 
 async function getOwnedFile(id: string, userId: string) {
   return db.storedFile.findFirst({
@@ -59,11 +59,18 @@ export async function DELETE(
       return apiError("Ficheiro não encontrado", 404);
     }
 
-    await deleteStoredObject(storedFile).catch(() => null);
-
-    await db.storedFile.delete({
+    await db.storedFile.update({
       where: { id: storedFile.id },
+      data: { status: "DELETED" },
     });
+
+    await trackProductEvent({
+      name: "stored_file_deleted",
+      category: "storage",
+      userId: session.user.id,
+      projectId: storedFile.projectId,
+      metadata: { fileId: storedFile.id, kind: storedFile.kind },
+    }).catch(() => null);
 
     return apiSuccess({ success: true });
   } catch (error) {

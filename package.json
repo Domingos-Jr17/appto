@@ -16,7 +16,9 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:reset": "prisma migrate reset",
-    "db:seed": "bun prisma/seed.ts"
+    "db:seed": "bun prisma/seed.ts",
+    "workers:once": "bun scripts/run-workers.ts",
+    "workers:loop": "bun scripts/run-workers.ts --loop"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1014.0",
@@ -72,11 +74,13 @@
     "framer-motion": "^12.23.2",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.525.0",
+    "mammoth": "^1.12.0",
     "next": "^16.1.1",
     "next-auth": "^4.24.11",
     "next-intl": "^4.3.4",
     "next-themes": "^0.4.6",
     "otplib": "^13.4.0",
+    "pdfjs-dist": "4.4.168",
     "prisma": "^6.11.1",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",

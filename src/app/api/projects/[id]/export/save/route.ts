@@ -8,6 +8,7 @@ import { withDistributedLock } from "@/lib/distributed-lock";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { serializeStoredFile } from "@/lib/files";
 import { DocumentExportService, getAbntChecklist } from "@/lib/document-export";
+import { trackProductEvent } from "@/lib/product-events";
 import { buildStoredFileRecord, createChecksum, uploadBufferToStorage } from "@/lib/storage";
 import { subscriptionService } from "@/lib/subscription";
 import { saveProjectExportSchema } from "@/lib/validators";
@@ -137,6 +138,14 @@ export async function POST(
             },
           }),
         ]);
+
+        await trackProductEvent({
+          name: "export_saved",
+          category: "workspace",
+          userId: session.user.id,
+          projectId: id,
+          metadata: { format },
+        }).catch(() => null);
 
         return apiSuccess({
           success: true,

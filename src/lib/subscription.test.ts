@@ -1,10 +1,16 @@
 import { describe, expect, mock, test } from "bun:test";
 import { PackageType, SubscriptionStatus } from "@prisma/client";
 
-import { SubscriptionService } from "@/lib/subscription";
+mock.module("server-only", () => ({}));
+
+async function loadSubscriptionService() {
+  const subscriptionModule = await import("@/lib/subscription");
+  return subscriptionModule.SubscriptionService;
+}
 
 describe("SubscriptionService", () => {
   test("allows only free-safe AI actions on FREE", async () => {
+    const SubscriptionService = await loadSubscriptionService();
     const db = {
       subscription: {
         findUnique: mock(async () => ({
@@ -27,6 +33,7 @@ describe("SubscriptionService", () => {
   });
 
   test("consumes extra works before plan quota", async () => {
+    const SubscriptionService = await loadSubscriptionService();
     const workPurchaseUpdate = mock(async () => null);
     const subscriptionUpdate = mock(async () => null);
     const db = {
@@ -63,6 +70,7 @@ describe("SubscriptionService", () => {
   });
 
   test("preserves used quota on downgrade when usage still fits new plan", async () => {
+    const SubscriptionService = await loadSubscriptionService();
     const subscriptionUpdate = mock(async () => null);
     const workPurchaseCreate = mock(async () => null);
     const db = {

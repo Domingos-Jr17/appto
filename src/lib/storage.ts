@@ -6,7 +6,10 @@ import path from "node:path";
 import { S3Client, PutObjectCommand, HeadObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { StoredFile, StoredFileKind, StorageProvider } from "@prisma/client";
+import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
+import { trackProductEvent } from "@/lib/product-events";
 
 const MAX_LOCAL_UPLOAD_SIZE = 25 * 1024 * 1024;
 
@@ -296,6 +299,68 @@ export async function deleteStoredObject(file: StoredFile) {
       Key: file.objectKey,
     })
   );
+}
+
+export async function cleanupStoredFileLifecycle(input?: {
+  pendingOlderThanHours?: number;
+  failedOlderThanHours?: number;
+  deletedOlderThanHours?: number;
+}) {
+  const now = Date.now();
+  const pendingCutoff = new Date(now - (input?.pendingOlderThanHours ?? 6) * 60 * 60 * 1000);
+  const failedCutoff = new Date(now - (input?.failedOlderThanHours ?? 72) * 60 * 60 * 1000);
+  const deletedCutoff = new Date(now - (input?.deletedOlderThanHours ?? 24) * 60 * 60 * 1000);
+
+  const [pendingExpired, failedExpired, deletedExpired] = await Promise.all([
+    db.storedFile.findMany({
+      where: { status: "PENDING", updatedAt: { lt: pendingCutoff } },
+      take: 50,
+    }),
+    db.storedFile.findMany({
+      where: { status: "FAILED", updatedAt: { lt: failedCutoff } },
+      take: 50,
+    }),
+    db.storedFile.findMany({
+      where: { status: "DELETED", updatedAt: { lt: deletedCutoff } },
+      take: 50,
+    }),
+  ]);
+
+  if (pendingExpired.length) {
+    await db.storedFile.updateMany({
+      where: { id: { in: pendingExpired.map((file) => file.id) } },
+      data: { status: "FAILED" },
+    });
+  }
+
+  const removable = [...failedExpired, ...deletedExpired];
+  for (const file of removable) {
+    await deleteStoredObject(file).catch((error) => {
+      logger.warn("[storage] failed to delete object during lifecycle cleanup", {
+        fileId: file.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
+
+    await db.storedFile.delete({ where: { id: file.id } }).catch(() => null);
+  }
+
+  const summary = {
+    pendingMarkedFailed: pendingExpired.length,
+    removedFailed: failedExpired.length,
+    removedDeleted: deletedExpired.length,
+  };
+
+  if (summary.pendingMarkedFailed || summary.removedFailed || summary.removedDeleted) {
+    logger.info("[storage] lifecycle cleanup completed", summary);
+    await trackProductEvent({
+      name: "storage_lifecycle_cleanup",
+      category: "ops",
+      metadata: summary,
+    }).catch(() => null);
+  }
+
+  return summary;
 }
 
 export async function getStoredFileDownloadUrl(file: StoredFile, expiresInSeconds = 900) {

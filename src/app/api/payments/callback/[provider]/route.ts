@@ -8,6 +8,7 @@ import { withDistributedLock } from "@/lib/distributed-lock";
 import { env } from "@/lib/env";
 import { normalizePaymentCallback, verifyWebhookSignature } from "@/lib/payment-gateway";
 import { PaymentService } from "@/lib/payments";
+import { trackProductEvent } from "@/lib/product-events";
 import { enforceRateLimit } from "@/lib/rate-limit";
 
 function toJsonValue(value: unknown) {
@@ -116,6 +117,24 @@ export async function POST(
         }
 
         if (
+          existingPayment.provider !== "SIMULATED" &&
+          existingPayment.provider.toLowerCase() !== provider.toLowerCase()
+        ) {
+          logAudit(
+            createAuditEntry(
+              normalized.paymentId,
+              provider,
+              normalized.status,
+              "FAILED",
+              existingPayment.userId,
+              existingPayment.status,
+              `Provider mismatch: expected ${existingPayment.provider}, received ${provider}`,
+            ),
+          );
+          return apiError("Provider inválido para este pagamento", 400);
+        }
+
+        if (
           existingPayment.status === PaymentStatus.CONFIRMED &&
           normalized.status === PaymentStatus.CONFIRMED
         ) {
@@ -164,6 +183,14 @@ export async function POST(
               quantity,
             );
 
+            await trackProductEvent({
+              name: "payment_confirmed",
+              category: "billing",
+              userId: existingPayment.userId,
+              paymentId: normalized.paymentId,
+              metadata: { purchaseType: "extra_work", quantity, provider },
+            }).catch(() => null);
+
             logAudit(
               createAuditEntry(
                 normalized.paymentId,
@@ -192,6 +219,14 @@ export async function POST(
               packageType,
             );
 
+            await trackProductEvent({
+              name: "payment_confirmed",
+              category: "billing",
+              userId: existingPayment.userId,
+              paymentId: normalized.paymentId,
+              metadata: { purchaseType: "subscription", packageType, provider },
+            }).catch(() => null);
+
             logAudit(
               createAuditEntry(
                 normalized.paymentId,
@@ -212,6 +247,14 @@ export async function POST(
             normalized.providerReference,
             normalized.providerPayload,
           );
+
+          await trackProductEvent({
+            name: "payment_confirmed",
+            category: "billing",
+            userId: existingPayment.userId,
+            paymentId: normalized.paymentId,
+            metadata: { purchaseType: payload.purchaseType || "legacy", provider },
+          }).catch(() => null);
 
           logAudit(
             createAuditEntry(

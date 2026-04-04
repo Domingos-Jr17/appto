@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { PwaProvider } from "@/components/providers/PwaProvider";
 
 const inter = Inter({
   variable: "--font-geist-sans",
@@ -29,6 +30,7 @@ export const metadata: Metadata = {
     siteName: "aptto",
     type: "website",
   },
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({
@@ -48,6 +50,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
+            <PwaProvider />
             {children}
           </AuthProvider>
           <Toaster position="top-right" />

@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
 import { db } from "@/lib/db";
 import { serializeStoredFile } from "@/lib/files";
+import { trackProductEvent } from "@/lib/product-events";
 import { finalizeUploadedFile } from "@/lib/storage";
 import { completeFileUploadSchema } from "@/lib/validators";
 
@@ -34,6 +35,14 @@ export async function POST(request: Request) {
         status: "READY",
       },
     });
+
+    await trackProductEvent({
+      name: "stored_file_ready",
+      category: "storage",
+      userId: session.user.id,
+      projectId: readyFile.projectId,
+      metadata: { fileId: readyFile.id, kind: readyFile.kind },
+    }).catch(() => null);
 
     return apiSuccess({
       success: true,

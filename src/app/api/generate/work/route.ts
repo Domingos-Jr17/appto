@@ -4,6 +4,7 @@ import { ZodError } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { createWorkSchema } from "@/lib/validators";
+import { trackProductEvent } from "@/lib/product-events";
 import { getSectionsForEducationLevel } from "@/lib/project-templates";
 import {
   formatProjectType,
@@ -115,6 +116,14 @@ export async function POST(request: NextRequest) {
 
       return createdProject;
     });
+
+    await trackProductEvent({
+      name: "work_created",
+      category: "workspace",
+      userId: session.user.id,
+      projectId: project.id,
+      metadata: { type, generateContent },
+    }).catch(() => null);
 
     if (generateContent) {
       const existingBrief = await db.projectBrief.findUnique({

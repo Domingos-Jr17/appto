@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { parseBody, handleApiError, apiSuccess, apiError } from "@/lib/api";
+import { trackProductEvent } from "@/lib/product-events";
 import { registerSchema } from "@/lib/validators";
 import { CreditLedgerService } from "@/lib/credit-ledger";
 import { CREDIT_DEFAULTS } from "@/lib/credits";
@@ -57,6 +58,13 @@ export async function POST(request: NextRequest) {
 
       return createdUser;
     });
+
+    await trackProductEvent({
+      name: "account_registered",
+      category: "auth",
+      userId: user.id,
+      metadata: { educationLevel: null },
+    }).catch(() => null);
 
     return apiSuccess(
       {

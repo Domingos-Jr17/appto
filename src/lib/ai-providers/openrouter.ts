@@ -5,7 +5,7 @@ import { AIRequestError } from "@/lib/ai-types";
 
 const RETRY_DELAYS_MS = [800, 1600, 3200];
 const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
-const DEFAULT_MODEL = "qwen/qwen3.6-plus-preview:free";
+const DEFAULT_MODEL = "qwen/qwen3.6-plus:free";
 
 interface OpenRouterConfig {
   apiKey: string;

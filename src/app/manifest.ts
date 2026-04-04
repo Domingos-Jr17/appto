@@ -1,0 +1,21 @@
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "aptto",
+    short_name: "aptto",
+    description: "Copiloto académico com IA para estudantes moçambicanos.",
+    start_url: "/app",
+    display: "standalone",
+    background_color: "#0f172a",
+    theme_color: "#1d9e75",
+    lang: "pt-MZ",
+    icons: [
+      {
+        src: "/logo.svg",
+        sizes: "any",
+        type: "image/svg+xml",
+      },
+    ],
+  };
+}

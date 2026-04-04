@@ -3,6 +3,7 @@ import { generateCacheKey, getCachedResponse, setCachedResponse } from "@/lib/ai
 import { buildActionPrompt, buildSystemPrompt, PROMPT_VERSION } from "@/lib/ai-prompts";
 import { runAIChatCompletion, runAIChatStream } from "@/lib/ai";
 import type { AIChatRequest } from "@/lib/ai-types";
+import { evaluateFactualValidation } from "@/lib/factual-validation";
 import { buildRagContext, RagService } from "@/lib/rag";
 import { subscriptionService, type AIAction } from "@/lib/subscription";
 
@@ -23,6 +24,7 @@ interface PreparedAiRequest {
   promptVersion: string;
   remainingWorks: number;
   sources: Awaited<ReturnType<RagService["search"]>>;
+  warnings: string[];
 }
 
 interface ProcessAiRequestResult {
@@ -32,6 +34,7 @@ interface ProcessAiRequestResult {
   promptVersion: string;
   remainingWorks: number;
   sources: Awaited<ReturnType<RagService["search"]>>;
+  warnings: string[];
 }
 
 interface StreamAiRequestResult {
@@ -41,6 +44,7 @@ interface StreamAiRequestResult {
   promptVersion: string;
   remainingWorks: number;
   sources: Awaited<ReturnType<RagService["search"]>>;
+  warnings: string[];
 }
 
 function buildProjectContext(project: {
@@ -146,6 +150,16 @@ async function prepareAiRequest(input: ProcessAiRequestInput): Promise<PreparedA
   const sources = await ragService.search([text, baseContext].filter(Boolean).join("\n"), userId);
   const ragContext = buildRagContext(sources);
   const mergedContext = [baseContext, ragContext].filter(Boolean).join("\n\n");
+  const factualValidation = evaluateFactualValidation({
+    action,
+    text,
+    hasGroundedSources: sources.length > 0,
+    hasReferenceSeed: Boolean(projectContext?.brief?.referencesSeed),
+  });
+
+  if (factualValidation.blocked) {
+    throw new Error(factualValidation.message);
+  }
 
   const cacheKey = generateCacheKey(
     action,
@@ -179,6 +193,7 @@ async function prepareAiRequest(input: ProcessAiRequestInput): Promise<PreparedA
     promptVersion: PROMPT_VERSION,
     remainingWorks: await subscriptionService.canGenerateWork(userId).then((result) => result.remaining),
     sources,
+    warnings: factualValidation.warnings,
   };
 }
 
@@ -193,6 +208,7 @@ export async function processAiRequest(input: ProcessAiRequestInput): Promise<Pr
       promptVersion: prepared.promptVersion,
       remainingWorks: prepared.remainingWorks,
       sources: prepared.sources,
+      warnings: prepared.warnings,
     };
   }
 
@@ -211,6 +227,7 @@ export async function processAiRequest(input: ProcessAiRequestInput): Promise<Pr
     promptVersion: prepared.promptVersion,
     remainingWorks: prepared.remainingWorks,
     sources: prepared.sources,
+    warnings: prepared.warnings,
   };
 }
 
@@ -231,6 +248,7 @@ export async function streamAiRequest(input: ProcessAiRequestInput): Promise<Str
       promptVersion: prepared.promptVersion,
       remainingWorks: prepared.remainingWorks,
       sources: prepared.sources,
+      warnings: prepared.warnings,
     };
   }
 
@@ -274,5 +292,6 @@ export async function streamAiRequest(input: ProcessAiRequestInput): Promise<Str
     promptVersion: prepared.promptVersion,
     remainingWorks: prepared.remainingWorks,
     sources: prepared.sources,
+    warnings: prepared.warnings,
   };
 }

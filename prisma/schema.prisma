@@ -471,6 +471,23 @@ model UserSettings {
   @@map("user_settings")
 }
 
+model ProductEvent {
+  id         String   @id @default(cuid())
+  name       String
+  category   String
+  userId     String?
+  projectId  String?
+  paymentId  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([name, createdAt])
+  @@index([category, createdAt])
+  @@index([userId, createdAt])
+  @@index([projectId, createdAt])
+  @@map("product_events")
+}
+
 model KnowledgeSource {
   id          String              @id @default(cuid())
   userId      String?

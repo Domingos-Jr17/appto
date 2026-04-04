@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
       promptVersion: result.promptVersion,
       cached: result.cached,
       sources: result.sources,
+      warnings: result.warnings,
     });
   } catch (error) {
     logger.error("AI generation error", { error: String(error) });

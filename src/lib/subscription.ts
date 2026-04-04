@@ -26,7 +26,11 @@ export const ADVANCED_AI_ACTIONS: AIAction[] = ["citations", "plagiarism-check",
 export const EXTRA_WORK_PRICE = EXTRA_WORKS.price;
 
 export class SubscriptionService {
-  constructor(private readonly dbClient: PrismaClient | any = db) {}
+  private readonly dbClient: PrismaClient | any;
+
+  constructor(dbClient?: PrismaClient | any) {
+    this.dbClient = dbClient ?? db;
+  }
 
   async getOrCreate(userId: string) {
     let subscription = await this.dbClient.subscription.findUnique({

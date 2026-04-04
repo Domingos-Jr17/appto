@@ -11,6 +11,7 @@ import {
   buildFallbackOutline,
   parseDemoOutlineResponse,
 } from "@/lib/demo-outline";
+import { trackProductEvent } from "@/lib/product-events";
 
 const DEMO_RATE_LIMIT = {
   limit: 5,
@@ -106,12 +107,24 @@ Regras:
       const outline = parseDemoOutlineResponse(content);
 
       if (!outline) {
+        await trackProductEvent({
+          name: "lead_magnet_generated",
+          category: "marketing",
+          metadata: { topic: normalizedTopic, source: "fallback" },
+        }).catch(() => null);
+
         return apiSuccess({
           success: true,
           outline: buildFallbackOutline(normalizedTopic),
           source: "fallback" as const,
         });
       }
+
+      await trackProductEvent({
+        name: "lead_magnet_generated",
+        category: "marketing",
+        metadata: { topic: normalizedTopic, source: "real" },
+      }).catch(() => null);
 
       return apiSuccess({
         success: true,
@@ -128,6 +141,12 @@ Regras:
           status >= 500);
 
       if (shouldFallback) {
+        await trackProductEvent({
+          name: "lead_magnet_generated",
+          category: "marketing",
+          metadata: { topic: normalizedTopic, source: "fallback_on_error" },
+        }).catch(() => null);
+
         return apiSuccess({
           success: true,
           outline: buildFallbackOutline(normalizedTopic),

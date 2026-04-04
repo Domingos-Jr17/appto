@@ -11,6 +11,7 @@ const envSchema = z
     AUTH_SECRET: z.string().min(1).optional(),
     NEXTAUTH_URL: z.string().url().optional(),
     APP_URL: z.string().url().optional(),
+    INTERNAL_WORKER_SECRET: z.string().min(1).optional(),
     GOOGLE_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
     ZAI_API_KEY: z.string().min(1).optional(),
@@ -122,6 +123,7 @@ const parsedEnv = envSchema.safeParse({
   AUTH_SECRET: process.env.AUTH_SECRET,
   NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   APP_URL: process.env.APP_URL,
+  INTERNAL_WORKER_SECRET: process.env.INTERNAL_WORKER_SECRET,
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   ZAI_API_KEY: process.env.ZAI_API_KEY,
@@ -170,6 +172,7 @@ export const env = {
     parsedEnv.data.APP_URL ??
     parsedEnv.data.NEXTAUTH_URL ??
     "http://localhost:3000",
+  INTERNAL_WORKER_SECRET: parsedEnv.data.INTERNAL_WORKER_SECRET,
   PAYMENT_GATEWAY: parsedEnv.data.PAYMENT_GATEWAY ?? "SIMULATED",
   PAYMENT_DEFAULT_PROVIDER: parsedEnv.data.PAYMENT_DEFAULT_PROVIDER ?? "SIMULATED",
   PAYSUITE_API_BASE_URL:

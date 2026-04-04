@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
         "X-Aptto-Prompt-Version": result.promptVersion,
         "X-Aptto-Remaining-Works": String(result.remainingWorks),
         "X-Aptto-Cached": String(result.cached),
+        "X-Aptto-Warnings": encodeURIComponent(result.warnings.join(" | ")),
       },
     });
   } catch (error) {

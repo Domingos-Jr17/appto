@@ -70,7 +70,7 @@ const landingFeatures: LandingItem<{
         icon: "BookMarked",
         title: "Normalização ABNT",
         description:
-            "Referências e citações formatadas automaticamente segundo as normas ABNT exigidas pelas universidades.",
+            "Referências, capas e sumários com foco em normas ABNT e modelos institucionais. A revisão académica final continua recomendada.",
         highlight: true,
     },
     {
@@ -78,7 +78,7 @@ const landingFeatures: LandingItem<{
         icon: "Database",
         title: "Base de conhecimento local",
         description:
-            "Infraestrutura preparada para fontes locais e institucionais. Ainda não está disponível publicamente na app.",
+            "Base RAG preparada para fontes locais, institucionais e documentos carregados por administradores. A experiência pública continua em activação controlada.",
         highlight: false,
         featureKey: "localRag",
     },
@@ -95,7 +95,7 @@ const landingFeatures: LandingItem<{
         icon: "FileDown",
         title: "Exportação DOCX",
         description:
-            "Exporte trabalhos formatados em Word (DOCX). A exportação PDF permanece fora da experiência pública até ser implementada.",
+            "Exporte em DOCX em todos os pacotes e use PDF no plano PRO, com foco crescente em alinhamento institucional.",
         highlight: false,
     },
     // {
@@ -117,7 +117,7 @@ const landingFeatures: LandingItem<{
         icon: "Zap",
         title: "Entrega completa da resposta",
         description:
-            "A experiência pública mostra respostas completas. Streaming token-a-token continua desativado até existir suporte real de backend.",
+            "O workspace já suporta respostas progressivas no backend. A experiência continua a melhorar conforme o provider e a qualidade da ligação.",
         highlight: false,
         featureKey: "realTimeStreaming",
     },
@@ -194,7 +194,7 @@ const landingDifferentiators: LandingItem<{
     {
         title: "RAG com Fontes Locais",
         description:
-            "Funcionalidade planeada. O domínio está a ser preparado, mas a retrieval real ainda não está disponível no produto público.",
+            "Capacidade em activação controlada, pensada para documentos curados e fontes institucionais, não como biblioteca infinita aberta ao público.",
         icon: "Library",
         featureKey: "localRag",
     },
@@ -255,7 +255,7 @@ export const faqs = [
     },
     {
         question: "O aptto usa português de Moçambique?",
-        answer: "Sim. O aptto foi treinado para produzir texto em português académico moçambicano, com a terminologia e expressões adequadas ao contexto das nossas universidades.",
+        answer: "Sim. O aptto foi orientado para produzir texto em português académico moçambicano, mas a revisão humana continua essencial antes da submissão.",
     },
     {
         question: "Como funcionam os planos e trabalhos extras?",
@@ -271,7 +271,7 @@ export const faqs = [
     },
     {
         question: "O que significa RAG com fontes locais?",
-        answer: "É uma funcionalidade planeada para uma fase posterior. O objetivo é permitir consulta a fontes locais durante a geração, mas isso ainda não está ativo na versão pública atual.",
+        answer: "Significa usar fontes curadas e documentos indexados para apoiar respostas factuais. A capacidade está em activação controlada e ainda não funciona como uma biblioteca pública ilimitada dentro do produto.",
     },
     {
         question: "O meu orientador vai aceitar?",

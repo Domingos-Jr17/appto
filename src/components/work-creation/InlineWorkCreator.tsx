@@ -26,6 +26,7 @@ import {
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { getTemplateLabel } from "@/lib/cover-template-config";
 import { GenerateWorkProgress } from "@/components/work-creation/GenerateWorkProgress";
+import { CoverFields } from "@/components/work-creation/CoverFields";
 import {
   useWorkCreation,
   GENERATION_STEPS,
@@ -288,9 +289,25 @@ export function InlineWorkCreator() {
           {/* Cover fields by level */}
           <CoverFields
             educationLevel={workForm.educationLevel}
-            form={workForm}
-            onUpdate={updateWorkForm}
-            onInstitutionChange={handleInstitutionChange}
+            institutionName={workForm.institutionName}
+            courseName={workForm.courseName}
+            studentName={workForm.studentName}
+            advisorName={workForm.advisorName}
+            city={workForm.city}
+            className={workForm.className}
+            turma={workForm.turma}
+            studentNumber={workForm.studentNumber}
+            facultyName={workForm.facultyName}
+            departmentName={workForm.departmentName}
+            semester={workForm.semester}
+            subjectName={workForm.subjectName}
+            onFieldChange={(field, value) => {
+              if (field === "institutionName") {
+                handleInstitutionChange(String(value ?? ""));
+              } else {
+                updateWorkForm(field as keyof WorkFormState, value as string);
+              }
+            }}
           />
         </motion.div>
       )}
@@ -520,302 +537,6 @@ export function InlineWorkCreator() {
           </p>
         </div>
       )}
-    </div>
-  );
-}
-
-// ── Compact Cover Fields (inline, no multi-step) ──────────────────────
-
-interface CoverFieldsProps {
-  educationLevel: AcademicEducationLevel;
-  form: WorkFormState;
-  onUpdate: <K extends keyof WorkFormState>(key: K, value: WorkFormState[K]) => void;
-  onInstitutionChange?: (value: string) => void;
-}
-
-function CoverFields({
-  educationLevel,
-  form,
-  onUpdate,
-  onInstitutionChange,
-}: CoverFieldsProps) {
-  if (educationLevel === "SECONDARY") {
-    return (
-      <div className="space-y-3">
-        <div className="space-y-2">
-          <Label htmlFor="cover-school">Escola</Label>
-          <Input
-            id="cover-school"
-            value={form.institutionName}
-            onChange={(e) =>
-              onInstitutionChange?.(e.target.value) ??
-              onUpdate("institutionName", e.target.value)
-            }
-            placeholder="Ex.: Escola Secundária Josina Machel"
-          />
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="cover-student">Aluno(a)</Label>
-            <Input
-              id="cover-student"
-              value={form.studentName}
-              onChange={(e) => onUpdate("studentName", e.target.value)}
-              placeholder="Ex.: Maria João"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cover-advisor">Professor(a)</Label>
-            <Input
-              id="cover-advisor"
-              value={form.advisorName}
-              onChange={(e) => onUpdate("advisorName", e.target.value)}
-              placeholder="Ex.: Prof. Carlos Bento"
-            />
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="cover-class">
-              Classe <span className="text-muted-foreground font-normal">(opcional)</span>
-            </Label>
-            <Select
-              value={form.className}
-              onValueChange={(v) => onUpdate("className", v)}
-            >
-              <SelectTrigger id="cover-class">
-                <SelectValue placeholder="Selecionar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10ª">10ª Classe</SelectItem>
-                <SelectItem value="11ª">11ª Classe</SelectItem>
-                <SelectItem value="12ª">12ª Classe</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cover-turma">
-              Turma <span className="text-muted-foreground font-normal">(opcional)</span>
-            </Label>
-            <Input
-              id="cover-turma"
-              value={form.turma}
-              onChange={(e) => onUpdate("turma", e.target.value)}
-              placeholder="Ex.: A"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cover-number">
-              Nº <span className="text-muted-foreground font-normal">(opcional)</span>
-            </Label>
-            <Input
-              id="cover-number"
-              value={form.studentNumber}
-              onChange={(e) => onUpdate("studentNumber", e.target.value)}
-              placeholder="Ex.: 15"
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="cover-city">
-            Cidade <span className="text-muted-foreground font-normal">(opcional)</span>
-          </Label>
-          <Input
-            id="cover-city"
-            value={form.city}
-            onChange={(e) => onUpdate("city", e.target.value)}
-            placeholder="Ex.: Maputo"
-          />
-        </div>
-      </div>
-    );
-  }
-
-  if (educationLevel === "TECHNICAL") {
-    return (
-      <div className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="cover-institute">Instituto</Label>
-            <Input
-              id="cover-institute"
-              value={form.institutionName}
-              onChange={(e) =>
-                onInstitutionChange?.(e.target.value) ??
-                onUpdate("institutionName", e.target.value)
-              }
-              placeholder="Ex.: ISTEG"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cover-course">Curso</Label>
-            <Input
-              id="cover-course"
-              value={form.courseName}
-              onChange={(e) => onUpdate("courseName", e.target.value)}
-              placeholder="Ex.: Informática"
-            />
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="cover-student">Estudante</Label>
-            <Input
-              id="cover-student"
-              value={form.studentName}
-              onChange={(e) => onUpdate("studentName", e.target.value)}
-              placeholder="Ex.: Maria João"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cover-advisor">Formador(a)</Label>
-            <Input
-              id="cover-advisor"
-              value={form.advisorName}
-              onChange={(e) => onUpdate("advisorName", e.target.value)}
-              placeholder="Ex.: Form. Carlos Bento"
-            />
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="cover-number">
-              Nº de Estudante <span className="text-muted-foreground font-normal">(opcional)</span>
-            </Label>
-            <Input
-              id="cover-number"
-              value={form.studentNumber}
-              onChange={(e) => onUpdate("studentNumber", e.target.value)}
-              placeholder="Ex.: 2024/001"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cover-city">
-              Cidade <span className="text-muted-foreground font-normal">(opcional)</span>
-            </Label>
-            <Input
-              id="cover-city"
-              value={form.city}
-              onChange={(e) => onUpdate("city", e.target.value)}
-              placeholder="Ex.: Maputo"
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // HIGHER_EDUCATION
-  return (
-    <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="cover-institution">Instituição</Label>
-          <Input
-            id="cover-institution"
-            value={form.institutionName}
-            onChange={(e) =>
-              onInstitutionChange?.(e.target.value) ??
-              onUpdate("institutionName", e.target.value)
-            }
-            placeholder="Ex.: Universidade Eduardo Mondlane"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="cover-course">Curso</Label>
-          <Input
-            id="cover-course"
-            value={form.courseName}
-            onChange={(e) => onUpdate("courseName", e.target.value)}
-            placeholder="Ex.: Gestão"
-          />
-        </div>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="cover-student">Estudante</Label>
-          <Input
-            id="cover-student"
-            value={form.studentName}
-            onChange={(e) => onUpdate("studentName", e.target.value)}
-            placeholder="Ex.: Maria João"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="cover-advisor">Docente</Label>
-          <Input
-            id="cover-advisor"
-            value={form.advisorName}
-            onChange={(e) => onUpdate("advisorName", e.target.value)}
-            placeholder="Ex.: Prof. Doutor João Luís"
-          />
-        </div>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="cover-faculty">
-            Faculdade <span className="text-muted-foreground font-normal">(opcional)</span>
-          </Label>
-          <Input
-            id="cover-faculty"
-            value={form.facultyName}
-            onChange={(e) => onUpdate("facultyName", e.target.value)}
-            placeholder="Ex.: Faculdade de Economia"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="cover-department">
-            Departamento <span className="text-muted-foreground font-normal">(opcional)</span>
-          </Label>
-          <Input
-            id="cover-department"
-            value={form.departmentName}
-            onChange={(e) => onUpdate("departmentName", e.target.value)}
-            placeholder="Ex.: Departamento de Gestão"
-          />
-        </div>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="space-y-2">
-          <Label htmlFor="cover-number">
-            Nº de Estudante <span className="text-muted-foreground font-normal">(opcional)</span>
-          </Label>
-          <Input
-            id="cover-number"
-            value={form.studentNumber}
-            onChange={(e) => onUpdate("studentNumber", e.target.value)}
-            placeholder="Ex.: 2024/001"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="cover-semester">
-            Semestre <span className="text-muted-foreground font-normal">(opcional)</span>
-          </Label>
-          <Select
-            value={form.semester}
-            onValueChange={(v) => onUpdate("semester", v)}
-          >
-            <SelectTrigger id="cover-semester">
-              <SelectValue placeholder="Selecionar" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="I">I Semestre</SelectItem>
-              <SelectItem value="II">II Semestre</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="cover-city">
-            Cidade <span className="text-muted-foreground font-normal">(opcional)</span>
-          </Label>
-          <Input
-            id="cover-city"
-            value={form.city}
-            onChange={(e) => onUpdate("city", e.target.value)}
-            placeholder="Ex.: Maputo"
-          />
-        </div>
-      </div>
     </div>
   );
 }

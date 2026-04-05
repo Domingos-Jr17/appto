@@ -19,16 +19,16 @@ export function Footer({ className }: FooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className={`relative pt-16 pb-8 overflow-hidden border-t border-border/50 ${className || ''}`}>
+    <footer className={`relative pt-10 pb-6 overflow-hidden border-t border-border/50 ${className || ''}`}>
       {/* Background */}
       <div className="absolute inset-0 bg-muted/20" />
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 lg:gap-8 mb-8">
           {/* Brand column */}
           <div className="lg:col-span-2">
-            <a href="#" className="flex items-center gap-2 mb-4">
+            <a href="#" className="flex items-center gap-2 mb-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20">
                 <Sparkles className="w-4 h-4 text-primary-foreground" />
               </div>
@@ -36,22 +36,10 @@ export function Footer({ className }: FooterProps) {
                 apt<span className="text-primary">to</span>
               </span>
             </a>
-            <p className="text-muted-foreground mb-6 max-w-xs">
+            <p className="text-muted-foreground max-w-xs text-sm">
               O copiloto académico inteligente feito para estudantes moçambicanos. 
               Escreva melhor, estruture com rigor, submeta com confiança.
             </p>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                <a href="mailto:ola@aptto.co.mz" className="hover:text-primary transition-colors">
-                  ola@aptto.co.mz
-                </a>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                <span>Maputo, Moçambique</span>
-              </div>
-            </div>
           </div>
 
           {/* Product links */}
@@ -107,13 +95,23 @@ export function Footer({ className }: FooterProps) {
         </div>
 
         {/* Bottom row */}
-        <div className="pt-8 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="pt-6 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
             © {currentYear} aptto. Todos os direitos reservados.
           </p>
 
-          {/* Social links */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <motion.a
+              href="mailto:ola@aptto.co.mz"
+              whileHover={{ scale: 1.1, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+              aria-label="Email"
+            >
+              <Mail className="w-4 h-4" />
+            </motion.a>
+
+            {/* Social links */}
             {footerLinks.social.map((social, index) => {
               const Icon = socialIcons[social.icon] || Twitter;
               return (
@@ -122,7 +120,7 @@ export function Footer({ className }: FooterProps) {
                   href={social.href}
                   whileHover={{ scale: 1.1, y: -2 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted/50 text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
                   aria-label={social.label}
                 >
                   <Icon className="w-4 h-4" />

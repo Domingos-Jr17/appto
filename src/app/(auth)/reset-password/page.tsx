@@ -74,7 +74,7 @@ export default function ResetPasswordPage() {
 
   if (isSubmitted) {
     return (
-      <div className="glass glass-border rounded-2xl p-8 shadow-2xl shadow-primary/5 gradient-glow-subtle">
+      <div className="rounded-2xl bg-card border border-border/40 p-8 shadow-2xl shadow-primary/5 gradient-glow-subtle">
         <div className="text-center">
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
             <CheckCircle className="h-8 w-8 text-success" />
@@ -92,7 +92,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="glass glass-border rounded-2xl p-8 shadow-2xl shadow-primary/5 gradient-glow-subtle">
+    <div className="rounded-2xl bg-card border border-border/40 p-8 shadow-2xl shadow-primary/5 gradient-glow-subtle">
       <div className="mb-8 text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
           <Lock className="h-6 w-6 text-primary" />

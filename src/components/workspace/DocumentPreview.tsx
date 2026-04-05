@@ -1,7 +1,6 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { getTemplateLabel } from "@/lib/cover-template-config";
 import { parseMarkdownBlocks, normalizeStoredContent } from "@/lib/content";
 import type { WorkBrief, WorkSection } from "@/types/workspace";
 
@@ -43,14 +42,14 @@ export function DocumentPreview({
   const contentSections = sections.filter((s) => s.title !== "Capa");
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      {/* A4 Page */}
-      <div className="doc-page w-full rounded-2xl border p-6 sm:p-8 md:p-10 lg:p-12">
+    <div className="mx-auto w-full sm:max-w-3xl sm:px-4 sm:py-6">
+      {/* Document page — edge-to-edge on mobile, card on desktop */}
+      <div className="doc-page w-full border-x-0 sm:border-x sm:border sm:rounded-2xl sm:shadow-[0_2px_8px_rgba(0,0,0,0.06),0_12px_40px_rgba(0,0,0,0.08)] dark:sm:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_12px_40px_rgba(0,0,0,0.3)] p-6 sm:p-8 md:p-10 lg:p-12">
         <article className="space-y-0">
-          {/* Cover */}
+          {/* Cover — first page of the document */}
           {coverSection && (
-            <div className="flex min-h-[50vh] flex-col items-center justify-center pb-8 sm:min-h-[60vh] sm:pb-12">
-              <CoverPreviewCard brief={brief} />
+            <div className="flex min-h-[70vh] flex-col justify-center pb-8 sm:min-h-[80vh] sm:pb-12">
+              <CoverPage brief={brief} />
             </div>
           )}
 
@@ -274,9 +273,9 @@ function InlineMarkdown({ text }: { text: string }) {
   );
 }
 
-// ── Cover Preview Card ─────────────────────────────────────────────────
+// ── Cover Page (first page of document) ──────────────────────────────────
 
-function CoverPreviewCard({ brief }: { brief?: WorkBrief | null }) {
+function CoverPage({ brief }: { brief?: WorkBrief | null }) {
   const workType = formatWorkType(brief?.workType);
   const institution = brief?.institutionName || fallbackInstitution(brief?.educationLevel);
   const course = getCoverCourseLabel(brief);
@@ -285,76 +284,73 @@ function CoverPreviewCard({ brief }: { brief?: WorkBrief | null }) {
   const advisor = brief?.advisorName || "Nome do orientador";
   const city = brief?.city || "Maputo";
   const year = brief?.year || String(new Date().getFullYear());
-  const templateLabel = brief?.coverTemplate
-    ? getTemplateLabel(brief.coverTemplate)
-    : defaultTemplateLabel(brief?.educationLevel);
   const secondaryMeta = getSecondaryMeta(brief);
 
   return (
-    <div className="mx-auto w-full max-w-[40rem] rounded-[24px] border border-[var(--doc-border)] bg-[var(--doc-bg)] p-6 text-[var(--doc-text)] shadow-[0_24px_60px_-36px_rgba(15,23,42,0.55)] sm:p-8 md:p-10">
-      <div className="flex min-h-[24rem] flex-col text-center sm:min-h-[32rem]">
-        <div>
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-[var(--doc-muted)] sm:text-xs">
-            Pré-visualização da capa • {templateLabel}
+    <div className="mx-auto w-full max-w-[36rem] text-center">
+      {/* Header: Institution */}
+      <div className="space-y-1">
+        <p className="text-sm font-semibold uppercase leading-snug text-[var(--doc-heading)] sm:text-base">
+          {institution}
+        </p>
+        {course && (
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--doc-muted)] sm:text-sm">
+            {course}
           </p>
-          <div className="mt-5 space-y-2">
-            <p className="text-sm font-semibold uppercase leading-snug sm:text-base text-[var(--doc-heading)]">
-              {institution}
-            </p>
-            <p className="text-xs uppercase tracking-[0.18em] text-[var(--doc-muted)] sm:text-sm">
-              {course}
-            </p>
-          </div>
-        </div>
+        )}
+      </div>
 
-        <div className="my-auto space-y-5">
-          <div className="mx-auto h-px w-16 bg-[var(--doc-border)] sm:w-24" />
-          <div className="space-y-3">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-[var(--doc-muted)] sm:text-xs">
-              {workType}
-            </p>
-            <h3 className="text-lg font-semibold leading-tight sm:text-2xl text-[var(--doc-heading)]">
-              {title}
-            </h3>
-          </div>
-          <div className="mx-auto h-px w-16 bg-[var(--doc-border)] sm:w-24" />
-        </div>
+      {/* Divider */}
+      <div className="my-8 h-px w-16 bg-[var(--doc-border)] mx-auto sm:w-24 sm:my-12" />
 
-        <div className="space-y-3 border-t border-[var(--doc-border)] pt-4 text-left text-xs text-[var(--doc-muted)] sm:text-sm">
-          {secondaryMeta ? (
-            <div className="flex items-start justify-between gap-4">
-              <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
-                Referência
-              </span>
-              <span className="max-w-[70%] text-right text-[var(--doc-text)]">
-                {secondaryMeta}
-              </span>
-            </div>
-          ) : null}
+      {/* Title block */}
+      <div className="space-y-3">
+        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-[var(--doc-muted)] sm:text-xs">
+          {workType}
+        </p>
+        <h3 className="text-lg font-semibold leading-tight sm:text-2xl text-[var(--doc-heading)]">
+          {title}
+        </h3>
+      </div>
+
+      {/* Divider */}
+      <div className="my-8 h-px w-16 bg-[var(--doc-border)] mx-auto sm:w-24 sm:my-12" />
+
+      {/* Footer: Author & Details */}
+      <div className="space-y-3 text-left text-xs text-[var(--doc-muted)] sm:text-sm">
+        <div className="flex items-start justify-between gap-4">
+          <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
+            Estudante
+          </span>
+          <span className="max-w-[60%] text-right font-medium text-[var(--doc-heading)]">
+            {student}
+          </span>
+        </div>
+        <div className="flex items-start justify-between gap-4">
+          <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
+            Orientador
+          </span>
+          <span className="max-w-[60%] text-right text-[var(--doc-text)]">
+            {advisor}
+          </span>
+        </div>
+        {secondaryMeta && (
           <div className="flex items-start justify-between gap-4">
             <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
-              Estudante
+              Referência
             </span>
-            <span className="max-w-[70%] text-right font-medium text-[var(--doc-heading)]">
-              {student}
-            </span>
-          </div>
-          <div className="flex items-start justify-between gap-4">
-            <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
-              Orientador
-            </span>
-            <span className="max-w-[70%] text-right text-[var(--doc-text)]">
-              {advisor}
+            <span className="max-w-[60%] text-right text-[var(--doc-text)]">
+              {secondaryMeta}
             </span>
           </div>
-          <div className="flex items-start justify-between gap-4">
-            <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
-              Local
-            </span>
-            <span className="text-right text-[var(--doc-text)]">
-              {city} - {year}
-            </span>
-          </div>
+        )}
+        <div className="flex items-start justify-between gap-4">
+          <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
+            Local
+          </span>
+          <span className="text-right text-[var(--doc-text)]">
+            {city} — {year}
+          </span>
         </div>
       </div>
     </div>
@@ -386,12 +382,6 @@ function getCoverCourseLabel(brief?: WorkBrief | null) {
     return brief.courseName || brief.subjectName || "Curso técnico";
   }
   return brief.courseName || brief.facultyName || brief.subjectName || "Curso / disciplina";
-}
-
-function defaultTemplateLabel(educationLevel?: string) {
-  if (educationLevel === "SECONDARY") return "Escola Moçambique";
-  if (educationLevel === "TECHNICAL") return "Técnico";
-  return "Académico";
 }
 
 function getSecondaryMeta(brief?: WorkBrief | null) {

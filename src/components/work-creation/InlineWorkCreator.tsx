@@ -101,8 +101,8 @@ export function InlineWorkCreator() {
   // ── GENERATING state ──────────────────────────────────────────────
   if (isCreating && generationProjectId) {
     return (
-      <div className="mx-auto max-w-2xl space-y-6">
-        <div className="rounded-[28px] glass glass-border p-6 lg:p-8">
+        <div className="mx-auto max-w-2xl space-y-6">
+        <div className="rounded-[28px] bg-card border border-border/40 p-6 lg:p-8">
           <p className="mb-4 text-sm font-medium text-muted-foreground">
             &ldquo;{workForm.title}&rdquo;
           </p>
@@ -131,8 +131,8 @@ export function InlineWorkCreator() {
         <p className="text-sm text-muted-foreground">
           Olá, {firstName}
         </p>
-        <h2 className="text-3xl font-semibold tracking-tight">
-          Que tema pode a Aptto criar para ti hoje?
+        <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          Que tema queres trabalhar hoje?
         </h2>
         {subscriptionStatus && (
           <p className="text-xs text-muted-foreground">
@@ -160,7 +160,7 @@ export function InlineWorkCreator() {
           }
         }}
         rows={2}
-        className="text-lg resize-none leading-relaxed"
+        className="resize-none leading-relaxed text-base sm:text-lg"
       />
 
       {/* Education level */}
@@ -341,13 +341,10 @@ export function InlineWorkCreator() {
           className="space-y-4 overflow-hidden"
         >
           {/* Content focus */}
-          <div className="space-y-4 rounded-2xl border border-border/50 bg-background/60 p-4">
+          <div className="space-y-3 rounded-2xl border border-border/40 bg-muted/20 p-3">
             <div>
               <p className="text-sm font-semibold text-foreground">
                 Conteúdo do trabalho
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Ajusta o foco académico antes de gerar o documento.
               </p>
             </div>
 
@@ -358,33 +355,23 @@ export function InlineWorkCreator() {
                 value={workForm.objective}
                 onChange={(e) => updateWorkForm("objective", e.target.value)}
                 rows={2}
-                placeholder="Ajuda a IA a manter o foco ao gerar o conteúdo."
+                placeholder="Ex.: analisar o impacto da IA no ensino superior"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="methodology">Metodologia ou orientação</Label>
-              <p className="text-xs text-muted-foreground">
-                {workForm.educationLevel === "SECONDARY"
-                  ? "Preenche apenas se o professor pediu."
-                  : "Descreve a abordagem a seguir."}
-              </p>
+              <Label htmlFor="methodology">Metodologia</Label>
               <Textarea
                 id="methodology"
                 value={workForm.methodology}
                 onChange={(e) => updateWorkForm("methodology", e.target.value)}
                 rows={2}
-                placeholder="Ex.: revisão bibliográfica e estudo comparativo."
+                placeholder="Ex.: revisão bibliográfica"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="research-question">Pergunta de investigação</Label>
-              <p className="text-xs text-muted-foreground">
-                {workForm.educationLevel === "SECONDARY"
-                  ? "Preenche apenas se o professor pediu."
-                  : "A pergunta central que o trabalho vai responder."}
-              </p>
+              <Label htmlFor="research-question">Pergunta de pesquisa</Label>
               <Textarea
                 id="research-question"
                 value={workForm.researchQuestion}
@@ -392,7 +379,7 @@ export function InlineWorkCreator() {
                   updateWorkForm("researchQuestion", e.target.value)
                 }
                 rows={2}
-                placeholder="Ex.: Quais os factores que influenciam a digitalização no sector bancário em Moçambique?"
+                placeholder="Ex.: como a IA afecta o ensino?"
               />
             </div>
 
@@ -408,13 +395,10 @@ export function InlineWorkCreator() {
           </div>
 
           {/* References and formatting */}
-          <div className="space-y-4 rounded-2xl border border-border/50 bg-background/60 p-4">
+          <div className="space-y-3 rounded-2xl border border-border/40 bg-muted/20 p-3">
             <div>
               <p className="text-sm font-semibold text-foreground">
-                Referências e formatação
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Define as pistas editoriais que vão orientar a estrutura final.
+                Referências
               </p>
             </div>
 
@@ -437,7 +421,7 @@ export function InlineWorkCreator() {
                   updateWorkForm("referencesSeed", e.target.value)
                 }
                 rows={2}
-                placeholder="Autores, livros, artigos ou links que devem orientar o trabalho."
+                placeholder="Ex.: Silva (2023), WHO (2024)"
               />
             </div>
 
@@ -464,7 +448,7 @@ export function InlineWorkCreator() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="additional-instructions">Notas adicionais</Label>
+              <Label htmlFor="additional-instructions">Notas</Label>
               <Textarea
                 id="additional-instructions"
                 value={workForm.additionalInstructions}
@@ -481,10 +465,10 @@ export function InlineWorkCreator() {
 
       {/* Recent works */}
       {recentProjects.length > 0 && (
-        <Card className="glass glass-border rounded-[28px] bg-background/80">
+        <Card className="rounded-[28px] bg-card border border-border/40">
           <CardContent className="space-y-3 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              ou continua onde paraste
+            <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/70">
+              Trabalhos recentes
             </p>
             {recentProjects.map((project) => (
               <Link
@@ -531,9 +515,9 @@ export function InlineWorkCreator() {
       {/* Empty state */}
       {recentProjects.length === 0 && (
         <div className="py-8 text-center">
-          <FileText className="mx-auto h-10 w-10 text-muted-foreground/40" />
-          <p className="mt-3 text-sm text-muted-foreground">
-            Ainda não criaste nenhum trabalho.
+          <FileText className="mx-auto h-8 w-8 text-muted-foreground/30" />
+          <p className="mt-2 text-sm text-muted-foreground/70">
+            Ainda não tens trabalhos.
           </p>
         </div>
       )}

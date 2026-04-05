@@ -109,7 +109,7 @@ export default function LoginPage() {
 
   if (status === "loading") {
     return (
-      <div className="glass glass-border rounded-[28px] p-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500 flex items-center justify-center min-h-[400px]">
+      <div className="rounded-[28px] bg-card border border-border/40 p-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500 flex items-center justify-center min-h-[400px]">
         <div className="h-9 w-9 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
@@ -120,7 +120,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="glass glass-border rounded-[28px] p-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+    <div className="rounded-[28px] bg-card border border-border/40 p-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold mb-2">Bem-vindo de volta</h1>

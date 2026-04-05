@@ -99,7 +99,7 @@ function ProjectCard({
   onArchive?: (id: string) => void;
   onEdit?: (id: string) => void;
 }) {
-  const typeStyle = typeStyles[project.type] || typeStyles.monografia;
+  const typeStyle = typeStyles[project.type] || typeStyles["trabalho de investigacao"];
   const statusStyle = statusStyles[project.status];
   const StatusIcon = statusStyle.icon;
   const generating = project.generationStatus === "GENERATING";
@@ -107,7 +107,7 @@ function ProjectCard({
   return (
     <Card
       className={cn(
-        "glass glass-border card-hover group relative cursor-pointer overflow-hidden rounded-2xl bg-card/80",
+        "card-hover group relative cursor-pointer overflow-hidden rounded-2xl bg-card border border-border/40",
         project.status === "archived" && "opacity-75"
       )}
     >
@@ -238,7 +238,7 @@ function ProjectListItem({
   onArchive?: (id: string) => void;
   onEdit?: (id: string) => void;
 }) {
-  const typeStyle = typeStyles[project.type] || typeStyles.monografia;
+  const typeStyle = typeStyles[project.type] || typeStyles["trabalho de investigacao"];
   const statusStyle = statusStyles[project.status];
   const StatusIcon = statusStyle.icon;
   const generating = project.generationStatus === "GENERATING";
@@ -246,7 +246,7 @@ function ProjectListItem({
   return (
     <Card
       className={cn(
-        "glass glass-border card-hover group cursor-pointer rounded-2xl bg-card/80",
+        "card-hover group cursor-pointer rounded-2xl bg-card border border-border/40",
         project.status === "archived" && "opacity-75"
       )}
     >

@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,6 +23,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [showVerificationNote, setShowVerificationNote] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,8 +37,8 @@ export default function RegisterPage() {
       setError("Precisas de aceitar os termos de uso");
       return;
     }
-    if (password.length < 6) {
-      setError("A palavra-passe deve ter pelo menos 6 caracteres");
+    if (password.length < 8) {
+      setError("A palavra-passe deve ter pelo menos 8 caracteres");
       return;
     }
 
@@ -67,6 +70,18 @@ export default function RegisterPage() {
         // Registration succeeded but login failed - redirect to login
         router.push("/login");
       } else {
+        // Trigger verification email in background
+        fetch("/api/auth/send-verification", { method: "POST" })
+          .then((res) => res.json())
+          .then(() => {
+            toast({
+              title: "Email de verificação enviado",
+              description: `Enviámos um email de verificação para ${email}.`,
+            });
+          })
+          .catch(() => {});
+
+        setShowVerificationNote(true);
         router.push("/app");
         router.refresh();
       }
@@ -104,7 +119,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="glass glass-border rounded-[28px] p-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+    <div className="rounded-[28px] bg-card border border-border/40 p-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold mb-2">Criar conta</h1>
@@ -117,6 +132,16 @@ export default function RegisterPage() {
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
           {error}
+        </div>
+      )}
+
+      {/* Verification Note */}
+      {showVerificationNote && (
+        <div className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/20 text-primary text-sm flex items-start gap-2">
+          <Mail className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>
+            Enviámos um email de verificação para <strong>{email}</strong>.
+          </span>
         </div>
       )}
 
@@ -169,7 +194,7 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 pr-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 transition-all duration-300"
               required
-              minLength={6}
+              minLength={8}
             />
             <button
               type="button"

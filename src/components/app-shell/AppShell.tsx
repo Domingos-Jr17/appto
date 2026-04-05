@@ -12,6 +12,7 @@ import { AppSidebar } from "./AppSidebar";
 import { AppShellDataProvider, useAppShellData } from "./AppShellDataContext";
 import { AccountDataProvider } from "@/hooks/use-account-data";
 import { AppHeader } from "./AppHeader";
+import { MobileBottomNav } from "./MobileBottomNav";
 import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "@/components/ui-aptto/ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ interface AppShellProps {
         email?: string | null;
         image?: string | null;
         role?: string | null;
+        emailVerified?: Date | null;
     };
 }
 
@@ -46,10 +48,39 @@ function AppShellChrome({ children, user }: AppShellProps) {
     const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
     const [editTarget, setEditTarget] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState("");
+    const [bannerDismissed, setBannerDismissed] = useState(() =>
+        typeof window !== "undefined" ? sessionStorage.getItem("email-verification-banner-dismissed") === "true" : false
+    );
+    const [sendingVerification, setSendingVerification] = useState(false);
     const prefersReducedMotion = useReducedMotion();
     const appChromeRef = useRef<HTMLDivElement>(null);
     const mobileMenuRef = useRef<HTMLDivElement>(null);
     const previousFocusRef = useRef<HTMLElement | null>(null);
+
+    const showVerificationBanner =
+        !user.emailVerified && !bannerDismissed;
+
+    const handleDismissBanner = () => {
+        setBannerDismissed(true);
+        sessionStorage.setItem("email-verification-banner-dismissed", "true");
+    };
+
+    const handleSendVerification = async () => {
+        setSendingVerification(true);
+        try {
+            const response = await fetchWithRetry("/api/auth/send-verification", {
+                method: "POST",
+                retries: 1,
+            });
+            if (!response.ok) throw new Error("Erro ao enviar");
+            toast({ title: "Email de verificação enviado", description: "Verifica a tua caixa de entrada." });
+            handleDismissBanner();
+        } catch {
+            toast({ title: "Erro", description: "Não foi possível enviar o email de verificação.", variant: "destructive" });
+        } finally {
+            setSendingVerification(false);
+        }
+    };
 
     useEffect(() => {
         if (!isMobileMenuOpen) return;
@@ -219,6 +250,42 @@ function AppShellChrome({ children, user }: AppShellProps) {
                 Saltar para o conteúdo
             </a>
             <OfflineBanner />
+            <AnimatePresence>
+                {showVerificationBanner ? (
+                    <motion.div
+                        key="verification-banner"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="flex items-center gap-3 bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5">
+                            <p className="flex-1 text-sm text-amber-700 dark:text-amber-300">
+                                O teu email ainda não foi verificado.
+                            </p>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs text-amber-700 hover:text-amber-800 hover:bg-amber-500/20 dark:text-amber-300 dark:hover:text-amber-200 font-medium"
+                                onClick={handleSendVerification}
+                                disabled={sendingVerification}
+                            >
+                                {sendingVerification ? "A enviar..." : "Verificar agora"}
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-amber-600/60 hover:text-amber-700 hover:bg-amber-500/20 dark:text-amber-400/60 dark:hover:text-amber-300"
+                                onClick={handleDismissBanner}
+                                aria-label="Fechar"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </Button>
+                        </div>
+                    </motion.div>
+                ) : null}
+            </AnimatePresence>
             <div
                 ref={appChromeRef}
                 className="h-svh w-screen flex gap-2 overflow-hidden bg-background p-2 lg:gap-3 lg:p-3"
@@ -246,11 +313,13 @@ function AppShellChrome({ children, user }: AppShellProps) {
                             "min-w-0 min-h-0 flex-1",
                             pathname.startsWith("/app/trabalhos/")
                                 ? "flex flex-col overflow-hidden"
-                                : "overflow-y-auto px-4 pb-8 pt-5 lg:px-8 lg:pb-7 lg:py-7",
+                                : "overflow-y-auto px-4 pb-24 pt-5 lg:px-8 lg:pb-7 lg:py-7",
                         )}
                     >
                         {children}
                     </div>
+
+                    <MobileBottomNav />
                 </main>
             </div>
 
@@ -316,16 +385,16 @@ function AppShellChrome({ children, user }: AppShellProps) {
                             <div className="mb-6 flex items-center justify-between">
                                 <div>
                                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/80">
-                                        Navegação
+                                        Menu
                                     </p>
                                     <p id="app-mobile-menu-title" className="mt-2 text-2xl font-semibold tracking-tight text-white">
-                                        Explora os teus trabalhos
+                                        Definições e conta
                                     </p>
                                 </div>
                                 <Link
                                     href="/app"
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className="flex h-12 w-12 items-center justify-center rounded-full bg-white/16 text-white backdrop-blur-md transition hover:bg-white/24"
+                                    className="flex h-12 w-12 items-center justify-center rounded-full bg-white/16 text-white transition hover:bg-white/24"
                                     aria-label="Novo trabalho"
                                 >
                                     <FilePlus2 className="h-5 w-5" />
@@ -333,8 +402,8 @@ function AppShellChrome({ children, user }: AppShellProps) {
                             </div>
 
                             <nav className="flex flex-col gap-2">
-                                {appNavItems.map((item, index) => {
-                                    const active = isNavActive(pathname, item.href);
+                                {appNavItems.filter((item) => ["/app/settings", "/app/subscription"].includes(item.href)).map((item, index) => {
+                                    const active = pathname === item.href;
                                     const Icon = item.icon;
 
                                     return (
@@ -376,7 +445,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
                                     delay: prefersReducedMotion ? 0 : 0.3,
                                     ease: [0.22, 1, 0.36, 1],
                                 }}
-                                className="mt-auto rounded-[28px] border border-white/12 bg-black/10 p-3 backdrop-blur-xl"
+                                className="mt-auto rounded-[28px] border border-white/12 bg-black/10 p-3"
                             >
                                 <UserMenu
                                     user={user}

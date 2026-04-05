@@ -1,0 +1,75 @@
+"use client";
+
+import { ImageIcon, Download, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+interface WorkspaceBottomBarProps {
+  hasContent: boolean;
+  isGenerating: boolean;
+  allDone: boolean;
+  coverIncomplete: boolean;
+  onEditCover: () => void;
+  onGenerate: () => void;
+  onDownload: () => void;
+}
+
+export function WorkspaceBottomBar({
+  hasContent,
+  isGenerating,
+  allDone,
+  coverIncomplete,
+  onEditCover,
+  onGenerate,
+  onDownload,
+}: WorkspaceBottomBarProps) {
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/40 bg-background/95 backdrop-blur-xl safe-area-inset-bottom lg:hidden">
+      <div className="flex items-center justify-around px-2 py-1.5">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "flex flex-1 flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-xs min-h-0 h-auto transition-colors",
+            coverIncomplete
+              ? "text-warning/80 hover:text-warning"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+          onClick={onEditCover}
+        >
+          <ImageIcon className="h-4 w-4" />
+          <span className="text-[10px] font-medium">Capa</span>
+          {coverIncomplete && (
+            <span className="absolute -top-0.5 right-2 h-1.5 w-1.5 rounded-full bg-warning" />
+          )}
+        </Button>
+
+        {hasContent && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-xs min-h-0 h-auto text-muted-foreground transition-colors hover:text-foreground"
+            onClick={onGenerate}
+            disabled={isGenerating}
+          >
+            <RefreshCw className={cn("h-4 w-4", isGenerating && "animate-spin")} />
+            <span className="text-[10px] font-medium">
+              {allDone ? "Regenerar" : "Gerar"}
+            </span>
+          </Button>
+        )}
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex flex-1 flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-xs min-h-0 h-auto text-muted-foreground transition-colors hover:text-foreground"
+          onClick={onDownload}
+          disabled={!hasContent}
+        >
+          <Download className="h-4 w-4" />
+          <span className="text-[10px] font-medium">Download</span>
+        </Button>
+      </div>
+    </div>
+  );
+}

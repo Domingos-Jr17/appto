@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -19,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { getTemplatesForLevel } from "@/lib/cover-template-config";
 import type { WorkBrief } from "@/types/workspace";
 import type { AcademicEducationLevel } from "@/types/editor";
@@ -55,7 +58,7 @@ function createInfoFromBrief(brief: WorkBrief): CoverInfoState {
     studentName: brief.studentName ?? "",
     advisorName: brief.advisorName ?? "",
     city: brief.city ?? "",
-    year: brief.year ?? "",
+    year: brief.year ?? new Date().getFullYear().toString(),
     className: brief.className ?? "",
     turma: brief.turma ?? "",
     studentNumber: brief.studentNumber ?? "",
@@ -64,6 +67,8 @@ function createInfoFromBrief(brief: WorkBrief): CoverInfoState {
     semester: brief.semester ?? "",
   };
 }
+
+const TRANSITION = { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const };
 
 export function CoverModal({
   open,
@@ -79,6 +84,7 @@ export function CoverModal({
   );
 
   const [info, setInfo] = useState<CoverInfoState>(() => createInfoFromBrief(brief));
+  const [showDetails, setShowDetails] = useState(false);
 
   const briefKey = JSON.stringify(brief);
 
@@ -87,6 +93,7 @@ export function CoverModal({
       onClose();
     } else {
       setInfo(createInfoFromBrief(brief));
+      setShowDetails(false);
     }
   };
 
@@ -118,10 +125,7 @@ export function CoverModal({
     } else if (educationLevel === "HIGHER_EDUCATION") {
       updates.facultyName = info.facultyName;
       updates.departmentName = info.departmentName;
-      updates.studentNumber = info.studentNumber;
       updates.semester = info.semester;
-    } else if (educationLevel === "TECHNICAL") {
-      updates.studentNumber = info.studentNumber;
     }
 
     onSaveBrief(updates);
@@ -142,7 +146,8 @@ export function CoverModal({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-4 space-y-4 py-2">
+        <div className="flex-1 overflow-y-auto px-4 py-2">
+          {/* Template */}
           <div className="space-y-1.5">
             <Label htmlFor="cover-template" className="text-xs">
               Estilo da capa
@@ -162,7 +167,7 @@ export function CoverModal({
           </div>
 
           {/* Mini preview */}
-          <div className="rounded-xl border border-border/40 bg-muted/10 p-4">
+          <div className="mt-4 rounded-xl border border-border/40 bg-muted/10 p-4">
             <div className="rounded-lg border border-border/30 bg-background px-6 py-8 text-center">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                 {info.institutionName || "Nome da instituição"}
@@ -185,7 +190,8 @@ export function CoverModal({
             </div>
           </div>
 
-          <div className="space-y-3">
+          {/* Essential fields — always visible */}
+          <div className="mt-4 space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="cover-institution" className="text-xs">
                 {educationLevel === "TECHNICAL" ? "Instituto" : "Instituição"}
@@ -217,35 +223,6 @@ export function CoverModal({
                   placeholder="Ex.: Gestão Bancária"
                   className="text-xs"
                 />
-              </div>
-            )}
-
-            {educationLevel === "HIGHER_EDUCATION" && (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="cover-faculty" className="text-xs">
-                    Faculdade
-                  </Label>
-                  <Input
-                    id="cover-faculty"
-                    value={info.facultyName}
-                    onChange={(e) => updateField("facultyName", e.target.value)}
-                    placeholder="Ex.: Facultad de Economia"
-                    className="text-xs"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cover-department" className="text-xs">
-                    Departamento
-                  </Label>
-                  <Input
-                    id="cover-department"
-                    value={info.departmentName}
-                    onChange={(e) => updateField("departmentName", e.target.value)}
-                    placeholder="Ex.: Departamento de Gestão"
-                    className="text-xs"
-                  />
-                </div>
               </div>
             )}
 
@@ -286,8 +263,93 @@ export function CoverModal({
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="cover-city" className="text-xs">
+                  Cidade
+                </Label>
+                <Input
+                  id="cover-city"
+                  value={info.city}
+                  onChange={(e) => updateField("city", e.target.value)}
+                  placeholder="Ex.: Maputo"
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="cover-year" className="text-xs">
+                  Ano
+                </Label>
+                <Input
+                  id="cover-year"
+                  value={info.year}
+                  onChange={(e) => updateField("year", e.target.value)}
+                  placeholder={new Date().getFullYear().toString()}
+                  className="text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Collapsible: Additional details */}
+          <button
+            type="button"
+            onClick={() => setShowDetails(!showDetails)}
+            aria-expanded={showDetails}
+            className="mt-4 flex w-full items-center justify-between rounded-xl border border-border/60 px-4 py-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/20 hover:text-foreground"
+          >
+            <span>
+              {showDetails
+                ? "Ocultar detalhes adicionais"
+                : "+ Detalhes adicionais (opcional)"}
+            </span>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 transition-transform duration-200",
+                showDetails && "rotate-180"
+              )}
+            />
+          </button>
+
+          {showDetails && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={TRANSITION}
+              className="space-y-3 overflow-hidden"
+            >
+              {educationLevel === "HIGHER_EDUCATION" && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cover-faculty" className="text-xs">
+                      Faculdade
+                    </Label>
+                    <Input
+                      id="cover-faculty"
+                      value={info.facultyName}
+                      onChange={(e) => updateField("facultyName", e.target.value)}
+                      placeholder="Ex.: Faculdade de Economia"
+                      className="text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cover-department" className="text-xs">
+                      Departamento
+                    </Label>
+                    <Input
+                      id="cover-department"
+                      value={info.departmentName}
+                      onChange={(e) => updateField("departmentName", e.target.value)}
+                      placeholder="Ex.: Departamento de Gestão"
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+
               {educationLevel === "SECONDARY" && (
-                <>
+                <div className="grid gap-3 sm:grid-cols-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="cover-class" className="text-xs">
                       Classe
@@ -318,85 +380,42 @@ export function CoverModal({
                       className="text-xs"
                     />
                   </div>
-                </>
-              )}
-
-              {educationLevel === "TECHNICAL" && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="cover-student-number" className="text-xs">
-                    Nº de Estudante
-                  </Label>
-                  <Input
-                    id="cover-student-number"
-                    value={info.studentNumber}
-                    onChange={(e) => updateField("studentNumber", e.target.value)}
-                    placeholder="Ex.: 2024/001"
-                    className="text-xs"
-                  />
-                </div>
-              )}
-
-              {educationLevel === "HIGHER_EDUCATION" && (
-                <>
                   <div className="space-y-1.5">
                     <Label htmlFor="cover-student-number" className="text-xs">
-                      Nº de Estudante
+                      Nº Estudante
                     </Label>
                     <Input
                       id="cover-student-number"
                       value={info.studentNumber}
                       onChange={(e) => updateField("studentNumber", e.target.value)}
-                      placeholder="Ex.: 2024/001"
+                      placeholder="Ex.: 15"
                       className="text-xs"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="cover-semester" className="text-xs">
-                      Semestre
-                    </Label>
-                    <Select
-                      value={info.semester}
-                      onValueChange={(v) => updateField("semester", v)}
-                    >
-                      <SelectTrigger id="cover-semester" className="text-xs">
-                        <SelectValue placeholder="Selecionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="I">I Semestre</SelectItem>
-                        <SelectItem value="II">II Semestre</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
+                </div>
               )}
-            </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="cover-city" className="text-xs">
-                Cidade
-              </Label>
-              <Input
-                id="cover-city"
-                value={info.city}
-                onChange={(e) => updateField("city", e.target.value)}
-                placeholder="Ex.: Maputo"
-                className="text-xs"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="cover-year" className="text-xs">
-                Ano
-              </Label>
-              <Input
-                id="cover-year"
-                value={info.year}
-                onChange={(e) => updateField("year", e.target.value)}
-                placeholder="Ex.: 2026"
-                className="text-xs"
-              />
-            </div>
-          </div>
+              {educationLevel === "HIGHER_EDUCATION" && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="cover-semester" className="text-xs">
+                    Semestre
+                  </Label>
+                  <Select
+                    value={info.semester}
+                    onValueChange={(v) => updateField("semester", v)}
+                  >
+                    <SelectTrigger id="cover-semester" className="text-xs">
+                      <SelectValue placeholder="Selecionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="I">I Semestre</SelectItem>
+                      <SelectItem value="II">II Semestre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </motion.div>
+          )}
         </div>
 
         <SheetFooter className="px-4 pb-4">

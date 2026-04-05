@@ -46,8 +46,8 @@ export function CoverFields({
 }: CoverFieldsProps) {
   if (educationLevel === "SECONDARY") {
     return (
-      <div className="space-y-3">
-        <div className="space-y-2">
+      <div className="space-y-2.5">
+        <div className="space-y-1.5">
           <Label htmlFor="cover-school">Escola</Label>
           <Input
             id="cover-school"
@@ -57,29 +57,29 @@ export function CoverFields({
           />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="cover-student">Aluno(a)</Label>
             <Input
               id="cover-student"
               value={studentName}
               onChange={(e) => onFieldChange("studentName", e.target.value)}
-              placeholder="Ex.: Maria João"
+              placeholder="Nome completo"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="cover-advisor">Professor(a)</Label>
             <Input
               id="cover-advisor"
               value={advisorName}
               onChange={(e) => onFieldChange("advisorName", e.target.value)}
-              placeholder="Ex.: Prof. Carlos Bento"
+              placeholder="Nome do professor"
             />
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="cover-class">
-              Classe <span className="text-muted-foreground font-normal">(opcional)</span>
+              Classe <span className="text-[10px] text-muted-foreground">(opcional)</span>
             </Label>
             <Select value={className} onValueChange={(v) => onFieldChange("className", v)}>
               <SelectTrigger id="cover-class">
@@ -92,9 +92,9 @@ export function CoverFields({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="cover-turma">
-              Turma <span className="text-muted-foreground font-normal">(opcional)</span>
+              Turma <span className="text-[10px] text-muted-foreground">(opcional)</span>
             </Label>
             <Input
               id="cover-turma"
@@ -103,9 +103,9 @@ export function CoverFields({
               placeholder="Ex.: A"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="cover-number">
-              Nº <span className="text-muted-foreground font-normal">(opcional)</span>
+              Nº <span className="text-[10px] text-muted-foreground">(opcional)</span>
             </Label>
             <Input
               id="cover-number"
@@ -115,9 +115,9 @@ export function CoverFields({
             />
           </div>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="cover-city">
-            Cidade <span className="text-muted-foreground font-normal">(opcional)</span>
+            Cidade <span className="text-[10px] text-muted-foreground">(opcional)</span>
           </Label>
           <Input
             id="cover-city"
@@ -132,9 +132,9 @@ export function CoverFields({
 
   if (educationLevel === "TECHNICAL") {
     return (
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="cover-institute">Instituto</Label>
             <Input
               id="cover-institute"
@@ -143,7 +143,7 @@ export function CoverFields({
               placeholder="Ex.: ISTEG"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="cover-course">Curso</Label>
             <Input
               id="cover-course"
@@ -154,40 +154,29 @@ export function CoverFields({
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="cover-student">Estudante</Label>
             <Input
               id="cover-student"
               value={studentName}
               onChange={(e) => onFieldChange("studentName", e.target.value)}
-              placeholder="Ex.: Maria João"
+              placeholder="Nome completo"
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="cover-advisor">Formador(a)</Label>
             <Input
               id="cover-advisor"
               value={advisorName}
               onChange={(e) => onFieldChange("advisorName", e.target.value)}
-              placeholder="Ex.: Form. Carlos Bento"
+              placeholder="Nome do formador"
             />
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="cover-number">
-              Nº de Estudante <span className="text-muted-foreground font-normal">(opcional)</span>
-            </Label>
-            <Input
-              id="cover-number"
-              value={studentNumber}
-              onChange={(e) => onFieldChange("studentNumber", e.target.value)}
-              placeholder="Ex.: 2024/001"
-            />
-          </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="cover-city">
-              Cidade <span className="text-muted-foreground font-normal">(opcional)</span>
+              Cidade <span className="text-[10px] text-muted-foreground">(opcional)</span>
             </Label>
             <Input
               id="cover-city"
@@ -203,51 +192,51 @@ export function CoverFields({
 
   // HIGHER_EDUCATION
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="cover-institution">Instituição</Label>
           <Input
             id="cover-institution"
             value={institutionName}
             onChange={(e) => onFieldChange("institutionName", e.target.value)}
-            placeholder="Ex.: Universidade Eduardo Mondlane"
+            placeholder="Nome da instituição"
           />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="cover-course">Curso</Label>
           <Input
             id="cover-course"
             value={courseName}
             onChange={(e) => onFieldChange("courseName", e.target.value)}
-            placeholder="Ex.: Gestão"
+            placeholder="Nome do curso"
           />
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="cover-student">Estudante</Label>
           <Input
             id="cover-student"
             value={studentName}
             onChange={(e) => onFieldChange("studentName", e.target.value)}
-            placeholder="Ex.: Maria João"
+            placeholder="Nome completo"
           />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="cover-advisor">Docente</Label>
           <Input
             id="cover-advisor"
             value={advisorName}
             onChange={(e) => onFieldChange("advisorName", e.target.value)}
-            placeholder="Ex.: Prof. Doutor João Luís"
+            placeholder="Nome do orientador"
           />
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="cover-faculty">
-            Faculdade <span className="text-muted-foreground font-normal">(opcional)</span>
+            Faculdade <span className="text-[10px] text-muted-foreground">(opcional)</span>
           </Label>
           <Input
             id="cover-faculty"
@@ -256,9 +245,9 @@ export function CoverFields({
             placeholder="Ex.: Faculdade de Economia"
           />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="cover-department">
-            Departamento <span className="text-muted-foreground font-normal">(opcional)</span>
+            Departamento <span className="text-[10px] text-muted-foreground">(opcional)</span>
           </Label>
           <Input
             id="cover-department"
@@ -268,21 +257,10 @@ export function CoverFields({
           />
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="space-y-2">
-          <Label htmlFor="cover-number">
-            Nº de Estudante <span className="text-muted-foreground font-normal">(opcional)</span>
-          </Label>
-          <Input
-            id="cover-number"
-            value={studentNumber}
-            onChange={(e) => onFieldChange("studentNumber", e.target.value)}
-            placeholder="Ex.: 2024/001"
-          />
-        </div>
-        <div className="space-y-2">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
           <Label htmlFor="cover-semester">
-            Semestre <span className="text-muted-foreground font-normal">(opcional)</span>
+            Semestre <span className="text-[10px] text-muted-foreground">(opcional)</span>
           </Label>
           <Select value={semester} onValueChange={(v) => onFieldChange("semester", v)}>
             <SelectTrigger id="cover-semester">
@@ -294,9 +272,9 @@ export function CoverFields({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="cover-city">
-            Cidade <span className="text-muted-foreground font-normal">(opcional)</span>
+            Cidade <span className="text-[10px] text-muted-foreground">(opcional)</span>
           </Label>
           <Input
             id="cover-city"

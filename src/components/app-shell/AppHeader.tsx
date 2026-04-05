@@ -22,7 +22,7 @@ export function AppHeader({
     isMobileMenuOpen = false,
 }: AppHeaderProps) {
     return (
-        <header className="glass-premium shrink-0 rounded-[24px] px-4 py-2 text-sidebar-foreground lg:px-6 lg:py-3 ">
+        <header className="shrink-0 rounded-[24px] px-4 py-2 lg:px-6 lg:py-3 bg-card border border-border/40">
             <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 lg:hidden">
                     <Button

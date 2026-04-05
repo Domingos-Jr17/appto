@@ -23,7 +23,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-4 rounded-[28px] glass glass-border p-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-4 rounded-[28px] bg-card border border-border/40 p-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             Configurações
@@ -49,7 +49,7 @@ export default function SettingsPage() {
         }}
         className="w-full"
       >
-        <TabsList className="glass glass-border flex h-auto w-full flex-wrap justify-start gap-2 rounded-[28px] p-2">
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-2 rounded-[28px] bg-muted/40 border border-border/40 p-2">
           {SETTINGS_TABS.map((tab) => (
             <TabsTrigger
               key={tab.value}
@@ -67,7 +67,7 @@ export default function SettingsPage() {
             value={tab.value}
             className="mt-6 focus-visible:outline-none"
           >
-            <Card className="glass glass-border rounded-[28px] bg-background/80">
+            <Card className="rounded-[28px] bg-card border border-border/40">
               <CardHeader className="border-b border-border/60 pb-5">
                 <CardTitle className="text-xl font-semibold">{tab.label}</CardTitle>
                 <CardDescription>{tab.description}</CardDescription>

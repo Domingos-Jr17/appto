@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceHeader } from "./WorkspaceHeader";
+import { WorkspaceBottomBar } from "./WorkspaceBottomBar";
 import { DocumentPreview } from "./DocumentPreview";
 import { CoverModal } from "./CoverModal";
 import { EditorLink } from "./EditorLink";
@@ -47,6 +48,10 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
       });
   }, []);
 
+  const hasContent = (workspace.data?.sections ?? []).some(
+    (s) => s.status === "done" && s.content.trim().length > 0
+  );
+
   return (
     <>
       {workspace.error && (
@@ -73,7 +78,7 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
           coverIncomplete={isCoverIncomplete(workspace.data?.brief)}
         />
 
-        <div className="flex-1 overflow-y-auto pb-16">
+        <div className="flex-1 overflow-y-auto pb-20 lg:pb-16">
          <div
             className={cn(
               "transition-[margin] duration-300 ease-in-out",
@@ -87,6 +92,16 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
             />
           </div>
         </div>
+
+        <WorkspaceBottomBar
+          hasContent={hasContent}
+          isGenerating={workspace.isGenerating}
+          allDone={workspace.allDone}
+          coverIncomplete={isCoverIncomplete(workspace.data?.brief)}
+          onEditCover={() => setCoverSheetOpen(true)}
+          onGenerate={workspace.generateAll}
+          onDownload={workspace.downloadDocx}
+        />
 
         <EditorLink workId={workspace.data?.id ?? ''} />
 

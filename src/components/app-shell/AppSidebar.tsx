@@ -37,7 +37,7 @@ export function AppSidebar({
         .slice(0, 4);
 
     return (
-        <aside className="glass-premium sticky top-0 z-[var(--z-sidebar)] flex h-full w-[240px] shrink-0 flex-col rounded-[28px] text-sidebar-foreground">
+        <aside className="sticky top-0 z-[var(--z-sidebar)] flex h-full w-[240px] shrink-0 flex-col rounded-[28px] bg-sidebar text-sidebar-foreground border border-border/40">
             <div className="shrink-0 flex flex-col items-center border-b border-white/10 px-3 pb-3 pt-4">
                 <Link
                     href="/app"

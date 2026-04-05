@@ -33,17 +33,7 @@ import { formatRelativeTime } from "@/lib/utils";
 import { fetchWithRetry } from "@/lib/fetch-retry";
 
 const PROJECT_TYPE_LABELS: Record<string, ProjectCardData["type"]> = {
-    MONOGRAPHY: "monografia",
-    DISSERTATION: "dissertação",
-    THESIS: "tese",
-    ARTICLE: "artigo",
-    ESSAY: "ensaio",
-    REPORT: "relatório",
-    SCHOOL_WORK: "trabalho escolar",
-    RESEARCH_PROJECT: "trabalho de pesquisa",
-    INTERNSHIP_REPORT: "relatório",
-    PRACTICAL_WORK: "trabalho prático",
-    TCC: "tcc",
+    RESEARCH_WORK: "trabalho de investigacao",
 };
 
 export function WorksLibraryPage() {
@@ -206,7 +196,7 @@ export function WorksLibraryPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-4 rounded-[28px] glass glass-border p-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-4 rounded-[28px] bg-card border border-border/40 p-5 lg:flex-row lg:items-end lg:justify-between">
                 <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                         Biblioteca
@@ -230,7 +220,7 @@ export function WorksLibraryPage() {
                 </Button>
             </div>
 
-            <div className="glass glass-border rounded-[28px] p-4 lg:p-5">
+            <div className="rounded-[28px] bg-card border border-border/40 p-4 lg:p-5">
                 <ProjectFilters
                     status={status}
                     onStatusChange={setStatus}

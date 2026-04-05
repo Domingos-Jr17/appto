@@ -23,6 +23,7 @@ const securityHeaders = [
       "default-src 'self'",
       "base-uri 'self'",
       "frame-ancestors 'none'",
+      "frame-src https://vercel.live",
       "object-src 'none'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https:",

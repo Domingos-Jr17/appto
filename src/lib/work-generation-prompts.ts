@@ -84,6 +84,7 @@ function countWords(text: string) {
 }
 
 function shouldUseSchoolProfile(type: string, educationLevel?: AcademicEducationLevel) {
+  if (type === "SCHOOL_WORK") return true;
   return isSchoolContext(educationLevel);
 }
 

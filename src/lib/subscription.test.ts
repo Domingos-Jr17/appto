@@ -36,6 +36,7 @@ describe("SubscriptionService", () => {
     const SubscriptionService = await loadSubscriptionService();
     const workPurchaseUpdateMany = mock(async () => ({ count: 1 }));
     const subscriptionUpdateMany = mock(async () => ({ count: 0 }));
+    const executeRaw = mock(async () => 1);
     const db = {
       subscription: {
         findUnique: mock(async () => ({
@@ -60,12 +61,13 @@ describe("SubscriptionService", () => {
         ]),
         updateMany: workPurchaseUpdateMany,
       },
+      $executeRaw: executeRaw,
     };
 
     const service = new SubscriptionService(db as never);
     await service.consumeWork("user_1");
 
-    expect(workPurchaseUpdateMany).toHaveBeenCalled();
+    expect(executeRaw).toHaveBeenCalled();
     expect(subscriptionUpdateMany).not.toHaveBeenCalled();
   });
 

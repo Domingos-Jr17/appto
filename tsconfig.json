@@ -44,6 +44,7 @@
     "archive",
     "examples",
     "prisma/seed.ts",
+    "scripts",
     "tests"
   ]
 }

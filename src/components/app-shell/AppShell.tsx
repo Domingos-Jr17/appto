@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FilePlus2, X, Trash2 } from "lucide-react";
 import { OfflineBanner } from "@/components/ui/offline-banner";
+import { PWAInstallBanner } from "./PWAInstallBanner";
 import { cn } from "@/lib/utils";
 import { appNavItems, isNavActive } from "./app-nav";
 import { AppSidebar } from "./AppSidebar";
@@ -250,6 +251,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
                 Saltar para o conteúdo
             </a>
             <OfflineBanner />
+            <PWAInstallBanner />
             <AnimatePresence>
                 {showVerificationBanner ? (
                     <motion.div

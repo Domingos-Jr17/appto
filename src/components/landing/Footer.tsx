@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, Linkedin, Twitter, Instagram, Facebook, Mail, MapPin } from "lucide-react";
+import { Sparkles, Linkedin, Twitter, Instagram, Facebook, Mail } from "lucide-react";
 import { footerLinks } from "./data";
 
 const socialIcons: Record<string, React.ComponentType<{ className?: string }>> = {

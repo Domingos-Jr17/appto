@@ -55,7 +55,7 @@ export function CoverFields({
   facultyName,
   departmentName,
   semester,
-  subjectName,
+  subjectName: _subjectName,
   onFieldChange,
 }: CoverFieldsProps) {
   if (educationLevel === "SECONDARY") {

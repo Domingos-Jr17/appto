@@ -8,7 +8,11 @@ import { Button } from "@/components/ui/button";
 export function PWAInstallBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(display-mode: standalone)").matches
+      || window.matchMedia("(display-mode: fullscreen)").matches;
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;

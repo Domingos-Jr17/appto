@@ -8,7 +8,7 @@ import { FilePlus2, X, Trash2 } from "lucide-react";
 import { OfflineBanner } from "@/components/ui/offline-banner";
 import { PWAInstallBanner } from "./PWAInstallBanner";
 import { cn } from "@/lib/utils";
-import { appNavItems, isNavActive } from "./app-nav";
+import { appNavItems } from "./app-nav";
 import { AppSidebar } from "./AppSidebar";
 import { AppShellDataProvider, useAppShellData } from "./AppShellDataContext";
 import { AccountDataProvider } from "@/hooks/use-account-data";

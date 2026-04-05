@@ -18,7 +18,7 @@ export function MobileBottomNav() {
 
   return (
     <nav className="fixed bottom-4 left-3 right-3 z-[var(--z-mobile)] lg:hidden">
-      <div className="flex items-center justify-around rounded-full border border-border/40 bg-background/90 px-2 py-1.5 backdrop-blur-xl shadow-lg shadow-black/5">
+      <div className="flex items-center justify-around rounded-full border border-border/40 bg-background/90 px-2 py-1.5 backdrop-blur-xl shadow-float-lg">
         <Link
           href="/app"
           className={cn(

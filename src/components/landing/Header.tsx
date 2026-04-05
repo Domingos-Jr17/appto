@@ -45,13 +45,13 @@ export function Header() {
     <>
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+          "fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-500",
           isScrolled
-            ? "bg-background/80 backdrop-blur-md border-b border-border/50 shadow-sm"
-            : "bg-background/60 backdrop-blur-sm"
+            ? "w-[calc(100%-2rem)] max-w-5xl rounded-2xl bg-background/70 backdrop-blur-xl border border-border/40 shadow-float-xl"
+            : "w-[calc(100%-2rem)] max-w-5xl rounded-2xl bg-background/50 backdrop-blur-md border border-border/30 shadow-float-lg"
         )}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+        <div className="flex items-center justify-between px-5 py-3">
           <a
             href="#"
             className="flex items-center gap-2"

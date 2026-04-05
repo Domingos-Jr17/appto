@@ -290,7 +290,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
             </AnimatePresence>
             <div
                 ref={appChromeRef}
-                className="h-svh w-screen flex gap-2 overflow-hidden bg-background p-2 lg:gap-3 lg:p-3"
+                className="h-svh w-screen flex gap-2 overflow-hidden bg-gradient-to-br from-background via-muted/20 to-muted/30 p-2 lg:gap-3 lg:p-3"
             >
                 <div className="hidden lg:block">
                     <AppSidebar

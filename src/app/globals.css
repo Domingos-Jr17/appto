@@ -96,7 +96,7 @@
 
     /* Borders & Inputs */
     --border: oklch(0.24 0.015 260);
-    --input: oklch(0.2 0.012 260);
+    --input: oklch(0.25 0.012 260);
     --ring: oklch(0.65 0.15 255);
 
     /* Chart colors */

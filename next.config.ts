@@ -7,7 +7,7 @@ const allowedDevOrigins = (process.env.ALLOWED_DEV_ORIGINS || "127.0.0.1,localho
 
 const scriptSrc = process.env.NODE_ENV === "development"
   ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live"
-  : "script-src 'self' 'unsafe-inline'";
+  : "script-src 'self' 'unsafe-inline' https://vercel.live";
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -26,7 +26,7 @@ const securityHeaders = [
       "object-src 'none'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https:",
-      "style-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       scriptSrc,
       "connect-src 'self' https: wss:",
       "worker-src 'self' blob:",

@@ -175,18 +175,18 @@ export class SubscriptionService {
      // Step 2: Try to consume from extra works first (atomic)
      // Find the earliest expiring work purchase with used < quantity and increment used
      const now = new Date();
-     const extraWorksResult = await this.dbClient.$executeRaw`
-       UPDATE "WorkPurchase"
-       SET "used" = "used" + 1
-       WHERE "id" = (
-         SELECT "id" FROM "WorkPurchase"
-         WHERE "userId" = ${userId}
-           AND "expiresAt" > ${now}
-           AND "used" < "quantity"
-         ORDER BY "expiresAt" ASC
-         LIMIT 1
-       )
-     `;
+      const extraWorksResult = await this.dbClient.$executeRaw`
+        UPDATE "work_purchases"
+        SET "used" = "used" + 1
+        WHERE "id" = (
+          SELECT "id" FROM "work_purchases"
+          WHERE "userId" = ${userId}
+            AND "expiresAt" > ${now}
+            AND "used" < "quantity"
+          ORDER BY "expiresAt" ASC
+          LIMIT 1
+        )
+      `;
 
      if (extraWorksResult === 1) {
        await this.checkAndSendLowCreditsAlert(userId);
@@ -196,12 +196,12 @@ export class SubscriptionService {
      // Step 3: Try to consume from plan (atomic — field-to-field comparison)
      // Uses raw SQL to compare worksUsed < worksPerMonth atomically,
      // preventing race conditions under concurrent requests.
-     const result = await this.dbClient.$executeRaw`
-       UPDATE "Subscription"
-       SET "worksUsed" = "worksUsed" + 1
-       WHERE "userId" = ${userId}
-         AND "worksUsed" < "worksPerMonth"
-     `;
+      const result = await this.dbClient.$executeRaw`
+        UPDATE "subscriptions"
+        SET "worksUsed" = "worksUsed" + 1
+        WHERE "userId" = ${userId}
+          AND "worksUsed" < "worksPerMonth"
+      `;
 
      if (result === 1) {
        await this.checkAndSendLowCreditsAlert(userId);

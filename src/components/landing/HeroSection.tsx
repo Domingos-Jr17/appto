@@ -15,7 +15,8 @@ export function HeroSection() {
             {/* Background */}
             <div className="pointer-events-none absolute inset-0 ">
                 <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_40%,black,transparent)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(var(--bg-pattern-color-light)_1px,transparent_1px),linear-gradient(90deg,var(--bg-pattern-color-light)_1px,transparent_1px)] bg-[size:var(--bg-pattern-size)_var(--bg-pattern-size)] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_40%,black,transparent)]" />
+                <div className="dark:absolute inset-0 dark:bg-[linear-gradient(var(--bg-pattern-color-dark)_1px,transparent_1px),linear-gradient(90deg,var(--bg-pattern-color-dark)_1px,transparent_1px)] dark:bg-[size:var(--bg-pattern-size)_var(--bg-pattern-size)] dark:[mask-image:radial-gradient(ellipse_60%_60%_at_50%_40%,black,transparent)]" />
             </div>
 
             <div className="relative z-10 mx-auto max-w-4xl text-center py-4">

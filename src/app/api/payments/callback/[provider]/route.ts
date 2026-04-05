@@ -73,10 +73,10 @@ export async function POST(
       return apiError("Payload inválido", 400);
     }
 
-    const normalized = normalizePaymentCallback(parsedBody, {
-      signature: signatureHeader ?? parsedBody?.signature,
-      rawBody,
-    });
+     const normalized = normalizePaymentCallback(parsedBody, {
+       signature: (signatureHeader ?? parsedBody?.signature) as string | null | undefined,
+       rawBody,
+     });
 
     await enforceRateLimit(`payment-callback:${provider}:${normalized.paymentId}`, 30, 60 * 1000);
 

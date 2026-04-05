@@ -80,15 +80,21 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const totalWords = await db.documentSection.aggregate({
-      where: { projectId },
-      _sum: { wordCount: true },
-    });
+    const totalWordsResult = await db.$queryRaw<
+      Array<{ _sum: { wordCount: bigint } }>
+    >`
+      SELECT COALESCE(SUM("wordCount"), 0) as "_sum"
+      FROM "DocumentSection"
+      WHERE "projectId" = ${projectId}
+    `;
 
-    await db.project.update({
-      where: { id: projectId },
-      data: { wordCount: totalWords._sum.wordCount || 0 },
-    });
+    const totalWords = Number(totalWordsResult[0]?._sum ?? 0n);
+
+    await db.$executeRaw`
+      UPDATE "Project"
+      SET "wordCount" = ${totalWords}
+      WHERE "id" = ${projectId}
+    `;
 
     return apiSuccess(
       {

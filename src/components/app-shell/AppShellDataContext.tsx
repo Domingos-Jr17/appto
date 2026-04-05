@@ -18,7 +18,7 @@ export function AppShellDataProvider({ children }: { children: React.ReactNode }
   const [projects, setProjects] = React.useState<AppProjectRecord[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [lastFetchTime, setLastFetchTime] = React.useState<number>(0);
-  const refreshRef = React.useRef<(() => Promise<void>) | null>(null);
+  const refreshRef = React.useRef<((silent: boolean) => Promise<void>) | null>(null);
 
   const refresh = React.useCallback(async (silent = false) => {
     if (!silent) {
@@ -42,9 +42,9 @@ export function AppShellDataProvider({ children }: { children: React.ReactNode }
   }, [refresh]);
 
   React.useEffect(() => {
-    const timer = setTimeout(() => {
-      refreshRef.current?.();
-    }, 100);
+     const timer = setTimeout(() => {
+       refreshRef.current?.(true);
+     }, 100);
     return () => clearTimeout(timer);
   }, []);
 

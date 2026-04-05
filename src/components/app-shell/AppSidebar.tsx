@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAppShellData } from "./AppShellDataContext";
 import { appNavItems, isNavActive } from "./app-nav";
+import React from "react";
 import {
     DropdownMenu,
     DropdownMenuContent,

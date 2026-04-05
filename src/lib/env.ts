@@ -28,7 +28,10 @@ const envSchema = z
     GOOGLE_AI_BASE_URL: z.string().url().optional(),
     GOOGLE_AI_MODEL: z.string().min(1).optional(),
     RESEND_API_KEY: z.string().min(1).optional(),
-    RESEND_FROM_EMAIL: z.string().email().optional(),
+    RESEND_FROM_EMAIL: z.preprocess(
+      (v) => (v === "" ? undefined : v),
+      z.string().email().optional(),
+    ),
     SMTP_HOST: z.string().min(1).optional(),
     SMTP_PORT: z.coerce.number().int().positive().optional(),
     SMTP_SECURE: z.coerce.boolean().optional(),

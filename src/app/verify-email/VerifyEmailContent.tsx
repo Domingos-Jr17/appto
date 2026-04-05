@@ -11,23 +11,15 @@ export function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    token ? "loading" : "error",
-  );
-  const [message, setMessage] = useState(
-    token ? "" : "Link de verificação inválido",
-  );
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     if (!token) {
-      setStatus("error");
-      setMessage("Link de verificação inválido");
       return;
     }
 
-    setStatus("loading");
-    setMessage("");
-
+    let cancelled = false;
     let redirectTimer: ReturnType<typeof setTimeout> | null = null;
 
     const verify = async () => {
@@ -39,6 +31,8 @@ export function VerifyEmailContent() {
         });
 
         const data = await response.json();
+
+        if (cancelled) return;
 
         if (!response.ok) {
           setStatus("error");
@@ -54,6 +48,7 @@ export function VerifyEmailContent() {
           router.refresh();
         }, 3000);
       } catch {
+        if (cancelled) return;
         setStatus("error");
         setMessage("Ocorreu um erro ao verificar o email");
       }
@@ -62,11 +57,29 @@ export function VerifyEmailContent() {
     void verify();
 
     return () => {
+      cancelled = true;
       if (redirectTimer) {
         clearTimeout(redirectTimer);
       }
     };
   }, [token, router]);
+
+  // Derive error state from missing token without setState in effect
+  if (!token) {
+    return (
+      <>
+        <XCircle className="mx-auto h-12 w-12 text-destructive" />
+        <h1 className="mt-4 text-2xl font-bold">Erro na verificação</h1>
+        <p className="mt-2 text-muted-foreground text-sm">Link de verificação inválido</p>
+        <Button asChild className="mt-6" variant="outline">
+          <Link href="/login">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar ao login
+          </Link>
+        </Button>
+      </>
+    );
+  }
 
   if (status === "loading") {
     return (

@@ -16,14 +16,7 @@ export function PWAInstallBanner() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    // Check if already installed
-    const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
-    const isFullscreen = window.matchMedia("(display-mode: fullscreen)").matches;
-    if (isStandalone || isFullscreen) {
-      setIsInstalled(true);
-      return;
-    }
+    if (isInstalled) return;
 
     // Check if user previously dismissed
     const dismissed = localStorage.getItem("pwa-install-dismissed");
@@ -49,7 +42,7 @@ export function PWAInstallBanner() {
 
     // Also show if prompt arrives after 30s
     const checkTimer = setInterval(() => {
-      if (deferredPrompt && !showBanner && !isInstalled) {
+      if (deferredPrompt && !showBanner) {
         setShowBanner(true);
         clearInterval(checkTimer);
       }

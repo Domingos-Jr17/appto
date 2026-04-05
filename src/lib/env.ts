@@ -204,7 +204,7 @@ export const env = {
   STORAGE_LOCAL_ROOT: parsedEnv.data.STORAGE_LOCAL_ROOT ?? ".storage",
   AI_PROVIDER: parsedEnv.data.AI_PROVIDER ?? "openrouter",
   AI_FALLBACK_PROVIDER: parsedEnv.data.AI_FALLBACK_PROVIDER,
-  AI_REQUEST_TIMEOUT_MS: parsedEnv.data.AI_REQUEST_TIMEOUT_MS ?? 8_000,
+  AI_REQUEST_TIMEOUT_MS: parsedEnv.data.AI_REQUEST_TIMEOUT_MS ?? 60_000,
   RAG_RETRIEVAL_MODE: parsedEnv.data.RAG_RETRIEVAL_MODE ?? "TEXT",
   RAG_EMBEDDING_DIMENSIONS: parsedEnv.data.RAG_EMBEDDING_DIMENSIONS ?? 128,
   isDevelopment: parsedEnv.data.NODE_ENV === "development",

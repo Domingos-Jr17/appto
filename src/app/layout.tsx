@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { PwaProvider } from "@/components/providers/PwaProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({
   variable: "--font-geist-sans",
@@ -54,6 +55,7 @@ export default function RootLayout({
             {children}
           </AuthProvider>
           <Toaster position="top-right" />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>

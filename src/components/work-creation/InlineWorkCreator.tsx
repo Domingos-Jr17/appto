@@ -160,11 +160,13 @@ export function InlineWorkCreator() {
           }
         }}
         rows={2}
-        className="resize-none leading-relaxed text-base sm:text-lg"
+        className="resize-none leading-relaxed text-base sm:text-lg shadow-input-inset"
       />
 
       {/* Education level */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-foreground">Nível de ensino</p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {EDUCATION_LEVELS.map((level) => (
           <button
             key={level.value}
@@ -172,10 +174,10 @@ export function InlineWorkCreator() {
             onClick={() => handleEducationLevelChange(level.value)}
             aria-pressed={workForm.educationLevel === level.value}
             className={cn(
-              "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors sm:block sm:text-center",
+              "flex items-center gap-3 rounded-xl border p-3 text-left transition-all duration-200 sm:block sm:text-center",
               workForm.educationLevel === level.value
                 ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                : "border-border/60 hover:border-border",
+                : "border-border/60 hover:border-border hover-elevate",
             )}
           >
             <level.icon className="h-5 w-5 sm:h-8 sm:w-8 text-muted-foreground" />
@@ -184,6 +186,7 @@ export function InlineWorkCreator() {
             </div>
           </button>
         ))}
+      </div>
       </div>
 
       {/* Generate button */}
@@ -212,7 +215,7 @@ export function InlineWorkCreator() {
             (subscriptionStatus ? !subscriptionStatus.canGenerate : false)
           }
           size="lg"
-          className="h-14 w-full gap-2 rounded-2xl text-base"
+          className="h-14 w-full gap-2 rounded-2xl text-base transition-all duration-200 shadow-cta shadow-cta-hover disabled:shadow-none"
         >
           {isCreating ? (
             <>

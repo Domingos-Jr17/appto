@@ -100,13 +100,13 @@ export function DemoLeadMagnet() {
         >
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/10 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary shadow-lg shadow-primary/5 backdrop-blur-xl">
             <Clock className="h-4 w-4" />
-            Experimente em 30 segundos
+            Testa grátis, sem conta
           </div>
           <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-            Veja o <span className="text-primary">aptto em acção</span>
+            Experimenta o aptto antes de criares conta
           </h2>
           <p className="mx-auto max-w-xl text-lg text-muted-foreground">
-            Introduz o tema do teu trabalho e recebes um sumário estruturado instantaneamente
+            Escreve o tema do teu trabalho e vê o sumário aparecer na hora
           </p>
         </motion.div>
 
@@ -123,7 +123,7 @@ export function DemoLeadMagnet() {
                   <div className="flex-1">
                     <label className="mb-2 block text-sm font-medium">Tema do trabalho</label>
                     <Input
-                      placeholder="Ex: Impacto das mudanças climáticas na agricultura..."
+                      placeholder="Ex: Desafios do abastecimento de água na cidade de Maputo..."
                       value={topic}
                       onChange={(event) => setTopic(event.target.value)}
                       className="h-12 border-border/50 bg-background/50 text-base backdrop-blur-xl focus:border-primary/50"
@@ -151,7 +151,7 @@ export function DemoLeadMagnet() {
                       ) : (
                         <>
                           <Sparkles className="mr-2 h-4 w-4" />
-                          Gerar sumário grátis
+                          Testar agora
                         </>
                       )}
                     </Button>
@@ -264,16 +264,6 @@ export function DemoLeadMagnet() {
             </CardContent>
           </Card>
         </motion.div>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
-          className="mt-6 text-center text-sm text-muted-foreground"
-        >
-          Sem registo necessário para esta demonstração • Os seus dados não são guardados
-        </motion.p>
       </div>
     </section>
   );

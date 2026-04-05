@@ -533,3 +533,16 @@ enum ExportFormat {
   DOCX
   PDF
 }
+
+model ProductEvent {
+  id          String   @id @default(cuid())
+  name        String
+  category    String
+  userId      String?
+  projectId   String?
+  paymentId   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@map("product_events")
+}

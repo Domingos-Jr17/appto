@@ -4,18 +4,13 @@ import { motion, useScroll, useSpring } from "framer-motion";
 import {
   Header,
   HeroSection,
-  SocialProof,
-  TestimonialsCarousel,
   FeaturesGrid,
-  HowItWorks,
-  DifferentiatorsSection,
-  PricingCards,
   DemoLeadMagnet,
+  PricingCards,
   FAQSection,
   FinalCTA,
   Footer,
 } from "@/components/landing";
-import { isFeatureVisible } from "@/lib/features";
 
 export default function Home() {
   const { scrollYProgress } = useScroll();
@@ -33,40 +28,13 @@ export default function Home() {
         style={{ scaleX }}
       />
 
-      {/* Header */}
       <Header />
-
-      {/* Hero Section */}
       <HeroSection />
-
-      {/* Social Proof Stats */}
-      {isFeatureVisible("landingSocialProof") && <SocialProof />}
-
-      {/* Features Grid */}
-      <FeaturesGrid />
-
-      {/* How It Works */}
-      <HowItWorks />
-
-      {/* Testimonials */}
-      {isFeatureVisible("landingTestimonials") && <TestimonialsCarousel />}
-
-      {/* Differentiators */}
-      <DifferentiatorsSection />
-
-      {/* Pricing */}
-      <PricingCards />
-
-      {/* Demo / Lead Magnet */}
       <DemoLeadMagnet />
-
-      {/* FAQ */}
+      <FeaturesGrid />
+      <PricingCards />
       <FAQSection />
-
-      {/* Final CTA */}
       <FinalCTA />
-
-      {/* Footer */}
       <Footer className="mt-auto" />
     </main>
   );

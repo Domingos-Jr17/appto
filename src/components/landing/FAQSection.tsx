@@ -83,21 +83,16 @@ export function FAQSection() {
                 Perguntas Frequentes
               </span>
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Tire as suas <span className="text-primary">dúvidas</span>
+                Tira as tuas <span className="text-primary">dúvidas</span>
               </h2>
               <p className="text-lg text-muted-foreground">
-                Encontre respostas para as perguntas mais comuns sobre o aptto.
+                Encontra respostas para as perguntas mais comuns sobre o aptto.
               </p>
             </div>
           </Reveal>
 
           <Reveal delay={0.1}>
-            <motion.div
-              whileHover={{ scale: 1.01 }}
-              className="p-6 md:p-8 rounded-2xl bg-card/80 backdrop-blur-xl border border-border/50 shadow-xl relative overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-primary/5 opacity-0 hover:opacity-100 transition-opacity pointer-events-none" />
-              <div className="relative z-10">
+            <div className="p-6 md:p-8 rounded-2xl bg-card/80 backdrop-blur-xl border border-border/50 shadow-xl">
                 {faqs.map((faq, index) => (
                   <FAQItem
                     key={index}
@@ -108,17 +103,16 @@ export function FAQSection() {
                     index={index}
                   />
                 ))}
-              </div>
-            </motion.div>
+            </div>
           </Reveal>
 
           <Reveal delay={0.2}>
-            <p className="text-center text-muted-foreground mt-8">
-              Ainda tem dúvidas?{" "}
-              <a href="#" className="text-primary hover:underline font-medium">
-                Fale connosco
-              </a>
-            </p>
+              <p className="text-center text-muted-foreground mt-8">
+                Ainda tens dúvidas?{" "}
+                <a href="mailto:ola@aptto.co.mz" className="text-primary hover:underline font-medium">
+                  Fale connosco
+                </a>
+              </p>
           </Reveal>
         </div>
       </div>

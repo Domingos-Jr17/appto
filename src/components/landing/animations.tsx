@@ -3,7 +3,6 @@
 import { motion, Variants, useInView } from "framer-motion";
 import { useRef, ReactNode, useState, useEffect } from "react";
 
-// Fade up animation for sections
 export const fadeUpVariants: Variants = {
   hidden: {
     opacity: 0,
@@ -19,99 +18,6 @@ export const fadeUpVariants: Variants = {
   },
 };
 
-// Fade in animation
-export const fadeInVariants: Variants = {
-  hidden: {
-    opacity: 0,
-  },
-  visible: {
-    opacity: 1,
-    transition: {
-      duration: 0.5,
-      ease: "easeOut",
-    },
-  },
-};
-
-// Scale up animation
-export const scaleUpVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    scale: 0.95,
-  },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: {
-      duration: 0.5,
-      ease: [0.25, 0.4, 0.25, 1],
-    },
-  },
-};
-
-// Slide in from left
-export const slideLeftVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    x: -50,
-  },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: {
-      duration: 0.6,
-      ease: [0.25, 0.4, 0.25, 1],
-    },
-  },
-};
-
-// Slide in from right
-export const slideRightVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    x: 50,
-  },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: {
-      duration: 0.6,
-      ease: [0.25, 0.4, 0.25, 1],
-    },
-  },
-};
-
-// Stagger container
-export const staggerContainerVariants: Variants = {
-  hidden: {
-    opacity: 0,
-  },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.1,
-    },
-  },
-};
-
-// Stagger item
-export const staggerItemVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    y: 20,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.5,
-      ease: [0.25, 0.4, 0.25, 1],
-    },
-  },
-};
-
-// Wrapper component for reveal animations
 interface RevealProps {
   children: ReactNode;
   className?: string;
@@ -144,50 +50,6 @@ export function Reveal({
   );
 }
 
-// Stagger container component
-interface StaggerContainerProps {
-  children: ReactNode;
-  className?: string;
-  delay?: number;
-}
-
-export function StaggerContainer({
-  children,
-  className = "",
-  delay = 0,
-}: StaggerContainerProps) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-50px" });
-
-  return (
-    <motion.div
-      ref={ref}
-      initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
-      variants={staggerContainerVariants}
-      className={className}
-      style={{ transitionDelay: `${delay}s` }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-// Stagger item component
-interface StaggerItemProps {
-  children: ReactNode;
-  className?: string;
-}
-
-export function StaggerItem({ children, className = "" }: StaggerItemProps) {
-  return (
-    <motion.div variants={staggerItemVariants} className={className}>
-      {children}
-    </motion.div>
-  );
-}
-
-// Typewriter effect hook
 export function useTypewriter(
   words: string[],
   typingSpeed = 100,
@@ -197,6 +59,14 @@ export function useTypewriter(
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [currentText, setCurrentText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [cursorVisible, setCursorVisible] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCursorVisible((prev) => !prev);
+    }, 530);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const currentWord = words[currentWordIndex];
@@ -230,5 +100,5 @@ export function useTypewriter(
     words,
   ]);
 
-  return currentText;
+  return { displayWord: currentText, cursorVisible };
 }

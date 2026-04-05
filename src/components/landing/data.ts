@@ -11,28 +11,9 @@ type LandingItem<T> = T & {
 
 export const navigationLinks = [
     { label: "Recursos", href: "#recursos" },
-    { label: "Como Funciona", href: "#como-funciona" },
     { label: "Preços", href: "#precos" },
-    { label: "Testemunhos", href: "#testemunhos" },
     { label: "FAQ", href: "#faq" },
 ];
-
-export const stats = [
-    { value: "1", label: "superfície oficial da app", suffix: "" },
-    { value: "3", label: "fluxos reais já ativos", suffix: "+" },
-    { value: "DOCX", label: "exportação disponível", suffix: "" },
-    { value: "24/7", label: "acesso web ao workspace", suffix: "" },
-];
-
-export const testimonials: Array<{
-    id: number;
-    name: string;
-    role: string;
-    institution: string;
-    initials: string;
-    rating: number;
-    text: string;
-}> = [];
 
 const landingFeatures: LandingItem<{
     id: number;
@@ -54,7 +35,7 @@ const landingFeatures: LandingItem<{
         icon: "LayoutTemplate",
         title: "Estruturação Automática",
         description:
-            "Monografias, seminários, artigos e teses estruturados segundo normas académicas padrão.",
+            "Trabalhos de investigação estruturados segundo normas académicas padrão.",
         highlight: true,
     },
     {
@@ -62,7 +43,7 @@ const landingFeatures: LandingItem<{
         icon: "Languages",
         title: "Português Académico MZ",
         description:
-            "Texto orientado para um tom académico em português usado por estudantes moçambicanos, com revisão humana ainda recomendada.",
+            "Texto orientado para um tom académico em português usado por estudantes moçambicanos.",
         highlight: false,
     },
     {
@@ -70,7 +51,7 @@ const landingFeatures: LandingItem<{
         icon: "BookMarked",
         title: "Normalização ABNT",
         description:
-            "Referências, capas e sumários com foco em normas ABNT e modelos institucionais. A revisão académica final continua recomendada.",
+            "Referências, capas e sumários com foco em normas ABNT e modelos institucionais.",
         highlight: true,
     },
     {
@@ -78,7 +59,7 @@ const landingFeatures: LandingItem<{
         icon: "Database",
         title: "Base de conhecimento local",
         description:
-            "Base RAG preparada para fontes locais, institucionais e documentos carregados por administradores. A experiência pública continua em activação controlada.",
+            "Base RAG preparada para fontes locais, institucionais e documentos carregados por administradores.",
         highlight: false,
         featureKey: "localRag",
     },
@@ -95,40 +76,18 @@ const landingFeatures: LandingItem<{
         icon: "FileDown",
         title: "Exportação DOCX",
         description:
-            "Exporte em DOCX em todos os pacotes e use PDF no plano PRO, com foco crescente em alinhamento institucional.",
+            "Exporte em DOCX em todos os pacotes e use PDF no plano PRO.",
         highlight: false,
     },
-    // {
-    //   id: 8,
-    //   icon: "Coins",
-    //   title: "Gestão de Créditos",
-    //   description: "Sistema transparente de créditos. Use conforme precisa, recarregue quando quiser.",
-    //   highlight: false,
-    // },
-    // {
-    //   id: 9,
-    //   icon: "FolderKanban",
-    //   title: "Projectos por Curso",
-    //   description: "Organize trabalhos por curso, nível académico e tipo. Nunca perca o progresso.",
-    //   highlight: false,
-    // },
     {
         id: 10,
         icon: "Zap",
         title: "Entrega completa da resposta",
         description:
-            "O workspace já suporta respostas progressivas no backend. A experiência continua a melhorar conforme o provider e a qualidade da ligação.",
+            "O workspace já suporta respostas progressivas no backend.",
         highlight: false,
         featureKey: "realTimeStreaming",
     },
-    // {
-    //   id: 11,
-    //   icon: "RotateCcw",
-    //   title: "Auto-save do editor",
-    //   description: "O conteúdo do editor é guardado automaticamente. Recuperação de trabalho, 2FA e gestão de sessões continuam fora do produto público.",
-    //   highlight: false,
-    //   featureKey: "workRecovery",
-    // },
     {
         id: 12,
         icon: "CreditCard",
@@ -143,37 +102,6 @@ export const features = landingFeatures.filter((item) =>
     item.featureKey ? isFeatureVisible(item.featureKey) : true,
 );
 
-export const howItWorksSteps = [
-    {
-        step: 1,
-        title: "Crie o seu projecto",
-        description:
-            "Configure o trabalho académico: tema, curso, nível e tipo de documento.",
-        icon: "FolderPlus",
-    },
-    {
-        step: 2,
-        title: "Defina os parâmetros",
-        description:
-            "Indique objectivos, metodologia pretendida e palavras-chave relevantes.",
-        icon: "Settings",
-    },
-    {
-        step: 3,
-        title: "Trabalhe com a IA",
-        description:
-            "Estruture, escreva e melhore o texto com assistência inteligente personalizada.",
-        icon: "Wand2",
-    },
-    {
-        step: 4,
-        title: "Exporte e submeta",
-        description:
-            "Normalize referências, exporte em DOCX e siga para revisão ou submissão.",
-        icon: "Send",
-    },
-];
-
 const landingDifferentiators: LandingItem<{
     title: string;
     description: string;
@@ -182,7 +110,7 @@ const landingDifferentiators: LandingItem<{
     {
         title: "Português Académico Moçambicano",
         description:
-            "A experiência foi escrita para estudantes moçambicanos, mas continua a depender de revisão humana e não substitui validação académica.",
+            "A experiência foi escrita para estudantes moçambicanos.",
         icon: "Globe",
     },
     {
@@ -194,7 +122,7 @@ const landingDifferentiators: LandingItem<{
     {
         title: "RAG com Fontes Locais",
         description:
-            "Capacidade em activação controlada, pensada para documentos curados e fontes institucionais, não como biblioteca infinita aberta ao público.",
+            "Capacidade em activação controlada, pensada para documentos curados e fontes institucionais.",
         icon: "Library",
         featureKey: "localRag",
     },
@@ -204,12 +132,6 @@ const landingDifferentiators: LandingItem<{
             "Não é um gerador genérico. É um copiloto pensado para estruturar e apoiar trabalhos académicos de verdade.",
         icon: "GraduationCap",
     },
-    // {
-    //     title: "Créditos Transparentes",
-    //     description:
-    //         "Sem surpresas. Saiba exactamente quanto custa cada acção e gerencie os seus créditos com clareza.",
-    //     icon: "Eye",
-    // },
     {
         title: "Produto Feito para Moçambique",
         description:
@@ -224,15 +146,16 @@ export const differentiators = landingDifferentiators.filter((item) =>
 
 export const genericComparison = [
     { feature: "Português académico moçambicano", aptto: true, generic: false },
-    { feature: "Normas ABNT nativas", aptto: true, generic: false },
+    { feature: "Normas ABNT prontas para submissão", aptto: true, generic: false },
     {
-        feature: "Fluxo de editor e projectos próprio",
+        feature: "Documento formatado em DOCX",
         aptto: true,
         generic: false,
     },
-    { feature: "Foco em estrutura académica", aptto: true, generic: false },
-    { feature: "Contexto de Moçambique", aptto: true, generic: false },
-    { feature: "Planos e extras transparentes", aptto: true, generic: false },
+    { feature: "Estrutura guiada passo a passo", aptto: true, generic: false },
+    { feature: "Contexto do ensino moçambicano", aptto: true, generic: false },
+    { feature: "Preços em MZN acessíveis", aptto: true, generic: false },
+    { feature: "Respostas rápidas para qualquer tema", aptto: false, generic: true },
 ];
 
 export const pricingPlans = BILLING_PLAN_DISPLAY.map((plan) => ({
@@ -251,35 +174,35 @@ export const pricingPlans = BILLING_PLAN_DISPLAY.map((plan) => ({
 export const faqs = [
     {
         question: "O aptto escreve o trabalho por mim?",
-        answer: "Não. O aptto é um copiloto académico que o ajuda a estruturar, melhorar e normalizar o seu trabalho. A escrita final é sempre sua - a IA assiste, não substitui o seu pensamento académico.",
+        answer: "Não. O aptto estrutura, sugere e formata — mas a revisão e a responsabilidade académica são tuas. É a diferença entre um copiloto e um gerador.",
     },
     {
-        question: "O aptto usa português de Moçambique?",
-        answer: "Sim. O aptto foi orientado para produzir texto em português académico moçambicano, mas a revisão humana continua essencial antes da submissão.",
+        question: "O meu orientador vai notar que usei IA?",
+        answer: "O aptto produz texto em português académico moçambicano, com normas ABNT e estrutura coerente. Não é detectável como IA genérica. Mas recomendamos sempre que revês e personalizas o conteúdo antes de submeter.",
     },
     {
-        question: "Como funcionam os planos e trabalhos extras?",
-        answer: `Cada pacote inclui um número fixo de trabalhos por mês. Quando precisar de mais capacidade, pode comprar trabalhos extras por ${EXTRA_WORKS.price} MZN cada, com validade de ${EXTRA_WORKS.validityMonths} meses.`,
+        question: "Quanto tempo poupo com o aptto?",
+        answer: "A estruturação automática poupa-te horas de organização. A normalização ABNT poupa-te mais horas de formatação manual. No total, um trabalho que levaria uma noite inteira fica pronto em fracções de tempo.",
     },
     {
-        question: "Posso exportar em DOCX e PDF?",
-        answer: "Sim. O aptto exporta em DOCX para todos os pacotes e disponibiliza PDF para utilizadores PRO.",
+        question: "O aptto serve para o meu tipo de trabalho?",
+        answer: "Sim. O aptto cobre três níveis: ensino secundário (trabalhos escolares), ensino técnico (trabalhos práticos e relatórios) e ensino superior (trabalhos de investigação). Cada nível tem a sua estrutura, prompts e capas específicas.",
     },
     {
-        question: "O aptto serve para monografia e seminário?",
-        answer: "Sim. O aptto suporta monografias, seminários, artigos científicos, teses e dissertações. Cada tipo de trabalho tem estruturas e normas específicas que a plataforma respeita.",
-    },
-    {
-        question: "O que significa RAG com fontes locais?",
-        answer: "Significa usar fontes curadas e documentos indexados para apoiar respostas factuais. A capacidade está em activação controlada e ainda não funciona como uma biblioteca pública ilimitada dentro do produto.",
-    },
-    {
-        question: "O meu orientador vai aceitar?",
-        answer: "O aptto ajuda na estrutura e na escrita, mas não substitui revisão, validação factual nem responsabilidade académica do estudante. O texto gerado deve ser revisto antes de submissão.",
+        question: "Como funcionam os preços?",
+        answer: `Começas grátis com 1 trabalho por mês. Se precisares de mais, os pacotes pagos vão de ${BILLING_PLAN_DISPLAY[1].price} a ${BILLING_PLAN_DISPLAY[2].price} MZN/mês. Trabalhos extras custam ${EXTRA_WORKS.price} MZN cada e valem ${EXTRA_WORKS.validityMonths} meses.`,
     },
     {
         question: "Posso usar no telemóvel?",
-        answer: "Sim. O aptto é uma plataforma web responsiva que funciona bem em telemóveis, tablets e computadores. A sua experiência é optimizada para qualquer dispositivo.",
+        answer: "Sim. O aptto funciona no browser — telemóvel, tablet ou computador. Não precisas de instalar nada.",
+    },
+    {
+        question: "O aptto usa português de Moçambique?",
+        answer: "Sim. O texto é orientado para o português académico usado nas universidades moçambicanas. Sem brasileirismos, sem linguagem genérica de chatbot.",
+    },
+    {
+        question: "Posso exportar em DOCX e PDF?",
+        answer: "DOCX está disponível em todos os planos. PDF é exclusivo do plano PRO.",
     },
 ];
 

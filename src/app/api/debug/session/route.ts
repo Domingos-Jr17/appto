@@ -5,6 +5,7 @@ import { apiError, apiSuccess, handleApiError } from "@/lib/api";
 import { authOptions } from "@/lib/auth";
 import { logger } from "@/lib/logger";
 import { subscriptionService } from "@/lib/subscription";
+import { env } from "@/lib/env";
 
 async function requireAdminSession() {
   const session = await getServerSession(authOptions);
@@ -16,6 +17,10 @@ async function requireAdminSession() {
 
 export async function GET(_request: NextRequest) {
   try {
+    if (env.isProduction) {
+      return apiError("Desactivado em produção", 403);
+    }
+
     const session = await requireAdminSession();
     if (!session) {
       return apiError("Não autorizado", 403);

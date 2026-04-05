@@ -11,6 +11,20 @@ import {
 } from "@/components/ui/select";
 import type { AcademicEducationLevel } from "@/types/editor";
 
+type CoverFieldKey =
+  | "institutionName"
+  | "courseName"
+  | "studentName"
+  | "advisorName"
+  | "city"
+  | "className"
+  | "turma"
+  | "studentNumber"
+  | "facultyName"
+  | "departmentName"
+  | "semester"
+  | "subjectName";
+
 interface CoverFieldsProps {
   educationLevel: AcademicEducationLevel;
   institutionName?: string;
@@ -25,7 +39,7 @@ interface CoverFieldsProps {
   departmentName?: string;
   semester?: string;
   subjectName?: string;
-  onFieldChange: <K extends keyof CoverFieldsProps>(field: K, value: CoverFieldsProps[K]) => void;
+  onFieldChange: <K extends CoverFieldKey>(field: K, value: string | undefined) => void;
 }
 
 export function CoverFields({

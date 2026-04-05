@@ -13,12 +13,14 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
   const [data, setData] = useState(initialData);
   const [error, setError] = useState<string | null>(null);
 
-  const allDone = data.sections.every((s) => s.status === "done");
-  const progress = Math.round(
-    (data.sections.filter((s) => s.status === "done").length /
-      data.sections.length) *
-      100
-  );
+  const allDone = data.sections.length > 0 && data.sections.every((s) => s.status === "done");
+  const progress = data.sections.length === 0
+    ? 0
+    : Math.round(
+        (data.sections.filter((s) => s.status === "done").length /
+          data.sections.length) *
+          100
+      );
 
   const getDoneCount = useCallback(
     () => data.sections.filter((s) => s.status === "done").length,

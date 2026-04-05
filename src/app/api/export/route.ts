@@ -80,14 +80,13 @@ export async function GET(request: NextRequest) {
 
     const { model, buffer } = exportResult;
 
+    const safeFilename = model.title.replace(/[^a-zA-Z0-9À-ÿ\s\-_]/g, "_").replace(/\s+/g, "_");
+
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type":
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "Content-Disposition": `attachment; filename="${model.title.replace(
-          /[^a-zA-Z0-9]/g,
-          "_"
-        )}.docx"`,
+        "Content-Disposition": `attachment; filename="${safeFilename}.docx"; filename*=UTF-8''${encodeURIComponent(model.title)}.docx`,
       },
     });
   } catch (error) {

@@ -49,16 +49,27 @@ export function AppShellDataProvider({ children }: { children: React.ReactNode }
   }, []);
 
   // Background refresh when stale
+  const lastFetchTimeRef = React.useRef(lastFetchTime);
+  const isLoadingRef = React.useRef(isLoading);
+
+  React.useEffect(() => {
+    lastFetchTimeRef.current = lastFetchTime;
+  }, [lastFetchTime]);
+
+  React.useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
+
   React.useEffect(() => {
     const interval = setInterval(() => {
-      const isStale = Date.now() - lastFetchTime > STALE_THRESHOLD;
-      if (isStale && !isLoading) {
-        refresh(true); // silent refresh
+      const isStale = Date.now() - lastFetchTimeRef.current > STALE_THRESHOLD;
+      if (isStale && !isLoadingRef.current) {
+        refreshRef.current?.(true); // silent refresh
       }
     }, BACKGROUND_REFRESH_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [lastFetchTime, isLoading, refresh]);
+  }, [refresh]);
 
   const value = React.useMemo(
     () => ({

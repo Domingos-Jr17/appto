@@ -68,7 +68,12 @@ export async function parseBody<T extends z.ZodTypeAny>(
   request: Request,
   schema: T,
 ): Promise<z.infer<T>> {
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    throw new ApiRouteError("Pedido inválido", 400, "INVALID_JSON");
+  }
   return schema.parse(body);
 }
 

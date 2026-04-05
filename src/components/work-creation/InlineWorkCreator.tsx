@@ -154,9 +154,9 @@ export function InlineWorkCreator() {
         value={workForm.title}
         onChange={(e) => updateWorkForm("title", e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
+          if (e.key === "Enter" && !e.shiftKey && workForm.title.trim()) {
             e.preventDefault();
-            if (workForm.title.trim()) handleCreate();
+            handleCreate();
           }
         }}
         rows={2}

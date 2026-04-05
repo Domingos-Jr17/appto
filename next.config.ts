@@ -6,7 +6,7 @@ const allowedDevOrigins = (process.env.ALLOWED_DEV_ORIGINS || "127.0.0.1,localho
   .filter(Boolean);
 
 const scriptSrc = process.env.NODE_ENV === "development"
-  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live"
   : "script-src 'self' 'unsafe-inline'";
 
 const securityHeaders = [

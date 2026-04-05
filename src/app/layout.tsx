@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   keywords: ["aptto", "escrita académica", "IA", "Moçambique", "ABNT", "monografia", "trabalho académico"],
   authors: [{ name: "aptto" }],
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logo.svg",
   },
   openGraph: {
     title: "aptto - Copiloto Académico com IA",

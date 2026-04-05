@@ -18,6 +18,7 @@ const PUBLIC_PATHS = new Set([
   "/reset-password",
   "/verify-email",
   "/offline",
+  "/manifest.webmanifest",
 ]);
 const PUBLIC_PREFIXES = [
   "/api/auth",
@@ -130,5 +131,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|robots.txt|logo.svg|sw.js|.*\\..*).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|robots.txt|logo.svg|sw.js|manifest.webmanifest|.*\\..*).*)"],
 };

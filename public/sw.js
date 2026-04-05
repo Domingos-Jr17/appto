@@ -1,6 +1,6 @@
 const CACHE_NAME = "appto-shell-v1";
 const OFFLINE_URL = "/offline";
-const APP_SHELL = ["/", "/app", OFFLINE_URL, "/logo.svg", "/favicon.ico"];
+const APP_SHELL = ["/", "/app", OFFLINE_URL, "/logo.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));

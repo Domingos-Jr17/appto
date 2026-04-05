@@ -42,7 +42,7 @@ export type WorkFormState = {
 
 export const INITIAL_WORK_FORM: WorkFormState = {
   title: "",
-  type: "SCHOOL_WORK",
+  type: "RESEARCH_WORK",
   institutionName: "",
   courseName: "",
   subjectName: "",
@@ -50,7 +50,7 @@ export const INITIAL_WORK_FORM: WorkFormState = {
   advisorName: "",
   studentName: "",
   city: "",
-  educationLevel: "SECONDARY",
+  educationLevel: "HIGHER_EDUCATION",
   objective: "",
   methodology: "",
   citationStyle: "ABNT",
@@ -71,7 +71,7 @@ export const INITIAL_WORK_FORM: WorkFormState = {
 export const EDUCATION_TO_TYPE: Record<AcademicEducationLevel, string> = {
   SECONDARY: "SCHOOL_WORK",
   TECHNICAL: "PRACTICAL_WORK",
-  HIGHER_EDUCATION: "MONOGRAPHY",
+  HIGHER_EDUCATION: "RESEARCH_WORK",
 };
 
 function getSmartTemplate(

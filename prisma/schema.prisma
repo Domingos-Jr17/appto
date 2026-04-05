@@ -168,7 +168,7 @@ model Project {
   id              String         @id @default(cuid())
   title           String
   description     String?
-  type            ProjectType    @default(MONOGRAPHY)
+  type            ProjectType    @default(RESEARCH_WORK)
   educationLevel  EducationLevel @default(SECONDARY)
   status          ProjectStatus  @default(DRAFT)
   wordCount       Int            @default(0)
@@ -264,20 +264,9 @@ model DocumentSection {
 }
 
 enum ProjectType {
-  // Ensino Superior
-  MONOGRAPHY
-  DISSERTATION
-  THESIS
-  ARTICLE
-  ESSAY
-  REPORT
-  
-  // Ensino Secundário e Técnico Profissional
-  SCHOOL_WORK       // Trabalho Escolar (Secundário)
-  RESEARCH_PROJECT  // Projecto de Investigação (Secundário)
-  INTERNSHIP_REPORT // Relatório de Estágio (Técnico Profissional)
-  PRACTICAL_WORK    // Trabalho Prático (Técnico Profissional)
-  TCC               // Trabalho de Conclusão de Curso (Técnico/Secundário)
+  SCHOOL_WORK       // Ensino Secundário
+  PRACTICAL_WORK    // Ensino Técnico Profissional
+  RESEARCH_WORK     // Ensino Superior
 }
 
 enum ProjectStatus {

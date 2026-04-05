@@ -28,19 +28,7 @@ export const deleteAccountSchema = z.object({
   otpCode: z.string().trim().min(6).max(12).optional(),
 });
 
-export const projectTypeSchema = z.enum([
-  "MONOGRAPHY",
-  "DISSERTATION",
-  "THESIS",
-  "ARTICLE",
-  "ESSAY",
-  "REPORT",
-  "SCHOOL_WORK",
-  "RESEARCH_PROJECT",
-  "INTERNSHIP_REPORT",
-  "PRACTICAL_WORK",
-  "TCC",
-]);
+export const projectTypeSchema = z.enum(["SCHOOL_WORK", "PRACTICAL_WORK", "RESEARCH_WORK"]);
 
 export const projectStatusSchema = z.enum([
   "DRAFT",
@@ -104,14 +92,14 @@ export const updateWorkBriefSchema = workBriefSchema.partial();
 export const createProjectSchema = z.object({
   title: z.string().trim().min(5).max(180),
   description: z.string().trim().max(5000).optional(),
-  type: projectTypeSchema.default("MONOGRAPHY"),
+  type: projectTypeSchema.default("RESEARCH_WORK"),
   brief: updateWorkBriefSchema.optional(),
 });
 
 export const createWorkSchema = z.object({
   title: z.string().trim().min(5).max(180),
   description: z.string().trim().max(5000).optional(),
-  type: projectTypeSchema.default("MONOGRAPHY"),
+  type: projectTypeSchema.default("RESEARCH_WORK"),
   brief: workBriefSchema.default({ language: "pt-MZ", citationStyle: "ABNT", coverTemplate: "UEM_STANDARD" }),
   generateContent: z.boolean().default(true),
 });

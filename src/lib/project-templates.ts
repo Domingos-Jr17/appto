@@ -33,19 +33,13 @@ const SCHOOL_PROJECT_SECTIONS: ProjectSectionTemplate[] = [
 
 const SCHOOL_TYPES = new Set([
   "SCHOOL_WORK",
-  "RESEARCH_PROJECT",
   "PRACTICAL_WORK",
-  "INTERNSHIP_REPORT",
-  "TCC",
 ]);
 
 export function getSectionsForEducationLevel(
   educationLevel: string | null | undefined,
   projectType: string,
 ): ProjectSectionTemplate[] {
-  // ESSAY always uses default (3-section structure is defined in SECTION_TEMPLATES)
-  if (projectType === "ESSAY") return DEFAULT_PROJECT_SECTIONS;
-
   if (educationLevel === "SECONDARY" || educationLevel === "TECHNICAL") {
     if (SCHOOL_TYPES.has(projectType)) return SCHOOL_PROJECT_SECTIONS;
   }

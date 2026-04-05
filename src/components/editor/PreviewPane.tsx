@@ -87,7 +87,7 @@ export function PreviewPane({ project, sections }: PreviewPaneProps) {
               <div className="space-y-1 text-sm text-muted-foreground">
                 <p>{getTodayFormatted()}</p>
                 <p className="text-xs">
-                  {numberedSections.length} seccoes · {totalWords.toLocaleString("pt-MZ")} palavras
+                  {numberedSections.length} secções · {totalWords.toLocaleString("pt-MZ")} palavras
                 </p>
               </div>
             </div>

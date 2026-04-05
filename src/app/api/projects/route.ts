@@ -222,7 +222,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await parseBody(request, createProjectSchema);
-    const { title, description, type = "MONOGRAPHY", brief } = body;
+    const { title, description, type, brief } = body;
 
     // Check user subscription
     const { allowed, reason } = await subscriptionService.canGenerateWork(session.user.id);

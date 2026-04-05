@@ -54,64 +54,10 @@ Cite fontes quando relevante.`;
 }
 
 const SECTION_TEMPLATES: Record<string, SectionTemplate[]> = {
-  MONOGRAPHY: [
-    { title: "1. Introdução", order: 3 },
-    { title: "2. Revisão da Literatura", order: 4 },
-    { title: "3. Metodologia", order: 5 },
-    { title: "4. Desenvolvimento", order: 6 },
-    { title: "5. Conclusão", order: 7 },
-  ],
-  DISSERTATION: [
-    { title: "1. Introdução", order: 3 },
-    { title: "2. Fundamentação Teórica", order: 4 },
-    { title: "3. Metodologia", order: 5 },
-    { title: "4. Análise e Discussão", order: 6 },
-    { title: "5. Conclusão", order: 7 },
-  ],
-  THESIS: [
-    { title: "1. Introdução", order: 3 },
-    { title: "2. Revisão da Literatura", order: 4 },
-    { title: "3. Metodologia", order: 5 },
-    { title: "4. Resultados", order: 6 },
-    { title: "5. Discussão", order: 7 },
-    { title: "6. Conclusão", order: 8 },
-  ],
-  ARTICLE: [
-    { title: "1. Introdução", order: 4 },
-    { title: "2. Metodologia", order: 5 },
-    { title: "3. Resultados e Discussão", order: 6 },
-    { title: "4. Conclusão", order: 7 },
-  ],
-  ESSAY: [
-    { title: "1. Introdução", order: 3 },
-    { title: "2. Desenvolvimento", order: 4 },
-    { title: "3. Conclusão", order: 5 },
-  ],
-  REPORT: [
-    { title: "1. Introdução", order: 3 },
-    { title: "2. Enquadramento", order: 4 },
-    { title: "3. Desenvolvimento", order: 5 },
-    { title: "4. Resultados", order: 6 },
-    { title: "5. Conclusão", order: 7 },
-  ],
   SCHOOL_WORK: [
     { title: "1. Introdução", order: 3 },
     { title: "2. Desenvolvimento", order: 4 },
     { title: "3. Conclusão", order: 5 },
-  ],
-  RESEARCH_PROJECT: [
-    { title: "1. Introdução", order: 3 },
-    { title: "2. Revisão da Literatura", order: 4 },
-    { title: "3. Metodologia", order: 5 },
-    { title: "4. Resultados", order: 6 },
-    { title: "5. Conclusão", order: 7 },
-  ],
-  INTERNSHIP_REPORT: [
-    { title: "1. Introdução", order: 3 },
-    { title: "2. Contexto do Estágio", order: 4 },
-    { title: "3. Actividades Desenvolvidas", order: 5 },
-    { title: "4. Resultados e Aprendizagens", order: 6 },
-    { title: "5. Conclusão", order: 7 },
   ],
   PRACTICAL_WORK: [
     { title: "1. Introdução", order: 3 },
@@ -119,26 +65,14 @@ const SECTION_TEMPLATES: Record<string, SectionTemplate[]> = {
     { title: "3. Resultados", order: 5 },
     { title: "4. Conclusão", order: 6 },
   ],
-  TCC: [
+  RESEARCH_WORK: [
     { title: "1. Introdução", order: 3 },
-    { title: "2. Fundamentação Teórica", order: 4 },
+    { title: "2. Revisão da Literatura", order: 4 },
     { title: "3. Metodologia", order: 5 },
     { title: "4. Desenvolvimento", order: 6 },
     { title: "5. Conclusão", order: 7 },
   ],
 };
-
-const SCHOOL_CONTEXT_TYPES = new Set([
-  "SCHOOL_WORK",
-  "RESEARCH_PROJECT",
-  "PRACTICAL_WORK",
-  "INTERNSHIP_REPORT",
-  "TCC",
-]);
-
-function isSchoolGenerationContext(type: string, educationLevel?: string | null) {
-  return educationLevel === "SECONDARY" || educationLevel === "TECHNICAL" || (!educationLevel && SCHOOL_CONTEXT_TYPES.has(type));
-}
 
 const jobStore = globalThis as typeof globalThis & {
   __apptoWorkGenerationJobs?: Map<string, WorkGenerationJobStatus>;
@@ -149,13 +83,7 @@ jobStore.__apptoWorkGenerationJobs = jobs;
 const JOB_RECLAIM_AFTER_MS = 10 * 60_000;
 
 export function getSectionTemplates(type: string, educationLevel?: string | null) {
-  const schoolContext = isSchoolGenerationContext(type, educationLevel);
-
-  if (schoolContext && SCHOOL_CONTEXT_TYPES.has(type)) {
-    return SECTION_TEMPLATES.SCHOOL_WORK;
-  }
-
-  return SECTION_TEMPLATES[type] || SECTION_TEMPLATES.MONOGRAPHY;
+  return SECTION_TEMPLATES[type] || SECTION_TEMPLATES.RESEARCH_WORK;
 }
 
 export function getWorkGenerationStatus(projectId: string): WorkGenerationJobStatus | null {
@@ -327,9 +255,7 @@ async function generateCompleteWorkContent(
     templates,
     profile,
   });
-  const resolvedEducationLevel = isSchoolGenerationContext(type, brief.educationLevel)
-    ? (brief.educationLevel || "SECONDARY")
-    : brief.educationLevel;
+  const resolvedEducationLevel = brief.educationLevel || "HIGHER_EDUCATION";
   const systemPrompt = getSystemPromptForEducation(resolvedEducationLevel);
 
   let assistantReply = "";
@@ -761,9 +687,7 @@ export async function regenerateWorkSection(input: {
 }) {
   const { sectionId, title, type, brief, sectionTitle } = input;
 
-  const isSchool = isSchoolGenerationContext(type, brief.educationLevel);
-  const resolvedEducationLevel = isSchool ? (brief.educationLevel || "SECONDARY") : brief.educationLevel;
-  const wordCount = isSchool ? "entre 180 e 320" : "entre 260 e 420";
+  const wordCount = "entre 260 e 420";
 
   const prompt = `Regere apenas a secção "${sectionTitle}" de um trabalho académico.
 
@@ -773,14 +697,14 @@ Contexto do briefing:
 ${buildBriefContext(brief)}
 
 Requisitos obrigatórios:
-- Escreva em Português académico de Moçambique${isSchool ? " (simplificado para o ensino secundário)" : ""}
+- Escreva em Português académico de Moçambique
 - Use a norma ${brief.citationStyle || "ABNT"}
 - Produza ${wordCount} palavras
 - Mantenha tom formal, coerente e plausível
 - Não invente dados factuais, leis, autores ou referências bibliográficas sem base no briefing
 - Devolva apenas o conteúdo final da secção, sem markdown extra nem explicações`;
 
-  const systemPrompt = getSystemPromptForEducation(resolvedEducationLevel);
+  const systemPrompt = getSystemPromptForEducation("HIGHER_EDUCATION");
   const completion = await runAIChatCompletion({
     model: "", // Provider uses its default model
     messages: [
@@ -809,18 +733,9 @@ Requisitos obrigatórios:
 
 export function formatProjectType(type: string): string {
   const types: Record<string, string> = {
-    MONOGRAPHY: "Monografia",
-    DISSERTATION: "Dissertação",
-    THESIS: "Tese",
-    ARTICLE: "Artigo Científico",
-    ESSAY: "Ensaio",
-    REPORT: "Relatório",
     SCHOOL_WORK: "Trabalho Escolar",
-    RESEARCH_PROJECT: "Trabalho de Pesquisa",
-    INTERNSHIP_REPORT: "Relatório de Estágio",
     PRACTICAL_WORK: "Trabalho Prático",
-    TCC: "Trabalho de Conclusão de Curso",
+    RESEARCH_WORK: "Trabalho de Investigação",
   };
-
   return types[type] || "Trabalho Académico";
 }

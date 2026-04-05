@@ -49,13 +49,13 @@ export interface ParsedGeneratedWorkContent {
   sections: GeneratedSection[];
 }
 
-const SCHOOL_CONTEXT_TYPES = new Set([
-  "SCHOOL_WORK",
-  "RESEARCH_PROJECT",
-  "PRACTICAL_WORK",
-  "INTERNSHIP_REPORT",
-  "TCC",
-]);
+function isSchoolContext(educationLevel?: string | null) {
+  return educationLevel === "SECONDARY" || educationLevel === "TECHNICAL";
+}
+
+function isHigherEducation(type: string, educationLevel?: string | null) {
+  return !isSchoolContext(educationLevel);
+}
 
 function createRange(min: number, max: number): WordRange {
   return {
@@ -83,12 +83,8 @@ function countWords(text: string) {
   return stripped.split(/\s+/).filter(Boolean).length;
 }
 
-function isSchoolContext(educationLevel?: AcademicEducationLevel) {
-  return educationLevel === "SECONDARY" || educationLevel === "TECHNICAL";
-}
-
 function shouldUseSchoolProfile(type: string, educationLevel?: AcademicEducationLevel) {
-  return isSchoolContext(educationLevel) || (!educationLevel && SCHOOL_CONTEXT_TYPES.has(type));
+  return isSchoolContext(educationLevel);
 }
 
 function normalizeTitle(title: string) {
@@ -255,11 +251,7 @@ export function getWorkGenerationProfile(
   }));
 
   const abstractRequired = !schoolContext;
-  const abstractRange = abstractRequired
-    ? type === "MONOGRAPHY" || type === "DISSERTATION" || type === "THESIS"
-      ? createRange(180, 260)
-      : createRange(140, 220)
-    : null;
+  const abstractRange = abstractRequired ? createRange(180, 260) : createRange(140, 220);
 
   const citationGuidance = schoolContext
     ? brief.referencesSeed

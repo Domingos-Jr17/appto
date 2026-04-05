@@ -21,8 +21,8 @@ export const featureRegistry: Record<FeatureKey, FeatureStatus> = {
   passwordReset: "beta",
   mobilePayments: "beta",
   transparentCredits: "real",
-  landingSocialProof: "hidden",
-  landingTestimonials: "hidden",
+  landingSocialProof: "real",
+  landingTestimonials: "real",
 };
 
 export function getFeatureStatus(feature: FeatureKey): FeatureStatus {

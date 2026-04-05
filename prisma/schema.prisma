@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,42 +8,38 @@ datasource db {
   directUrl = env("DATABASE_URL_DIRECT")
 }
 
-// ==================== USER & AUTH ====================
-
 model User {
-  id              String          @id @default(cuid())
-  email           String          @unique
-  name            String?
-  password        String?   // Hashed password for credentials auth
-  image           String?
-  emailVerified   DateTime?
-  role            Role            @default(STUDENT)
-  educationLevel  EducationLevel? @default(SECONDARY)
-  twoFactorEnabled Boolean        @default(false)
-  passwordChangedAt DateTime?
-  failedLoginAttempts Int         @default(0)
-  lockoutUntil     DateTime?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
-  // Relations
-  accounts        Account[]
-  sessions        Session[]
-  projects        Project[]
-  credits         Credit?
-  transactions    CreditTransaction[]
-  subscription    Subscription?
-  settings        UserSettings?
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  name                String?
+  password            String?
+  image               String?
+  emailVerified       DateTime?
+  role                Role                 @default(STUDENT)
+  educationLevel      EducationLevel?      @default(SECONDARY)
+  twoFactorEnabled    Boolean              @default(false)
+  passwordChangedAt   DateTime?
+  failedLoginAttempts Int                  @default(0)
+  lockoutUntil        DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  accounts            Account[]
+  authSessionAudits   AuthSessionAudit[]
+  transactions        CreditTransaction[]
+  credits             Credit?
+  generationJobs      GenerationJob[]
+  knowledgeSources    KnowledgeSource[]
   passwordResetTokens PasswordResetToken[]
-  authSessionAudits AuthSessionAudit[]
-  totpCredential  TotpCredential?
-  recoveryCodes   RecoveryCode[]
   paymentTransactions PaymentTransaction[]
+  createdExports      ProjectExport[]      @relation("ProjectExportCreator")
+  projects            Project[]
+  recoveryCodes       RecoveryCode[]
+  sessions            Session[]
+  storedFiles         StoredFile[]
+  subscription        Subscription?
+  totpCredential      TotpCredential?
+  settings            UserSettings?
   workPurchases       WorkPurchase[]
-  knowledgeSources KnowledgeSource[]
-  storedFiles     StoredFile[]
-  createdExports  ProjectExport[]     @relation("ProjectExportCreator")
-  generationJobs  GenerationJob[]
 
   @@map("users")
 }
@@ -64,8 +57,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -95,59 +87,328 @@ model VerificationToken {
 }
 
 model PasswordResetToken {
-  id         String   @id @default(cuid())
-  userId     String
-  tokenHash  String   @unique
-  expiresAt  DateTime
-  usedAt     DateTime?
-  createdAt  DateTime @default(now())
-
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, expiresAt])
   @@map("password_reset_tokens")
 }
 
 model AuthSessionAudit {
-  id         String           @id @default(cuid())
-  userId     String
-  sessionId  String?
-  event      AuthSessionEvent
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime         @default(now())
-
-  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String           @id @default(cuid())
+  userId    String
+  sessionId String?
+  event     AuthSessionEvent
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@map("auth_session_audits")
 }
 
 model TotpCredential {
-  id              String   @id @default(cuid())
-  userId          String   @unique
+  id              String    @id @default(cuid())
+  userId          String    @unique
   secretEncrypted String
   enabledAt       DateTime?
   lastUsedAt      DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("totp_credentials")
 }
 
 model RecoveryCode {
-  id         String   @id @default(cuid())
-  userId     String
-  codeHash   String   @unique
-  usedAt     DateTime?
-  createdAt  DateTime @default(now())
-
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String    @id @default(cuid())
+  userId    String
+  codeHash  String    @unique
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, usedAt])
   @@map("recovery_codes")
+}
+
+model Project {
+  id             String            @id @default(cuid())
+  title          String
+  description    String?
+  type           ProjectType       @default(MONOGRAPHY)
+  educationLevel EducationLevel    @default(SECONDARY)
+  status         ProjectStatus     @default(DRAFT)
+  wordCount      Int               @default(0)
+  userId         String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  sections       DocumentSection[]
+  generationJob  GenerationJob?
+  brief          ProjectBrief?
+  exports        ProjectExport[]
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storedFiles    StoredFile[]
+
+  @@map("projects")
+}
+
+model ProjectBrief {
+  projectId              String               @id
+  workType               ProjectType
+  generationStatus       WorkGenerationStatus @default(BRIEFING)
+  institutionName        String?
+  courseName             String?
+  subjectName            String?
+  educationLevel         EducationLevel?
+  advisorName            String?
+  studentName            String?
+  city                   String?
+  academicYear           Int?
+  dueDate                DateTime?            @db.Date
+  theme                  String?
+  subtitle               String?
+  objective              String?
+  researchQuestion       String?
+  methodology            String?
+  keywords               String?
+  referencesSeed         String?
+  citationStyle          CitationStyle        @default(ABNT)
+  language               String               @default("pt-MZ")
+  additionalInstructions String?
+  coverTemplate          String?              @default("UEM_STANDARD")
+  className              String?              @db.VarChar(30)
+  turma                  String?              @db.VarChar(10)
+  facultyName            String?              @db.VarChar(180)
+  departmentName         String?              @db.VarChar(180)
+  studentNumber          String?              @db.VarChar(30)
+  semester               String?              @db.VarChar(10)
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  project                Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([generationStatus])
+  @@map("project_briefs")
+}
+
+model GenerationJob {
+  id          String    @id @default(cuid())
+  projectId   String    @unique
+  userId      String
+  status      String    @default("GENERATING")
+  progress    Int       @default(0)
+  step        String?
+  error       String?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("generation_jobs")
+}
+
+model DocumentSection {
+  id        String            @id @default(cuid())
+  projectId String
+  parentId  String?
+  title     String
+  content   String?
+  order     Int               @default(0)
+  wordCount Int               @default(0)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  parent    DocumentSection?  @relation("SectionTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  DocumentSection[] @relation("SectionTree")
+  project   Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("document_sections")
+}
+
+model Credit {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Int      @default(0)
+  used      Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("credits")
+}
+
+model CreditTransaction {
+  id          String          @id @default(cuid())
+  userId      String
+  amount      Int
+  type        TransactionType
+  description String?
+  metadata    String?
+  createdAt   DateTime        @default(now())
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("credit_transactions")
+}
+
+model PaymentTransaction {
+  id                String          @id @default(cuid())
+  userId            String
+  provider          PaymentProvider
+  providerReference String
+  status            PaymentStatus   @default(PENDING)
+  creditsAmount     Int
+  moneyAmount       Int
+  currency          String          @default("MZN")
+  payloadJson       Json?
+  confirmedAt       DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerReference])
+  @@index([userId, status, createdAt])
+  @@map("payment_transactions")
+}
+
+model Subscription {
+  id             String             @id @default(cuid())
+  userId         String             @unique
+  package        PackageType        @default(FREE)
+  status         SubscriptionStatus @default(ACTIVE)
+  worksPerMonth  Int                @default(1)
+  worksUsed      Int                @default(0)
+  lastUsageReset DateTime           @default(now())
+  startDate      DateTime           @default(now())
+  endDate        DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model WorkPurchase {
+  id        String    @id @default(cuid())
+  userId    String
+  quantity  Int
+  pricePaid Int
+  used      Int       @default(0)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("work_purchases")
+}
+
+model UserSettings {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  language             String   @default("pt-MZ")
+  citationStyle        String   @default("ABNT")
+  fontSize             Int      @default(14)
+  autoSave             Boolean  @default(true)
+  aiSuggestionsEnabled Boolean  @default(true)
+  emailNotifications   Boolean  @default(true)
+  marketingEmails      Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+model KnowledgeSource {
+  id        String              @id @default(cuid())
+  userId    String?
+  name      String
+  slug      String              @unique
+  type      KnowledgeSourceType
+  isActive  Boolean             @default(true)
+  metadata  Json?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  documents KnowledgeDocument[]
+  user      User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("knowledge_sources")
+}
+
+model KnowledgeDocument {
+  id        String           @id @default(cuid())
+  sourceId  String
+  title     String
+  content   String
+  metadata  Json?
+  checksum  String?
+  isIndexed Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  chunks    KnowledgeChunk[]
+  source    KnowledgeSource  @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId, isIndexed])
+  @@map("knowledge_documents")
+}
+
+model KnowledgeChunk {
+  id            String            @id @default(cuid())
+  documentId    String
+  chunkIndex    Int
+  content       String
+  embeddingJson String?
+  metadata      Json?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  document      KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, chunkIndex])
+  @@map("knowledge_chunks")
+}
+
+model StoredFile {
+  id           String           @id @default(cuid())
+  userId       String
+  projectId    String?
+  kind         StoredFileKind
+  provider     StorageProvider
+  bucket       String
+  objectKey    String           @unique
+  mimeType     String
+  sizeBytes    Int
+  originalName String
+  checksum     String?
+  status       StoredFileStatus @default(PENDING)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  exports      ProjectExport[]
+  project      Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind, createdAt])
+  @@index([projectId, kind, createdAt])
+  @@map("stored_files")
+}
+
+model ProjectExport {
+  id          String       @id @default(cuid())
+  projectId   String
+  fileId      String
+  format      ExportFormat
+  createdById String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   User         @relation("ProjectExportCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  file        StoredFile   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, format, createdAt])
+  @@index([createdById, createdAt])
+  @@map("project_exports")
 }
 
 enum Role {
@@ -157,116 +418,23 @@ enum Role {
 }
 
 enum EducationLevel {
-  SECONDARY        // Ensino Secundário
-  TECHNICAL        // Ensino Técnico Profissional
-  HIGHER_EDUCATION // Ensino Superior
-}
-
-// ==================== PROJECTS & DOCUMENTS ====================
-
-model Project {
-  id              String         @id @default(cuid())
-  title           String
-  description     String?
-  type            ProjectType    @default(RESEARCH_WORK)
-  educationLevel  EducationLevel @default(SECONDARY)
-  status          ProjectStatus  @default(DRAFT)
-  wordCount       Int            @default(0)
-  userId          String
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  // Relations
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  brief           ProjectBrief?
-  sections        DocumentSection[]
-  storedFiles     StoredFile[]
-  exports         ProjectExport[]
-  generationJob   GenerationJob?
-
-  @@map("projects")
-}
-
-model ProjectBrief {
-  projectId               String               @id
-  workType                ProjectType
-  generationStatus        WorkGenerationStatus @default(BRIEFING)
-  institutionName         String?
-  courseName              String?
-  subjectName             String?
-  educationLevel          EducationLevel?
-  advisorName             String?
-  studentName             String?
-  city                    String?
-  academicYear            Int?
-  dueDate                 DateTime?            @db.Date
-  theme                   String?
-  subtitle                String?
-  objective               String?
-  researchQuestion        String?
-  methodology             String?
-  keywords                String?
-  referencesSeed          String?
-  citationStyle           CitationStyle        @default(ABNT)
-  language                String               @default("pt-MZ")
-  additionalInstructions  String?
-  coverTemplate           String?              @default("UEM_STANDARD")
-  // Education-level specific fields
-  className               String?              @db.VarChar(30)   // 10ª/11ª/12ª Classe (Secundário)
-  turma                   String?              @db.VarChar(10)   // A/B/C (Secundário)
-  facultyName             String?              @db.VarChar(180)  // Faculdade (Superior)
-  departmentName          String?              @db.VarChar(180)  // Departamento (Superior)
-  studentNumber           String?              @db.VarChar(30)   // Nº de Estudante
-  semester                String?              @db.VarChar(10)   // I/II (Superior)
-  createdAt               DateTime             @default(now())
-  updatedAt               DateTime             @updatedAt
-
-  project                 Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  @@index([generationStatus])
-  @@map("project_briefs")
-}
-
-model GenerationJob {
-  id            String   @id @default(cuid())
-  projectId     String   @unique
-  userId        String
-  status        String   @default("GENERATING")
-  progress      Int      @default(0)
-  step          String?
-  error         String?
-  startedAt     DateTime @default(now())
-  completedAt   DateTime?
-  
-  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@map("generation_jobs")
-}
-
-model DocumentSection {
-  id          String   @id @default(cuid())
-  projectId   String
-  parentId    String?
-  title       String
-  content     String?
-  order       Int      @default(0)
-  wordCount   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  project     Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  parent      DocumentSection?  @relation("SectionTree", fields: [parentId], references: [id], onDelete: Cascade)
-  children    DocumentSection[] @relation("SectionTree")
-
-  @@map("document_sections")
+  SECONDARY
+  TECHNICAL
+  HIGHER_EDUCATION
 }
 
 enum ProjectType {
-  SCHOOL_WORK       // Ensino Secundário
-  PRACTICAL_WORK    // Ensino Técnico Profissional
-  RESEARCH_WORK     // Ensino Superior
+  MONOGRAPHY
+  DISSERTATION
+  THESIS
+  ARTICLE
+  ESSAY
+  REPORT
+  SCHOOL_WORK
+  RESEARCH_PROJECT
+  INTERNSHIP_REPORT
+  PRACTICAL_WORK
+  TCC
 }
 
 enum ProjectStatus {
@@ -291,96 +459,12 @@ enum CitationStyle {
   Vancouver
 }
 
-// ==================== CREDITS & SUBSCRIPTIONS ====================
-
-model Credit {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  balance   Int      @default(0)
-  used      Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("credits")
-}
-
-model CreditTransaction {
-  id          String          @id @default(cuid())
-  userId      String
-  amount      Int
-  type        TransactionType
-  description String?
-  metadata    String? // JSON string for additional data
-  createdAt   DateTime        @default(now())
-
-  // Relations
-  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("credit_transactions")
-}
-
-model PaymentTransaction {
-  id                String          @id @default(cuid())
-  userId            String
-  provider          PaymentProvider
-  providerReference String
-  status            PaymentStatus   @default(PENDING)
-  creditsAmount     Int
-  moneyAmount       Int
-  currency          String          @default("MZN")
-  payloadJson       Json?
-  confirmedAt       DateTime?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-
-  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerReference])
-  @@index([userId, status, createdAt])
-  @@map("payment_transactions")
-}
-
 enum TransactionType {
   PURCHASE
   USAGE
   BONUS
   REFUND
   SUBSCRIPTION
-}
-
-model Subscription {
-  id              String             @id @default(cuid())
-  userId          String             @unique
-  package         PackageType        @default(FREE)
-  status          SubscriptionStatus @default(ACTIVE)
-  worksPerMonth   Int                @default(1)
-  worksUsed       Int                @default(0)
-  lastUsageReset  DateTime           @default(now())
-  startDate       DateTime           @default(now())
-  endDate         DateTime?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-
-  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("subscriptions")
-}
-
-model WorkPurchase {
-  id            String    @id @default(cuid())
-  userId        String
-  quantity      Int
-  pricePaid     Int
-  used          Int       @default(0)
-  createdAt     DateTime  @default(now())
-  expiresAt     DateTime?
-  
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("work_purchases")
 }
 
 enum PackageType {
@@ -439,143 +523,10 @@ enum StoredFileStatus {
   DELETED
 }
 
-// ==================== USER SETTINGS ====================
-
-model UserSettings {
-  id                    String   @id @default(cuid())
-  userId                String   @unique
-  language              String   @default("pt-MZ")
-  citationStyle         String   @default("ABNT")
-  fontSize              Int      @default(14)
-  autoSave              Boolean  @default(true)
-  aiSuggestionsEnabled  Boolean  @default(true)
-  emailNotifications    Boolean  @default(true)
-  marketingEmails       Boolean  @default(false)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  // Relations
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("user_settings")
-}
-
-model ProductEvent {
-  id         String   @id @default(cuid())
-  name       String
-  category   String
-  userId     String?
-  projectId  String?
-  paymentId  String?
-  metadata   Json?
-  createdAt  DateTime @default(now())
-
-  @@index([name, createdAt])
-  @@index([category, createdAt])
-  @@index([userId, createdAt])
-  @@index([projectId, createdAt])
-  @@map("product_events")
-}
-
-model KnowledgeSource {
-  id          String              @id @default(cuid())
-  userId      String?
-  name        String
-  slug        String              @unique
-  type        KnowledgeSourceType
-  isActive    Boolean             @default(true)
-  metadata    Json?
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-
-  user        User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  documents   KnowledgeDocument[]
-
-  @@map("knowledge_sources")
-}
-
-model KnowledgeDocument {
-  id          String            @id @default(cuid())
-  sourceId    String
-  title       String
-  content     String
-  metadata    Json?
-  checksum    String?
-  isIndexed   Boolean           @default(false)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-
-  source      KnowledgeSource   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
-  chunks      KnowledgeChunk[]
-
-  @@index([sourceId, isIndexed])
-  @@map("knowledge_documents")
-}
-
-model KnowledgeChunk {
-  id            String            @id @default(cuid())
-  documentId    String
-  chunkIndex    Int
-  content       String
-  embeddingJson String?
-  embeddingVector Unsupported("vector(128)")? @map("embedding_vector")
-  metadata      Json?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-
-  document      KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
-
-  @@unique([documentId, chunkIndex])
-  @@map("knowledge_chunks")
-}
-
 enum KnowledgeSourceType {
   PUBLIC
   INSTITUTIONAL
   PRIVATE
-}
-
-model StoredFile {
-  id           String           @id @default(cuid())
-  userId       String
-  projectId    String?
-  kind         StoredFileKind
-  provider     StorageProvider
-  bucket       String
-  objectKey    String           @unique
-  mimeType     String
-  sizeBytes    Int
-  originalName String
-  checksum     String?
-  status       StoredFileStatus @default(PENDING)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-
-  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project      Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  exports      ProjectExport[]
-
-  @@index([userId, kind, createdAt])
-  @@index([projectId, kind, createdAt])
-  @@map("stored_files")
-}
-
-model ProjectExport {
-  id          String       @id @default(cuid())
-  projectId   String
-  fileId      String
-  format      ExportFormat
-  createdById String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  file        StoredFile   @relation(fields: [fileId], references: [id], onDelete: Cascade)
-  createdBy   User         @relation("ProjectExportCreator", fields: [createdById], references: [id], onDelete: Cascade)
-
-  @@index([projectId, format, createdAt])
-  @@index([createdById, createdAt])
-  @@map("project_exports")
 }
 
 enum ExportFormat {

@@ -1,0 +1,376 @@
+{
+  "common": {
+    "appName": "aptto",
+    "loading": "A carregar...",
+    "saving": "A guardar...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Criar",
+    "confirm": "Confirmar",
+    "back": "Voltar",
+    "next": "Seguinte",
+    "previous": "Anterior",
+    "search": "Pesquisar",
+    "close": "Fechar",
+    "open": "Abrir",
+    "required": "Obrigatório",
+    "optional": "Opcional",
+    "error": "Erro",
+    "success": "Sucesso",
+    "tryAgain": "Tentar novamente"
+  },
+  "auth": {
+    "login": {
+      "title": "Entrar na tua conta",
+      "subtitle": "Introduz os teus dados para continuares",
+      "email": "Email",
+      "emailPlaceholder": "seu@email.com",
+      "password": "Palavra-passe",
+      "passwordPlaceholder": "••••••••",
+      "showPassword": "Mostrar palavra-passe",
+      "hidePassword": "Esconder palavra-passe",
+      "forgotPassword": "Esqueceste a palavra-passe?",
+      "loginButton": "Entrar",
+      "loginWithGoogle": "Entrar com Google",
+      "noAccount": "Não tens conta?",
+      "register": "Regista-te",
+      "twoFactorCode": "Código de verificação",
+      "twoFactorDescription": "Introduz o código de 6 dígitos da tua app de autenticação.",
+      "verify": "Verificar"
+    },
+    "register": {
+      "title": "Criar conta",
+      "subtitle": "Preenche os dados abaixo para começares",
+      "fullName": "Nome completo",
+      "namePlaceholder": "O teu nome",
+      "email": "Email",
+      "password": "Palavra-passe",
+      "confirmPassword": "Confirmar palavra-passe",
+      "passwordStrength": "Força da palavra-passe",
+      "weak": "Fraca",
+      "regular": "Regular",
+      "good": "Boa",
+      "strong": "Forte",
+      "passwordsMatch": "Palavras-passe coincidem",
+      "passwordsDontMatch": "As palavras-passe não coincidem",
+      "acceptTerms": "Eu aceito os {termsLink} e a {privacyLink}",
+      "termsOfUse": "Termos de Uso",
+      "privacyPolicy": "Política de Privacidade",
+      "mustAcceptTerms": "Precisas de aceitar os termos de uso",
+      "passwordMinLength": "A palavra-passe deve ter pelo menos 8 caracteres",
+      "createAccount": "Criar conta",
+      "hasAccount": "Já tens conta?",
+      "login": "Entrar",
+      "errorCreating": "Erro ao criar conta",
+      "errorGeneric": "Ocorreu um erro. Tente novamente."
+    },
+    "forgotPassword": {
+      "title": "Recuperar palavra-passe",
+      "subtitle": "Indica o teu email e enviamos instruções para redefinir a palavra-passe.",
+      "email": "Email",
+      "emailPlaceholder": "seu@email.com",
+      "sendInstructions": "Enviar instruções",
+      "successTitle": "Verifica o teu email",
+      "successMessage": "Se uma conta com esse email existir, enviámos instruções para redefinir a palavra-passe.",
+      "backToLogin": "Voltar ao login"
+    },
+    "resetPassword": {
+      "title": "Redefinir palavra-passe",
+      "subtitle": "Introduz a tua nova palavra-passe.",
+      "password": "Nova palavra-passe",
+      "confirmPassword": "Confirmar nova palavra-passe",
+      "reset": "Redefinir palavra-passe",
+      "success": "Palavra-passe redefinida com sucesso.",
+      "backToLogin": "Voltar ao login",
+      "passwordMinLength": "A palavra-passe deve ter pelo menos 8 caracteres"
+    }
+  },
+  "landing": {
+    "hero": {
+      "badge": "Feito para estudantes universitários",
+      "title1": "O teu copiloto",
+      "title2": "académico",
+      "subtitle": "Estrutura, escreve e melhora os teus trabalhos académicos com assistência inteligente. Pensado para estudantes moçambicanos.",
+      "cta": "Começar Grátis",
+      "demo": "Ver Demo",
+      "trustPrefix": "Com a confiança de estudantes de",
+      "trustSuffix": "universidades moçambicanas"
+    },
+    "features": {
+      "title": "Recursos",
+      "subtitle": "Tudo o que precisas para o teu trabalho académico"
+    },
+    "howItWorks": {
+      "title": "Como Funciona",
+      "subtitle": "Do tema à submissão em quatro passos",
+      "step1Title": "Crie o seu projecto",
+      "step1Desc": "Configure o trabalho académico: tema, curso, nível e tipo de documento.",
+      "step2Title": "Defina os parâmetros",
+      "step2Desc": "Indique objectivos, metodologia pretendida e palavras-chave relevantes.",
+      "step3Title": "Trabalhe com a IA",
+      "step3Desc": "Estruture, escreva e melhore o texto com assistência inteligente personalizada.",
+      "step4Title": "Exporte e submeta",
+      "step4Desc": "Normalize referências, exporte em DOCX e siga para revisão ou submissão."
+    },
+    "pricing": {
+      "title": "Preços",
+      "subtitle": "Pacotes que cabem no teu bolso",
+      "billingToggle": "Facturação mensal",
+      "popular": "Mais Popular",
+      "perMonth": "por mês",
+      "forever": "para sempre",
+      "startFree": "Começar Grátis",
+      "choose": "Escolher {name}",
+      "disclaimer": "Cobrança ainda em validação operacional"
+    },
+    "testimonials": {
+      "title": "Testemunhos",
+      "subtitle": "O que dizem os estudantes que usam o aptto"
+    },
+    "socialProof": {
+      "worksCreated": "trabalhos criados",
+      "activeStudents": "estudantes activos",
+      "exportTypes": "tipos de exportação",
+      "webAccess": "acesso web ao workspace"
+    },
+    "faq": {
+      "title": "Perguntas Frequentes",
+      "subtitle": "Respostas para as dúvidas mais comuns",
+      "contactUs": "Fale connosco"
+    },
+    "differentiators": {
+      "title": "Porquê o aptto?",
+      "subtitle": "O que nos diferencia das IAs genéricas"
+    },
+    "finalCTA": {
+      "title": "Pronto para começar?",
+      "subtitle": "Junta-te a milhares de estudantes moçambicanos que já usam o aptto para criar melhores trabalhos académicos.",
+      "cta": "Começar Grátis"
+    },
+    "footer": {
+      "product": "Produto",
+      "company": "Empresa",
+      "legal": "Legal",
+      "features": "Funcionalidades",
+      "pricing": "Preços",
+      "demo": "Demo",
+      "faq": "FAQ",
+      "about": "Sobre nós",
+      "blog": "Blog",
+      "careers": "Carreiras",
+      "contact": "Contacto",
+      "terms": "Termos de uso",
+      "privacy": "Privacidade",
+      "cookies": "Cookies",
+      "description": "Estrutura, escreve e melhora os teus trabalhos académicos com assistência inteligente.",
+      "rights": "Todos os direitos reservados.",
+      "location": "Maputo, Moçambique"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Bem-vindo de volta",
+    "nextAction": "Próxima acção",
+    "resumeChat": "Retomar no chat",
+    "resumeDocument": "Abrir documento",
+    "resumeStructure": "Retomar estrutura",
+    "noProjects": "Ainda não tens projectos",
+    "createFirst": "Cria o teu primeiro trabalho",
+    "allProjects": "Todos os projectos",
+    "recentProjects": "Projectos recentes",
+    "stats": {
+      "totalProjects": "Total de projectos",
+      "inProgress": "Em curso",
+      "completed": "Concluídos",
+      "wordsWritten": "Palavras escritas"
+    }
+  },
+  "projects": {
+    "title": "Projectos",
+    "newProject": "Novo projecto",
+    "createProject": "Criar projecto",
+    "editProject": "Editar projecto",
+    "deleteProject": "Eliminar projecto",
+    "deleteConfirm": "Tem a certeza de que queres eliminar este projecto?",
+    "titleLabel": "Título do Trabalho",
+    "titlePlaceholder": "Ex: Impacto das redes sociais na educação",
+    "type": "Tipo de trabalho",
+    "description": "Descrição (opcional)",
+    "descriptionPlaceholder": "Descreve brevemente o teu trabalho...",
+    "aiAssistance": "Assistência IA",
+    "cost": "Custo",
+    "credits": "créditos",
+    "availableCredits": "Créditos disponíveis",
+    "status": {
+      "draft": "Rascunho",
+      "inProgress": "Em curso",
+      "review": "Em revisão",
+      "completed": "Concluído"
+    },
+    "types": {
+      "monography": "Monografia",
+      "dissertation": "Dissertação",
+      "thesis": "Tese",
+      "article": "Artigo",
+      "essay": "Ensaio",
+      "report": "Relatório",
+      "schoolWork": "Trabalho escolar",
+      "researchProject": "Trabalho de pesquisa",
+      "internshipReport": "Relatório de estágio",
+      "practicalWork": "Trabalho prático",
+      "tcc": "TCC"
+    }
+  },
+  "editor": {
+    "title": "Editor",
+    "chat": "Chat",
+    "structure": "Estrutura",
+    "document": "Documento",
+    "export": "Exportar",
+    "exportDocx": "Descarregar DOCX",
+    "exportPdf": "Descarregar PDF",
+    "sections": "secções",
+    "words": "palavras",
+    "preview": "Pré-visualizar",
+    "tableOfContents": "Índice",
+    "coverPage": "Capa",
+    "noContent": "Secção ainda sem conteúdo.",
+    "noDocument": "O documento ainda não tem conteúdo escrito.",
+    "writeInSections": "Escreva nas secções do editor para ver o preview aqui.",
+    "today": "hoje",
+    "sectionNumber": "Secção {number}",
+    "renameSection": "Mudar nome da secção",
+    "deleteSection": "Eliminar secção",
+    "deleteSectionConfirm": "Tem a certeza de que queres eliminar esta secção?",
+    "deleteSectionWithContent": "Esta secção tem conteúdo. A eliminação é permanente.",
+    "generateContent": "Gerar conteúdo",
+    "improveWriting": "Melhorar escrita",
+    "summarize": "Resumir",
+    "translate": "Traduzir"
+  },
+  "settings": {
+    "title": "Definições",
+    "tabs": {
+      "profile": "Perfil",
+      "preferences": "Preferências",
+      "security": "Segurança",
+      "account": "Conta"
+    },
+    "profile": {
+      "title": "Perfil",
+      "name": "Nome",
+      "email": "Email",
+      "emailReadOnly": "O email não pode ser alterado",
+      "avatar": "Foto de perfil",
+      "uploadAvatar": "Carregar foto",
+      "removeAvatar": "Remover foto",
+      "saveChanges": "Guardar alterações"
+    },
+    "preferences": {
+      "title": "Preferências",
+      "language": "Idioma",
+      "languagePT_MZ": "Português (Moçambique)",
+      "languagePT_BR": "Português (Brasil)",
+      "languageEN": "Inglês",
+      "languageES": "Espanhol",
+      "theme": "Tema",
+      "themeLight": "Claro",
+      "themeDark": "Escuro",
+      "themeSystem": "Sistema",
+      "fontSize": "Tamanho da fonte",
+      "citationStyle": "Estilo de citação",
+      "citationABNT": "ABNT",
+      "citationAPA": "APA",
+      "citationVancouver": "Vancouver",
+      "autoSave": "Guardar automaticamente",
+      "aiSuggestions": "Sugestões de IA"
+    },
+    "security": {
+      "title": "Segurança",
+      "changePassword": "Alterar palavra-passe",
+      "currentPassword": "Palavra-passe actual",
+      "newPassword": "Nova palavra-passe",
+      "confirmNewPassword": "Confirmar nova palavra-passe",
+      "twoFactor": "Autenticação de dois factores",
+      "twoFactorEnable": "Activar 2FA",
+      "twoFactorDisable": "Desactivar 2FA",
+      "twoFactorSetup": "Configurar 2FA",
+      "twoFactorVerify": "Verificar código",
+      "twoFactorDescription": "Adiciona uma camada extra de segurança à tua conta.",
+      "recoveryCodes": "Códigos de recuperação",
+      "recoveryCodesDescription": "Guarda estes códigos num local seguro. Cada código só pode ser usado uma vez.",
+      "sessions": "Sessões activas",
+      "revokeSession": "Terminar sessão",
+      "revokeAllSessions": "Terminar todas as outras sessões",
+      "currentSession": "Sessão actual",
+      "lastActive": "Última actividade",
+      "passwordMinLength": "A palavra-passe deve ter pelo menos 8 caracteres"
+    },
+    "account": {
+      "title": "Conta",
+      "status": "Estado da conta",
+      "package": "Pacote actual",
+      "exportData": "Exportar os meus dados",
+      "exportDataDescription": "Descarrega uma cópia de todos os teus dados em formato JSON.",
+      "exportDataButton": "Exportar dados",
+      "deleteAccount": "Eliminar conta",
+      "deleteAccountDescription": "Esta acção é irreversível. Todos os teus dados serão eliminados permanentemente.",
+      "deleteAccountButton": "Eliminar conta",
+      "deleteConfirmLabel": "Escreve EXCLUIR para confirmar",
+      "deleteConfirmPlaceholder": "EXCLUIR"
+    }
+  },
+  "subscription": {
+    "title": "Subscrição",
+    "currentPlan": "Plano actual",
+    "upgrade": "Mudar de plano",
+    "addCredits": "Adicionar créditos",
+    "extraWorks": "Trabalhos extras",
+    "buyExtraWorks": "Comprar trabalhos extras",
+    "transactionHistory": "Histórico de transacções",
+    "paymentMethod": "Método de pagamento",
+    "mPesa": "M-Pesa",
+    "eMola": "e-Mola",
+    "noTransactions": "Sem transacções ainda"
+  },
+  "workspace": {
+    "chat": {
+      "title": "Chat",
+      "placeholder": "Descreve o que precisas...",
+      "send": "Enviar",
+      "generating": "A gerar...",
+      "regenerate": "Gerar novamente"
+    },
+    "structure": {
+      "title": "Estrutura",
+      "addSection": "Adicionar secção",
+      "removeSection": "Remover secção",
+      "approve": "Aprovar estrutura",
+      "editStructure": "Editar estrutura"
+    },
+    "document": {
+      "title": "Documento",
+      "generateSection": "Gerar secção",
+      "generateComplete": "Gerar documento completo"
+    },
+    "status": {
+      "empty": "Vazio",
+      "started": "Iniciado",
+      "drafting": "A escrever",
+      "review": "Em revisão",
+      "stale": "Parado"
+    }
+  },
+  "emailVerification": {
+    "banner": "O teu email ainda não foi verificado.",
+    "verifyNow": "Verificar agora",
+    "verifySent": "Email de verificação enviado",
+    "verifyCheckInbox": "Verifica a tua caixa de entrada e clica no link de verificação.",
+    "resendEmail": "Reenviar email",
+    "verified": "Email verificado com sucesso!",
+    "invalidToken": "Link de verificação inválido ou expirado.",
+    "alreadyVerified": "O teu email já está verificado."
+  }
+}

@@ -18,6 +18,7 @@ import { SettingsSectionSkeleton } from "@/components/skeletons/SettingsSectionS
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
 import { useAccountData } from "@/hooks/use-account-data";
+import { useLocaleSwitcher } from "@/hooks/use-locale";
 import {
   Loader2,
   Globe,
@@ -63,6 +64,7 @@ export function PreferencesSection() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { settings, isLoading: isAccountLoading } = useAccountData();
+  const { locale: currentLocale, setLocale } = useLocaleSwitcher();
   const [isSaving, setIsSaving] = useState(false);
   const [preferences, setPreferences] = useState<SettingsData>({
     language: "pt-MZ",
@@ -148,8 +150,8 @@ export function PreferencesSection() {
           </p>
         </div>
         <Select
-          value={preferences.language}
-          onValueChange={(value) => handleSelectChange("language", value)}
+          value={currentLocale}
+          onValueChange={(value) => setLocale(value as "pt-MZ" | "pt-BR" | "en")}
         >
           <SelectTrigger className="w-48">
             <SelectValue />

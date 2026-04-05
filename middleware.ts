@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const SUPPORTED_LOCALES = ["pt-MZ", "pt-BR", "en"] as const;
+const DEFAULT_LOCALE = "pt-MZ";
+
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 const API_CSRF_EXEMPTIONS = [
   "/api/payments/callback/",
@@ -46,6 +49,20 @@ export function middleware(request: NextRequest) {
     },
   });
   response.headers.set("x-request-id", requestId);
+
+  const existingLocale = request.cookies.get("NEXT_LOCALE")?.value;
+  if (existingLocale && SUPPORTED_LOCALES.includes(existingLocale as (typeof SUPPORTED_LOCALES)[number])) {
+    response.headers.set("x-locale", existingLocale);
+  } else {
+    response.headers.set("x-locale", DEFAULT_LOCALE);
+    response.cookies.set("NEXT_LOCALE", DEFAULT_LOCALE, {
+      path: "/",
+      maxAge: 31536000,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+  }
+
   return response;
 }
 

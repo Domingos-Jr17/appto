@@ -6,11 +6,14 @@ import { apiError, apiSuccess, handleApiError } from "@/lib/api";
 import { db } from "@/lib/db";
 import { withDistributedLock } from "@/lib/distributed-lock";
 import { env } from "@/lib/env";
+import { sendPurchaseReceiptEmail, sendExtraWorksReceiptEmail } from "@/lib/email";
 import { logger } from "@/lib/logger";
 import { normalizePaymentCallback, verifyWebhookSignature } from "@/lib/payment-gateway";
 import { PaymentService } from "@/lib/payments";
 import { trackProductEvent } from "@/lib/product-events";
 import { enforceRateLimit } from "@/lib/rate-limit";
+import { PACKAGE_PRICES } from "@/lib/subscription";
+import { EXTRA_WORKS } from "@/lib/billing";
 
 function toJsonValue(value: unknown) {
   return JSON.parse(JSON.stringify(value ?? null));
@@ -194,6 +197,26 @@ export async function POST(
               quantity,
             );
 
+            // Send extra works receipt email (non-blocking)
+            const user = await db.user.findUnique({
+              where: { id: existingPayment.userId },
+              select: { email: true, name: true },
+            });
+            if (user) {
+              sendExtraWorksReceiptEmail(user.email, user.name, {
+                quantity,
+                unitPrice: EXTRA_WORKS.price,
+                total: Number(existingPayment.moneyAmount),
+                currency: "MZN",
+                paymentMethod: existingPayment.provider,
+                transactionId: normalized.paymentId,
+                date: new Date().toLocaleString("pt-MZ"),
+                validityMonths: EXTRA_WORKS.validityMonths,
+              }).catch((err) => {
+                logger.error("Failed to send extra works receipt email", { error: String(err), email: user.email });
+              });
+            }
+
             await trackProductEvent({
               name: "payment_confirmed",
               category: "billing",
@@ -229,6 +252,26 @@ export async function POST(
               normalized.providerReference,
               packageType,
             );
+
+            // Send purchase receipt email (non-blocking)
+            const user = await db.user.findUnique({
+              where: { id: existingPayment.userId },
+              select: { email: true, name: true },
+            });
+            if (user) {
+              const planDetails = PACKAGE_PRICES[packageType];
+              sendPurchaseReceiptEmail(user.email, user.name, {
+                packageName: planDetails.name,
+                amount: Number(existingPayment.moneyAmount),
+                currency: "MZN",
+                worksIncluded: planDetails.worksPerMonth,
+                paymentMethod: existingPayment.provider,
+                transactionId: normalized.paymentId,
+                date: new Date().toLocaleString("pt-MZ"),
+              }).catch((err) => {
+                logger.error("Failed to send purchase receipt email", { error: String(err), email: user.email });
+              });
+            }
 
             await trackProductEvent({
               name: "payment_confirmed",

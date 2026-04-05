@@ -1,0 +1,376 @@
+{
+  "common": {
+    "appName": "aptto",
+    "loading": "Carregando...",
+    "saving": "Salvando...",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "create": "Criar",
+    "confirm": "Confirmar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "previous": "Anterior",
+    "search": "Pesquisar",
+    "close": "Fechar",
+    "open": "Abrir",
+    "required": "Obrigatório",
+    "optional": "Opcional",
+    "error": "Erro",
+    "success": "Sucesso",
+    "tryAgain": "Tentar novamente"
+  },
+  "auth": {
+    "login": {
+      "title": "Entrar na sua conta",
+      "subtitle": "Insira seus dados para continuar",
+      "email": "E-mail",
+      "emailPlaceholder": "seu@email.com",
+      "password": "Senha",
+      "passwordPlaceholder": "••••••••",
+      "showPassword": "Mostrar senha",
+      "hidePassword": "Esconder senha",
+      "forgotPassword": "Esqueceu a senha?",
+      "loginButton": "Entrar",
+      "loginWithGoogle": "Entrar com Google",
+      "noAccount": "Não tem conta?",
+      "register": "Cadastre-se",
+      "twoFactorCode": "Código de verificação",
+      "twoFactorDescription": "Insira o código de 6 dígitos do seu app de autenticação.",
+      "verify": "Verificar"
+    },
+    "register": {
+      "title": "Criar conta",
+      "subtitle": "Preencha os dados abaixo para começar",
+      "fullName": "Nome completo",
+      "namePlaceholder": "Seu nome",
+      "email": "E-mail",
+      "password": "Senha",
+      "confirmPassword": "Confirmar senha",
+      "passwordStrength": "Força da senha",
+      "weak": "Fraca",
+      "regular": "Regular",
+      "good": "Boa",
+      "strong": "Forte",
+      "passwordsMatch": "Senhas coincidem",
+      "passwordsDontMatch": "As senhas não coincidem",
+      "acceptTerms": "Eu aceito os {termsLink} e a {privacyLink}",
+      "termsOfUse": "Termos de Uso",
+      "privacyPolicy": "Política de Privacidade",
+      "mustAcceptTerms": "Você precisa aceitar os termos de uso",
+      "passwordMinLength": "A senha deve ter pelo menos 8 caracteres",
+      "createAccount": "Criar conta",
+      "hasAccount": "Já tem conta?",
+      "login": "Entrar",
+      "errorCreating": "Erro ao criar conta",
+      "errorGeneric": "Ocorreu um erro. Tente novamente."
+    },
+    "forgotPassword": {
+      "title": "Recuperar senha",
+      "subtitle": "Informe seu e-mail e enviaremos instruções para redefinir a senha.",
+      "email": "E-mail",
+      "emailPlaceholder": "seu@email.com",
+      "sendInstructions": "Enviar instruções",
+      "successTitle": "Verifique seu e-mail",
+      "successMessage": "Se uma conta com esse e-mail existir, enviamos instruções para redefinir a senha.",
+      "backToLogin": "Voltar ao login"
+    },
+    "resetPassword": {
+      "title": "Redefinir senha",
+      "subtitle": "Insira sua nova senha.",
+      "password": "Nova senha",
+      "confirmPassword": "Confirmar nova senha",
+      "reset": "Redefinir senha",
+      "success": "Senha redefinida com sucesso.",
+      "backToLogin": "Voltar ao login",
+      "passwordMinLength": "A senha deve ter pelo menos 8 caracteres"
+    }
+  },
+  "landing": {
+    "hero": {
+      "badge": "Feito para estudantes universitários",
+      "title1": "Seu copiloto",
+      "title2": "acadêmico",
+      "subtitle": "Estruture, escreva e melhore seus trabalhos acadêmicos com assistência inteligente. Pensado para estudantes brasileiros.",
+      "cta": "Começar Grátis",
+      "demo": "Ver Demo",
+      "trustPrefix": "Com a confiança de estudantes de",
+      "trustSuffix": "universidades brasileiras"
+    },
+    "features": {
+      "title": "Recursos",
+      "subtitle": "Tudo o que você precisa para seu trabalho acadêmico"
+    },
+    "howItWorks": {
+      "title": "Como Funciona",
+      "subtitle": "Do tema à submissão em quatro passos",
+      "step1Title": "Crie seu projeto",
+      "step1Desc": "Configure o trabalho acadêmico: tema, curso, nível e tipo de documento.",
+      "step2Title": "Defina os parâmetros",
+      "step2Desc": "Indique objetivos, metodologia pretendida e palavras-chave relevantes.",
+      "step3Title": "Trabalhe com a IA",
+      "step3Desc": "Estruture, escreva e melhore o texto com assistência inteligente personalizada.",
+      "step4Title": "Exporte e submeta",
+      "step4Desc": "Normalize referências, exporte em DOCX e siga para revisão ou submissão."
+    },
+    "pricing": {
+      "title": "Preços",
+      "subtitle": "Planos que cabem no seu bolso",
+      "billingToggle": "Cobrança mensal",
+      "popular": "Mais Popular",
+      "perMonth": "por mês",
+      "forever": "para sempre",
+      "startFree": "Começar Grátis",
+      "choose": "Escolher {name}",
+      "disclaimer": "Cobrança ainda em validação operacional"
+    },
+    "testimonials": {
+      "title": "Depoimentos",
+      "subtitle": "O que dizem os estudantes que usam o aptto"
+    },
+    "socialProof": {
+      "worksCreated": "trabalhos criados",
+      "activeStudents": "estudantes ativos",
+      "exportTypes": "tipos de exportação",
+      "webAccess": "acesso web ao workspace"
+    },
+    "faq": {
+      "title": "Perguntas Frequentes",
+      "subtitle": "Respostas para as dúvidas mais comuns",
+      "contactUs": "Fale conosco"
+    },
+    "differentiators": {
+      "title": "Por que o aptto?",
+      "subtitle": "O que nos diferencia das IAs genéricas"
+    },
+    "finalCTA": {
+      "title": "Pronto para começar?",
+      "subtitle": "Junte-se a milhares de estudantes brasileiros que já usam o aptto para criar melhores trabalhos acadêmicos.",
+      "cta": "Começar Grátis"
+    },
+    "footer": {
+      "product": "Produto",
+      "company": "Empresa",
+      "legal": "Legal",
+      "features": "Funcionalidades",
+      "pricing": "Preços",
+      "demo": "Demo",
+      "faq": "FAQ",
+      "about": "Sobre nós",
+      "blog": "Blog",
+      "careers": "Carreiras",
+      "contact": "Contato",
+      "terms": "Termos de uso",
+      "privacy": "Privacidade",
+      "cookies": "Cookies",
+      "description": "Estruture, escreva e melhore seus trabalhos acadêmicos com assistência inteligente.",
+      "rights": "Todos os direitos reservados.",
+      "location": "Maputo, Moçambique"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Bem-vindo de volta",
+    "nextAction": "Próxima ação",
+    "resumeChat": "Retomar no chat",
+    "resumeDocument": "Abrir documento",
+    "resumeStructure": "Retomar estrutura",
+    "noProjects": "Você ainda não tem projetos",
+    "createFirst": "Crie seu primeiro trabalho",
+    "allProjects": "Todos os projetos",
+    "recentProjects": "Projetos recentes",
+    "stats": {
+      "totalProjects": "Total de projetos",
+      "inProgress": "Em andamento",
+      "completed": "Concluídos",
+      "wordsWritten": "Palavras escritas"
+    }
+  },
+  "projects": {
+    "title": "Projetos",
+    "newProject": "Novo projeto",
+    "createProject": "Criar projeto",
+    "editProject": "Editar projeto",
+    "deleteProject": "Excluir projeto",
+    "deleteConfirm": "Tem certeza de que deseja excluir este projeto?",
+    "titleLabel": "Título do Trabalho",
+    "titlePlaceholder": "Ex: Impacto das redes sociais na educação",
+    "type": "Tipo de trabalho",
+    "description": "Descrição (opcional)",
+    "descriptionPlaceholder": "Descreva brevemente seu trabalho...",
+    "aiAssistance": "Assistência IA",
+    "cost": "Custo",
+    "credits": "créditos",
+    "availableCredits": "Créditos disponíveis",
+    "status": {
+      "draft": "Rascunho",
+      "inProgress": "Em andamento",
+      "review": "Em revisão",
+      "completed": "Concluído"
+    },
+    "types": {
+      "monography": "Monografia",
+      "dissertation": "Dissertação",
+      "thesis": "Tese",
+      "article": "Artigo",
+      "essay": "Ensaio",
+      "report": "Relatório",
+      "schoolWork": "Trabalho escolar",
+      "researchProject": "Trabalho de pesquisa",
+      "internshipReport": "Relatório de estágio",
+      "practicalWork": "Trabalho prático",
+      "tcc": "TCC"
+    }
+  },
+  "editor": {
+    "title": "Editor",
+    "chat": "Chat",
+    "structure": "Estrutura",
+    "document": "Documento",
+    "export": "Exportar",
+    "exportDocx": "Baixar DOCX",
+    "exportPdf": "Baixar PDF",
+    "sections": "seções",
+    "words": "palavras",
+    "preview": "Pré-visualizar",
+    "tableOfContents": "Índice",
+    "coverPage": "Capa",
+    "noContent": "Seção ainda sem conteúdo.",
+    "noDocument": "O documento ainda não tem conteúdo escrito.",
+    "writeInSections": "Escreva nas seções do editor para ver o preview aqui.",
+    "today": "hoje",
+    "sectionNumber": "Seção {number}",
+    "renameSection": "Renomear seção",
+    "deleteSection": "Excluir seção",
+    "deleteSectionConfirm": "Tem certeza de que deseja excluir esta seção?",
+    "deleteSectionWithContent": "Esta seção tem conteúdo. A exclusão é permanente.",
+    "generateContent": "Gerar conteúdo",
+    "improveWriting": "Melhorar escrita",
+    "summarize": "Resumir",
+    "translate": "Traduzir"
+  },
+  "settings": {
+    "title": "Configurações",
+    "tabs": {
+      "profile": "Perfil",
+      "preferences": "Preferências",
+      "security": "Segurança",
+      "account": "Conta"
+    },
+    "profile": {
+      "title": "Perfil",
+      "name": "Nome",
+      "email": "E-mail",
+      "emailReadOnly": "O e-mail não pode ser alterado",
+      "avatar": "Foto de perfil",
+      "uploadAvatar": "Carregar foto",
+      "removeAvatar": "Remover foto",
+      "saveChanges": "Salvar alterações"
+    },
+    "preferences": {
+      "title": "Preferências",
+      "language": "Idioma",
+      "languagePT_MZ": "Português (Moçambique)",
+      "languagePT_BR": "Português (Brasil)",
+      "languageEN": "Inglês",
+      "languageES": "Espanhol",
+      "theme": "Tema",
+      "themeLight": "Claro",
+      "themeDark": "Escuro",
+      "themeSystem": "Sistema",
+      "fontSize": "Tamanho da fonte",
+      "citationStyle": "Estilo de citação",
+      "citationABNT": "ABNT",
+      "citationAPA": "APA",
+      "citationVancouver": "Vancouver",
+      "autoSave": "Salvar automaticamente",
+      "aiSuggestions": "Sugestões de IA"
+    },
+    "security": {
+      "title": "Segurança",
+      "changePassword": "Alterar senha",
+      "currentPassword": "Senha atual",
+      "newPassword": "Nova senha",
+      "confirmNewPassword": "Confirmar nova senha",
+      "twoFactor": "Autenticação de dois fatores",
+      "twoFactorEnable": "Ativar 2FA",
+      "twoFactorDisable": "Desativar 2FA",
+      "twoFactorSetup": "Configurar 2FA",
+      "twoFactorVerify": "Verificar código",
+      "twoFactorDescription": "Adiciona uma camada extra de segurança à sua conta.",
+      "recoveryCodes": "Códigos de recuperação",
+      "recoveryCodesDescription": "Guarde estes códigos em um local seguro. Cada código só pode ser usado uma vez.",
+      "sessions": "Sessões ativas",
+      "revokeSession": "Encerrar sessão",
+      "revokeAllSessions": "Encerrar todas as outras sessões",
+      "currentSession": "Sessão atual",
+      "lastActive": "Última atividade",
+      "passwordMinLength": "A senha deve ter pelo menos 8 caracteres"
+    },
+    "account": {
+      "title": "Conta",
+      "status": "Status da conta",
+      "package": "Pacote atual",
+      "exportData": "Exportar meus dados",
+      "exportDataDescription": "Baixe uma cópia de todos os seus dados em formato JSON.",
+      "exportDataButton": "Exportar dados",
+      "deleteAccount": "Excluir conta",
+      "deleteAccountDescription": "Esta ação é irreversível. Todos os seus dados serão excluídos permanentemente.",
+      "deleteAccountButton": "Excluir conta",
+      "deleteConfirmLabel": "Digite EXCLUIR para confirmar",
+      "deleteConfirmPlaceholder": "EXCLUIR"
+    }
+  },
+  "subscription": {
+    "title": "Assinatura",
+    "currentPlan": "Plano atual",
+    "upgrade": "Mudar de plano",
+    "addCredits": "Adicionar créditos",
+    "extraWorks": "Trabalhos extras",
+    "buyExtraWorks": "Comprar trabalhos extras",
+    "transactionHistory": "Histórico de transações",
+    "paymentMethod": "Método de pagamento",
+    "mPesa": "M-Pesa",
+    "eMola": "e-Mola",
+    "noTransactions": "Sem transações ainda"
+  },
+  "workspace": {
+    "chat": {
+      "title": "Chat",
+      "placeholder": "Descreva o que você precisa...",
+      "send": "Enviar",
+      "generating": "Gerando...",
+      "regenerate": "Gerar novamente"
+    },
+    "structure": {
+      "title": "Estrutura",
+      "addSection": "Adicionar seção",
+      "removeSection": "Remover seção",
+      "approve": "Aprovar estrutura",
+      "editStructure": "Editar estrutura"
+    },
+    "document": {
+      "title": "Documento",
+      "generateSection": "Gerar seção",
+      "generateComplete": "Gerar documento completo"
+    },
+    "status": {
+      "empty": "Vazio",
+      "started": "Iniciado",
+      "drafting": "Escrevendo",
+      "review": "Em revisão",
+      "stale": "Parado"
+    }
+  },
+  "emailVerification": {
+    "banner": "Seu e-mail ainda não foi verificado.",
+    "verifyNow": "Verificar agora",
+    "verifySent": "E-mail de verificação enviado",
+    "verifyCheckInbox": "Verifique sua caixa de entrada e clique no link de verificação.",
+    "resendEmail": "Reenviar e-mail",
+    "verified": "E-mail verificado com sucesso!",
+    "invalidToken": "Link de verificação inválido ou expirado.",
+    "alreadyVerified": "Seu e-mail já está verificado."
+  }
+}

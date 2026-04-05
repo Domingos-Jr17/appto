@@ -1,5 +1,6 @@
 import { ApiRouteError } from "@/lib/api";
 import { db } from "@/lib/db";
+import { sendLowCreditsAlert } from "@/lib/email";
 import { SubscriptionStatus, PackageType, type PrismaClient } from "@prisma/client";
 import { BILLING_PLANS, EXTRA_WORKS } from "@/lib/billing";
 
@@ -194,6 +195,7 @@ export class SubscriptionService {
         });
 
         if (updated.count === 1) {
+          await this.checkAndSendLowCreditsAlert(userId);
           return;
         }
       }
@@ -210,10 +212,36 @@ export class SubscriptionService {
     `;
 
     if (result === 1) {
+      await this.checkAndSendLowCreditsAlert(userId);
       return;
     }
 
     throw new ApiRouteError("Limite de trabalhos atingido", 403, "WORK_LIMIT_REACHED");
+  }
+
+  private async checkAndSendLowCreditsAlert(userId: string): Promise<void> {
+    try {
+      const subscription = await this.getOrCreate(userId);
+      const planRemaining = subscription.worksPerMonth - subscription.worksUsed;
+      const extraWorks = await this.getAvailableExtraWorks(userId);
+      const remaining = planRemaining + extraWorks;
+
+      if (remaining <= 1) {
+        const user = await this.dbClient.user.findUnique({
+          where: { id: userId },
+          select: { email: true, name: true },
+        });
+
+        if (user) {
+          sendLowCreditsAlert(user.email, user.name, {
+            remaining,
+            total: subscription.worksPerMonth,
+          }).catch(() => null);
+        }
+      }
+    } catch {
+      // Silently fail - alert is non-critical
+    }
   }
 
   async refundWork(userId: string): Promise<void> {

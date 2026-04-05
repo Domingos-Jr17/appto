@@ -12,6 +12,7 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 import { verifySync } from "otplib";
 import { decryptText } from "@/lib/crypto";
 import { AuthSessionEvent } from "@prisma/client";
+import { sendSuspiciousLoginAlert } from "@/lib/email";
 
 declare module "next-auth" {
   interface Session {
@@ -23,6 +24,7 @@ declare module "next-auth" {
       role: string;
       credits: number;
       twoFactorEnabled: boolean;
+      emailVerified?: Date | null;
     };
     error?: "SessionInvalidated";
   }
@@ -32,6 +34,7 @@ declare module "next-auth" {
     credits: number;
     twoFactorEnabled: boolean;
     passwordChangedAt?: string | null;
+    emailVerified?: Date | null;
   }
 }
 
@@ -42,6 +45,7 @@ declare module "next-auth/jwt" {
     twoFactorEnabled?: boolean;
     passwordChangedAt?: string | null;
     invalidated?: boolean;
+    emailVerified?: Date | null;
   }
 }
 
@@ -171,6 +175,7 @@ export const authOptions: NextAuthOptions = {
           credits: user.credits?.balance || 0,
           twoFactorEnabled: user.twoFactorEnabled,
           passwordChangedAt: user.passwordChangedAt?.toISOString() ?? null,
+          emailVerified: user.emailVerified,
         };
       },
     }),
@@ -190,6 +195,7 @@ export const authOptions: NextAuthOptions = {
         token.twoFactorEnabled = user.twoFactorEnabled;
         token.passwordChangedAt = user.passwordChangedAt ?? null;
         token.invalidated = false;
+        token.emailVerified = user.emailVerified ?? null;
       }
 
       if (!token.sub) {
@@ -215,6 +221,7 @@ export const authOptions: NextAuthOptions = {
       token.credits = currentUser.credits?.balance || 0;
       token.twoFactorEnabled = currentUser.twoFactorEnabled;
       token.passwordChangedAt = currentPasswordChangedAt;
+      token.emailVerified = currentUser.emailVerified;
       return token;
     },
     async session({ session, token }) {
@@ -235,6 +242,7 @@ export const authOptions: NextAuthOptions = {
       session.user.role = token.role || "STUDENT";
       session.user.credits = token.credits || 0;
       session.user.twoFactorEnabled = Boolean(token.twoFactorEnabled);
+      session.user.emailVerified = token.emailVerified ?? null;
       return session;
     },
     async signIn({ user, account }) {
@@ -290,6 +298,30 @@ export const authOptions: NextAuthOptions = {
       }
 
       await security.recordSessionEvent(user.id, null, AuthSessionEvent.SIGN_IN);
+
+      // Check for suspicious login (new IP/UA)
+      const headers = await import("next/headers");
+      const requestHeaders = await headers.headers();
+      const ip = requestHeaders.get("x-forwarded-for") ?? requestHeaders.get("x-real-ip") ?? null;
+      const userAgent = requestHeaders.get("user-agent") ?? null;
+
+      const previousSessions = await db.session.findMany({
+        where: { userId: user.id },
+        orderBy: { lastActiveAt: "desc" },
+        take: 5,
+      });
+
+      const isNewDevice = !previousSessions.some(
+        (s) => s.ipAddress === ip && s.userAgent === userAgent
+      );
+
+      if (isNewDevice && previousSessions.length > 0 && user.email) {
+        sendSuspiciousLoginAlert(user.email, user.name ?? null, {
+          ipAddress: ip,
+          userAgent: userAgent,
+          date: new Date().toLocaleString("pt-MZ"),
+        }).catch(() => null);
+      }
     },
     async signOut({ session }) {
       if (session?.user?.id) {

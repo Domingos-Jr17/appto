@@ -5,6 +5,7 @@ import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
 import { CreditLedgerService } from "@/lib/credit-ledger";
 import { CREDIT_DEFAULTS } from "@/lib/credits";
 import { db } from "@/lib/db";
+import { sendWelcomeEmail } from "@/lib/email";
 import { logger } from "@/lib/logger";
 import { trackProductEvent } from "@/lib/product-events";
 import { getClientIp } from "@/lib/request";
@@ -63,6 +64,11 @@ export async function POST(request: NextRequest) {
       });
 
       return createdUser;
+    });
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(normalizedEmail, name?.trim() ?? null).catch((err) => {
+      logger.error("Failed to send welcome email", { error: String(err), email: normalizedEmail });
     });
 
     await trackProductEvent({

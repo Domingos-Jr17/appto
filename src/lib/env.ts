@@ -188,7 +188,7 @@ if (!parsedEnv.success) {
 
 export const env = {
   ...parsedEnv.data,
-  AUTH_SECRET: parsedEnv.data.NEXTAUTH_SECRET ?? parsedEnv.data.AUTH_SECRET!,
+  AUTH_SECRET: parsedEnv.data.NEXTAUTH_SECRET ?? parsedEnv.data.AUTH_SECRET ?? "",
   APP_URL:
     parsedEnv.data.APP_URL ??
     parsedEnv.data.NEXTAUTH_URL ??

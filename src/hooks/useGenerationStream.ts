@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface StreamEvent {
   progress: number;
@@ -100,21 +100,6 @@ export function useGenerationStream({
           onError({ progress: 0, step: "Conexão falhou" });
         }
       });
-
-      es.onerror = () => {
-        const wasConnected = es.readyState === EventSource.OPEN;
-        if (eventSourceRef.current) {
-          eventSourceRef.current.close();
-          eventSourceRef.current = null;
-        }
-        setIsStreaming(false);
-
-        if (wasConnected && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
-          const delay = RECONNECT_DELAYS[reconnectAttemptsRef.current] || 4000;
-          reconnectAttemptsRef.current += 1;
-          reconnectTimeoutRef.current = setTimeout(connect, delay);
-        }
-      };
     };
 
     connect();

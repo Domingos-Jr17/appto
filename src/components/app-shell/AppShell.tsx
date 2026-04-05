@@ -199,7 +199,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
     const handleArchiveProject = async (id: string) => {
         try {
             const currentWork = projects.find((p) => p.id === id);
-            const newStatus = currentWork?.status === "archived" ? "IN_PROGRESS" : "ARCHIVED";
+            const newStatus = currentWork?.status === "ARCHIVED" ? "IN_PROGRESS" : "ARCHIVED";
             const response = await fetchWithRetry(`/api/projects/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },

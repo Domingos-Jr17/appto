@@ -1,7 +1,7 @@
 import { ApiRouteError } from "@/lib/api";
 import { db } from "@/lib/db";
 import { sendLowCreditsAlert } from "@/lib/email";
-import { SubscriptionStatus, PackageType, type PrismaClient } from "@prisma/client";
+import { SubscriptionStatus, PackageType, type PrismaClient, type Prisma } from "@prisma/client";
 import { BILLING_PLANS, EXTRA_WORKS } from "@/lib/billing";
 
 export interface PackageDetails {
@@ -28,9 +28,9 @@ export const ADVANCED_AI_ACTIONS: AIAction[] = ["citations", "plagiarism-check",
 export const EXTRA_WORK_PRICE = EXTRA_WORKS.price;
 
 export class SubscriptionService {
-  private readonly dbClient: PrismaClient | any;
+  private readonly dbClient: PrismaClient | Prisma.TransactionClient;
 
-  constructor(dbClient?: PrismaClient | any) {
+  constructor(dbClient?: PrismaClient | Prisma.TransactionClient) {
     this.dbClient = dbClient ?? db;
   }
 

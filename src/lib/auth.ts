@@ -320,7 +320,9 @@ export const authOptions: NextAuthOptions = {
           ipAddress: ip,
           userAgent: userAgent,
           date: new Date().toLocaleString("pt-MZ"),
-        }).catch(() => null);
+        }).catch((err) => {
+          console.error("Failed to send suspicious login alert:", err);
+        });
       }
     },
     async signOut({ session }) {

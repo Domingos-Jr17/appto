@@ -36,9 +36,13 @@ let cachedRateLimiter: RateLimiter | null = null;
 
 function createRateLimiter(): RateLimiter {
   if (env.RATE_LIMIT_PROVIDER === "UPSTASH") {
+    if (!env.UPSTASH_REDIS_REST_URL || !env.UPSTASH_REDIS_REST_TOKEN) {
+      throw new Error("UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required when RATE_LIMIT_PROVIDER=UPSTASH");
+    }
+
     const redis = new Redis({
-      url: env.UPSTASH_REDIS_REST_URL!,
-      token: env.UPSTASH_REDIS_REST_TOKEN!,
+      url: env.UPSTASH_REDIS_REST_URL,
+      token: env.UPSTASH_REDIS_REST_TOKEN,
     });
 
     return new UpstashRateLimiter(redis);

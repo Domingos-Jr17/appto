@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     const result = await processAiRequest({
       userId: session.user.id,
-      action: parsed.data.action as never,
+      action: parsed.data.action,
       text: parsed.data.text,
       context: parsed.data.context,
       projectId: parsed.data.projectId,

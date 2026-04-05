@@ -295,7 +295,11 @@ export async function DELETE(
 
     await Promise.all(
       storedFiles.map(async (file) => {
-        await deleteStoredObject(file).catch(() => null);
+        try {
+          await deleteStoredObject(file);
+        } catch (err) {
+          logger.warn("Failed to delete stored file", { fileId: file.id, error: String(err) });
+        }
       }),
     );
 

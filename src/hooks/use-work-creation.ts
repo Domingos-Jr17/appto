@@ -139,8 +139,8 @@ export function useWorkCreation() {
             canGenerate: sub.remaining > 0,
           });
         }
-      } catch (error) {
-        console.error("Failed to fetch subscription:", error);
+      } catch {
+        // Silently fail — subscription status is non-critical
       }
     };
     fetchSubscription();

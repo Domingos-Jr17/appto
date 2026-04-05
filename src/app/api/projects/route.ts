@@ -11,7 +11,7 @@ import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/wo
 import { getSectionsForEducationLevel } from "@/lib/project-templates";
 import { SubscriptionService, subscriptionService } from "@/lib/subscription";
 import { createProjectSchema } from "@/lib/validators";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, ProjectStatus, ProjectType } from "@prisma/client";
 
 function serializeBrief(
   brief: {
@@ -148,12 +148,15 @@ export async function GET(request: NextRequest) {
       userId: session.user.id,
     };
 
-    if (status) {
-      (where as any).status = status;
+    const validStatuses: ProjectStatus[] = ["DRAFT", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"];
+    const validTypes: ProjectType[] = ["SCHOOL_WORK", "PRACTICAL_WORK", "RESEARCH_WORK"];
+
+    if (status && validStatuses.includes(status as ProjectStatus)) {
+      where.status = status as ProjectStatus;
     }
 
-    if (type) {
-      (where as any).type = type;
+    if (type && validTypes.includes(type as ProjectType)) {
+      where.type = type as ProjectType;
     }
 
     if (search) {

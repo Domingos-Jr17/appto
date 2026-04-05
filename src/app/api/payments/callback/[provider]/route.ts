@@ -65,7 +65,14 @@ export async function POST(
     const { provider } = await params;
     const rawBody = await request.text();
     const signatureHeader = request.headers.get("x-webhook-signature");
-    const parsedBody = JSON.parse(rawBody || "{}");
+
+    let parsedBody: Record<string, unknown>;
+    try {
+      parsedBody = rawBody ? JSON.parse(rawBody) : {};
+    } catch {
+      return apiError("Payload inválido", 400);
+    }
+
     const normalized = normalizePaymentCallback(parsedBody, {
       signature: signatureHeader ?? parsedBody?.signature,
       rawBody,

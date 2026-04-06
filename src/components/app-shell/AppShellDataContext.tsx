@@ -32,9 +32,7 @@ export function AppShellDataProvider({ children }: { children: React.ReactNode }
     }
 
     setLastFetchTime(Date.now());
-    if (!silent) {
-      setIsLoading(false);
-    }
+    setIsLoading(false);
   }, []);
 
   React.useEffect(() => {

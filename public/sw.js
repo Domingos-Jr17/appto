@@ -23,7 +23,12 @@ self.addEventListener("fetch", (event) => {
 
   const requestUrl = new URL(event.request.url);
   const isNavigation = event.request.mode === "navigate";
-  const isStaticAsset = requestUrl.origin === self.location.origin && !requestUrl.pathname.startsWith("/api/");
+  const isNextInternal = requestUrl.pathname.startsWith("/_next/") ||
+    requestUrl.pathname.startsWith("/__nextjs") ||
+    requestUrl.pathname.endsWith(".hot-update.json");
+  const isStaticAsset = !isNextInternal &&
+    requestUrl.origin === self.location.origin &&
+    !requestUrl.pathname.startsWith("/api/");
 
   if (isNavigation) {
     event.respondWith(

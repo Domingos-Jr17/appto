@@ -14,23 +14,20 @@ export const DEFAULT_PROJECT_SECTIONS: ProjectSectionTemplate[] = [
   { title: "1. Introdução", order: 6, isFrontMatter: false, isPrimaryEditable: true },
   { title: "2. Revisão da Literatura", order: 7, isFrontMatter: false, isPrimaryEditable: true },
   { title: "3. Metodologia", order: 8, isFrontMatter: false, isPrimaryEditable: true },
-  { title: "4. Resultados", order: 9, isFrontMatter: false, isPrimaryEditable: true },
-  { title: "5. Discussão", order: 10, isFrontMatter: false, isPrimaryEditable: true },
-  { title: "6. Conclusão", order: 11, isFrontMatter: false, isPrimaryEditable: true },
-  { title: "7. Recomendações", order: 12, isFrontMatter: false, isPrimaryEditable: true },
-  { title: "Referências", order: 13, isFrontMatter: false, isPrimaryEditable: false },
-  { title: "Apêndices", order: 14, isFrontMatter: false, isPrimaryEditable: false },
-  { title: "Anexos", order: 15, isFrontMatter: false, isPrimaryEditable: false },
+  { title: "4. Análise e Discussão", order: 9, isFrontMatter: false, isPrimaryEditable: true },
+  { title: "5. Conclusão", order: 10, isFrontMatter: false, isPrimaryEditable: true },
+  { title: "6. Recomendações", order: 11, isFrontMatter: false, isPrimaryEditable: true },
+  { title: "Referências", order: 12, isFrontMatter: false, isPrimaryEditable: false },
+  { title: "Anexos", order: 13, isFrontMatter: false, isPrimaryEditable: false },
 ];
 
-const SCHOOL_PROJECT_SECTIONS: ProjectSectionTemplate[] = [
+const SECONDARY_PROJECT_SECTIONS: ProjectSectionTemplate[] = [
   { title: "Capa", order: 1, isFrontMatter: true, isPrimaryEditable: false },
   { title: "Índice", order: 2, isFrontMatter: true, isPrimaryEditable: false },
   { title: "1. Introdução", order: 3, isFrontMatter: false, isPrimaryEditable: true },
   { title: "2. Desenvolvimento", order: 4, isFrontMatter: false, isPrimaryEditable: true },
   { title: "3. Conclusão", order: 5, isFrontMatter: false, isPrimaryEditable: true },
   { title: "Referências", order: 6, isFrontMatter: false, isPrimaryEditable: false },
-  { title: "Anexos", order: 7, isFrontMatter: false, isPrimaryEditable: false },
 ];
 
 const TECHNICAL_PROJECT_SECTIONS: ProjectSectionTemplate[] = [
@@ -43,31 +40,23 @@ const TECHNICAL_PROJECT_SECTIONS: ProjectSectionTemplate[] = [
   { title: "5. Conclusão", order: 7, isFrontMatter: false, isPrimaryEditable: true },
   { title: "6. Recomendações", order: 8, isFrontMatter: false, isPrimaryEditable: true },
   { title: "Referências", order: 9, isFrontMatter: false, isPrimaryEditable: false },
-  { title: "Anexos", order: 10, isFrontMatter: false, isPrimaryEditable: false },
 ];
 
-const SCHOOL_TYPES = new Set([
-  "SCHOOL_WORK",
-]);
-
-const TECHNICAL_TYPES = new Set([
-  "PRACTICAL_WORK",
-]);
+const SECONDARY_TYPES = new Set(["SECONDARY_WORK"]);
+const TECHNICAL_TYPES = new Set(["TECHNICAL_WORK"]);
 
 export function getSectionsForEducationLevel(
   educationLevel: string | null | undefined,
   projectType: string,
 ): ProjectSectionTemplate[] {
   if (educationLevel === "SECONDARY") {
-    if (SCHOOL_TYPES.has(projectType)) return SCHOOL_PROJECT_SECTIONS;
+    if (SECONDARY_TYPES.has(projectType)) return SECONDARY_PROJECT_SECTIONS;
   }
 
   if (educationLevel === "TECHNICAL") {
     if (TECHNICAL_TYPES.has(projectType)) return TECHNICAL_PROJECT_SECTIONS;
-    if (SCHOOL_TYPES.has(projectType)) return SCHOOL_PROJECT_SECTIONS;
+    if (SECONDARY_TYPES.has(projectType)) return SECONDARY_PROJECT_SECTIONS;
   }
 
   return DEFAULT_PROJECT_SECTIONS;
 }
-
-

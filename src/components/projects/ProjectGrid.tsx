@@ -99,7 +99,7 @@ function ProjectCard({
   onArchive?: (id: string) => void;
   onEdit?: (id: string) => void;
 }) {
-  const typeStyle = typeStyles[project.type] || typeStyles["trabalho de investigacao"];
+  const typeStyle = typeStyles[project.type] || typeStyles["trabalho académico"];
   const statusStyle = statusStyles[project.status];
   const StatusIcon = statusStyle.icon;
   const generating = project.generationStatus === "GENERATING";
@@ -238,7 +238,7 @@ function ProjectListItem({
   onArchive?: (id: string) => void;
   onEdit?: (id: string) => void;
 }) {
-  const typeStyle = typeStyles[project.type] || typeStyles["trabalho de investigacao"];
+  const typeStyle = typeStyles[project.type] || typeStyles["trabalho académico"];
   const statusStyle = statusStyles[project.status];
   const StatusIcon = statusStyle.icon;
   const generating = project.generationStatus === "GENERATING";

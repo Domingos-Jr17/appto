@@ -88,12 +88,12 @@ function countWords(text: string) {
 }
 
 function shouldUseSchoolProfile(type: string, educationLevel?: AcademicEducationLevel) {
-  if (type === "SCHOOL_WORK") return true;
+  if (type === "SECONDARY_WORK") return true;
   return isSchoolContext(educationLevel);
 }
 
 function shouldUseTechnicalProfile(type: string, educationLevel?: AcademicEducationLevel) {
-  if (type === "PRACTICAL_WORK") return true;
+  if (type === "TECHNICAL_WORK") return true;
   return isTechnicalContext(educationLevel);
 }
 
@@ -144,6 +144,11 @@ function getSectionSubsections(title: string, schoolContext: boolean, technicalC
       return [`${n}.1 Apresentação dos dados`, `${n}.2 Análise técnica`, `${n}.3 Ligação teoria-prática`];
     }
     return [`${n}.1 Apresentação dos dados`, `${n}.2 Análise dos resultados`];
+  }
+
+  if (normalized.includes("discussão") && normalized.includes("análise")) {
+    // Higher education: combined "Análise e Discussão" section
+    return [`${n}.1 Análise crítica da literatura`, `${n}.2 Comparação entre autores e perspectivas`, `${n}.3 Síntese teórica do problema`, `${n}.4 Ligação com o contexto moçambicano`];
   }
 
   if (normalized.includes("discussão")) {
@@ -206,6 +211,10 @@ function getSectionGuidance(title: string, schoolContext: boolean, sectionCount:
       return "explique os conceitos principais do tema com linguagem acessível e exemplos concretos";
     }
     return "organize os principais conceitos, perspectivas teóricas, autores de referência e debates ligados ao tema, evitando definições vagas e repetidas; use citações no formato (SOBRENOME, ano)";
+  }
+
+  if (normalized.includes("discussão") && normalized.includes("análise")) {
+    return "desenvolva análise crítica da literatura, compare diferentes autores e perspectivas teóricas, sintetize os principais debates e ligue-os ao problema de pesquisa e ao contexto moçambicano";
   }
 
   if (normalized.includes("resultado") || normalized.includes("discussão") || normalized.includes("análise")) {

@@ -584,7 +584,7 @@ export class DocumentExportService {
           const isSubSubheading = /^\d+\.\d+\.\d+/.test(block.text);
           const isSubheading = /^\d+\.\d+/.test(block.text);
 
-          let headingLevel: HeadingLevel;
+          let headingLevel: typeof HeadingLevel.HEADING_1 | typeof HeadingLevel.HEADING_2 | typeof HeadingLevel.HEADING_3;
           let fontSize: number;
 
           if (isSubSubheading) {
@@ -671,7 +671,6 @@ export class DocumentExportService {
           properties: {
             page: {
               margin: pageMargins,
-              titlePage: true,
             },
           },
           headers: {

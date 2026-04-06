@@ -35,7 +35,7 @@ describe("work generation prompts", () => {
       subjectName: "Português",
     };
 
-    const profile = getWorkGenerationProfile("SCHOOL_WORK", brief, schoolTemplates);
+    const profile = getWorkGenerationProfile("SECONDARY_WORK", brief, schoolTemplates);
 
     expect(profile.abstract.required).toBe(false);
     expect(profile.totalRange.min).toBeGreaterThanOrEqual(2000);
@@ -65,7 +65,7 @@ describe("work generation prompts", () => {
       city: "Maputo",
     };
 
-    const profile = getWorkGenerationProfile("SCHOOL_WORK", brief, schoolTemplates);
+    const profile = getWorkGenerationProfile("SECONDARY_WORK", brief, schoolTemplates);
     const prompt = buildWorkGenerationPrompt({
       title: "Mudanças climáticas em Moçambique",
       typeLabel: "Trabalho Escolar",
@@ -91,7 +91,7 @@ describe("work generation prompts", () => {
       subjectName: "História",
     };
 
-    const profile = getWorkGenerationProfile("SCHOOL_WORK", brief, schoolTemplates);
+    const profile = getWorkGenerationProfile("SECONDARY_WORK", brief, schoolTemplates);
 
     expect(profile.abstract.required).toBe(false);
     expect(profile.totalRange.min).toBeGreaterThanOrEqual(2000);
@@ -103,7 +103,7 @@ describe("work generation prompts", () => {
       educationLevel: "SECONDARY",
       institutionName: "Escola Secundária Josina Machel",
     };
-    const profile = getWorkGenerationProfile("SCHOOL_WORK", brief, schoolTemplates);
+    const profile = getWorkGenerationProfile("SECONDARY_WORK", brief, schoolTemplates);
     const introductionContent = (
       "O presente trabalho aborda um tema relevante para o contexto escolar moçambicano e procura explicar a sua importância para os estudantes, professores e comunidade educativa. " +
       "Além de apresentar o assunto principal, a introdução mostra por que razão o tema merece atenção no quotidiano da escola e da comunidade. " +
@@ -148,7 +148,7 @@ describe("work generation prompts", () => {
       educationLevel: "SECONDARY",
       institutionName: "Escola Secundária da Matola",
     };
-    const profile = getWorkGenerationProfile("SCHOOL_WORK", brief, schoolTemplates);
+    const profile = getWorkGenerationProfile("SECONDARY_WORK", brief, schoolTemplates);
     const introductionContent = (
       "O trabalho apresenta um tema importante para a escola, explica o objectivo do estudo e indica que a análise será feita com base na realidade do estudante e da comunidade educativa. "
     ).repeat(15);
@@ -174,7 +174,7 @@ describe("work generation prompts", () => {
       institutionName: "Escola Secundária da Polana",
       subjectName: "Português",
     };
-    const profile = getWorkGenerationProfile("SCHOOL_WORK", brief, schoolTemplates);
+    const profile = getWorkGenerationProfile("SECONDARY_WORK", brief, schoolTemplates);
     const sectionPlan = profile.sections.find((s) => s.title === "2. Desenvolvimento")!;
 
     const prompt = buildSectionGenerationPrompt({
@@ -205,7 +205,7 @@ describe("work generation prompts", () => {
       educationLevel: "SECONDARY",
       institutionName: "Escola Secundária da Polana",
     };
-    const profile = getWorkGenerationProfile("SCHOOL_WORK", brief, schoolTemplates);
+    const profile = getWorkGenerationProfile("SECONDARY_WORK", brief, schoolTemplates);
     const sectionPlan = profile.sections.find((s) => s.title === "1. Introdução")!;
 
     const prompt = buildSectionGenerationPrompt({
@@ -227,7 +227,7 @@ describe("work generation prompts", () => {
 
   test("validateGeneratedSection accepts content within range", () => {
     const brief: WorkBriefInput = { educationLevel: "SECONDARY" };
-    const profile = getWorkGenerationProfile("SCHOOL_WORK", brief, schoolTemplates);
+    const profile = getWorkGenerationProfile("SECONDARY_WORK", brief, schoolTemplates);
     const introRange = profile.sections.find((s) => s.title === "1. Introdução")!.range;
 
     const content = "Palavra ".repeat(350);
@@ -238,7 +238,7 @@ describe("work generation prompts", () => {
 
   test("validateGeneratedSection rejects content below hardMin", () => {
     const brief: WorkBriefInput = { educationLevel: "SECONDARY" };
-    const profile = getWorkGenerationProfile("SCHOOL_WORK", brief, schoolTemplates);
+    const profile = getWorkGenerationProfile("SECONDARY_WORK", brief, schoolTemplates);
     const devRange = profile.sections.find((s) => s.title === "2. Desenvolvimento")!.range;
 
     const content = "Texto muito curto.";
@@ -301,7 +301,7 @@ describe("work generation prompts", () => {
       { title: "6. Recomendações", order: 8 },
     ];
 
-    const profile = getWorkGenerationProfile("PRACTICAL_WORK", brief, technicalTemplates);
+    const profile = getWorkGenerationProfile("TECHNICAL_WORK", brief, technicalTemplates);
 
     expect(profile.abstract.required).toBe(false);
     expect(profile.sections.length).toBe(6);

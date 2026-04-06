@@ -157,7 +157,7 @@ async function main() {
     {
       title: "Impacto das Redes Sociais na Aprendizagem dos Estudantes",
       description: "Trabalho escolar sobre o uso de redes sociais na educação",
-      type: "SCHOOL_WORK" as const,
+      type: "SECONDARY_WORK" as const,
       educationLevel: "SECONDARY" as const,
       status: "IN_PROGRESS" as const,
       wordCount: 850,
@@ -186,7 +186,7 @@ async function main() {
     {
       title: "Implementação de Sistema de Gestão de Inventário",
       description: "Trabalho prático de desenvolvimento de software",
-      type: "PRACTICAL_WORK" as const,
+      type: "TECHNICAL_WORK" as const,
       educationLevel: "TECHNICAL" as const,
       status: "DRAFT" as const,
       wordCount: 600,

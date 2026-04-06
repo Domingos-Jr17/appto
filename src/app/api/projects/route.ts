@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
     };
 
     const validStatuses: ProjectStatus[] = ["DRAFT", "IN_PROGRESS", "REVIEW", "COMPLETED", "ARCHIVED"];
-    const validTypes: ProjectType[] = ["SCHOOL_WORK", "PRACTICAL_WORK", "RESEARCH_WORK"];
+    const validTypes: ProjectType[] = ["SECONDARY_WORK", "TECHNICAL_WORK", "HIGHER_EDUCATION_WORK"];
 
     if (status && validStatuses.includes(status as ProjectStatus)) {
       where.status = status as ProjectStatus;

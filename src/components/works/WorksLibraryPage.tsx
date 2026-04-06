@@ -33,9 +33,9 @@ import { formatRelativeTime } from "@/lib/utils";
 import { fetchWithRetry } from "@/lib/fetch-retry";
 
 const PROJECT_TYPE_LABELS: Record<string, ProjectCardData["type"]> = {
-    SCHOOL_WORK: "trabalho escolar",
-    PRACTICAL_WORK: "trabalho prático",
-    RESEARCH_WORK: "trabalho de investigacao",
+    SECONDARY_WORK: "trabalho escolar",
+    TECHNICAL_WORK: "trabalho técnico",
+    HIGHER_EDUCATION_WORK: "trabalho académico",
 };
 
 export function WorksLibraryPage() {

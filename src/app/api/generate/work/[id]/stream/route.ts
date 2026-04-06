@@ -8,7 +8,7 @@ const MAX_DURATION_MS = 300_000; // 5 minutes
 const RETRY_MS = 3000;
 
 interface SSEEvent {
-  type: "handshake" | "progress" | "section-complete" | "complete" | "error";
+  type: "handshake" | "job-created" | "section-started" | "section-complete" | "progress" | "complete" | "error";
   data: {
     progress: number;
     step: string;
@@ -67,6 +67,17 @@ export async function GET(
         data: { progress: 0, step: "Conectado ao stream de geração" },
       });
 
+      // Check initial job status
+      const initialStatus = await getWorkGenerationStatusAsync(id);
+      if (initialStatus) {
+        send({
+          type: "job-created",
+          data: { progress: initialStatus.progress, step: initialStatus.step },
+        });
+      }
+
+      let lastSectionTitle: string | undefined;
+
       const check = async () => {
         try {
           const status = await getWorkGenerationStatusAsync(id);
@@ -82,21 +93,21 @@ export async function GET(
 
           // Detect section transitions from step text
           const stepMatch = status.step.match(/A gerar\s+(.+)/i);
-          const sectionTitle = stepMatch ? stepMatch[1]?.trim() : undefined;
+          const currentSectionTitle = stepMatch ? stepMatch[1]?.trim() : undefined;
 
           if (status.progress !== lastProgress || status.step !== lastStep) {
             lastProgress = status.progress;
             lastStep = status.step;
 
-            // Emit section-complete when we detect a new section starting
-            // (the previous section must have finished)
-            if (sectionTitle && status.progress > 10) {
+            // Detect section start (new section title we haven't seen yet)
+            if (currentSectionTitle && currentSectionTitle !== lastSectionTitle) {
+              lastSectionTitle = currentSectionTitle;
               send({
-                type: "section-complete",
+                type: "section-started",
                 data: {
                   progress: status.progress,
                   step: status.step,
-                  sectionTitle,
+                  sectionTitle: currentSectionTitle,
                 },
               });
             } else {
@@ -105,6 +116,18 @@ export async function GET(
                 data: { progress: status.progress, step: status.step },
               });
             }
+          }
+
+          // Detect section completion (progress changed but section title didn't change = previous section done)
+          if (currentSectionTitle && lastSectionTitle && currentSectionTitle !== lastSectionTitle) {
+            send({
+              type: "section-complete",
+              data: {
+                progress: status.progress,
+                step: status.step,
+                sectionTitle: lastSectionTitle,
+              },
+            });
           }
 
           if (status.status === "READY") {

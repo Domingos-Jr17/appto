@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface SSEEvent {
-  type: "handshake" | "progress" | "section-complete" | "complete" | "error";
+  type: "handshake" | "job-created" | "section-started" | "section-complete" | "progress" | "complete" | "error";
   data: {
     progress: number;
     step: string;
@@ -16,6 +16,7 @@ interface UseGenerationStreamOptions {
   projectId: string;
   generationStatus: string | undefined;
   onFetch: () => Promise<void>;
+  onSectionStarted?: (sectionTitle: string) => void;
   getDoneCount: () => number;
   enabled?: boolean;
   maxTimeout?: number;
@@ -25,6 +26,7 @@ export function useGenerationStream({
   projectId,
   generationStatus,
   onFetch,
+  onSectionStarted,
   getDoneCount,
   enabled = true,
   maxTimeout = 300_000,
@@ -87,6 +89,20 @@ export function useGenerationStream({
 
     eventSource.addEventListener("handshake", () => {
       // Connection established
+    });
+
+    eventSource.addEventListener("job-created", () => {
+      // Job exists — connection confirmed
+    });
+
+    eventSource.addEventListener("section-started", (e) => {
+      try {
+        const parsed: SSEEvent = JSON.parse((e as MessageEvent).data);
+        onSectionStarted?.(parsed.data.sectionTitle || "");
+      } catch {
+        // ignore
+      }
+      void onFetch();
     });
 
     eventSource.addEventListener("section-complete", () => {

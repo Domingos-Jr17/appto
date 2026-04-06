@@ -62,6 +62,24 @@ const baseStyles = `
     width: 210mm;
     min-height: 297mm;
   }
+  @page {
+    size: A4;
+    margin: 25mm 20mm 25mm 30mm;
+    @bottom-right {
+      content: counter(page);
+      font-family: "Times New Roman", serif;
+      font-size: 10pt;
+    }
+  }
+  @page:first {
+    @bottom-right {
+      content: none;
+    }
+  }
+  @media print {
+    body { margin: 0; }
+    .cover-page { width: 100%; min-height: 100vh; page-break-after: always; }
+  }
 `;
 
 function fallback(value: string | null | undefined, placeholder: string): string {

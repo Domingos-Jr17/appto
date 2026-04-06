@@ -3,11 +3,13 @@ import {
   AlignmentType,
   Document,
   Footer,
+  Header,
   HeadingLevel,
   Packer,
   PageBreak,
   PageNumber,
   Paragraph,
+  SectionType,
   TableOfContents,
   TextRun,
 } from "docx";
@@ -522,28 +524,32 @@ export class DocumentExportService {
   }
 
   static async generateDocx(model: ExportDocument) {
-    const children: (Paragraph | TableOfContents)[] = [...buildCoverParagraphs(model)];
+    const coverChildren = [...buildCoverParagraphs(model)];
+    // End cover page without page number
+    coverChildren.push(new Paragraph({ children: [], pageBreakBefore: false }));
 
-    children.push(new Paragraph({ children: [new PageBreak()] }));
-    children.push(
+    const bodyChildren: (Paragraph | TableOfContents)[] = [];
+
+    bodyChildren.push(
       new Paragraph({
         children: [new TextRun({ text: "SUMÁRIO", bold: true, size: 28, font: "Arial" })],
         heading: HeadingLevel.HEADING_1,
         alignment: AlignmentType.CENTER,
+        spacing: { before: 0, after: 200 },
       })
     );
-    children.push(
+    bodyChildren.push(
       new TableOfContents("Sumário", {
         hyperlink: true,
         headingStyleRange: "1-3",
       })
     );
-    children.push(new Paragraph({ children: [new PageBreak()] }));
+    bodyChildren.push(new Paragraph({ children: [new PageBreak()] }));
 
     for (const section of model.sections) {
       const isReferenceSection = /refer[eê]ncias/i.test(section.title);
 
-      children.push(
+      bodyChildren.push(
         new Paragraph({
           children: [
             new TextRun({
@@ -561,7 +567,7 @@ export class DocumentExportService {
       if (isReferenceSection) {
         const entries = parseReferenceEntries(section.content);
         for (const entry of entries) {
-          children.push(
+          bodyChildren.push(
             new Paragraph({
               children: [new TextRun({ text: entry, size: 24, font: "Arial" })],
               spacing: { after: 120, line: 280 },
@@ -574,7 +580,7 @@ export class DocumentExportService {
 
       for (const block of parseMarkdownBlocks(section.content)) {
         if (block.type === "heading" && block.text) {
-          children.push(
+          bodyChildren.push(
             new Paragraph({
               children: [new TextRun({ text: block.text, bold: true, size: 24, font: "Arial" })],
               heading: block.level && block.level <= 2 ? HeadingLevel.HEADING_2 : HeadingLevel.HEADING_3,
@@ -584,7 +590,7 @@ export class DocumentExportService {
         }
 
         if (block.type === "paragraph" && block.text) {
-          children.push(
+          bodyChildren.push(
             new Paragraph({
               children: [new TextRun({ text: block.text, size: 24, font: "Arial" })],
               spacing: { after: 200, line: 360 },
@@ -595,7 +601,7 @@ export class DocumentExportService {
         }
 
         if (block.type === "quote" && block.text) {
-          children.push(
+          bodyChildren.push(
             new Paragraph({
               children: [new TextRun({ text: block.text, size: 20, font: "Arial" })],
               spacing: { after: 180, line: 240 },
@@ -606,7 +612,7 @@ export class DocumentExportService {
 
         if (block.type === "list" && block.items) {
           for (const item of block.items) {
-            children.push(
+            bodyChildren.push(
               new Paragraph({
                 children: [new TextRun({ text: item, size: 24, font: "Arial" })],
                 bullet: { level: 0 },
@@ -619,30 +625,54 @@ export class DocumentExportService {
       }
     }
 
+    const pageMargins = {
+      top: 1701,
+      right: 1134,
+      bottom: 1134,
+      left: 1701,
+    };
+
     const doc = new Document({
       sections: [
+        // Section 1: Cover page (no page number, titlePage resets counter)
+        {
+          properties: {
+            type: SectionType.CONTINUOUS,
+            page: { margin: pageMargins },
+          },
+          headers: {
+            default: new Header({ children: [] }),
+          },
+          footers: {
+            default: new Footer({ children: [] }),
+          },
+          children: coverChildren,
+        },
+        // Section 2: Main content with page numbers at bottom-right
         {
           properties: {
             page: {
-              margin: {
-                top: 1701,
-                right: 1134,
-                bottom: 1134,
-                left: 1701,
-              },
+              margin: pageMargins,
+              titlePage: true,
             },
+          },
+          headers: {
+            default: new Header({ children: [] }),
+            first: new Header({ children: [] }),
           },
           footers: {
             default: new Footer({
               children: [
                 new Paragraph({
-                  children: [new TextRun({ children: [PageNumber.CURRENT] })],
-                  alignment: AlignmentType.CENTER,
+                  children: [new TextRun({ children: [PageNumber.CURRENT], font: "Times New Roman", size: 20 })],
+                  alignment: AlignmentType.RIGHT,
+                  spacing: { after: 0 },
                 }),
               ],
             }),
+            first: new Footer({ children: [] }),
           },
-          children,
+          children: bodyChildren,
         },
       ],
     });
@@ -651,12 +681,19 @@ export class DocumentExportService {
   }
 
   static createPdfComponent(model: ExportDocument) {
+    const skipFrontMatter = new Set(["Capa", "Folha de Rosto"]);
+    let contentPageCount = 0;
+
     return (
       <PdfDocument>
         <Page size="A4" style={pdfStyles.page}>
           {renderPdfCover(model)}
           {model.description ? <Text style={pdfStyles.paragraph}>{model.description}</Text> : null}
-          {model.sections.map((section) => (
+          {model.sections.map((section) => {
+            const isFrontMatter = skipFrontMatter.has(section.title);
+            if (!isFrontMatter) contentPageCount++;
+
+            return (
             <View key={section.id}>
               <Text style={pdfStyles.sectionTitle}>{section.title}</Text>
               {/refer[eê]ncias/i.test(section.title)
@@ -708,7 +745,19 @@ export class DocumentExportService {
                 return null;
               })}
             </View>
-          ))}
+            );
+          })}
+          {/* Page number at bottom-right, hidden on cover and folha de rosto */}
+          <Text
+            style={{
+              position: "absolute",
+              bottom: 30,
+              right: 48,
+              fontSize: 10,
+              fontFamily: "Times New Roman",
+            }}
+            render={({ pageNumber }) => (pageNumber > 2 ? String(pageNumber - 2) : "")}
+          />
         </Page>
       </PdfDocument>
     );

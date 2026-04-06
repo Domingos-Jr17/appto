@@ -720,6 +720,7 @@ export async function startWorkGenerationJob(input: {
   }
 
   // Create/update the job record first - this is the single source of truth for generation status
+  const now = new Date();
   await db.generationJob.upsert({
     where: { projectId },
     create: {
@@ -728,13 +729,14 @@ export async function startWorkGenerationJob(input: {
       status: "GENERATING",
       progress: 5,
       step: "Na fila do worker",
+      startedAt: now,
     },
     update: {
       status: "GENERATING",
       progress: 5,
       step: "Na fila do worker",
       error: null,
-      startedAt: new Date(),
+      startedAt: now,
       completedAt: null,
     },
   });
@@ -957,12 +959,11 @@ async function setJobAsync(projectId: string, partial: {
   }).catch(() => null);
 }
 
-async function claimGenerationJob(projectId: string, startedAt: Date) {
+async function claimGenerationJob(projectId: string, _startedAt: Date) {
   const result = await db.generationJob.updateMany({
     where: {
       projectId,
       status: "GENERATING",
-      startedAt,
       completedAt: null,
     },
     data: {
@@ -1007,30 +1008,60 @@ export async function processQueuedGenerationJobs(limit = 2) {
 }
 
 export function triggerQueuedGenerationProcessing() {
-  if (env.INTERNAL_WORKER_SECRET) {
-    void fetch(`${env.APP_URL.replace(/\/$/, "")}/api/internal/workers/run`, {
-      method: "POST",
-      headers: {
-        "x-worker-secret": env.INTERNAL_WORKER_SECRET,
-      },
-    }).catch((error) => {
-      logger.warn("[worker] remote generation trigger failed; falling back to local execution", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      queueMicrotask(() => {
-        void processQueuedGenerationJobs(1).catch(() => null);
-      });
-    });
+  const workerSecret = env.INTERNAL_WORKER_SECRET;
+
+  if (workerSecret) {
+    // Try to trigger the worker endpoint with a small delay to ensure DB commit
+    setTimeout(async () => {
+      try {
+        const response = await fetch(`${env.APP_URL.replace(/\/$/, "")}/api/internal/workers/run`, {
+          method: "POST",
+          headers: {
+            "x-worker-secret": workerSecret,
+          },
+        });
+
+        if (!response.ok) {
+          const body = await response.text().catch(() => "");
+          logger.warn("[worker] remote generation trigger returned error", {
+            status: response.status,
+            body: body.slice(0, 200),
+          });
+          throw new Error(`Worker endpoint returned ${response.status}`);
+        }
+
+        const data = await response.json().catch(() => null);
+        logger.info("[worker] remote generation trigger succeeded", { data });
+      } catch (error) {
+        logger.warn("[worker] remote generation trigger failed; falling back to local execution", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        // Fallback: process directly
+        try {
+          const result = await processQueuedGenerationJobs(1);
+          logger.info("[worker] fallback local processing completed", { processed: result.processed });
+        } catch (fallbackError) {
+          logger.error("[worker] fallback local processing also failed", {
+            error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+          });
+        }
+      }
+    }, 500); // 500ms delay to ensure DB transaction is committed
     return;
   }
 
-  queueMicrotask(() => {
-    void processQueuedGenerationJobs(1).catch((error) => {
-      logger.warn("[worker] local generation trigger failed", {
+  // No worker secret: process directly with a delay to ensure DB commit
+  setTimeout(async () => {
+    try {
+      logger.info("[worker] starting local generation processing (no worker secret)");
+      const result = await processQueuedGenerationJobs(1);
+      logger.info("[worker] local generation processing completed", { processed: result.processed });
+    } catch (error) {
+      logger.error("[worker] local generation trigger failed", {
         error: error instanceof Error ? error.message : String(error),
       });
-    });
-  });
+    }
+  }, 500);
 }
 
 export async function regenerateWorkSection(input: {

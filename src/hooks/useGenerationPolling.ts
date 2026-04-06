@@ -9,9 +9,9 @@ interface PollingConfig {
 }
 
 const DEFAULT_CONFIG: PollingConfig = {
-  initial: 3000,
-  max: 10000,
-  multiplier: 1.5,
+  initial: 2000,
+  max: 8000,
+  multiplier: 1.3,
 };
 
 interface UseGenerationPollingOptions {
@@ -30,7 +30,7 @@ export function useGenerationPolling({
   onFetch,
   getDoneCount,
   enabled = true,
-  maxTimeout = 120_000,
+  maxTimeout = 300_000,
   config: configOverrides,
 }: UseGenerationPollingOptions) {
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);

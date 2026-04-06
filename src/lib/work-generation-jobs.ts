@@ -58,12 +58,12 @@ Cite fontes quando relevante.`;
 }
 
 const SECTION_TEMPLATES: Record<string, SectionTemplate[]> = {
-  SCHOOL_WORK: [
+  SECONDARY_WORK: [
     { title: "1. Introdução", order: 3 },
     { title: "2. Desenvolvimento", order: 4 },
     { title: "3. Conclusão", order: 5 },
   ],
-  PRACTICAL_WORK: [
+  TECHNICAL_WORK: [
     { title: "1. Introdução", order: 3 },
     { title: "2. Fundamentação Teórica", order: 4 },
     { title: "3. Metodologia", order: 5 },
@@ -71,14 +71,13 @@ const SECTION_TEMPLATES: Record<string, SectionTemplate[]> = {
     { title: "5. Conclusão", order: 7 },
     { title: "6. Recomendações", order: 8 },
   ],
-  RESEARCH_WORK: [
+  HIGHER_EDUCATION_WORK: [
     { title: "1. Introdução", order: 6 },
     { title: "2. Revisão da Literatura", order: 7 },
     { title: "3. Metodologia", order: 8 },
-    { title: "4. Resultados", order: 9 },
-    { title: "5. Discussão", order: 10 },
-    { title: "6. Conclusão", order: 11 },
-    { title: "7. Recomendações", order: 12 },
+    { title: "4. Análise e Discussão", order: 9 },
+    { title: "5. Conclusão", order: 10 },
+    { title: "6. Recomendações", order: 11 },
   ],
 };
 
@@ -91,7 +90,7 @@ jobStore.__apptoWorkGenerationJobs = jobs;
 const JOB_RECLAIM_AFTER_MS = 10 * 60_000;
 
 export function getSectionTemplates(type: string, educationLevel?: string | null) {
-  return SECTION_TEMPLATES[type] || SECTION_TEMPLATES.RESEARCH_WORK;
+  return SECTION_TEMPLATES[type] || SECTION_TEMPLATES.HIGHER_EDUCATION_WORK;
 }
 
 export function getWorkGenerationStatus(projectId: string): WorkGenerationJobStatus | null {
@@ -368,7 +367,23 @@ async function saveSectionToDb(
   });
 
   if (result.count === 0) {
-    logger.warn("[work-generation] section not found for update", { projectId, title });
+    logger.warn("[work-generation] section not found, creating fallback", { projectId, title });
+
+    const maxOrder = await db.documentSection.findFirst({
+      where: { projectId },
+      orderBy: { order: "desc" },
+      select: { order: true },
+    });
+
+    await db.documentSection.create({
+      data: {
+        projectId,
+        title,
+        content,
+        wordCount,
+        order: (maxOrder?.order ?? 0) + 1,
+      },
+    });
   }
 }
 
@@ -1073,9 +1088,9 @@ Requisitos obrigatórios:
 
 export function formatProjectType(type: string): string {
   const types: Record<string, string> = {
-    SCHOOL_WORK: "Trabalho Escolar",
-    PRACTICAL_WORK: "Trabalho Prático",
-    RESEARCH_WORK: "Trabalho de Investigação",
+    SECONDARY_WORK: "Trabalho Escolar",
+    TECHNICAL_WORK: "Trabalho Técnico",
+    HIGHER_EDUCATION_WORK: "Trabalho Académico",
   };
   return types[type] || "Trabalho Académico";
 }

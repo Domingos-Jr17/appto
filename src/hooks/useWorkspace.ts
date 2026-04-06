@@ -33,6 +33,8 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
       if (!res.ok) return;
       const project = await res.json();
 
+      const isComplete = project.generationStatus !== "GENERATING";
+
       setData((prev) => ({
         ...prev,
         sections: prev.sections
@@ -42,28 +44,22 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
                 s.id === section.id
             );
             if (!updated) return section;
+
+            const hasContent = updated.wordCount > 0 || (updated.content && updated.content.trim().length > 0);
+
             return {
               ...section,
               content: updated.content ?? "",
-              status: updated.wordCount > 0 ? ("done" as const) : section.status,
+              status: isComplete
+                ? (hasContent ? "done" : "pending")
+                : (hasContent ? "done" : section.status),
             };
           })
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
         generationStatus: project.generationStatus,
-        generationProgress: project.generationProgress,
+        generationProgress: isComplete ? 100 : project.generationProgress,
         generationStep: project.generationStep,
       }));
-
-      if (project.generationStatus !== "GENERATING") {
-        setData((prev) => ({
-          ...prev,
-          generationProgress: 100,
-          sections: prev.sections.map((s) => ({
-            ...s,
-            status: s.content ? "done" : "pending",
-          })),
-        }));
-      }
     } catch (err) {
       console.warn("[useWorkspace] refreshProject failed:", err);
     }

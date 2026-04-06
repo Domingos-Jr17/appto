@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { parseMarkdownBlocks, normalizeStoredContent } from "@/lib/content";
+import { parseMarkdownBlocks } from "@/lib/content";
 import type { WorkBrief, WorkSection } from "@/types/workspace";
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -117,7 +117,7 @@ function DocumentSection({ section }: { section: WorkSection }) {
 // ── Markdown Renderer ──────────────────────────────────────────────────
 
 function RenderedMarkdown({ content }: { content: string }) {
-  const blocks = parseMarkdownBlocks(normalizeStoredContent(content));
+  const blocks = parseMarkdownBlocks(content);
 
   if (blocks.length === 0) {
     return (

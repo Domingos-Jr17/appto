@@ -1,8 +1,9 @@
 "use client";
 
-import { ImageIcon, Download, RefreshCw } from "lucide-react";
+import { ImageIcon, Download, RefreshCw, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface WorkspaceBottomBarProps {
   hasContent: boolean;
@@ -44,20 +45,18 @@ export function WorkspaceBottomBar({
           )}
         </Button>
 
-        {hasContent && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-xs min-h-0 h-auto text-muted-foreground transition-colors hover:text-foreground"
-            onClick={onGenerate}
-            disabled={isGenerating}
-          >
-            <RefreshCw className={cn("h-4 w-4", isGenerating && "animate-spin")} />
-            <span className="text-[10px] font-medium">
-              {allDone ? "Regenerar" : "Gerar"}
-            </span>
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex flex-1 flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-xs min-h-0 h-auto text-muted-foreground transition-colors hover:text-foreground"
+          onClick={onGenerate}
+          disabled={isGenerating}
+        >
+          <RefreshCw className={cn("h-4 w-4", isGenerating && "animate-spin")} />
+          <span className="text-[10px] font-medium">
+            {allDone ? "Regenerar" : "Gerar"}
+          </span>
+        </Button>
 
         <Button
           variant="ghost"
@@ -69,6 +68,17 @@ export function WorkspaceBottomBar({
           <Download className="h-4 w-4" />
           <span className="text-[10px] font-medium">Download</span>
         </Button>
+
+        <Link href="/app" className="flex flex-1 items-center justify-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-xs min-h-0 h-auto text-emerald-500 transition-colors hover:text-emerald-400 hover:bg-emerald-500/10"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="text-[10px] font-medium">Novo</span>
+          </Button>
+        </Link>
       </div>
     </div>
   );

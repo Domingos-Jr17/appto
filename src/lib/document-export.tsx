@@ -580,11 +580,29 @@ export class DocumentExportService {
 
       for (const block of parseMarkdownBlocks(section.content)) {
         if (block.type === "heading" && block.text) {
+          // Detect hierarchical numbering: 1.1.1 (HEADING_3), 1.1 (HEADING_2), other (HEADING_2 fallback)
+          const isSubSubheading = /^\d+\.\d+\.\d+/.test(block.text);
+          const isSubheading = /^\d+\.\d+/.test(block.text);
+
+          let headingLevel: HeadingLevel;
+          let fontSize: number;
+
+          if (isSubSubheading) {
+            headingLevel = HeadingLevel.HEADING_3;
+            fontSize = 24; // 12pt
+          } else if (isSubheading) {
+            headingLevel = HeadingLevel.HEADING_2;
+            fontSize = 24; // 12pt
+          } else {
+            headingLevel = HeadingLevel.HEADING_1;
+            fontSize = 28; // 14pt
+          }
+
           bodyChildren.push(
             new Paragraph({
-              children: [new TextRun({ text: block.text, bold: true, size: 24, font: "Arial" })],
-              heading: block.level && block.level <= 2 ? HeadingLevel.HEADING_2 : HeadingLevel.HEADING_3,
-              spacing: { before: 220, after: 120 },
+              children: [new TextRun({ text: block.text, bold: true, size: fontSize, font: "Arial" })],
+              heading: headingLevel,
+              spacing: { before: isSubheading ? 220 : 120, after: 120 },
             })
           );
         }
@@ -707,8 +725,12 @@ export class DocumentExportService {
                 ? null
                 : parseMarkdownBlocks(section.content).map((block, index) => {
                 if (block.type === "heading" && block.text) {
+                  const isSubSubheading = /^\d+\.\d+\.\d+/.test(block.text);
+                  const isSubheading = /^\d+\.\d+/.test(block.text);
+                  const fontSize = isSubheading ? 11 : 13;
+                  const marginLeft = isSubSubheading ? 16 : isSubheading ? 8 : 0;
                   return (
-                    <Text key={`${section.id}-${index}`} style={[pdfStyles.paragraph, { fontSize: 12, fontWeight: 700 }]}>
+                    <Text key={`${section.id}-${index}`} style={[pdfStyles.paragraph, { fontSize, fontWeight: 700, marginLeft }]}>
                       {block.text}
                     </Text>
                   );

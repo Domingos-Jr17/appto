@@ -100,8 +100,9 @@ const renderers: Record<string, CoverTemplateRenderer> = {
   <div>
     <div class="logo-placeholder">Logo</div>
     <div class="institution">${fallback(data.institutionName, "Universidade Eduardo Mondlane")}</div>
-    <div class="department">${fallback(data.courseName, "Faculdade / Departamento")}</div>
-    ${data.subjectName ? `<div class="department">${fallback(data.subjectName, "Disciplina")}</div>` : ""}
+    ${data.facultyName ? `<div class="department">${data.facultyName}</div>` : `<div class="department">${fallback(data.courseName, "Faculdade / Departamento")}</div>`}
+    ${data.courseName ? `<div class="department">${data.courseName}</div>` : ""}
+    ${data.subjectName ? `<div class="department">${data.subjectName}</div>` : ""}
   </div>
   <div class="spacer"></div>
   <div>
@@ -113,8 +114,9 @@ const renderers: Record<string, CoverTemplateRenderer> = {
   </div>
   <div class="spacer"></div>
   <div>
-    <div class="author">${fallback(data.studentName, "Nome do Autor")}</div>
-    <div class="advisor">${data.advisorName ? `Orientador: ${data.advisorName}` : ""}</div>
+    <div class="author">${fallback(data.studentName, "Nome do Estudante")}${data.studentNumber ? ` — Nº ${data.studentNumber}` : ""}</div>
+    ${data.advisorName ? `<div class="advisor">Orientador: ${data.advisorName}</div>` : ""}
+    ${data.className ? `<div class="field">${data.className}${data.turma ? ` — Turma ${data.turma}` : ""}</div>` : ""}
     <div class="location-year">${fallback(data.city, "Maputo")} — ${data.academicYear || new Date().getFullYear()}</div>
   </div>
 </div></body></html>`;

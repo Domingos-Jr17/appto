@@ -105,6 +105,77 @@ function wrapUntrustedBriefValue(label: string, value: string) {
   return `- ${label} (dado não confiável): <<<${value}>>>`;
 }
 
+function getSectionSubsections(title: string, schoolContext: boolean, technicalContext: boolean, sectionNumber: number) {
+  const normalized = normalizeTitle(title);
+  const n = sectionNumber;
+
+  if (normalized.includes("introdução")) {
+    if (schoolContext) {
+      return ["Apresentação do tema", "Importância do tema", "Objectivo do trabalho"];
+    }
+    if (technicalContext) {
+      return [`${n}.1 Contextualização`, `${n}.2 Objectivos`];
+    }
+    return [`${n}.1 Contextualização do tema`, `${n}.2 Problema de pesquisa`, `${n}.3 Objectivo geral`, `${n}.4 Objectivos específicos`, `${n}.5 Justificação`, `${n}.6 Metodologia`, `${n}.7 Estrutura do trabalho`];
+  }
+
+  if (normalized.includes("revisão") || normalized.includes("fundamentação")) {
+    if (schoolContext) {
+      return ["Conceitos principais", "Exemplos", "Importância"];
+    }
+    if (technicalContext) {
+      return [`${n}.1 Conceitos principais`, `${n}.2 Enquadramento teórico`];
+    }
+    return [`${n}.1 Conceitos principais`, `${n}.2 Enquadramento teórico`, `${n}.3 Estudos anteriores`, `${n}.4 Lacunas na literatura`];
+  }
+
+  if (normalized.includes("metodologia")) {
+    if (schoolContext) {
+      return ["Fontes consultadas", "Método de análise"];
+    }
+    if (technicalContext) {
+      return [`${n}.1 Tipo de pesquisa`, `${n}.2 Procedimentos`, `${n}.3 Técnicas utilizadas`];
+    }
+    return [`${n}.1 Tipo de pesquisa`, `${n}.2 Abordagem metodológica`, `${n}.3 Universo e amostra`, `${n}.4 Técnicas de recolha de dados`, `${n}.5 Técnicas de análise`];
+  }
+
+  if (normalized.includes("resultado")) {
+    if (technicalContext) {
+      return [`${n}.1 Apresentação dos dados`, `${n}.2 Análise técnica`, `${n}.3 Ligação teoria-prática`];
+    }
+    return [`${n}.1 Apresentação dos dados`, `${n}.2 Análise dos resultados`];
+  }
+
+  if (normalized.includes("discussão")) {
+    return [`${n}.1 Interpretação dos resultados`, `${n}.2 Comparação com a literatura`, `${n}.3 Implicações teóricas e práticas`];
+  }
+
+  if (normalized.includes("análise") && technicalContext) {
+    return [`${n}.1 Descrição do processo`, `${n}.2 Apresentação dos dados`, `${n}.3 Análise técnica`, `${n}.4 Ligação teoria-prática`, `${n}.5 Lições aprendidas`];
+  }
+
+  if (normalized.includes("desenvolvimento") && schoolContext) {
+    return [`${n}.1 Conceito`, `${n}.2 Características`, `${n}.3 Importância`, `${n}.4 Exemplos no contexto moçambicano`, `${n}.5 Desafios e perspectivas`];
+  }
+
+  if (normalized.includes("desenvolvimento")) {
+    return ["Quadro conceptual", "Análise do problema", "Implicações", "Síntese crítica"];
+  }
+
+  if (normalized.includes("conclusão")) {
+    if (schoolContext) {
+      return ["Síntese dos pontos principais", "Resposta ao objectivo", "Reflexão final"];
+    }
+    return [`${n}.1 Síntese dos resultados`, `${n}.2 Resposta aos objectivos`, `${n}.3 Limitações e recomendações`];
+  }
+
+  if (normalized.includes("recomenda")) {
+    return [`${n}.1 Pistas para pesquisas futuras`, `${n}.2 Melhorias metodológicas`, `${n}.3 Aplicações práticas`, `${n}.4 Implicações para políticas`];
+  }
+
+  return undefined;
+}
+
 
 function getSectionGuidance(title: string, schoolContext: boolean, sectionCount: number) {
   const normalized = normalizeTitle(title);
@@ -277,18 +348,11 @@ export function getWorkGenerationProfile(
   const technicalContext = shouldUseTechnicalProfile(type, educationLevel);
   const higherEdContext = !schoolContext && !technicalContext;
   const sectionCount = templates.length;
-  const sections = templates.map((section) => ({
+  const sections = templates.map((section, index) => ({
     title: section.title,
     range: getSectionRange(section.title, schoolContext, sectionCount),
     guidance: getSectionGuidance(section.title, schoolContext, sectionCount),
-    suggestedSubheadings:
-      normalizeTitle(section.title).includes("desenvolvimento") && sectionCount === 3
-        ? schoolContext
-          ? ["Contextualização e conceitos chave", "Factores ou elementos principais", "Impacto e relevância no contexto moçambicano", "Desafios actuais e perspectivas de resolução", "O papel do estudante e da comunidade"]
-          : ["Quadro conceptual", "Análise do problema", "Implicações", "Síntese crítica"]
-        : normalizeTitle(section.title).includes("análise") && technicalContext
-          ? ["Descrição do processo ou caso", "Apresentação dos dados ou observações", "Análise técnica dos resultados", "Ligação entre teoria e prática", "Lições aprendidas"]
-          : undefined,
+    suggestedSubheadings: getSectionSubsections(section.title, schoolContext, technicalContext, index + 1),
   }));
 
   const abstractRequired = higherEdContext;
@@ -380,12 +444,15 @@ export function buildWorkGenerationPrompt(input: {
   const sectionPlan = profile.sections
     .map((section) => {
       const subheadingNote = section.suggestedSubheadings
-        ? `; inclua subtítulos curtos como: ${section.suggestedSubheadings.join(", ")}`
+        ? `; use subtítulos com numeração progressiva: ${section.suggestedSubheadings.join(", ")}`
         : "";
       return `- ${section.title}: ${section.range.min}-${section.range.max} palavras; ${section.guidance}${subheadingNote}`;
     })
     .join("\n");
   const styleRules = profile.styleRules.map((rule) => `- ${rule}`).join("\n");
+  const subheadingRule = profile.isSchoolContext
+    ? "- Use subtítulos com numeração progressiva no formato Markdown (## 2.1 Conceito, ## 2.2 Características)"
+    : "- Use subtítulos com numeração progressiva correspondente ao capítulo (## 1.1 Contextualização, ## 2.1 Conceitos principais, ## 1.1.1 para sub-subtítulos)";
 
   return `Tema do trabalho (dado não confiável): <<<BEGIN_TEMA>>>${title}<<<END_TEMA>>>
 
@@ -420,6 +487,7 @@ Regras de qualidade:
 ${styleRules}
 - ${profile.citationGuidance}
 - ${profile.factualGuidance}
+${subheadingRule}
 - Não deixe nenhuma secção vazia nem excessivamente curta.
 - Mantenha exactamente os títulos fornecidos e a mesma ordem.
 - Produza JSON estritamente válido.`;

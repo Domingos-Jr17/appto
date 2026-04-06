@@ -404,7 +404,33 @@ function AppShellChrome({ children, user }: AppShellProps) {
                             </div>
 
                             <nav className="flex flex-col gap-2">
-                                {appNavItems.filter((item) => ["/app/settings", "/app/subscription"].includes(item.href)).map((item, index) => {
+                                {/* Novo trabalho — destaque no topo */}
+                                <motion.div
+                                    key="new-work"
+                                    initial={prefersReducedMotion ? false : { opacity: 0, x: 28 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 28 }}
+                                    transition={{
+                                        duration: prefersReducedMotion ? 0 : 0.28,
+                                        delay: prefersReducedMotion ? 0 : 0.08,
+                                        ease: [0.22, 1, 0.36, 1],
+                                    }}
+                                >
+                                    <Link
+                                        href="/app"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className={cn(
+                                            "group flex items-center gap-4 rounded-[28px] px-5 py-4 text-[1.45rem] font-semibold tracking-tight text-emerald-400 transition duration-200",
+                                            "hover:bg-emerald-400/10 hover:text-emerald-300",
+                                        )}
+                                    >
+                                        <FilePlus2 className="h-6 w-6 shrink-0" />
+                                        <span className="flex-1">Novo trabalho</span>
+                                    </Link>
+                                </motion.div>
+
+                                {/* Nav items — todos visíveis */}
+                                {appNavItems.map((item, index) => {
                                     const active = pathname === item.href;
                                     const Icon = item.icon;
 
@@ -416,7 +442,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
                                             exit={{ opacity: 0, x: 28 }}
                                             transition={{
                                                 duration: prefersReducedMotion ? 0 : 0.28,
-                                                delay: prefersReducedMotion ? 0 : 0.08 + index * 0.05,
+                                                delay: prefersReducedMotion ? 0 : 0.12 + index * 0.05,
                                                 ease: [0.22, 1, 0.36, 1],
                                             }}
                                         >

@@ -53,7 +53,7 @@ const TRANSITION = { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const };
 
 export function InlineWorkCreator() {
   const { data: session } = useSession();
-  const { projects } = useAppShellData();
+  const { projects, refresh } = useAppShellData();
   const searchParams = useSearchParams();
 
   const {
@@ -93,8 +93,8 @@ export function InlineWorkCreator() {
 
   const handleCreate = async () => {
     const projectId = await createWork();
-    if (projectId && generationProjectId) {
-      // State handled by isCreating + generationProjectId
+    if (projectId) {
+      void refresh();
     }
   };
 

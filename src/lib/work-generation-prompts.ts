@@ -494,6 +494,160 @@ export function validateGeneratedWorkContent(
   return issues;
 }
 
+export interface GeneratedSectionContent {
+  title: string;
+  content: string;
+}
+
+export interface SectionValidationIssue {
+  sectionTitle: string;
+  message: string;
+}
+
+export interface CrossSectionRepetitionIssue {
+  sectionA: string;
+  sectionB: string;
+  overlapCount: number;
+}
+
+export function buildSectionGenerationPrompt(input: {
+  title: string;
+  typeLabel: string;
+  brief: WorkBriefInput;
+  sectionTitle: string;
+  sectionGuidance: string;
+  sectionRange: WordRange;
+  previousSections: GeneratedSectionContent[];
+  styleRules: string[];
+  citationGuidance: string;
+  factualGuidance: string;
+}) {
+  const {
+    title,
+    typeLabel,
+    brief,
+    sectionTitle,
+    sectionGuidance,
+    sectionRange,
+    previousSections,
+    styleRules,
+    citationGuidance,
+    factualGuidance,
+  } = input;
+
+  const briefContext = buildBriefContext(brief);
+
+  const previousSectionsContext = previousSections.length > 0
+    ? `\nConteúdo já gerado nas secções anteriores (NÃO repita este conteúdo):\n${previousSections
+        .map((s) => `--- ${s.title} ---\n${s.content}`)
+        .join("\n\n")}\n---`
+    : "";
+
+  const styleRulesText = styleRules.map((rule) => `- ${rule}`).join("\n");
+
+  return `Tema do trabalho: ${title}
+Tipo de trabalho: ${typeLabel}
+Contexto do briefing:
+${briefContext || "- Sem detalhes adicionais além do título e tipo do trabalho."}
+${previousSectionsContext}
+
+Instrução: Gere APENAS o conteúdo da secção "${sectionTitle}" sobre o tema fornecido.
+
+Requisitos obrigatórios:
+- Produza entre ${sectionRange.min} e ${sectionRange.max} palavras
+- ${sectionGuidance}
+- Escreva em Português académico de Moçambique
+- Siga a norma ${brief.citationStyle || "ABNT"}
+- NÃO repita conteúdo já escrito nas secções anteriores
+- NÃO invente dados factuais, leis, autores ou referências sem base no briefing
+- Devolva apenas o texto da secção, sem JSON, sem markdown de código, sem explicações antes ou depois
+
+Regras de estilo:
+${styleRulesText}
+- ${citationGuidance}
+- ${factualGuidance}`;
+}
+
+export function validateGeneratedSection(
+  content: string,
+  sectionTitle: string,
+  range: WordRange,
+  theme?: string,
+  thematicCoverageThreshold = 0.4,
+): SectionValidationIssue[] {
+  const issues: SectionValidationIssue[] = [];
+  const words = countWords(content);
+
+  if (words < range.hardMin || words > range.hardMax) {
+    issues.push({
+      sectionTitle,
+      message: `A secção "${sectionTitle}" ficou com ${words} palavras; esperado aproximadamente ${range.min}-${range.max}.`,
+    });
+  }
+
+  if (theme) {
+    const themeLower = theme.toLowerCase();
+    const themeWords = themeLower
+      .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+      .split(/\s+/)
+      .map((w) => w.trim())
+      .filter((w) => w.length >= 4);
+
+    if (themeWords.length > 0) {
+      const contentLower = content.toLowerCase();
+      const matches = themeWords.filter((word) => contentLower.includes(word));
+      const coverage = matches.length / themeWords.length;
+
+      if (coverage < thematicCoverageThreshold) {
+        issues.push({
+          sectionTitle,
+          message: `A secção "${sectionTitle}" menciona apenas ${matches.length} de ${themeWords.length} palavras-chave do tema "${theme}".`,
+        });
+      }
+    }
+  }
+
+  return issues;
+}
+
+export function detectCrossSectionRepetition(
+  sections: GeneratedSectionContent[],
+  overlapThreshold = 0.7,
+  minSentenceLength = 30,
+): CrossSectionRepetitionIssue[] {
+  const issues: CrossSectionRepetitionIssue[] = [];
+
+  for (let i = 0; i < sections.length; i += 1) {
+    for (let j = i + 1; j < sections.length; j += 1) {
+      const sectionA = sections[i]!;
+      const sectionB = sections[j]!;
+
+      const sentencesA = sectionA.content.toLowerCase().split(/[.!?]+/).map((s) => s.trim()).filter((s) => s.length > minSentenceLength);
+      const sentencesB = sectionB.content.toLowerCase().split(/[.!?]+/).map((s) => s.trim()).filter((s) => s.length > minSentenceLength);
+
+      const repeated = sentencesA.filter((sentenceA) =>
+        sentencesB.some((sentenceB) => {
+          const wordsA = new Set(sentenceA.split(/\s+/));
+          const wordsB = new Set(sentenceB.split(/\s+/));
+          const overlap = [...wordsA].filter((w) => wordsB.has(w)).length;
+          const minWords = Math.min(wordsA.size, wordsB.size);
+          return minWords > 5 && overlap / minWords > overlapThreshold;
+        }),
+      );
+
+      if (repeated.length > 0) {
+        issues.push({
+          sectionA: sectionA.title,
+          sectionB: sectionB.title,
+          overlapCount: repeated.length,
+        });
+      }
+    }
+  }
+
+  return issues;
+}
+
 export function parseGeneratedWorkContent(
   rawContent: string,
   templates: SectionTemplate[],

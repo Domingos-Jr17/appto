@@ -1,10 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  buildSectionGenerationPrompt,
   buildWorkGenerationPrompt,
+  detectCrossSectionRepetition,
   getWorkGenerationProfile,
   parseGeneratedWorkContent,
   type SectionTemplate,
+  validateGeneratedSection,
 } from "@/lib/work-generation-prompts";
 import type { WorkBriefInput } from "@/types/editor";
 
@@ -161,5 +164,122 @@ describe("work generation prompts", () => {
     expect(() => parseGeneratedWorkContent(raw, schoolTemplates, profile)).toThrow(
       "A secção \"2. Desenvolvimento\" ficou com",
     );
+  });
+
+  test("buildSectionGenerationPrompt includes previous sections context", () => {
+    const brief: WorkBriefInput = {
+      educationLevel: "SECONDARY",
+      institutionName: "Escola Secundária da Polana",
+      subjectName: "Português",
+    };
+    const profile = getWorkGenerationProfile("SCHOOL_WORK", brief, schoolTemplates);
+    const sectionPlan = profile.sections.find((s) => s.title === "2. Desenvolvimento")!;
+
+    const prompt = buildSectionGenerationPrompt({
+      title: "Mudanças climáticas em Moçambique",
+      typeLabel: "Trabalho Escolar",
+      brief,
+      sectionTitle: "2. Desenvolvimento",
+      sectionGuidance: sectionPlan.guidance,
+      sectionRange: sectionPlan.range,
+      previousSections: [
+        { title: "1. Introdução", content: "Texto introdutório sobre mudanças climáticas." },
+      ],
+      styleRules: profile.styleRules,
+      citationGuidance: profile.citationGuidance,
+      factualGuidance: profile.factualGuidance,
+    });
+
+    expect(prompt).toContain("Conteúdo já gerado nas secções anteriores");
+    expect(prompt).toContain("1. Introdução");
+    expect(prompt).toContain("Texto introdutório sobre mudanças climáticas");
+    expect(prompt).toContain("NÃO repita conteúdo já escrito");
+    expect(prompt).toContain("1500");
+    expect(prompt).toContain("1700");
+  });
+
+  test("buildSectionGenerationPrompt omits previous sections when first section", () => {
+    const brief: WorkBriefInput = {
+      educationLevel: "SECONDARY",
+      institutionName: "Escola Secundária da Polana",
+    };
+    const profile = getWorkGenerationProfile("SCHOOL_WORK", brief, schoolTemplates);
+    const sectionPlan = profile.sections.find((s) => s.title === "1. Introdução")!;
+
+    const prompt = buildSectionGenerationPrompt({
+      title: "Tema de teste",
+      typeLabel: "Trabalho Escolar",
+      brief,
+      sectionTitle: "1. Introdução",
+      sectionGuidance: sectionPlan.guidance,
+      sectionRange: sectionPlan.range,
+      previousSections: [],
+      styleRules: profile.styleRules,
+      citationGuidance: profile.citationGuidance,
+      factualGuidance: profile.factualGuidance,
+    });
+
+    expect(prompt).not.toContain("Conteúdo já gerado nas secções anteriores");
+    expect(prompt).toContain("1. Introdução");
+  });
+
+  test("validateGeneratedSection accepts content within range", () => {
+    const brief: WorkBriefInput = { educationLevel: "SECONDARY" };
+    const profile = getWorkGenerationProfile("SCHOOL_WORK", brief, schoolTemplates);
+    const introRange = profile.sections.find((s) => s.title === "1. Introdução")!.range;
+
+    const content = "Palavra ".repeat(350);
+    const issues = validateGeneratedSection(content, "1. Introdução", introRange);
+
+    expect(issues).toHaveLength(0);
+  });
+
+  test("validateGeneratedSection rejects content below hardMin", () => {
+    const brief: WorkBriefInput = { educationLevel: "SECONDARY" };
+    const profile = getWorkGenerationProfile("SCHOOL_WORK", brief, schoolTemplates);
+    const devRange = profile.sections.find((s) => s.title === "2. Desenvolvimento")!.range;
+
+    const content = "Texto muito curto.";
+    const issues = validateGeneratedSection(content, "2. Desenvolvimento", devRange);
+
+    expect(issues.length).toBeGreaterThan(0);
+    expect(issues[0]?.message).toContain("ficou com");
+    expect(issues[0]?.message).toContain("palavras");
+  });
+
+  test("validateGeneratedSection checks thematic coverage", () => {
+    const range = { min: 100, max: 200, hardMin: 85, hardMax: 230 };
+    const content = "Texto genérico sem relação com o tema específico solicitado. ".repeat(20);
+    const issues = validateGeneratedSection(content, "Secção", range, "biodiversidade marinha costeira");
+
+    expect(issues.length).toBeGreaterThan(0);
+    expect(issues[0]?.message).toContain("palavras-chave do tema");
+  });
+
+  test("detectCrossSectionRepetition finds repeated content", () => {
+    const repeatedSentence = "A escola moçambicana enfrenta desafios concretos ligados ao acesso à informação e à organização do estudo diário dos alunos";
+
+    const sections = [
+      { title: "1. Introdução", content: `${repeatedSentence}. Além disso, outros aspectos são relevantes para a análise.` },
+      { title: "2. Desenvolvimento", content: `${repeatedSentence}. Este ponto é crucial para compreender o contexto actual.` },
+    ];
+
+    const issues = detectCrossSectionRepetition(sections);
+
+    expect(issues.length).toBeGreaterThan(0);
+    expect(issues[0]?.sectionA).toBe("1. Introdução");
+    expect(issues[0]?.sectionB).toBe("2. Desenvolvimento");
+  });
+
+  test("detectCrossSectionRepetition passes normal sections", () => {
+    const sections = [
+      { title: "1. Introdução", content: "A introdução apresenta o tema e os objectivos do trabalho académico de forma clara." },
+      { title: "2. Desenvolvimento", content: "O desenvolvimento analisa os factores principais com exemplos concretos do contexto moçambicano actual." },
+      { title: "3. Conclusão", content: "A conclusão sintetiza os resultados e responde aos objectivos propostos inicialmente." },
+    ];
+
+    const issues = detectCrossSectionRepetition(sections);
+
+    expect(issues).toHaveLength(0);
   });
 });

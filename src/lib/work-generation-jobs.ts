@@ -7,11 +7,14 @@ import { trackProductEvent } from "@/lib/product-events";
 import { subscriptionService } from "@/lib/subscription";
 import {
   buildBriefContext,
+  buildSectionGenerationPrompt,
   buildWorkGenerationPrompt,
   buildWorkRegenerationRepairPrompt,
+  detectCrossSectionRepetition,
   getWorkGenerationProfile,
   parseGeneratedWorkContent,
   type SectionTemplate,
+  validateGeneratedSection,
 } from "@/lib/work-generation-prompts";
 import type { CitationStyle, CoverTemplate, WorkBriefInput } from "@/types/editor";
 
@@ -303,6 +306,271 @@ async function generateCompleteWorkContent(
   throw lastError || new Error("A IA não devolveu conteúdo para o trabalho completo.");
 }
 
+async function saveSectionToDb(
+  projectId: string,
+  title: string,
+  content: string,
+) {
+  const wordCount = content.split(/\s+/).filter(Boolean).length;
+  await db.documentSection.updateMany({
+    where: { projectId, title },
+    data: { content, wordCount },
+  });
+}
+
+async function loadGeneratedSections(
+  projectId: string,
+  templates: SectionTemplate[],
+) {
+  const sections = await db.documentSection.findMany({
+    where: { projectId, title: { in: templates.map((t) => t.title) } },
+    select: { title: true, content: true },
+  });
+  return sections
+    .filter((s) => s.content && s.content.trim().length > 0)
+    .map((s) => ({ title: s.title, content: s.content! }));
+}
+
+async function generateWorkSectionBySection(
+  projectId: string,
+  title: string,
+  type: string,
+  brief: WorkBriefInput,
+  templates: SectionTemplate[],
+  userId: string,
+  onProgress: (progress: number, step: string) => Promise<void>,
+) {
+  const profile = getWorkGenerationProfile(type, brief, templates);
+  const resolvedEducationLevel = brief.educationLevel || "HIGHER_EDUCATION";
+  const systemPrompt = getSystemPromptForEducation(resolvedEducationLevel);
+  const typeLabel = formatProjectType(type);
+
+  const totalSteps = templates.length + (profile.abstract.required ? 1 : 0) + 1; // +1 for cover
+  let completedSteps = 0;
+
+  const progressForStep = () => {
+    completedSteps += 1;
+    return Math.round((completedSteps / totalSteps) * 90) + 10; // 10-100 range
+  };
+
+  // Step 1: Generate cover
+  await onProgress(progressForStep(), "A gerar capa");
+  await saveSectionToDb(projectId, "Capa", generateCover(title, type, brief));
+
+  // Step 2: Generate abstract if required
+  if (profile.abstract.required && profile.abstract.range) {
+    await onProgress(progressForStep(), "A gerar resumo");
+    const abstractPrompt = buildSectionGenerationPrompt({
+      title,
+      typeLabel,
+      brief,
+      sectionTitle: "Resumo",
+      sectionGuidance: profile.abstract.guidance,
+      sectionRange: profile.abstract.range,
+      previousSections: [],
+      styleRules: profile.styleRules,
+      citationGuidance: profile.citationGuidance,
+      factualGuidance: profile.factualGuidance,
+    });
+
+    let abstractContent = "";
+    let abstractError: Error | null = null;
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const completion = await runAIChatCompletion({
+          model: "",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: abstractPrompt },
+          ],
+          temperature: 0,
+          max_tokens: Math.ceil((profile.abstract.range.max || 260) * 1.5),
+        });
+
+        abstractContent = completion.choices[0]?.message?.content?.trim() || "";
+        if (!abstractContent) {
+          abstractError = new Error("A IA não devolveu conteúdo para o resumo.");
+          continue;
+        }
+
+        const issues = validateGeneratedSection(abstractContent, "Resumo", profile.abstract.range, title);
+        if (issues.length > 0) {
+          abstractError = new Error(issues.map((i) => i.message).join(" "));
+          continue;
+        }
+
+        abstractError = null;
+        break;
+      } catch (error) {
+        abstractError = error instanceof Error ? error : new Error(String(error));
+      }
+    }
+
+    if (abstractContent && !abstractError) {
+      await saveSectionToDb(projectId, "Resumo", abstractContent);
+    } else if (abstractError) {
+      logger.warn("[work-generation] abstract generation failed", { projectId, error: abstractError.message });
+    }
+  }
+
+  // Step 3: Generate each content section sequentially
+  const sectionsFailed: string[] = [];
+
+  for (const template of templates) {
+    const sectionPlan = profile.sections.find((s) => s.title === template.title);
+    if (!sectionPlan) continue;
+
+    await onProgress(progressForStep(), `A gerar ${template.title}`);
+
+    const previousSections = await loadGeneratedSections(projectId, templates);
+
+    const sectionPrompt = buildSectionGenerationPrompt({
+      title,
+      typeLabel,
+      brief,
+      sectionTitle: template.title,
+      sectionGuidance: sectionPlan.guidance,
+      sectionRange: sectionPlan.range,
+      previousSections,
+      styleRules: profile.styleRules,
+      citationGuidance: profile.citationGuidance,
+      factualGuidance: profile.factualGuidance,
+    });
+
+    let sectionContent = "";
+    let sectionError: Error | null = null;
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const maxTokens = Math.ceil((sectionPlan.range.max || 800) * 1.8);
+        const completion = await runAIChatCompletion({
+          model: "",
+          messages:
+            attempt === 0
+              ? [
+                  { role: "system", content: systemPrompt },
+                  { role: "user", content: sectionPrompt },
+                ]
+              : [
+                  { role: "system", content: systemPrompt },
+                  { role: "user", content: sectionPrompt },
+                  {
+                    role: "user",
+                    content: `A resposta anterior para a secção "${template.title}" não cumpriu os requisitos: ${sectionError?.message || "Conteúdo insuficiente"}. Regere a secção respeitando todos os requisitos.`,
+                  },
+                ],
+          temperature: 0,
+          max_tokens: maxTokens,
+        });
+
+        sectionContent = completion.choices[0]?.message?.content?.trim() || "";
+        if (!sectionContent) {
+          sectionError = new Error(`A IA não devolveu conteúdo para "${template.title}".`);
+          continue;
+        }
+
+        const issues = validateGeneratedSection(sectionContent, template.title, sectionPlan.range, title);
+        if (issues.length > 0) {
+          sectionError = new Error(issues.map((i) => i.message).join(" "));
+          continue;
+        }
+
+        sectionError = null;
+        break;
+      } catch (error) {
+        sectionError = error instanceof Error ? error : new Error(String(error));
+      }
+    }
+
+    if (sectionContent && !sectionError) {
+      await saveSectionToDb(projectId, template.title, sectionContent);
+    } else {
+      sectionsFailed.push(template.title);
+      logger.warn("[work-generation] section generation failed", {
+        projectId,
+        section: template.title,
+        error: sectionError?.message,
+      });
+    }
+  }
+
+  // Step 4: Cross-section repetition check and repair
+  await onProgress(95, "A validar conteúdo");
+  const allSections = await loadGeneratedSections(projectId, templates);
+  const repetitionIssues = detectCrossSectionRepetition(allSections);
+
+  for (const issue of repetitionIssues) {
+    const failedSection = templates.find((t) => t.title === issue.sectionB);
+    if (!failedSection) continue;
+
+    const sectionPlan = profile.sections.find((s) => s.title === failedSection.title);
+    if (!sectionPlan) continue;
+
+    logger.info("[work-generation] repairing cross-section repetition", {
+      projectId,
+      sectionA: issue.sectionA,
+      sectionB: issue.sectionB,
+    });
+
+    const repeatedSectionContent = allSections.find((s) => s.title === issue.sectionB)?.content || "";
+    const originalSectionContent = allSections.find((s) => s.title === issue.sectionA)?.content || "";
+
+    const repairPrompt = `A secção "${issue.sectionB}" tem repetição significativa de conteúdo da secção "${issue.sectionA}".
+Regere APENAS a secção "${issue.sectionB}" com conteúdo NOVO e DIFERENTE.
+
+Conteúdo da secção "${issue.sectionA}" (NÃO repita isto):
+${originalSectionContent}
+
+Conteúdo actual da secção "${issue.sectionB}" (que precisa ser refeito):
+${repeatedSectionContent}
+
+Instrução: Gere a secção "${issue.sectionB}" com conteúdo completamente diferente, sem repetir ideias ou frases da secção "${issue.sectionA}".
+Respeite o range de ${sectionPlan.range.min}-${sectionPlan.range.max} palavras.
+Devolva apenas o texto da secção.`;
+
+    try {
+      const completion = await runAIChatCompletion({
+        model: "",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: repairPrompt },
+        ],
+        temperature: 0.3,
+        max_tokens: Math.ceil(sectionPlan.range.max * 1.8),
+      });
+
+      const repairedContent = completion.choices[0]?.message?.content?.trim() || "";
+      if (repairedContent) {
+        const issues = validateGeneratedSection(repairedContent, failedSection.title, sectionPlan.range, title);
+        if (issues.length === 0) {
+          await saveSectionToDb(projectId, failedSection.title, repairedContent);
+        }
+      }
+    } catch (error) {
+      logger.warn("[work-generation] cross-section repair failed", {
+        projectId,
+        section: issue.sectionB,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  // Step 5: Save references section
+  const referenceOrder = Math.max(...templates.map((section) => section.order)) + 1;
+  await saveSectionToDb(
+    projectId,
+    "Referências",
+    brief.referencesSeed || "Adicione referências verificadas manualmente antes da submissão.",
+  );
+  await db.documentSection.updateMany({
+    where: { projectId, title: "Referências" },
+    data: { order: referenceOrder },
+  });
+
+  return { sectionsFailed };
+}
+
 function setJob(projectId: string, partial: Partial<WorkGenerationJobStatus>) {
   const current = jobs.get(projectId) || {
     projectId,
@@ -479,78 +747,80 @@ async function processGenerationJob(projectId: string) {
       data: { generationStatus: "GENERATING" },
     });
 
-    setJob(projectId, { progress: 25, step: "A gerar capa e estrutura" });
-    await setJobAsync(projectId, { progress: 25, step: "A gerar capa e estrutura", startedAt: new Date() });
+    await setJobAsync(projectId, { progress: 5, step: "A iniciar geração", startedAt: new Date() });
 
-    const generatedContent = await generateCompleteWorkContent(project.title, project.type, brief, templates);
-    const referenceOrder = Math.max(...templates.map((section) => section.order)) + 1;
+    const { sectionsFailed } = await generateWorkSectionBySection(
+      projectId,
+      project.title,
+      project.type,
+      brief,
+      templates,
+      project.userId,
+      async (progress, step) => {
+        setJob(projectId, { progress, step });
+        await setJobAsync(projectId, { progress, step });
+      },
+    );
 
-    setJob(projectId, { progress: 65, step: "A escrever as secções iniciais" });
-    await setJobAsync(projectId, { progress: 65, step: "A escrever as secções iniciais", startedAt: new Date() });
+    // Calculate total word count
+    const updatedSections = await db.documentSection.findMany({
+      where: { projectId },
+      select: { wordCount: true, content: true },
+    });
 
-    await db.$transaction(async (tx) => {
-      await tx.documentSection.updateMany({
-        where: { projectId, title: "Capa" },
-        data: { content: generateCover(project.title, project.type, brief) },
-      });
+    const totalWords = updatedSections.reduce((sum, section) => {
+      if (typeof section.wordCount === "number" && section.wordCount > 0) return sum + section.wordCount;
+      if (section.content) return sum + section.content.split(/\s+/).filter(Boolean).length;
+      return sum;
+    }, 0);
 
-      await tx.documentSection.updateMany({
-        where: { projectId, title: "Resumo" },
-        data: { content: generatedContent.abstract },
-      });
+    await db.project.update({
+      where: { id: projectId },
+      data: { wordCount: totalWords },
+    });
 
-      await tx.documentSection.updateMany({
-        where: { projectId, title: "Referências" },
-        data: { content: brief.referencesSeed || "Adicione referências verificadas manualmente antes da submissão.", order: referenceOrder },
-      });
-
-      for (const section of generatedContent.sections) {
-        await tx.documentSection.updateMany({
-          where: { projectId, title: section.title },
-          data: { content: section.content },
-        });
-      }
-
-      const updatedSections = await tx.documentSection.findMany({
-        where: { projectId },
-        select: { wordCount: true, content: true },
-      });
-
-      const totalWords = updatedSections.reduce((sum, section) => {
-        if (typeof section.wordCount === "number" && section.wordCount > 0) return sum + section.wordCount;
-        if (section.content) return sum + section.content.split(/\s+/).filter(Boolean).length;
-        return sum;
-      }, 0);
-
-      await tx.project.update({
-        where: { id: projectId },
-        data: { wordCount: totalWords },
-      });
-
-      await tx.projectBrief.update({
+    if (sectionsFailed.length > 0) {
+      await db.projectBrief.update({
         where: { projectId },
         data: { generationStatus: "READY" },
       });
-    });
 
-    await setJobAsync(projectId, {
-      status: "READY",
-      progress: 100,
-      step: "Trabalho pronto para revisão",
-      completedAt: new Date(),
-    });
-    setJob(projectId, {
-      status: "READY",
-      progress: 100,
-      step: "Trabalho pronto para revisão",
-    });
+      await setJobAsync(projectId, {
+        status: "READY",
+        progress: 100,
+        step: `Trabalho pronto — ${sectionsFailed.length} secção(ões) com qualidade abaixo do esperado. Pode re-gerar individualmente.`,
+        completedAt: new Date(),
+      });
+      setJob(projectId, {
+        status: "READY",
+        progress: 100,
+        step: `Trabalho pronto — ${sectionsFailed.length} secção(ões) com qualidade abaixo do esperado. Pode re-gerar individualmente.`,
+      });
+    } else {
+      await db.projectBrief.update({
+        where: { projectId },
+        data: { generationStatus: "READY" },
+      });
+
+      await setJobAsync(projectId, {
+        status: "READY",
+        progress: 100,
+        step: "Trabalho pronto para revisão",
+        completedAt: new Date(),
+      });
+      setJob(projectId, {
+        status: "READY",
+        progress: 100,
+        step: "Trabalho pronto para revisão",
+      });
+    }
 
     await trackProductEvent({
       name: "work_generation_completed",
       category: "workspace",
       userId: project.userId,
       projectId,
-      metadata: { type: project.type },
+      metadata: { type: project.type, sectionsFailed: sectionsFailed.length },
     }).catch(() => null);
   } catch (error) {
     const friendlyMessage = getFriendlyAIErrorMessage(error);

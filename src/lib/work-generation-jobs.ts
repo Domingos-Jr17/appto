@@ -390,11 +390,20 @@ async function generateWorkSectionBySection(
   userId: string,
   onProgress: (progress: number, step: string) => Promise<void>,
 ) {
-  const profile = getWorkGenerationProfile(type, brief, templates);
-  const resolvedEducationLevel = brief.educationLevel || "HIGHER_EDUCATION";
+  // Enrich references with real academic sources from Semantic Scholar
+  let enrichedBrief = brief;
+  if (!brief.referencesSeed || brief.referencesSeed.trim().length < 20) {
+    const enriched = await enrichReferencesWithAcademicSources(title, brief.referencesSeed || "", 6);
+    if (enriched && enriched !== brief.referencesSeed) {
+      enrichedBrief = { ...brief, referencesSeed: enriched };
+    }
+  }
+
+  const profile = getWorkGenerationProfile(type, enrichedBrief, templates);
+  const resolvedEducationLevel = enrichedBrief.educationLevel || "HIGHER_EDUCATION";
   const systemPrompt = getSystemPromptForEducation(resolvedEducationLevel);
   const typeLabel = formatProjectType(type);
-  const isHigherEd = brief.educationLevel === "HIGHER_EDUCATION";
+  const isHigherEd = enrichedBrief.educationLevel === "HIGHER_EDUCATION";
 
   const totalSteps = templates.length + (profile.abstract.required ? 1 : 0) + 1 + (isHigherEd ? 1 : 0); // +1 for cover, +1 for title page if higher ed
   let completedSteps = 0;
@@ -613,12 +622,12 @@ Devolva apenas o texto da secção.`;
     }
   }
 
-  // Step 5: Save references section
+  // Step 5: Save references section with enriched academic sources
   const referenceOrder = Math.max(...templates.map((section) => section.order)) + 1;
   await saveSectionToDb(
     projectId,
     "Referências",
-    brief.referencesSeed || "Adicione referências verificadas manualmente antes da submissão.",
+    enrichedBrief.referencesSeed || "Adicione referências verificadas manualmente antes da submissão.",
   );
   await db.documentSection.updateMany({
     where: { projectId, title: "Referências" },

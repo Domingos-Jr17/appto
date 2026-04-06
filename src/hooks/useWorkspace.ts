@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import type { WorkspaceData, WorkBrief } from "@/types/workspace";
 import { toast } from "@/hooks/use-toast";
-import { useGenerationPolling } from "@/hooks/useGenerationPolling";
+import { useGenerationStream } from "@/hooks/useGenerationStream";
 
 interface UseWorkspaceOptions {
   initialData: WorkspaceData;
@@ -67,7 +67,7 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
 
   const isGenerating = data.generationStatus === "GENERATING";
 
-  useGenerationPolling({
+  useGenerationStream({
     projectId: data.id,
     generationStatus: data.generationStatus,
     onFetch: refreshProject,

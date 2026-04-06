@@ -2,151 +2,158 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-interface StreamEvent {
-  progress: number;
-  step: string;
-  error?: string;
+interface SSEEvent {
+  type: "handshake" | "progress" | "section-complete" | "complete" | "error";
+  data: {
+    progress: number;
+    step: string;
+    sectionTitle?: string;
+    error?: string;
+  };
 }
 
 interface UseGenerationStreamOptions {
   projectId: string;
   generationStatus: string | undefined;
-  onProgress: (event: StreamEvent) => void;
-  onComplete: (event: StreamEvent) => void;
-  onError: (event: StreamEvent) => void;
+  onFetch: () => Promise<void>;
+  getDoneCount: () => number;
   enabled?: boolean;
+  maxTimeout?: number;
 }
-
-const MAX_RECONNECT_ATTEMPTS = 3;
-const RECONNECT_DELAYS = [1000, 2000, 4000];
 
 export function useGenerationStream({
   projectId,
   generationStatus,
-  onProgress,
-  onComplete,
-  onError,
+  onFetch,
+  getDoneCount,
   enabled = true,
+  maxTimeout = 300_000,
 }: UseGenerationStreamOptions) {
   const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectAttemptsRef = useRef(0);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const maxTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [lastEvent, setLastEvent] = useState<StreamEvent | null>(null);
+  const lastEventIdRef = useRef<string | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const isGeneratingRef = useRef(false);
+  const [useSSE, setUseSSE] = useState(true);
 
-  useEffect(() => {
-    if (!enabled || generationStatus !== "GENERATING") {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsStreaming(false);
-      return;
-    }
+  const isGenerating = generationStatus === "GENERATING";
 
-    const connect = () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-
-      const url = `/api/generate/work/${projectId}/stream`;
-      const es = new EventSource(url);
-      eventSourceRef.current = es;
-
-      es.onopen = () => {
-        reconnectAttemptsRef.current = 0;
-        setIsStreaming(true);
-      };
-
-      es.addEventListener("progress", (event) => {
-        try {
-          const data = JSON.parse(event.data) as StreamEvent;
-          setLastEvent(data);
-          onProgress(data);
-        } catch {
-          // malformed data
-        }
-      });
-
-      es.addEventListener("complete", (event) => {
-        try {
-          const data = JSON.parse(event.data) as StreamEvent;
-          setLastEvent(data);
-          onComplete(data);
-        } catch {
-          // malformed data
-        }
-        if (eventSourceRef.current) {
-          eventSourceRef.current.close();
-          eventSourceRef.current = null;
-        }
-        setIsStreaming(false);
-      });
-
-      es.addEventListener("error", () => {
-        const wasConnected = es.readyState === EventSource.OPEN;
-        if (eventSourceRef.current) {
-          eventSourceRef.current.close();
-          eventSourceRef.current = null;
-        }
-        setIsStreaming(false);
-
-        if (wasConnected && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
-          const delay = RECONNECT_DELAYS[reconnectAttemptsRef.current] || 4000;
-          reconnectAttemptsRef.current += 1;
-          reconnectTimeoutRef.current = setTimeout(connect, delay);
-        } else if (!wasConnected) {
-          onError({ progress: 0, step: "Conexão falhou" });
-        }
-      });
-    };
-
-    connect();
-
-    return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-      setIsStreaming(false);
-    };
-  }, [enabled, generationStatus, projectId, onProgress, onComplete, onError]);
-
-  useEffect(() => {
-    return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-      setIsStreaming(false);
-    };
-  }, []);
-
-  const connect = () => {
-    if (enabled && generationStatus === "GENERATING") {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-      reconnectAttemptsRef.current = 0;
-    }
-  };
-
-  const disconnect = () => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
+  const stopSSE = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
     }
-    setIsStreaming(false);
-  };
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  }, []);
 
-  return { isStreaming, lastEvent, connect, disconnect };
+  const stopPolling = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (maxTimeoutRef.current) {
+      clearTimeout(maxTimeoutRef.current);
+      maxTimeoutRef.current = null;
+    }
+  }, []);
+
+  const startPolling = useCallback(() => {
+    stopPolling();
+
+    const tick = async () => {
+      await onFetch();
+      timeoutRef.current = setTimeout(tick, 3000);
+    };
+
+    timeoutRef.current = setTimeout(tick, 2000);
+
+    if (maxTimeout > 0) {
+      maxTimeoutRef.current = setTimeout(stopPolling, maxTimeout);
+    }
+  }, [maxTimeout, onFetch, stopPolling]);
+
+  const connectSSE = useCallback(() => {
+    stopSSE();
+    reconnectAttemptsRef.current = 0;
+
+    const url = `/api/generate/work/${projectId}/stream`;
+    const eventSource = new EventSource(url);
+    eventSourceRef.current = eventSource;
+
+    eventSource.addEventListener("handshake", () => {
+      // Connection established
+    });
+
+    eventSource.addEventListener("section-complete", () => {
+      void onFetch();
+    });
+
+    eventSource.addEventListener("complete", () => {
+      void onFetch();
+      stopSSE();
+    });
+
+    eventSource.addEventListener("error", () => {
+      void onFetch();
+      stopSSE();
+    });
+
+    eventSource.onerror = () => {
+      reconnectAttemptsRef.current += 1;
+
+      if (reconnectAttemptsRef.current >= 5) {
+        setUseSSE(false);
+        stopSSE();
+        startPolling();
+        return;
+      }
+
+      stopSSE();
+      reconnectTimeoutRef.current = setTimeout(() => {
+        if (isGeneratingRef.current) {
+          connectSSE();
+        }
+      }, 3000);
+    };
+  }, [projectId, onFetch, stopSSE, startPolling]);
+
+  const stopAll = useCallback(() => {
+    isGeneratingRef.current = false;
+    stopSSE();
+    stopPolling();
+  }, [stopSSE, stopPolling]);
+
+  const startAll = useCallback(() => {
+    isGeneratingRef.current = true;
+
+    if (useSSE) {
+      connectSSE();
+    } else {
+      startPolling();
+    }
+  }, [useSSE, connectSSE, startPolling]);
+
+  useEffect(() => {
+    if (!enabled || !isGenerating) {
+      stopAll();
+      return;
+    }
+
+    startAll();
+
+    return () => {
+      stopAll();
+    };
+  }, [enabled, isGenerating, projectId, startAll, stopAll]);
+
+  useEffect(() => {
+    return () => stopAll();
+  }, [stopAll]);
+
+  return { stopAll, useSSE };
 }

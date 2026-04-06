@@ -4,19 +4,22 @@ import { db } from "@/lib/db";
 import { getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
 
 const POLL_INTERVAL_MS = 500;
-const MAX_DURATION_MS = 120_000;
+const MAX_DURATION_MS = 300_000; // 5 minutes
+const RETRY_MS = 3000;
 
 interface SSEEvent {
-  type: "progress" | "complete" | "error";
+  type: "handshake" | "progress" | "section-complete" | "complete" | "error";
   data: {
     progress: number;
     step: string;
+    sectionTitle?: string;
     error?: string;
   };
 }
 
-function createSSEMessage(event: SSEEvent): string {
-  return `event: ${event.type}\ndata: ${JSON.stringify(event.data)}\n\n`;
+function createSSEMessage(event: SSEEvent, id?: string): string {
+  const idLine = id ? `id: ${id}\n` : "";
+  return `${idLine}retry: ${RETRY_MS}\nevent: ${event.type}\ndata: ${JSON.stringify(event.data)}\n\n`;
 }
 
 export async function GET(
@@ -41,19 +44,28 @@ export async function GET(
   }
 
   const stream = new ReadableStream({
-    start(controller) {
+    async start(controller) {
       let closed = false;
       let lastProgress = -1;
+      let lastStep = "";
+      let eventCounter = 0;
       const encoder = new TextEncoder();
 
       const send = (event: SSEEvent) => {
         if (closed) return;
         try {
-          controller.enqueue(encoder.encode(createSSEMessage(event)));
+          const eventId = `evt-${eventCounter++}`;
+          controller.enqueue(encoder.encode(createSSEMessage(event, eventId)));
         } catch {
           closed = true;
         }
       };
+
+      // Send initial handshake
+      send({
+        type: "handshake",
+        data: { progress: 0, step: "Conectado ao stream de geração" },
+      });
 
       const check = async () => {
         try {
@@ -68,12 +80,31 @@ export async function GET(
             return;
           }
 
-          if (status.progress !== lastProgress) {
+          // Detect section transitions from step text
+          const stepMatch = status.step.match(/A gerar\s+(.+)/i);
+          const sectionTitle = stepMatch ? stepMatch[1]?.trim() : undefined;
+
+          if (status.progress !== lastProgress || status.step !== lastStep) {
             lastProgress = status.progress;
-            send({
-              type: "progress",
-              data: { progress: status.progress, step: status.step },
-            });
+            lastStep = status.step;
+
+            // Emit section-complete when we detect a new section starting
+            // (the previous section must have finished)
+            if (sectionTitle && status.progress > 10) {
+              send({
+                type: "section-complete",
+                data: {
+                  progress: status.progress,
+                  step: status.step,
+                  sectionTitle,
+                },
+              });
+            } else {
+              send({
+                type: "progress",
+                data: { progress: status.progress, step: status.step },
+              });
+            }
           }
 
           if (status.status === "READY") {

@@ -35,18 +35,20 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
 
       setData((prev) => ({
         ...prev,
-        sections: prev.sections.map((section) => {
-          const updated = project.sections?.find(
-            (s: { id: string; content: string | null; wordCount: number }) =>
-              s.id === section.id
-          );
-          if (!updated) return section;
-          return {
-            ...section,
-            content: updated.content ?? "",
-            status: updated.wordCount > 0 ? ("done" as const) : section.status,
-          };
-        }),
+        sections: prev.sections
+          .map((section) => {
+            const updated = project.sections?.find(
+              (s: { id: string; content: string | null; wordCount: number }) =>
+                s.id === section.id
+            );
+            if (!updated) return section;
+            return {
+              ...section,
+              content: updated.content ?? "",
+              status: updated.wordCount > 0 ? ("done" as const) : section.status,
+            };
+          })
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
         generationStatus: project.generationStatus,
         generationProgress: project.generationProgress,
         generationStep: project.generationStep,

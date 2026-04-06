@@ -39,7 +39,9 @@ export function DocumentPreview({
   }
 
   const coverSection = sections.find((s) => s.title === "Capa");
-  const contentSections = sections.filter((s) => s.title !== "Capa");
+  const contentSections = sections
+    .filter((s) => s.title !== "Capa")
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   return (
     <div className="mx-auto w-full sm:max-w-3xl sm:px-4 sm:py-6">

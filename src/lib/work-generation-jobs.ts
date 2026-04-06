@@ -362,10 +362,14 @@ async function saveSectionToDb(
   content: string,
 ) {
   const wordCount = content.split(/\s+/).filter(Boolean).length;
-  await db.documentSection.updateMany({
+  const result = await db.documentSection.updateMany({
     where: { projectId, title },
     data: { content, wordCount },
   });
+
+  if (result.count === 0) {
+    logger.warn("[work-generation] section not found for update", { projectId, title });
+  }
 }
 
 async function loadGeneratedSections(

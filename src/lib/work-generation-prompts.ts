@@ -50,11 +50,15 @@ export interface ParsedGeneratedWorkContent {
 }
 
 function isSchoolContext(educationLevel?: string | null) {
-  return educationLevel === "SECONDARY" || educationLevel === "TECHNICAL";
+  return educationLevel === "SECONDARY";
+}
+
+function isTechnicalContext(educationLevel?: string | null) {
+  return educationLevel === "TECHNICAL";
 }
 
 function isHigherEducation(type: string, educationLevel?: string | null) {
-  return !isSchoolContext(educationLevel);
+  return !isSchoolContext(educationLevel) && !isTechnicalContext(educationLevel);
 }
 
 function createRange(min: number, max: number): WordRange {
@@ -88,6 +92,11 @@ function shouldUseSchoolProfile(type: string, educationLevel?: AcademicEducation
   return isSchoolContext(educationLevel);
 }
 
+function shouldUseTechnicalProfile(type: string, educationLevel?: AcademicEducationLevel) {
+  if (type === "PRACTICAL_WORK") return true;
+  return isTechnicalContext(educationLevel);
+}
+
 function normalizeTitle(title: string) {
   return title.trim().toLowerCase();
 }
@@ -101,35 +110,49 @@ function getSectionGuidance(title: string, schoolContext: boolean, sectionCount:
   const normalized = normalizeTitle(title);
 
   if (normalized.includes("introdução")) {
-    return schoolContext
-      ? "apresente o tema, a importância do assunto, o objectivo do trabalho e a organização do texto"
-      : "delimite o tema, apresente o problema, o objectivo, a relevância académica e a organização do trabalho";
+    if (schoolContext) {
+      return "apresente o tema, a importância do assunto, o objectivo do trabalho e a organização do texto";
+    }
+    return "delimite o tema, apresente o problema, o objectivo, a relevância académica e a organização do trabalho";
   }
 
   if (normalized.includes("conclusão")) {
-    return schoolContext
-      ? "retome as ideias principais, responda ao objectivo e feche o trabalho com clareza, sem introduzir novos tópicos"
-      : "sintetize os resultados da análise, responda ao objectivo e apresente fecho crítico sem repetir o texto literalmente";
+    if (schoolContext) {
+      return "retome as ideias principais, responda ao objectivo e feche o trabalho com clareza, sem introduzir novos tópicos";
+    }
+    return "sintetize os resultados da análise, responda ao objectivo e apresente fecho crítico sem repetir o texto literalmente";
   }
 
   if (normalized.includes("metodologia")) {
-    return schoolContext
-      ? "explique como o tema foi estudado, quais fontes foram consultadas e como a análise foi organizada"
-      : "descreva abordagem, métodos, fontes, procedimentos e critérios analíticos com linguagem académica";
+    if (schoolContext) {
+      return "explique como o tema foi estudado, quais fontes foram consultadas e como a análise foi organizada";
+    }
+    return "descreva abordagem (qualitativa, quantitativa ou mista), tipo de pesquisa (bibliográfica, documental, estudo de caso), universo e amostra, técnicas de recolha de dados (entrevista, questionário, observação) e técnicas de análise com linguagem académica";
   }
 
   if (normalized.includes("revisão") || normalized.includes("fundamentação")) {
-    return "organize os principais conceitos, perspectivas e debates ligados ao tema, evitando definições vagas e repetidas";
+    if (schoolContext) {
+      return "explique os conceitos principais do tema com linguagem acessível e exemplos concretos";
+    }
+    return "organize os principais conceitos, perspectivas teóricas, autores de referência e debates ligados ao tema, evitando definições vagas e repetidas; use citações no formato (SOBRENOME, ano)";
   }
 
   if (normalized.includes("resultado") || normalized.includes("discussão") || normalized.includes("análise")) {
-    return "apresente análise substantiva, implicações, exemplos e interpretação crítica articulada com o tema";
+    if (schoolContext || normalized.includes("prática")) {
+      return "apresente análise substantiva, ligação entre teoria e prática, exemplos concretos e interpretação crítica articulada com o tema";
+    }
+    return "apresente análise substantiva, implicações, exemplos e interpretação crítica articulada com o tema e com a literatura";
+  }
+
+  if (normalized.includes("recomenda")) {
+    return "apresente sugestões concretas e acionáveis baseadas nos resultados, incluindo pistas para pesquisas futuras, melhorias metodológicas, aplicações práticas e implicações para políticas ou práticas profissionais";
   }
 
   if (normalized.includes("desenvolvimento") && sectionCount === 3) {
-    return schoolContext
-      ? "desenvolva o tema em profundidade, usando exactamente 5 subtítulos curtos em Markdown (## Título) para garantir extensão e qualidade. Estrutura sugerida: 1) Contextualização e conceitos chave; 2) Análise dos factores ou elementos principais; 3) Impacto e relevância no contexto moçambicano; 4) Desafios actuais e perspectivas de resolução; 5) O papel do estudante e da comunidade. Cada subtópico deve ter pelo menos 3 parágrafos desenvolvidos com exemplos concretos."
-      : "desenvolva a argumentação principal em profundidade, com 3 a 5 subtítulos curtos que organizem conceitos, análise e implicações";
+    if (schoolContext) {
+      return "desenvolva o tema em profundidade, usando exactamente 5 subtítulos curtos em Markdown (## Título) para garantir extensão e qualidade. Estrutura sugerida: 1) Contextualização e conceitos chave; 2) Análise dos factores ou elementos principais; 3) Impacto e relevância no contexto moçambicano; 4) Desafios actuais e perspectivas de resolução; 5) O papel do estudante e da comunidade. Cada subtópico deve ter pelo menos 3 parágrafos desenvolvidos com exemplos concretos.";
+    }
+    return "desenvolva a argumentação principal em profundidade, com 3 a 5 subtítulos curtos que organizem conceitos, análise e implicações";
   }
 
   if (normalized.includes("desenvolvimento")) {
@@ -144,9 +167,11 @@ function getSectionGuidance(title: string, schoolContext: boolean, sectionCount:
     return "descreva as actividades realizadas de forma concreta, organizada e ligada às aprendizagens obtidas";
   }
 
-  return schoolContext
-    ? "desenvolva ideias claras, específicas e úteis para o nível escolar, evitando generalidades"
-    : "desenvolva análise clara, específica e académica, evitando generalidades e repetições";
+  if (schoolContext) {
+    return "desenvolva ideias claras, específicas e úteis para o nível escolar, evitando generalidades";
+  }
+
+  return "desenvolva análise clara, específica e académica, evitando generalidades e repetições";
 }
 
 function getSectionRange(title: string, schoolContext: boolean, sectionCount: number) {
@@ -165,30 +190,41 @@ function getSectionRange(title: string, schoolContext: boolean, sectionCount: nu
   }
 
   if (normalized.includes("introdução")) {
-    return schoolContext ? createRange(240, 340) : createRange(350, 520);
+    if (schoolContext) return createRange(240, 340);
+    return createRange(350, 520);
   }
 
   if (normalized.includes("conclusão")) {
-    return schoolContext ? createRange(180, 260) : createRange(280, 420);
+    if (schoolContext) return createRange(180, 260);
+    return createRange(280, 420);
   }
 
   if (normalized.includes("metodologia")) {
-    return schoolContext ? createRange(220, 320) : createRange(420, 680);
+    if (schoolContext) return createRange(220, 320);
+    return createRange(420, 680);
   }
 
   if (normalized.includes("revisão") || normalized.includes("fundamentação")) {
-    return schoolContext ? createRange(260, 420) : createRange(700, 1020);
+    if (schoolContext) return createRange(260, 420);
+    return createRange(700, 1020);
   }
 
-  if (normalized.includes("desenvolvimento") || normalized.includes("resultado") || normalized.includes("discussão") || normalized.includes("análise")) {
-    return schoolContext ? createRange(320, 520) : createRange(850, 1300);
+  if (normalized.includes("resultado") || normalized.includes("discussão") || normalized.includes("análise")) {
+    if (schoolContext) return createRange(320, 520);
+    return createRange(850, 1300);
   }
 
-  if (normalized.includes("contexto") || normalized.includes("enquadramento") || normalized.includes("actividades")) {
-    return schoolContext ? createRange(260, 420) : createRange(520, 820);
+  if (normalized.includes("recomenda")) {
+    return createRange(200, 350);
   }
 
-  return schoolContext ? createRange(220, 360) : createRange(420, 700);
+  if (normalized.includes("desenvolvimento") || normalized.includes("contexto") || normalized.includes("enquadramento") || normalized.includes("actividades")) {
+    if (schoolContext) return createRange(260, 420);
+    return createRange(520, 820);
+  }
+
+  if (schoolContext) return createRange(220, 360);
+  return createRange(420, 700);
 }
 
 function sumRanges(ranges: WordRange[]) {
@@ -238,6 +274,8 @@ export function getWorkGenerationProfile(
 ): WorkGenerationProfile {
   const educationLevel = brief.educationLevel;
   const schoolContext = shouldUseSchoolProfile(type, educationLevel);
+  const technicalContext = shouldUseTechnicalProfile(type, educationLevel);
+  const higherEdContext = !schoolContext && !technicalContext;
   const sectionCount = templates.length;
   const sections = templates.map((section) => ({
     title: section.title,
@@ -248,19 +286,23 @@ export function getWorkGenerationProfile(
         ? schoolContext
           ? ["Contextualização e conceitos chave", "Factores ou elementos principais", "Impacto e relevância no contexto moçambicano", "Desafios actuais e perspectivas de resolução", "O papel do estudante e da comunidade"]
           : ["Quadro conceptual", "Análise do problema", "Implicações", "Síntese crítica"]
-        : undefined,
+        : normalizeTitle(section.title).includes("análise") && technicalContext
+          ? ["Descrição do processo ou caso", "Apresentação dos dados ou observações", "Análise técnica dos resultados", "Ligação entre teoria e prática", "Lições aprendidas"]
+          : undefined,
   }));
 
-  const abstractRequired = !schoolContext;
+  const abstractRequired = higherEdContext;
   const abstractRange = abstractRequired ? createRange(180, 260) : createRange(140, 220);
 
   const citationGuidance = schoolContext
     ? brief.referencesSeed
       ? `Se citar fontes nominalmente, use apenas as referências iniciais fornecidas e siga a norma ${brief.citationStyle || "ABNT"}.`
       : `Evite inventar autores, datas e referências. As citações formais no texto são opcionais; se usar, siga a norma ${brief.citationStyle || "ABNT"}.`
-    : brief.referencesSeed
-      ? `Use as referências iniciais como base para sustentar o texto e siga a norma ${brief.citationStyle || "ABNT"} sem inventar novas fontes específicas.`
-      : `Mantenha tom académico e siga a norma ${brief.citationStyle || "ABNT"}, mas não invente autores, obras, leis ou estatísticas.`;
+    : technicalContext
+      ? `Use citações para sustentar a fundamentação teórica e siga a norma ${brief.citationStyle || "ABNT"}. Não invente autores ou fontes.`
+      : brief.referencesSeed
+        ? `Use as referências iniciais como base para sustentar o texto e siga a norma ${brief.citationStyle || "ABNT"} sem inventar novas fontes específicas. Inclua citações no formato (SOBRENOME, ano) ao longo do texto.`
+        : `Mantenha tom académico e siga a norma ${brief.citationStyle || "ABNT"}. Inclua citações de autores reais no formato (SOBRENOME, ano) para sustentar a argumentação. Não invente autores, obras, leis ou estatísticas.`;
 
   const factualGuidance = brief.referencesSeed
     ? "Use as referências iniciais apenas como base explícita; não acrescente metadados bibliográficos não confirmados."
@@ -269,13 +311,17 @@ export function getWorkGenerationProfile(
   const styleRules = [
     schoolContext
       ? "Escreva em Português de Moçambique com linguagem clara, formal e acessível ao nível escolar."
-      : "Escreva em Português académico de Moçambique com coesão, precisão e progressão argumentativa.",
+      : technicalContext
+        ? "Escreva em Português de Moçambique com linguagem técnica e prática, adequada ao nível técnico-profissional."
+        : "Escreva em Português académico de Moçambique com coesão, precisão e progressão argumentativa.",
     "Evite introduções vagas como 'desde os primórdios', 'ao longo dos tempos' ou definições genéricas repetidas.",
     "Cada secção deve avançar a análise e ligar-se ao tema, ao objectivo e ao contexto do briefing.",
     "Evite repetir a mesma ideia em várias secções ou reutilizar frases quase idênticas.",
     schoolContext
       ? "Quando relevante, use exemplos plausíveis ligados à realidade moçambicana, à escola, à comunidade ou ao quotidiano do estudante."
-      : "Quando relevante, contextualize o tema com a realidade moçambicana de forma plausível e específica.",
+      : technicalContext
+        ? "Quando relevante, use exemplos práticos ligados à realidade profissional moçambicana e à aplicação técnica."
+        : "Quando relevante, contextualize o tema com a realidade moçambicana de forma plausível e específica.",
     "Escreva principalmente em parágrafos corridos; use listas apenas se forem indispensáveis para a clareza.",
     "Use apenas subtítulos em Markdown (## Título) — nunca use tags HTML como <h1>, <h2>, <h3>.",
   ];
@@ -287,8 +333,8 @@ export function getWorkGenerationProfile(
       required: abstractRequired,
       range: abstractRange,
       guidance: abstractRequired
-        ? "O resumo deve sintetizar objecto, foco analítico e conclusão geral sem copiar frases do corpo do texto."
-        : "Não inclua resumo nem abstract; concentre o esforço nas secções principais do trabalho escolar.",
+        ? "O resumo deve sintetizar objecto, foco analítico, metodologia e conclusão geral sem copiar frases do corpo do texto."
+        : "Não inclua resumo nem abstract; concentre o esforço nas secções principais do trabalho.",
     },
     sections,
     totalRange: sumRanges(sections.map((section) => section.range)),

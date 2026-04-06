@@ -7,9 +7,9 @@ export interface ProjectSectionTemplate {
 
 export const DEFAULT_PROJECT_SECTIONS: ProjectSectionTemplate[] = [
   { title: "Capa", order: 1, isFrontMatter: true, isPrimaryEditable: false },
-  { title: "Resumo", order: 2, isFrontMatter: true, isPrimaryEditable: false },
-  { title: "Abstract", order: 3, isFrontMatter: true, isPrimaryEditable: false },
-  { title: "Agradecimentos", order: 4, isFrontMatter: true, isPrimaryEditable: false },
+  { title: "Folha de Rosto", order: 2, isFrontMatter: true, isPrimaryEditable: false },
+  { title: "Resumo", order: 3, isFrontMatter: true, isPrimaryEditable: false },
+  { title: "Abstract", order: 4, isFrontMatter: true, isPrimaryEditable: false },
   { title: "Índice", order: 5, isFrontMatter: true, isPrimaryEditable: false },
   { title: "1. Introdução", order: 6, isFrontMatter: false, isPrimaryEditable: true },
   { title: "2. Revisão da Literatura", order: 7, isFrontMatter: false, isPrimaryEditable: true },
@@ -17,8 +17,10 @@ export const DEFAULT_PROJECT_SECTIONS: ProjectSectionTemplate[] = [
   { title: "4. Resultados", order: 9, isFrontMatter: false, isPrimaryEditable: true },
   { title: "5. Discussão", order: 10, isFrontMatter: false, isPrimaryEditable: true },
   { title: "6. Conclusão", order: 11, isFrontMatter: false, isPrimaryEditable: true },
-  { title: "Referências", order: 12, isFrontMatter: false, isPrimaryEditable: false },
-  { title: "Anexos", order: 13, isFrontMatter: false, isPrimaryEditable: false },
+  { title: "7. Recomendações", order: 12, isFrontMatter: false, isPrimaryEditable: true },
+  { title: "Referências", order: 13, isFrontMatter: false, isPrimaryEditable: false },
+  { title: "Apêndices", order: 14, isFrontMatter: false, isPrimaryEditable: false },
+  { title: "Anexos", order: 15, isFrontMatter: false, isPrimaryEditable: false },
 ];
 
 const SCHOOL_PROJECT_SECTIONS: ProjectSectionTemplate[] = [
@@ -31,8 +33,24 @@ const SCHOOL_PROJECT_SECTIONS: ProjectSectionTemplate[] = [
   { title: "Anexos", order: 7, isFrontMatter: false, isPrimaryEditable: false },
 ];
 
+const TECHNICAL_PROJECT_SECTIONS: ProjectSectionTemplate[] = [
+  { title: "Capa", order: 1, isFrontMatter: true, isPrimaryEditable: false },
+  { title: "Índice", order: 2, isFrontMatter: true, isPrimaryEditable: false },
+  { title: "1. Introdução", order: 3, isFrontMatter: false, isPrimaryEditable: true },
+  { title: "2. Fundamentação Teórica", order: 4, isFrontMatter: false, isPrimaryEditable: true },
+  { title: "3. Metodologia", order: 5, isFrontMatter: false, isPrimaryEditable: true },
+  { title: "4. Análise Prática", order: 6, isFrontMatter: false, isPrimaryEditable: true },
+  { title: "5. Conclusão", order: 7, isFrontMatter: false, isPrimaryEditable: true },
+  { title: "6. Recomendações", order: 8, isFrontMatter: false, isPrimaryEditable: true },
+  { title: "Referências", order: 9, isFrontMatter: false, isPrimaryEditable: false },
+  { title: "Anexos", order: 10, isFrontMatter: false, isPrimaryEditable: false },
+];
+
 const SCHOOL_TYPES = new Set([
   "SCHOOL_WORK",
+]);
+
+const TECHNICAL_TYPES = new Set([
   "PRACTICAL_WORK",
 ]);
 
@@ -40,7 +58,12 @@ export function getSectionsForEducationLevel(
   educationLevel: string | null | undefined,
   projectType: string,
 ): ProjectSectionTemplate[] {
-  if (educationLevel === "SECONDARY" || educationLevel === "TECHNICAL") {
+  if (educationLevel === "SECONDARY") {
+    if (SCHOOL_TYPES.has(projectType)) return SCHOOL_PROJECT_SECTIONS;
+  }
+
+  if (educationLevel === "TECHNICAL") {
+    if (TECHNICAL_TYPES.has(projectType)) return TECHNICAL_PROJECT_SECTIONS;
     if (SCHOOL_TYPES.has(projectType)) return SCHOOL_PROJECT_SECTIONS;
   }
 

@@ -18,11 +18,13 @@ const schoolTemplates: SectionTemplate[] = [
 ];
 
 const higherEducationTemplates: SectionTemplate[] = [
-  { title: "1. Introdução", order: 3 },
-  { title: "2. Revisão da Literatura", order: 4 },
-  { title: "3. Metodologia", order: 5 },
-  { title: "4. Desenvolvimento", order: 6 },
-  { title: "5. Conclusão", order: 7 },
+  { title: "1. Introdução", order: 6 },
+  { title: "2. Revisão da Literatura", order: 7 },
+  { title: "3. Metodologia", order: 8 },
+  { title: "4. Resultados", order: 9 },
+  { title: "5. Discussão", order: 10 },
+  { title: "6. Conclusão", order: 11 },
+  { title: "7. Recomendações", order: 12 },
 ];
 
 describe("work generation prompts", () => {
@@ -281,5 +283,31 @@ describe("work generation prompts", () => {
     const issues = detectCrossSectionRepetition(sections);
 
     expect(issues).toHaveLength(0);
+  });
+
+  test("uses technical profile with practical sections", () => {
+    const brief: WorkBriefInput = {
+      educationLevel: "TECHNICAL",
+      institutionName: "Instituto Técnico de Informática",
+      courseName: "Informática de Gestão",
+    };
+
+    const technicalTemplates: SectionTemplate[] = [
+      { title: "1. Introdução", order: 3 },
+      { title: "2. Fundamentação Teórica", order: 4 },
+      { title: "3. Metodologia", order: 5 },
+      { title: "4. Análise Prática", order: 6 },
+      { title: "5. Conclusão", order: 7 },
+      { title: "6. Recomendações", order: 8 },
+    ];
+
+    const profile = getWorkGenerationProfile("PRACTICAL_WORK", brief, technicalTemplates);
+
+    expect(profile.abstract.required).toBe(false);
+    expect(profile.sections.length).toBe(6);
+    expect(profile.sections[1]?.title).toBe("2. Fundamentação Teórica");
+    expect(profile.sections[3]?.title).toBe("4. Análise Prática");
+    expect(profile.sections[5]?.title).toBe("6. Recomendações");
+    expect(profile.sections[3]?.suggestedSubheadings).toBeDefined();
   });
 });

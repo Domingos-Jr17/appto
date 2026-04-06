@@ -64,16 +64,20 @@ const SECTION_TEMPLATES: Record<string, SectionTemplate[]> = {
   ],
   PRACTICAL_WORK: [
     { title: "1. Introdução", order: 3 },
-    { title: "2. Procedimentos", order: 4 },
-    { title: "3. Resultados", order: 5 },
-    { title: "4. Conclusão", order: 6 },
+    { title: "2. Fundamentação Teórica", order: 4 },
+    { title: "3. Metodologia", order: 5 },
+    { title: "4. Análise Prática", order: 6 },
+    { title: "5. Conclusão", order: 7 },
+    { title: "6. Recomendações", order: 8 },
   ],
   RESEARCH_WORK: [
-    { title: "1. Introdução", order: 3 },
-    { title: "2. Revisão da Literatura", order: 4 },
-    { title: "3. Metodologia", order: 5 },
-    { title: "4. Desenvolvimento", order: 6 },
-    { title: "5. Conclusão", order: 7 },
+    { title: "1. Introdução", order: 6 },
+    { title: "2. Revisão da Literatura", order: 7 },
+    { title: "3. Metodologia", order: 8 },
+    { title: "4. Resultados", order: 9 },
+    { title: "5. Discussão", order: 10 },
+    { title: "6. Conclusão", order: 11 },
+    { title: "7. Recomendações", order: 12 },
   ],
 };
 
@@ -244,6 +248,42 @@ export function generateCover(title: string, type: string, brief: WorkBriefInput
     .trim();
 }
 
+export function generateTitlePage(title: string, type: string, brief: WorkBriefInput) {
+  const kind = formatProjectType(type);
+  const institution = brief.institutionName || "INSTITUIÇÃO DE ENSINO";
+  const faculty = brief.facultyName || "";
+  const course = brief.courseName || "";
+  const student = brief.studentName || "Nome do estudante";
+  const studentNumber = brief.studentNumber ? `Nº ${brief.studentNumber}` : "";
+  const advisor = brief.advisorName ? `Orientador: ${brief.advisorName}` : "";
+  const city = brief.city || "Cidade";
+  const year = brief.academicYear || new Date().getFullYear();
+  const subtitle = brief.subtitle || "";
+
+  return [
+    `<div style="text-align: center; font-family: 'Times New Roman', serif; padding: 40mm 30mm; min-height: 297mm; display: flex; flex-direction: column; justify-content: space-between;">`,
+    `<div>`,
+    `<p style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 8px 0;">${institution}</p>`,
+    faculty ? `<p style="font-size: 12pt; margin: 8px 0;">${faculty}</p>` : "",
+    course ? `<p style="font-size: 12pt; margin: 8px 0;">${course}</p>` : "",
+    `</div>`,
+    `<div style="margin: 40px 0;">`,
+    `<p style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 8px 0;">${title}</p>`,
+    subtitle ? `<p style="font-size: 12pt; font-style: italic; margin: 8px 0;">${subtitle}</p>` : "",
+    `<p style="font-size: 12pt; margin: 16px 0;">${kind}</p>`,
+    `</div>`,
+    `<div>`,
+    `<p style="font-size: 12pt; margin: 8px 0;">${student} ${studentNumber}</p>`,
+    advisor ? `<p style="font-size: 12pt; margin: 8px 0;">${advisor}</p>` : "",
+    `</div>`,
+    `<p style="font-size: 12pt; margin-top: 32px;">${city} — ${year}</p>`,
+    `</div>`,
+  ]
+    .filter((line) => line !== "")
+    .join("\n")
+    .trim();
+}
+
 async function generateCompleteWorkContent(
   title: string,
   type: string,
@@ -344,8 +384,9 @@ async function generateWorkSectionBySection(
   const resolvedEducationLevel = brief.educationLevel || "HIGHER_EDUCATION";
   const systemPrompt = getSystemPromptForEducation(resolvedEducationLevel);
   const typeLabel = formatProjectType(type);
+  const isHigherEd = brief.educationLevel === "HIGHER_EDUCATION";
 
-  const totalSteps = templates.length + (profile.abstract.required ? 1 : 0) + 1; // +1 for cover
+  const totalSteps = templates.length + (profile.abstract.required ? 1 : 0) + 1 + (isHigherEd ? 1 : 0); // +1 for cover, +1 for title page if higher ed
   let completedSteps = 0;
 
   const progressForStep = () => {
@@ -356,6 +397,12 @@ async function generateWorkSectionBySection(
   // Step 1: Generate cover
   await onProgress(progressForStep(), "A gerar capa");
   await saveSectionToDb(projectId, "Capa", generateCover(title, type, brief));
+
+  // Step 1.5: Generate title page for higher education
+  if (isHigherEd) {
+    await onProgress(progressForStep(), "A gerar folha de rosto");
+    await saveSectionToDb(projectId, "Folha de Rosto", generateTitlePage(title, type, brief));
+  }
 
   // Step 2: Generate abstract if required
   if (profile.abstract.required && profile.abstract.range) {

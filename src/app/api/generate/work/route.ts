@@ -11,11 +11,15 @@ import { trackProductEvent } from "@/lib/product-events";
 import { SubscriptionService, subscriptionService } from "@/lib/subscription";
 import { createWorkSchema } from "@/lib/validators";
 import {
-  formatProjectType,
   generateCover,
+  generateTitlePage,
   getSectionTemplates,
-  serializeBrief,
+  getWorkGenerationStatus,
+  getWorkGenerationStatusAsync,
+  triggerQueuedGenerationProcessing,
   startWorkGenerationJob,
+  formatProjectType,
+  serializeBrief,
 } from "@/lib/work-generation-jobs";
 
 export async function POST(request: NextRequest) {
@@ -105,10 +109,12 @@ export async function POST(request: NextRequest) {
 
       const referenceOrder = Math.max(...templates.map((section) => section.order)) + 1;
       const projectSections = getSectionsForEducationLevel(brief.educationLevel, type);
+      const isHigherEd = brief.educationLevel === "HIGHER_EDUCATION";
       const initialSections = [
         { title: "Capa", order: 1, content: generateCover(title, type, brief) },
+        ...(isHigherEd ? [{ title: "Folha de Rosto", order: 2, content: generateTitlePage(title, type, brief) }] : []),
         ...projectSections
-          .filter((section) => section.title !== "Capa" && section.title !== "Referências" && section.title !== "Anexos")
+          .filter((section) => section.title !== "Capa" && section.title !== "Folha de Rosto" && section.title !== "Referências" && section.title !== "Anexos" && section.title !== "Apêndices")
           .map((section) => ({ title: section.title, order: section.order, content: "" })),
         ...templates.map((section) => ({ title: section.title, order: section.order, content: "" })),
         { title: "Referências", order: referenceOrder, content: brief.referencesSeed || "" },

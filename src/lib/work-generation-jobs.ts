@@ -1,4 +1,5 @@
 import { getFriendlyAIErrorMessage, runAIChatCompletion } from "@/lib/ai";
+import { enrichReferencesWithAcademicSources } from "@/lib/academic-search";
 import { generateCoverHTML } from "@/lib/cover-templates";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -290,11 +291,20 @@ async function generateCompleteWorkContent(
   brief: WorkBriefInput,
   templates: SectionTemplate[]
 ) {
-  const profile = getWorkGenerationProfile(type, brief, templates);
+  // Enrich references with real academic sources from Semantic Scholar
+  let enrichedBrief = brief;
+  if (!brief.referencesSeed || brief.referencesSeed.trim().length < 20) {
+    const enriched = await enrichReferencesWithAcademicSources(title, brief.referencesSeed || "", 6);
+    if (enriched && enriched !== brief.referencesSeed) {
+      enrichedBrief = { ...brief, referencesSeed: enriched };
+    }
+  }
+
+  const profile = getWorkGenerationProfile(type, enrichedBrief, templates);
   const prompt = buildWorkGenerationPrompt({
     title,
     typeLabel: formatProjectType(type),
-    brief,
+    brief: enrichedBrief,
     templates,
     profile,
   });

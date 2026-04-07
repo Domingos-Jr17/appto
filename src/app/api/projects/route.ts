@@ -7,89 +7,10 @@ import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
 import { batchGetWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
-import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
-import { getSectionsForEducationLevel } from "@/lib/project-templates";
-import { SubscriptionService, subscriptionService } from "@/lib/subscription";
+import { createProjectWithStructure } from "@/lib/projects/project-creation";
+import { buildGenerationMap, serializeProjectDetail, serializeProjectListItem } from "@/lib/projects/project-serialization";
 import { createProjectSchema } from "@/lib/validators";
 import type { Prisma, ProjectStatus, ProjectType } from "@prisma/client";
-
-function serializeBrief(
-  brief: {
-    workType: string;
-    generationStatus: string;
-    institutionName: string | null;
-    courseName: string | null;
-    subjectName: string | null;
-    educationLevel: string | null;
-    advisorName: string | null;
-    studentName: string | null;
-    city: string | null;
-    academicYear: number | null;
-    dueDate: Date | null;
-    theme: string | null;
-    subtitle: string | null;
-    objective: string | null;
-    researchQuestion: string | null;
-    methodology: string | null;
-    keywords: string | null;
-    referencesSeed: string | null;
-    citationStyle: string;
-    language: string;
-    additionalInstructions: string | null;
-    coverTemplate?: string;
-  } | null,
-) {
-  if (!brief) {
-    return null;
-  }
-
-  return {
-    ...brief,
-    dueDate: brief.dueDate?.toISOString() ?? null,
-  };
-}
-
-type ProjectWithRelations = {
-  id: string;
-  title: string;
-  description: string | null;
-  type: string;
-  status: string;
-  wordCount: number;
-  updatedAt: Date;
-  createdAt: Date;
-  sections: {
-    id: string;
-    title: string;
-    parentId: string | null;
-    order: number;
-    wordCount: number;
-    updatedAt: Date;
-  }[];
-  brief: {
-    workType: string;
-    generationStatus: string;
-    institutionName: string | null;
-    courseName: string | null;
-    subjectName: string | null;
-    educationLevel: string | null;
-    advisorName: string | null;
-    studentName: string | null;
-    city: string | null;
-    academicYear: number | null;
-    dueDate: Date | null;
-    theme: string | null;
-    subtitle: string | null;
-    objective: string | null;
-    researchQuestion: string | null;
-    methodology: string | null;
-    keywords: string | null;
-    referencesSeed: string | null;
-    citationStyle: string;
-    language: string;
-    additionalInstructions: string | null;
-  } | null;
-};
 
 function parsePositiveIntParam(value: string | null, fallback: number, max: number) {
   const parsed = Number(value ?? fallback);
@@ -97,23 +18,6 @@ function parsePositiveIntParam(value: string | null, fallback: number, max: numb
   return Math.min(Math.floor(parsed), max);
 }
 
-function serializeProject(
-  project: ProjectWithRelations,
-  generationStatusMap: Map<string, { status: string; progress: number; step: string }>,
-) {
-  const liveGeneration = generationStatusMap.get(project.id);
-
-  return {
-    ...project,
-    brief: serializeBrief(project.brief),
-    generationStatus: liveGeneration?.status || project.brief?.generationStatus || "BRIEFING",
-    generationProgress: liveGeneration?.progress || (project.brief?.generationStatus === "READY" ? 100 : 0),
-    generationStep: liveGeneration?.step || null,
-    resumeMode: getResumeMode(project, getLastEditedSection(project.sections)),
-    lastEditedSection: getLastEditedSection(project.sections),
-    sectionSummary: getSectionSummary(project.sections),
-  };
-}
 
 // GET /api/projects - List all user's projects
 export async function GET(request: NextRequest) {
@@ -174,6 +78,7 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             title: true,
+            content: true,
             parentId: true,
             order: true,
             wordCount: true,
@@ -198,11 +103,11 @@ export async function GET(request: NextRequest) {
     // Batch fetch generation status to avoid N+1
     const projectIds = projects.map((p) => p.id);
     const statusMap = await batchGetWorkGenerationStatusAsync(projectIds);
-    const generationMap = new Map(
+    const generationMap = buildGenerationMap(new Map(
       Array.from(statusMap.entries()).map(([id, s]) => [id, { status: s.status, progress: s.progress, step: s.step }]),
-    );
+    ));
 
-    return apiSuccess(projects.map((p) => serializeProject(p, generationMap)), {
+    return apiSuccess(projects.map((p) => serializeProjectListItem(p, generationMap)), {
       headers: {
         "x-total-count": String(totalCount),
         "x-page": String(page),
@@ -227,76 +132,14 @@ export async function POST(request: NextRequest) {
     const body = await parseBody(request, createProjectSchema);
     const { title, description, type, brief } = body;
 
-    // Check user subscription
-    const { allowed, reason } = await subscriptionService.canGenerateWork(session.user.id);
-
-    if (!allowed) {
-      return apiError(reason || "Limite de trabalhos atingido", 403, "LIMIT_REACHED", { remaining: 0 });
-    }
-
-    // Create project with default sections
-    const project = await db.$transaction(async (tx) => {
-      // Consume work from subscription within the same transaction
-      await new SubscriptionService(tx).consumeWork(session.user.id);
-
-      // Create project
-      const newProject = await tx.project.create({
-        data: {
-          title,
-          description,
-          type,
-          educationLevel: brief?.educationLevel,
-          userId: session.user.id,
-          ...(brief
-            ? {
-                brief: {
-                  create: {
-                    workType: type,
-                    generationStatus: "BRIEFING",
-                    institutionName: brief.institutionName,
-                    courseName: brief.courseName,
-                    subjectName: brief.subjectName,
-                    educationLevel: brief.educationLevel,
-                    advisorName: brief.advisorName,
-                    studentName: brief.studentName,
-                    city: brief.city,
-                    academicYear: brief.academicYear,
-                    dueDate: brief.dueDate ? new Date(brief.dueDate) : undefined,
-                    theme: brief.theme || title,
-                    subtitle: brief.subtitle,
-                    objective: brief.objective,
-                    researchQuestion: brief.researchQuestion,
-                    methodology: brief.methodology,
-                    keywords: brief.keywords,
-                    referencesSeed: brief.referencesSeed,
-                    citationStyle: brief.citationStyle || "ABNT",
-                    language: brief.language || "pt-MZ",
-                    additionalInstructions: brief.additionalInstructions,
-                    className: brief.className,
-                    turma: brief.turma,
-                    facultyName: brief.facultyName,
-                    departmentName: brief.departmentName,
-                    studentNumber: brief.studentNumber,
-                    semester: brief.semester,
-                  },
-                },
-              }
-            : {}),
-        },
-      });
-
-      // Create default document structure from template
-      const sections = getSectionsForEducationLevel(brief?.educationLevel, type);
-      await tx.documentSection.createMany({
-        data: sections.map((section) => ({
-          projectId: newProject.id,
-          title: section.title,
-          order: section.order,
-        })),
-      });
-
-      return newProject;
-    }, { timeout: 30000 });
+    const project = await createProjectWithStructure({
+      userId: session.user.id,
+      title,
+      description,
+      type,
+      brief,
+      structureMode: "template",
+    });
 
     // Fetch the complete project with sections
     const completeProject = await db.project.findUnique({
@@ -306,6 +149,7 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             title: true,
+            content: true,
             parentId: true,
             order: true,
             wordCount: true,
@@ -317,11 +161,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const generationMap = await batchGetWorkGenerationStatusAsync([project.id]);
     const serializedProject = completeProject
-      ? serializeProject(completeProject, new Map(
-          Array.from(generationMap.entries()).map(([id, s]) => [id, { status: s.status, progress: s.progress, step: s.step }]),
-        ))
+      ? await serializeProjectDetail(completeProject)
       : null;
 
     return apiSuccess(serializedProject, { status: 201 });

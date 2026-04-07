@@ -8,6 +8,7 @@ import Link from "next/link";
 interface WorkspaceBottomBarProps {
   hasContent: boolean;
   isGenerating: boolean;
+  isDownloading?: boolean;
   allDone: boolean;
   coverIncomplete: boolean;
   onEditCover: () => void;
@@ -18,6 +19,7 @@ interface WorkspaceBottomBarProps {
 export function WorkspaceBottomBar({
   hasContent,
   isGenerating,
+  isDownloading = false,
   allDone,
   coverIncomplete,
   onEditCover,
@@ -63,10 +65,10 @@ export function WorkspaceBottomBar({
           size="sm"
           className="flex flex-1 flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-xs min-h-0 h-auto text-muted-foreground transition-colors hover:text-foreground"
           onClick={onDownload}
-          disabled={!hasContent}
+          disabled={!hasContent || isDownloading}
         >
           <Download className="h-4 w-4" />
-          <span className="text-[10px] font-medium">Download</span>
+          <span className="text-[10px] font-medium">{isDownloading ? "A descarregar" : "Download"}</span>
         </Button>
 
         <Link href="/app" className="flex flex-1 items-center justify-center">

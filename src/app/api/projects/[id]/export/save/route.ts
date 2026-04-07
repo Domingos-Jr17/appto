@@ -112,7 +112,21 @@ export async function POST(
         });
 
         try {
-          await uploadBufferToStorage(createdFile, buffer);
+          const writeResult = await uploadBufferToStorage(createdFile, buffer);
+          if (
+            writeResult.provider !== createdFile.provider ||
+            writeResult.bucket !== createdFile.bucket ||
+            writeResult.objectKey !== createdFile.objectKey
+          ) {
+            await db.storedFile.update({
+              where: { id: createdFile.id },
+              data: {
+                provider: writeResult.provider,
+                bucket: writeResult.bucket,
+                objectKey: writeResult.objectKey,
+              },
+            });
+          }
         } catch (error) {
           await db.storedFile.update({
             where: { id: createdFile.id },

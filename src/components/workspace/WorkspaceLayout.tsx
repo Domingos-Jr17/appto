@@ -7,7 +7,6 @@ import { WorkspaceHeader } from "./WorkspaceHeader";
 import { WorkspaceBottomBar } from "./WorkspaceBottomBar";
 import { DocumentPreview } from "./DocumentPreview";
 import { CoverModal } from "./CoverModal";
-import { EditorLink } from "./EditorLink";
 import type { WorkspaceData, WorkBrief } from "@/types/workspace";
 import type { AcademicEducationLevel } from "@/types/editor";
 
@@ -65,14 +64,19 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
           title={workspace.data?.brief?.title ?? ''}
           workType={workspace.data?.brief?.workType ?? 'monografia'}
           progress={workspace.progress}
+          generationStatus={workspace.data?.generationStatus}
           generationProgress={workspace.data?.generationProgress ?? 0}
           generationStep={workspace.data?.generationStep ?? null}
           isGenerating={workspace.isGenerating}
+          isDownloading={workspace.isDownloading}
+          isSavingExport={workspace.isSavingExport}
           allDone={workspace.allDone}
           sections={workspace.data?.sections ?? []}
           subscriptionStatus={subscriptionStatus ?? undefined}
           onGenerate={workspace.generateAll}
           onDownload={workspace.downloadDocx}
+          onDownloadPdf={workspace.downloadPdf}
+          onSaveExport={workspace.saveExport}
           onEditCover={() => setCoverSheetOpen(true)}
           onSaveTitle={workspace.updateTitle}
           coverIncomplete={isCoverIncomplete(workspace.data?.brief)}
@@ -96,14 +100,13 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
         <WorkspaceBottomBar
           hasContent={hasContent}
           isGenerating={workspace.isGenerating}
+          isDownloading={workspace.isDownloading}
           allDone={workspace.allDone}
           coverIncomplete={isCoverIncomplete(workspace.data?.brief)}
           onEditCover={() => setCoverSheetOpen(true)}
           onGenerate={workspace.generateAll}
           onDownload={workspace.downloadDocx}
         />
-
-        <EditorLink workId={workspace.data?.id ?? ''} />
 
         <CoverModal
           open={coverSheetOpen}

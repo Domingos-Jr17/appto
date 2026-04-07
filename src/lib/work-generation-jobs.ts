@@ -1,37 +1,55 @@
 import { getFriendlyAIErrorMessage, runAIChatCompletion, runAIChatStream } from "@/lib/ai";
-import { createTextStreamFromSse } from "@/lib/ai-stream-parser";
 import { enrichReferencesWithAcademicSources } from "@/lib/academic-search";
-import { generateCoverHTML } from "@/lib/cover-templates";
 import { db } from "@/lib/db";
-import { env } from "@/lib/env";
+import { processQueuedGenerationJobs as processQueuedJobs, triggerQueuedGenerationProcessing as triggerQueuedProcessing } from "@/lib/generation/job-queue";
+import {
+  batchGetWorkGenerationStatusAsync,
+  getWorkGenerationStatus,
+  getWorkGenerationStatusAsync,
+  setPersistedWorkGenerationJob,
+  setWorkGenerationJob,
+} from "@/lib/generation/job-status-store";
+import {
+  buildGenerationSectionKey,
+} from "@/lib/generation/run-domain";
+import {
+  createGenerationRun,
+  updateGenerationAttemptState,
+  updateGenerationRunState,
+  updateSectionRunState,
+} from "@/lib/generation/run-repository";
+import {
+  formatProjectType,
+  generateCover,
+  generateTitlePage,
+} from "@/lib/generation/work-generation-artifacts";
 import { logger } from "@/lib/logger";
 import { trackProductEvent } from "@/lib/product-events";
+import { serializeProjectBrief, toWorkBriefInput } from "@/lib/projects/project-brief";
 import { subscriptionService } from "@/lib/subscription";
+import {
+  createProgressTracker,
+} from "@/lib/work-generation-state";
 import {
   buildBriefContext,
   buildSectionGenerationPrompt,
-  buildWorkGenerationPrompt,
-  buildWorkRegenerationRepairPrompt,
   detectCrossSectionRepetition,
   getWorkGenerationProfile,
-  parseGeneratedWorkContent,
   type SectionTemplate,
   type WordRange,
   validateGeneratedSection,
 } from "@/lib/work-generation-prompts";
-import type { CitationStyle, CoverTemplate, WorkBriefInput } from "@/types/editor";
+import type { WorkBriefInput } from "@/types/editor";
 
-type JobStatus = "GENERATING" | "READY" | "FAILED";
-
-export interface WorkGenerationJobStatus {
-  projectId: string;
-  status: JobStatus;
-  progress: number;
-  step: string;
-  streamingContent?: string;
-  streamingSectionTitle?: string;
-  error?: string;
-}
+export const serializeBrief = serializeProjectBrief;
+export {
+  batchGetWorkGenerationStatusAsync,
+  formatProjectType,
+  generateCover,
+  generateTitlePage,
+  getWorkGenerationStatus,
+  getWorkGenerationStatusAsync,
+};
 
 const SYSTEM_PROMPT = `Você é um especialista em escrita académica para estudantes moçambicanos.
 Gere conteúdo académico de alta qualidade em Português de Moçambique.
@@ -76,7 +94,7 @@ async function generateSectionWithStreaming(
   try {
     logger.info("[stream] Starting AI stream", { projectId, sectionTitle });
 
-    const rawStream = await runAIChatStream({
+    const textStream = await runAIChatStream({
       model: "",
       messages: [
         { role: "system", content: systemPrompt },
@@ -86,8 +104,6 @@ async function generateSectionWithStreaming(
       max_tokens: maxTokens,
     });
 
-    // Convert raw SSE bytes to text stream (parses OpenAI-compatible SSE format)
-    const textStream = createTextStreamFromSse(rawStream, "work-generation");
     const reader = textStream.getReader();
     const decoder = new TextDecoder();
 
@@ -99,21 +115,8 @@ async function generateSectionWithStreaming(
         const textChunk = decoder.decode(value, { stream: true });
         content += textChunk;
 
-        logger.info("[stream] Chunk received", {
-          projectId,
-          sectionTitle,
-          chunkLength: textChunk.length,
-          totalLength: content.length,
-          preview: textChunk.slice(0, 50),
-        });
-
         const now = Date.now();
         if (now - lastEmitTime >= THROTTLE_MS && content.length > 0) {
-          logger.info("[stream] Calling onChunk", {
-            projectId,
-            sectionTitle,
-            contentLength: content.length,
-          });
           await onChunk(content);
           lastEmitTime = now;
         }
@@ -146,6 +149,8 @@ async function generateSectionWithRetry(
   sectionPrompt: string,
   onChunk: (content: string) => Promise<void>,
 ) {
+  let lastStreamError: Error | null = null;
+
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const maxTokens = Math.ceil((sectionPlan.range.max || 800) * 1.8);
 
@@ -163,6 +168,7 @@ async function generateSectionWithRetry(
     );
 
     if (!content) {
+      lastStreamError = error;
       continue;
     }
 
@@ -174,7 +180,10 @@ async function generateSectionWithRetry(
     return { content, error: null };
   }
 
-  return { content: null, error: new Error(`A IA não conseguiu gerar conteúdo válido para "${template.title}" após 2 tentativas.`) };
+  return {
+    content: null,
+    error: lastStreamError || new Error(`A IA não conseguiu gerar conteúdo válido para "${template.title}" após 2 tentativas.`),
+  };
 }
 
 const SECTION_TEMPLATES: Record<string, SectionTemplate[]> = {
@@ -201,287 +210,8 @@ const SECTION_TEMPLATES: Record<string, SectionTemplate[]> = {
   ],
 };
 
-const jobStore = globalThis as typeof globalThis & {
-  __apptoWorkGenerationJobs?: Map<string, WorkGenerationJobStatus>;
-};
-
-const jobs = jobStore.__apptoWorkGenerationJobs ?? new Map<string, WorkGenerationJobStatus>();
-jobStore.__apptoWorkGenerationJobs = jobs;
-const JOB_RECLAIM_AFTER_MS = 10 * 60_000;
-
-export function getSectionTemplates(type: string, educationLevel?: string | null) {
+export function getSectionTemplates(type: string, _educationLevel?: string | null) {
   return SECTION_TEMPLATES[type] || SECTION_TEMPLATES.HIGHER_EDUCATION_WORK;
-}
-
-export function getWorkGenerationStatus(projectId: string): WorkGenerationJobStatus | null {
-  const inMemory = jobs.get(projectId);
-  if (inMemory) return inMemory;
-  
-  // Fall through to DB lookup is handled by getWorkGenerationStatusAsync
-  // This function returns only in-memory for sync contexts; use async for DB fallback
-  return null;
-}
-
-export async function getWorkGenerationStatusAsync(projectId: string): Promise<WorkGenerationJobStatus | null> {
-  // First check in-memory
-  const inMemory = jobs.get(projectId);
-  if (inMemory) return inMemory;
-  
-  // Then check database
-  const dbJob = await db.generationJob.findUnique({
-    where: { projectId },
-    select: { status: true, progress: true, step: true, error: true },
-  });
-
-  if (dbJob) {
-    return {
-      projectId,
-      status: dbJob.status as "GENERATING" | "READY" | "FAILED",
-      progress: dbJob.progress,
-      step: dbJob.step || "",
-      error: dbJob.error || undefined,
-    };
-  }
-
-  return jobs.get(projectId) || null;
-}
-
-export async function batchGetWorkGenerationStatusAsync(
-  projectIds: string[],
-): Promise<Map<string, WorkGenerationJobStatus>> {
-  const result = new Map<string, WorkGenerationJobStatus>();
-
-  for (const projectId of projectIds) {
-    const inMemory = jobs.get(projectId);
-    if (inMemory) {
-      result.set(projectId, inMemory);
-    }
-  }
-
-  const missingIds = projectIds.filter((id) => !result.has(id));
-  if (missingIds.length > 0) {
-    const dbJobs = await db.generationJob.findMany({
-      where: { projectId: { in: missingIds } },
-      select: { projectId: true, status: true, progress: true, step: true, error: true },
-    });
-
-    for (const job of dbJobs) {
-      result.set(job.projectId, {
-        projectId: job.projectId,
-        status: job.status as "GENERATING" | "READY" | "FAILED",
-        progress: job.progress,
-        step: job.step || "",
-        error: job.error || undefined,
-      });
-    }
-  }
-
-  return result;
-}
-
-export function serializeBrief(brief: {
-  workType: string;
-  generationStatus: string;
-  institutionName: string | null;
-  courseName: string | null;
-  subjectName: string | null;
-  educationLevel: string | null;
-  advisorName: string | null;
-  studentName: string | null;
-  city: string | null;
-  academicYear: number | null;
-  dueDate: Date | null;
-  theme: string | null;
-  subtitle: string | null;
-  objective: string | null;
-  researchQuestion: string | null;
-  methodology: string | null;
-  keywords: string | null;
-  referencesSeed: string | null;
-  citationStyle: CitationStyle | string;
-  language: string;
-  additionalInstructions: string | null;
-  coverTemplate?: string | null;
-  className: string | null;
-  turma: string | null;
-  facultyName: string | null;
-  departmentName: string | null;
-  studentNumber: string | null;
-  semester: string | null;
-}) {
-  return {
-    ...brief,
-    dueDate: brief.dueDate?.toISOString() ?? null,
-    coverTemplate: brief.coverTemplate ?? undefined,
-  };
-}
-
-export function generateCover(title: string, type: string, brief: WorkBriefInput) {
-  const coverTemplate = brief.coverTemplate || "UEM_STANDARD";
-
-  if (coverTemplate) {
-    return generateCoverHTML(coverTemplate as CoverTemplate, {
-      title,
-      type: formatProjectType(type),
-      institutionName: brief.institutionName,
-      courseName: brief.courseName,
-      subjectName: brief.subjectName,
-      advisorName: brief.advisorName,
-      studentName: brief.studentName,
-      city: brief.city,
-      academicYear: brief.academicYear,
-      subtitle: brief.subtitle,
-      className: brief.className,
-      turma: brief.turma,
-      facultyName: brief.facultyName,
-      departmentName: brief.departmentName,
-      studentNumber: brief.studentNumber,
-      semester: brief.semester,
-    });
-  }
-
-  const kind = formatProjectType(type).toUpperCase();
-  const institution = brief.institutionName || "INSTITUIÇÃO DE ENSINO";
-  const student = brief.studentName || "Nome do estudante";
-  const advisor = brief.advisorName ? `Orientador: ${brief.advisorName}` : null;
-  const city = brief.city || "Cidade";
-  const year = brief.academicYear || new Date().getFullYear();
-  const subtitle = brief.subtitle ? `\n${brief.subtitle}` : "";
-
-  return [
-    institution,
-    brief.courseName || null,
-    brief.subjectName || null,
-    "",
-    kind,
-    "",
-    `${title.toUpperCase()}${subtitle ? subtitle.toUpperCase() : ""}`,
-    "",
-    `Autor: ${student}`,
-    advisor,
-    "",
-    `${city}`,
-    `${year}`,
-  ]
-    .filter((line) => line !== null)
-    .join("\n")
-    .trim();
-}
-
-export function generateTitlePage(title: string, type: string, brief: WorkBriefInput) {
-  const kind = formatProjectType(type);
-  const institution = brief.institutionName || "INSTITUIÇÃO DE ENSINO";
-  const faculty = brief.facultyName || "";
-  const course = brief.courseName || "";
-  const student = brief.studentName || "Nome do estudante";
-  const studentNumber = brief.studentNumber ? `Nº ${brief.studentNumber}` : "";
-  const advisor = brief.advisorName ? `Orientador: ${brief.advisorName}` : "";
-  const city = brief.city || "Cidade";
-  const year = brief.academicYear || new Date().getFullYear();
-  const subtitle = brief.subtitle || "";
-
-  return [
-    `<div style="text-align: center; font-family: 'Times New Roman', serif; padding: 40mm 30mm; min-height: 297mm; display: flex; flex-direction: column; justify-content: space-between;">`,
-    `<div>`,
-    `<p style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 8px 0;">${institution}</p>`,
-    faculty ? `<p style="font-size: 12pt; margin: 8px 0;">${faculty}</p>` : "",
-    course ? `<p style="font-size: 12pt; margin: 8px 0;">${course}</p>` : "",
-    `</div>`,
-    `<div style="margin: 40px 0;">`,
-    `<p style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin: 8px 0;">${title}</p>`,
-    subtitle ? `<p style="font-size: 12pt; font-style: italic; margin: 8px 0;">${subtitle}</p>` : "",
-    `<p style="font-size: 12pt; margin: 16px 0;">${kind}</p>`,
-    `</div>`,
-    `<div>`,
-    `<p style="font-size: 12pt; margin: 8px 0;">${student} ${studentNumber}</p>`,
-    advisor ? `<p style="font-size: 12pt; margin: 8px 0;">${advisor}</p>` : "",
-    `</div>`,
-    `<p style="font-size: 12pt; margin-top: 32px;">${city} — ${year}</p>`,
-    `</div>`,
-  ]
-    .filter((line) => line !== "")
-    .join("\n")
-    .trim();
-}
-
-async function generateCompleteWorkContent(
-  title: string,
-  type: string,
-  brief: WorkBriefInput,
-  templates: SectionTemplate[]
-) {
-  // Enrich references with real academic sources from Semantic Scholar
-  // Run with timeout to avoid blocking generation for 5-10s
-  let enrichedBrief = brief;
-  if (!brief.referencesSeed || brief.referencesSeed.trim().length < 20) {
-    try {
-      const enriched = await Promise.race([
-        enrichReferencesWithAcademicSources(title, brief.referencesSeed || "", 6),
-        new Promise<string>((resolve) => setTimeout(() => resolve(""), 2000)),
-      ]);
-      if (enriched && enriched !== brief.referencesSeed) {
-        enrichedBrief = { ...brief, referencesSeed: enriched };
-      }
-    } catch {
-      // Skip enrichment if it fails — generation can proceed without it
-    }
-  }
-
-  const profile = getWorkGenerationProfile(type, enrichedBrief, templates);
-  const prompt = buildWorkGenerationPrompt({
-    title,
-    typeLabel: formatProjectType(type),
-    brief: enrichedBrief,
-    templates,
-    profile,
-  });
-  const resolvedEducationLevel = brief.educationLevel || "HIGHER_EDUCATION";
-  const systemPrompt = getSystemPromptForEducation(resolvedEducationLevel);
-
-  let assistantReply = "";
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const completion = await runAIChatCompletion({
-      model: "", // Provider uses its default model
-      responseMimeType: "application/json", // Explicitly request JSON for structured work generation
-      messages:
-        attempt === 0
-          ? [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: prompt },
-            ]
-          : [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: prompt },
-              { role: "assistant", content: assistantReply },
-              {
-                role: "user",
-                content: buildWorkRegenerationRepairPrompt({
-                  issues: [lastError?.message || "A resposta anterior ficou abaixo do esperado."],
-                  profile,
-                }),
-              },
-            ],
-      temperature: 0,
-      max_tokens: 16000,
-    });
-
-    assistantReply = completion.choices[0]?.message?.content || "";
-
-    if (!assistantReply) {
-      lastError = new Error("A IA não devolveu conteúdo para o trabalho completo.");
-      continue;
-    }
-
-    try {
-      return parseGeneratedWorkContent(assistantReply, templates, profile, title);
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-    }
-  }
-
-  throw lastError || new Error("A IA não devolveu conteúdo para o trabalho completo.");
 }
 
 async function saveSectionToDb(
@@ -536,6 +266,7 @@ async function generateWorkSectionBySection(
   brief: WorkBriefInput,
   templates: SectionTemplate[],
   userId: string,
+  generationContext: { runId: string; attemptId: string },
   onProgress: (progress: number, step: string) => Promise<void>,
 ) {
   // Enrich references with real academic sources from Semantic Scholar
@@ -562,30 +293,25 @@ async function generateWorkSectionBySection(
   const isHigherEd = enrichedBrief.educationLevel === "HIGHER_EDUCATION";
 
   const totalSteps = templates.length + (profile.abstract.required ? 1 : 0) + 1 + (isHigherEd ? 1 : 0); // +1 for cover, +1 for title page if higher ed
-  let completedSteps = 0;
-
-  const progressForStep = () => {
-    completedSteps += 1;
-    return Math.round((completedSteps / totalSteps) * 90) + 10; // 10-100 range
-  };
+  const progressTracker = createProgressTracker(totalSteps);
 
   // Step 1: Generate cover
-  await onProgress(progressForStep(), "A gerar capa");
+  await onProgress(progressTracker.advance(), "A gerar capa");
   await saveSectionToDb(projectId, "Capa", generateCover(title, type, brief));
 
   // Step 1.5: Generate title page for higher education
   if (isHigherEd) {
-    await onProgress(progressForStep(), "A gerar folha de rosto");
+    await onProgress(progressTracker.advance(), "A gerar folha de rosto");
     await saveSectionToDb(projectId, "Folha de Rosto", generateTitlePage(title, type, brief));
   }
 
   // Step 2: Generate abstract if required
   if (profile.abstract.required && profile.abstract.range) {
-    await onProgress(progressForStep(), "A gerar resumo");
+    await onProgress(progressTracker.advance(), "A gerar resumo");
     const abstractPrompt = buildSectionGenerationPrompt({
       title,
       typeLabel,
-      brief,
+      brief: enrichedBrief,
       sectionTitle: "Resumo",
       sectionGuidance: profile.abstract.guidance,
       sectionRange: profile.abstract.range,
@@ -643,14 +369,32 @@ async function generateWorkSectionBySection(
     const sectionPlan = profile.sections.find((s) => s.title === template.title);
     if (!sectionPlan) continue;
 
-    await onProgress(progressForStep(), `A gerar ${template.title}`);
+    const sectionProgress = progressTracker.advance();
+    const stableKey = buildGenerationSectionKey({ title: template.title, order: template.order });
+    await onProgress(sectionProgress, `A gerar ${template.title}`);
+    await Promise.all([
+      updateGenerationRunState(generationContext.runId, {
+        activeSectionKey: stableKey,
+        progress: sectionProgress,
+        step: `A gerar ${template.title}`,
+      }),
+      updateSectionRunState(generationContext.attemptId, {
+        stableKey,
+        title: template.title,
+        order: template.order,
+        status: "STREAMING",
+        progress: sectionProgress,
+        startedAt: new Date(),
+        error: null,
+      }),
+    ]);
 
     const previousSections = await loadGeneratedSections(projectId, templates);
 
     const sectionPrompt = buildSectionGenerationPrompt({
       title,
       typeLabel,
-      brief,
+      brief: enrichedBrief,
       sectionTitle: template.title,
       sectionGuidance: sectionPlan.guidance,
       sectionRange: sectionPlan.range,
@@ -661,23 +405,26 @@ async function generateWorkSectionBySection(
     });
 
     const handleChunk = async (content: string) => {
-      logger.info("[stream] handleChunk called", {
-        projectId,
-        sectionTitle: template.title,
-        contentLength: content.length,
-        preview: content.slice(0, 100),
-      });
-      setJob(projectId, {
-        progress: progressForStep(),
+      setWorkGenerationJob(projectId, {
+        progress: sectionProgress,
         step: `A gerar ${template.title}`,
         streamingContent: content,
         streamingSectionTitle: template.title,
       });
-      await setJobAsync(projectId, {
-        progress: progressForStep(),
+      await setPersistedWorkGenerationJob(projectId, {
+        progress: sectionProgress,
         step: `A gerar ${template.title}`,
         streamingContent: content,
         streamingSectionTitle: template.title,
+      });
+      await updateSectionRunState(generationContext.attemptId, {
+        stableKey,
+        title: template.title,
+        order: template.order,
+        status: "STREAMING",
+        progress: sectionProgress,
+        lastContentPreview: content,
+        lastPersistedAt: new Date(),
       });
     };
 
@@ -690,19 +437,41 @@ async function generateWorkSectionBySection(
       handleChunk,
     );
 
-    setJob(projectId, {
+    setWorkGenerationJob(projectId, {
       streamingContent: undefined,
       streamingSectionTitle: undefined,
     });
-    await setJobAsync(projectId, {
+    await setPersistedWorkGenerationJob(projectId, {
       streamingContent: null,
       streamingSectionTitle: null,
     });
 
     if (sectionContent && !sectionError) {
       await saveSectionToDb(projectId, template.title, sectionContent);
+      await updateSectionRunState(generationContext.attemptId, {
+        stableKey,
+        title: template.title,
+        order: template.order,
+        status: "COMPLETED",
+        progress: 100,
+        wordCount: sectionContent.split(/\s+/).filter(Boolean).length,
+        lastContentPreview: sectionContent,
+        lastPersistedAt: new Date(),
+        completedAt: new Date(),
+        error: null,
+      });
     } else {
       sectionsFailed.push(template.title);
+      await updateSectionRunState(generationContext.attemptId, {
+        stableKey,
+        title: template.title,
+        order: template.order,
+        status: "FAILED",
+        progress: sectionProgress,
+        retryCount: 2,
+        completedAt: new Date(),
+        error: sectionError?.message ?? "Falha ao gerar secção",
+      });
       logger.warn("[work-generation] section generation failed", {
         projectId,
         section: template.title,
@@ -787,48 +556,12 @@ Devolva apenas o texto da secção.`;
   return { sectionsFailed };
 }
 
-function setJob(projectId: string, partial: Partial<WorkGenerationJobStatus>) {
-  const current = jobs.get(projectId) || {
-    projectId,
-    status: "GENERATING" as JobStatus,
-    progress: 0,
-    step: "A preparar geração",
-  };
-
-  const updated = { ...current, ...partial };
-  jobs.set(projectId, updated);
-
-  persistJob(projectId, partial).catch(console.error);
-}
-
-async function persistJob(
-  projectId: string,
-  partial: Partial<WorkGenerationJobStatus>,
-  userId?: string
-) {
-  const current = await db.generationJob.findUnique({
+async function loadProjectSectionsForRun(projectId: string) {
+  return db.documentSection.findMany({
     where: { projectId },
+    select: { id: true, title: true, order: true },
+    orderBy: { order: "asc" },
   });
-
-  const { streamingContent, streamingSectionTitle, ...dbPartial } = partial;
-
-  if (current) {
-    await db.generationJob.update({
-      where: { projectId },
-      data: dbPartial,
-    });
-  } else if (userId) {
-    await db.generationJob.create({
-      data: {
-        projectId,
-        userId,
-        status: dbPartial.status || "GENERATING",
-        progress: dbPartial.progress || 0,
-        step: dbPartial.step,
-        error: partial.error,
-      },
-    });
-  }
 }
 
 export async function startWorkGenerationJob(input: {
@@ -854,17 +587,25 @@ export async function startWorkGenerationJob(input: {
 
   // Create/update the job record first - this is the single source of truth for generation status
   const now = new Date();
+  const queuedRun = await createGenerationRun({
+    projectId,
+    userId,
+    sections: await loadProjectSectionsForRun(projectId),
+  });
+
   await db.generationJob.upsert({
     where: { projectId },
     create: {
       projectId,
       userId,
+      currentRunId: queuedRun.runId,
       status: "GENERATING",
       progress: 5,
       step: "Na fila do worker",
       startedAt: now,
     },
     update: {
+      currentRunId: queuedRun.runId,
       status: "GENERATING",
       progress: 5,
       step: "Na fila do worker",
@@ -874,7 +615,7 @@ export async function startWorkGenerationJob(input: {
     },
   });
 
-  setJob(projectId, {
+  setWorkGenerationJob(projectId, {
     status: "GENERATING",
     progress: 5,
     step: "Na fila do worker",
@@ -890,75 +631,42 @@ export async function startWorkGenerationJob(input: {
   triggerQueuedGenerationProcessing();
 }
 
-function buildWorkBriefInputFromRecord(brief: {
-  institutionName: string | null;
-  courseName: string | null;
-  subjectName: string | null;
-  educationLevel: string | null;
-  advisorName: string | null;
-  studentName: string | null;
-  city: string | null;
-  academicYear: number | null;
-  dueDate: Date | null;
-  theme: string | null;
-  subtitle: string | null;
-  objective: string | null;
-  researchQuestion: string | null;
-  methodology: string | null;
-  keywords: string | null;
-  referencesSeed: string | null;
-  citationStyle: CitationStyle | string;
-  language: string;
-  additionalInstructions: string | null;
-  coverTemplate: string | null;
-  className: string | null;
-  turma: string | null;
-  facultyName: string | null;
-  departmentName: string | null;
-  studentNumber: string | null;
-  semester: string | null;
-}): WorkBriefInput {
-  return {
-    institutionName: brief.institutionName ?? undefined,
-    courseName: brief.courseName ?? undefined,
-    subjectName: brief.subjectName ?? undefined,
-    educationLevel: (brief.educationLevel as WorkBriefInput["educationLevel"]) ?? undefined,
-    advisorName: brief.advisorName ?? undefined,
-    studentName: brief.studentName ?? undefined,
-    city: brief.city ?? undefined,
-    academicYear: brief.academicYear ?? undefined,
-    dueDate: brief.dueDate?.toISOString().slice(0, 10),
-    theme: brief.theme ?? undefined,
-    subtitle: brief.subtitle ?? undefined,
-    objective: brief.objective ?? undefined,
-    researchQuestion: brief.researchQuestion ?? undefined,
-    methodology: brief.methodology ?? undefined,
-    keywords: brief.keywords ?? undefined,
-    referencesSeed: brief.referencesSeed ?? undefined,
-    citationStyle: (brief.citationStyle as WorkBriefInput["citationStyle"]) ?? "ABNT",
-    language: brief.language,
-    additionalInstructions: brief.additionalInstructions ?? undefined,
-    coverTemplate: (brief.coverTemplate as WorkBriefInput["coverTemplate"]) ?? undefined,
-    className: brief.className ?? undefined,
-    turma: brief.turma ?? undefined,
-    facultyName: brief.facultyName ?? undefined,
-    departmentName: brief.departmentName ?? undefined,
-    studentNumber: brief.studentNumber ?? undefined,
-    semester: brief.semester ?? undefined,
-  };
-}
-
 async function processGenerationJob(projectId: string) {
-  const project = await db.project.findUnique({
-    where: { id: projectId },
-    include: { brief: true },
-  });
+  const [project, job] = await Promise.all([
+    db.project.findUnique({
+      where: { id: projectId },
+      include: { brief: true },
+    }),
+    db.generationJob.findUnique({
+      where: { projectId },
+      select: { currentRunId: true },
+    }),
+  ]);
 
   if (!project?.brief) {
     throw new Error("Projecto ou briefing não encontrado para processamento.");
   }
 
-  const brief = buildWorkBriefInputFromRecord(project.brief);
+  if (!job?.currentRunId) {
+    throw new Error("Generation run não encontrado para o trabalho enfileirado.");
+  }
+
+  const currentRun = await db.generationRun.findUnique({
+    where: { id: job.currentRunId },
+    select: {
+      id: true,
+      currentAttemptId: true,
+    },
+  });
+
+  if (!currentRun?.currentAttemptId) {
+    throw new Error("Generation attempt não encontrado para o trabalho enfileirado.");
+  }
+
+  const runId = currentRun.id;
+  const attemptId = currentRun.currentAttemptId;
+
+  const brief = toWorkBriefInput(project.brief);
   const templates = getSectionTemplates(project.type, project.brief.educationLevel);
 
   try {
@@ -967,7 +675,23 @@ async function processGenerationJob(projectId: string) {
       data: { generationStatus: "GENERATING" },
     });
 
-    await setJobAsync(projectId, { progress: 5, step: "A iniciar geração", startedAt: new Date() });
+    await Promise.all([
+      setPersistedWorkGenerationJob(projectId, { progress: 5, step: "A iniciar geração", startedAt: new Date() }),
+      updateGenerationRunState(runId, {
+        status: "GENERATING",
+        progress: 5,
+        step: "A iniciar geração",
+        startedAt: new Date(),
+        completedAt: null,
+        error: null,
+      }),
+      updateGenerationAttemptState(attemptId, {
+        status: "GENERATING",
+        startedAt: new Date(),
+        completedAt: null,
+        error: null,
+      }),
+    ]);
 
     const { sectionsFailed } = await generateWorkSectionBySection(
       projectId,
@@ -976,9 +700,13 @@ async function processGenerationJob(projectId: string) {
       brief,
       templates,
       project.userId,
+      { runId, attemptId },
       async (progress, step) => {
-        setJob(projectId, { progress, step });
-        await setJobAsync(projectId, { progress, step });
+        setWorkGenerationJob(projectId, { progress, step });
+        await Promise.all([
+          setPersistedWorkGenerationJob(projectId, { progress, step }),
+          updateGenerationRunState(runId, { progress, step }),
+        ]);
       },
     );
 
@@ -1010,17 +738,36 @@ async function processGenerationJob(projectId: string) {
       });
 
       await subscriptionService.refundWork(project.userId).catch((err) => {
-        console.error("[Work Generation] Failed to refund subscription work:", err);
+        logger.error("[work-generation] failed to refund work after full failure", {
+          projectId,
+          userId: project.userId,
+          error: err instanceof Error ? err.message : String(err),
+        });
       });
 
-      await setJobAsync(projectId, {
+      await setPersistedWorkGenerationJob(projectId, {
         status: "FAILED",
         progress: 100,
         step: "Falha na geração: nenhum conteúdo foi produzido.",
         error: "A IA não conseguiu gerar nenhuma secção do trabalho após múltiplas tentativas.",
         completedAt: new Date(),
       });
-      setJob(projectId, {
+      await Promise.all([
+        updateGenerationRunState(runId, {
+          status: "FAILED",
+          progress: 100,
+          step: "Falha na geração: nenhum conteúdo foi produzido.",
+          error: "A IA não conseguiu gerar nenhuma secção do trabalho após múltiplas tentativas.",
+          completedAt: new Date(),
+          activeSectionKey: null,
+        }),
+        updateGenerationAttemptState(attemptId, {
+          status: "FAILED",
+          error: "A IA não conseguiu gerar nenhuma secção do trabalho após múltiplas tentativas.",
+          completedAt: new Date(),
+        }),
+      ]);
+      setWorkGenerationJob(projectId, {
         status: "FAILED",
         progress: 100,
         step: "Falha na geração: nenhum conteúdo foi produzido.",
@@ -1040,13 +787,26 @@ async function processGenerationJob(projectId: string) {
         data: { generationStatus: "READY" },
       });
 
-      await setJobAsync(projectId, {
+      await setPersistedWorkGenerationJob(projectId, {
         status: "READY",
         progress: 100,
         step: `Trabalho pronto — ${sectionsFailed.length} secção(ões) com qualidade abaixo do esperado. Pode re-gerar individualmente.`,
         completedAt: new Date(),
       });
-      setJob(projectId, {
+      await Promise.all([
+        updateGenerationRunState(runId, {
+          status: "READY",
+          progress: 100,
+          step: `Trabalho pronto — ${sectionsFailed.length} secção(ões) com qualidade abaixo do esperado. Pode re-gerar individualmente.`,
+          completedAt: new Date(),
+          activeSectionKey: null,
+        }),
+        updateGenerationAttemptState(attemptId, {
+          status: "COMPLETED",
+          completedAt: new Date(),
+        }),
+      ]);
+      setWorkGenerationJob(projectId, {
         status: "READY",
         progress: 100,
         step: `Trabalho pronto — ${sectionsFailed.length} secção(ões) com qualidade abaixo do esperado. Pode re-gerar individualmente.`,
@@ -1057,26 +817,41 @@ async function processGenerationJob(projectId: string) {
         data: { generationStatus: "READY" },
       });
 
-      await setJobAsync(projectId, {
+      await setPersistedWorkGenerationJob(projectId, {
         status: "READY",
         progress: 100,
         step: "Trabalho pronto para revisão",
         completedAt: new Date(),
       });
-      setJob(projectId, {
+      await Promise.all([
+        updateGenerationRunState(runId, {
+          status: "READY",
+          progress: 100,
+          step: "Trabalho pronto para revisão",
+          completedAt: new Date(),
+          activeSectionKey: null,
+        }),
+        updateGenerationAttemptState(attemptId, {
+          status: "COMPLETED",
+          completedAt: new Date(),
+        }),
+      ]);
+      setWorkGenerationJob(projectId, {
         status: "READY",
         progress: 100,
         step: "Trabalho pronto para revisão",
       });
     }
 
-    await trackProductEvent({
-      name: "work_generation_completed",
-      category: "workspace",
-      userId: project.userId,
-      projectId,
-      metadata: { type: project.type, sectionsFailed: sectionsFailed.length },
-    }).catch(() => null);
+    if (!allContentSectionsFailed) {
+      await trackProductEvent({
+        name: "work_generation_completed",
+        category: "workspace",
+        userId: project.userId,
+        projectId,
+        metadata: { type: project.type, sectionsFailed: sectionsFailed.length },
+      }).catch(() => null);
+    }
   } catch (error) {
     const friendlyMessage = getFriendlyAIErrorMessage(error);
 
@@ -1086,17 +861,36 @@ async function processGenerationJob(projectId: string) {
     });
 
     await subscriptionService.refundWork(project.userId).catch((err) => {
-      console.error("[Work Generation] Failed to refund subscription work:", err);
+      logger.error("[work-generation] failed to refund work after generation error", {
+        projectId,
+        userId: project.userId,
+        error: err instanceof Error ? err.message : String(err),
+      });
     });
 
-    await setJobAsync(projectId, {
+    await setPersistedWorkGenerationJob(projectId, {
       status: "FAILED",
       progress: 100,
       step: "Falha na geração",
       error: friendlyMessage,
       completedAt: new Date(),
     });
-    setJob(projectId, {
+    await Promise.all([
+      updateGenerationRunState(runId, {
+        status: "FAILED",
+        progress: 100,
+        step: "Falha na geração",
+        error: friendlyMessage,
+        completedAt: new Date(),
+        activeSectionKey: null,
+      }),
+      updateGenerationAttemptState(attemptId, {
+        status: "FAILED",
+        error: friendlyMessage,
+        completedAt: new Date(),
+      }),
+    ]);
+    setWorkGenerationJob(projectId, {
       status: "FAILED",
       progress: 100,
       step: "Falha na geração",
@@ -1113,127 +907,12 @@ async function processGenerationJob(projectId: string) {
   }
 }
 
-async function setJobAsync(projectId: string, partial: {
-  status?: string;
-  progress?: number;
-  step?: string;
-  error?: string | null;
-  completedAt?: Date | null;
-  startedAt?: Date;
-  streamingContent?: string | null;
-  streamingSectionTitle?: string | null;
-}) {
-  const { streamingContent, streamingSectionTitle, ...dbPartial } = partial;
-  await db.generationJob.update({
-    where: { projectId },
-    data: dbPartial,
-  }).catch(() => null);
-}
-
-async function claimGenerationJob(projectId: string, _startedAt: Date) {
-  const result = await db.generationJob.updateMany({
-    where: {
-      projectId,
-      status: "GENERATING",
-      completedAt: null,
-    },
-    data: {
-      step: "A processar em worker persistente",
-      startedAt: new Date(),
-      error: null,
-    },
-  });
-
-  return result.count === 1;
-}
-
 export async function processQueuedGenerationJobs(limit = 2) {
-  const staleCutoff = new Date(Date.now() - JOB_RECLAIM_AFTER_MS);
-  const candidates = await db.generationJob.findMany({
-    where: {
-      status: "GENERATING",
-      completedAt: null,
-      OR: [
-        { step: "Na fila do worker" },
-        { startedAt: { lt: staleCutoff } },
-      ],
-    },
-    orderBy: { startedAt: "asc" },
-    take: limit,
-    select: { projectId: true, startedAt: true },
-  });
-
-  let processed = 0;
-  for (const candidate of candidates) {
-    const claimed = await claimGenerationJob(candidate.projectId, candidate.startedAt);
-    if (!claimed) {
-      continue;
-    }
-
-    processed += 1;
-    logger.info("[worker] processing generation job", { projectId: candidate.projectId });
-    await processGenerationJob(candidate.projectId);
-  }
-
-  return { processed };
+  return processQueuedJobs(processGenerationJob, limit);
 }
 
 export function triggerQueuedGenerationProcessing() {
-  const workerSecret = env.INTERNAL_WORKER_SECRET;
-
-  if (workerSecret) {
-    // Fire-and-forget: trigger the worker endpoint in a new serverless invocation
-    // Do NOT use setTimeout — it won't execute in Vercel serverless after response is sent
-    void (async () => {
-      try {
-        const response = await fetch(`${env.APP_URL.replace(/\/$/, "")}/api/internal/workers/run`, {
-          method: "POST",
-          headers: {
-            "x-worker-secret": workerSecret,
-          },
-        });
-
-        if (!response.ok) {
-          const body = await response.text().catch(() => "");
-          logger.warn("[worker] remote generation trigger returned error", {
-            status: response.status,
-            body: body.slice(0, 200),
-          });
-          throw new Error(`Worker endpoint returned ${response.status}`);
-        }
-
-        const data = await response.json().catch(() => null);
-        logger.info("[worker] remote generation trigger succeeded", { data });
-      } catch (error) {
-        logger.warn("[worker] remote generation trigger failed; falling back to local execution", {
-          error: error instanceof Error ? error.message : String(error),
-        });
-        // Fallback: process directly
-        try {
-          const result = await processQueuedGenerationJobs(1);
-          logger.info("[worker] fallback local processing completed", { processed: result.processed });
-        } catch (fallbackError) {
-          logger.error("[worker] fallback local processing also failed", {
-            error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
-          });
-        }
-      }
-    })();
-    return;
-  }
-
-  // No worker secret: process directly (synchronously, before response is sent)
-  void (async () => {
-    try {
-      logger.info("[worker] starting local generation processing (no worker secret)");
-      const result = await processQueuedGenerationJobs(1);
-      logger.info("[worker] local generation processing completed", { processed: result.processed });
-    } catch (error) {
-      logger.error("[worker] local generation trigger failed", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  })();
+  triggerQueuedProcessing(processQueuedGenerationJobs);
 }
 
 export async function regenerateWorkSection(input: {
@@ -1289,11 +968,3 @@ Requisitos obrigatórios:
   return content;
 }
 
-export function formatProjectType(type: string): string {
-  const types: Record<string, string> = {
-    SECONDARY_WORK: "Trabalho Escolar",
-    TECHNICAL_WORK: "Trabalho Técnico",
-    HIGHER_EDUCATION_WORK: "Trabalho Académico",
-  };
-  return types[type] || "Trabalho Académico";
-}

@@ -3,7 +3,14 @@ import "server-only";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { S3Client, PutObjectCommand, HeadObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadBucketCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { StoredFile, StoredFileKind, StorageProvider } from "@prisma/client";
 import { ApiRouteError } from "@/lib/api";
@@ -11,15 +18,23 @@ import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { trackProductEvent } from "@/lib/product-events";
+import { resolveStorageTopology } from "@/lib/storage-topology";
 
 const MAX_LOCAL_UPLOAD_SIZE = 25 * 1024 * 1024;
 
 type UploadIntent = {
-  provider: "LOCAL" | "R2";
+  provider: "LOCAL" | "SUPABASE" | "R2";
   method: "PUT";
   uploadUrl: string;
   headers: Record<string, string>;
   expiresInSeconds: number;
+};
+
+type StorageWriteResult = {
+  provider: StorageProvider;
+  bucket: string;
+  objectKey: string;
+  fallbackUsed: boolean;
 };
 
 const FILE_RULES: Record<
@@ -73,13 +88,30 @@ const FILE_RULES: Record<
 };
 
 let s3ClientSingleton: S3Client | null = null;
+const storageTopology = resolveStorageTopology(env);
 
 function getStorageProvider(): StorageProvider {
-  return env.STORAGE_PROVIDER === "R2" ? "R2" : "LOCAL";
+  if (storageTopology.primary.provider === "SUPABASE") {
+    return "SUPABASE";
+  }
+
+  if (storageTopology.primary.provider === "R2") {
+    return "R2";
+  }
+
+  return "LOCAL";
 }
 
-function getBucket() {
-  return getStorageProvider() === "R2" ? env.R2_BUCKET! : "local";
+function getBucket(provider: StorageProvider = getStorageProvider()) {
+  if (provider === "SUPABASE") {
+    return env.SUPABASE_STORAGE_BUCKET!;
+  }
+
+  if (provider === "R2") {
+    return env.R2_BUCKET!;
+  }
+
+  return "local";
 }
 
 function sanitizeFileName(fileName: string) {
@@ -154,6 +186,18 @@ function getLocalPath(objectKey: string) {
   return path.join(getLocalRoot(), ...objectKey.split("/"));
 }
 
+function getSupabaseStorageBaseUrl() {
+  return `${env.SUPABASE_URL!.replace(/\/$/, "")}/storage/v1`;
+}
+
+function getSupabaseStorageHeaders(contentType?: string) {
+  return {
+    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY!}`,
+    apikey: env.SUPABASE_SERVICE_ROLE_KEY!,
+    ...(contentType ? { "Content-Type": contentType } : {}),
+  };
+}
+
 function getR2Client() {
   if (s3ClientSingleton) return s3ClientSingleton;
 
@@ -203,39 +247,19 @@ export function buildStoredFileRecord(input: {
   mimeType: string;
   sizeBytes: number;
 }) {
+  const provider = getStorageProvider();
   return {
-    provider: getStorageProvider(),
-    bucket: getBucket(),
+    provider,
+    bucket: getBucket(provider),
     objectKey: buildObjectKey(input),
   };
 }
 
 export async function createUploadIntent(file: StoredFile): Promise<UploadIntent> {
-  if (file.provider === "LOCAL") {
-    return {
-      provider: "LOCAL",
-      method: "PUT",
-      uploadUrl: `/api/files/upload-local/${file.id}`,
-      headers: {
-        "Content-Type": file.mimeType,
-      },
-      expiresInSeconds: 900,
-    };
-  }
-
-  const client = getR2Client();
-  const command = new PutObjectCommand({
-    Bucket: file.bucket,
-    Key: file.objectKey,
-    ContentType: file.mimeType,
-  });
-
-  const uploadUrl = await getSignedUrl(client, command, { expiresIn: 900 });
-
   return {
-    provider: "R2",
+    provider: file.provider,
     method: "PUT",
-    uploadUrl,
+    uploadUrl: `/api/files/upload-local/${file.id}`,
     headers: {
       "Content-Type": file.mimeType,
     },
@@ -253,11 +277,118 @@ export async function writeLocalUpload(file: StoredFile, bytes: Uint8Array) {
   await fs.writeFile(absolutePath, bytes);
 }
 
+async function uploadToSupabaseStorage(file: StoredFile, buffer: Buffer | Uint8Array) {
+  const body = buffer instanceof Buffer ? buffer : Buffer.from(buffer);
+  const response = await fetch(
+    `${getSupabaseStorageBaseUrl()}/object/${encodeURIComponent(file.bucket)}/${file.objectKey.split("/").map(encodeURIComponent).join("/")}`,
+    {
+      method: "POST",
+      headers: {
+        ...getSupabaseStorageHeaders(file.mimeType),
+        "x-upsert": "true",
+      },
+      body,
+    },
+  );
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new ApiRouteError(
+      `Falha ao guardar ficheiro no Supabase Storage (${response.status})`,
+      502,
+      "SUPABASE_STORAGE_UPLOAD_FAILED",
+      body.slice(0, 300),
+    );
+  }
+}
+
+async function readSupabaseStoredFileBytes(file: StoredFile) {
+  const response = await fetch(
+    `${getSupabaseStorageBaseUrl()}/object/authenticated/${encodeURIComponent(file.bucket)}/${file.objectKey.split("/").map(encodeURIComponent).join("/")}`,
+    {
+      method: "GET",
+      headers: getSupabaseStorageHeaders(),
+    },
+  );
+
+  if (!response.ok) {
+    throw new ApiRouteError("O objecto armazenado não pôde ser lido.", 500, "FILE_READ_FAILED");
+  }
+
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  return Buffer.from(bytes);
+}
+
+async function deleteSupabaseStoredObject(file: StoredFile) {
+  const response = await fetch(
+    `${getSupabaseStorageBaseUrl()}/object/${encodeURIComponent(file.bucket)}/${file.objectKey.split("/").map(encodeURIComponent).join("/")}`,
+    {
+      method: "DELETE",
+      headers: getSupabaseStorageHeaders(),
+    },
+  );
+
+  if (!response.ok && response.status !== 404) {
+    const body = await response.text().catch(() => "");
+    throw new ApiRouteError(
+      `Falha ao remover ficheiro do Supabase Storage (${response.status})`,
+      502,
+      "SUPABASE_STORAGE_DELETE_FAILED",
+      body.slice(0, 300),
+    );
+  }
+}
+
+async function headSupabaseStoredObject(file: StoredFile) {
+  const response = await fetch(
+    `${getSupabaseStorageBaseUrl()}/object/info/authenticated/${encodeURIComponent(file.bucket)}/${file.objectKey.split("/").map(encodeURIComponent).join("/")}`,
+    {
+      method: "GET",
+      headers: getSupabaseStorageHeaders(),
+    },
+  );
+
+  if (!response.ok) {
+    throw new ApiRouteError(
+      `Falha ao validar ficheiro no Supabase Storage (${response.status})`,
+      502,
+      "SUPABASE_STORAGE_HEAD_FAILED",
+    );
+  }
+
+  const payload = (await response.json().catch(() => null)) as { metadata?: { size?: number }; size?: number } | null;
+  return { contentLength: Number(payload?.metadata?.size ?? payload?.size ?? file.sizeBytes) };
+}
+
+function buildStoredFileWithProvider(file: StoredFile, provider: StorageProvider): StoredFile {
+  return {
+    ...file,
+    provider,
+    bucket: getBucket(provider),
+  };
+}
+
+function resolveWritableFallbackProvider(file: StoredFile): StorageProvider | null {
+  if (env.STORAGE_FAILOVER_MODE !== "write-fallback") {
+    return null;
+  }
+
+  if (file.provider === "SUPABASE" && storageTopology.fallback?.provider === "R2") {
+    return "R2";
+  }
+
+  return null;
+}
+
 export async function finalizeUploadedFile(file: StoredFile) {
   if (file.provider === "LOCAL") {
     const absolutePath = getLocalPath(file.objectKey);
     const stat = await fs.stat(absolutePath);
     return { contentLength: stat.size };
+  }
+
+  if (file.provider === "SUPABASE") {
+    return headSupabaseStoredObject(file);
   }
 
   const client = getR2Client();
@@ -272,26 +403,63 @@ export async function finalizeUploadedFile(file: StoredFile) {
 }
 
 export async function uploadBufferToStorage(file: StoredFile, buffer: Buffer | Uint8Array) {
-  if (file.provider === "LOCAL") {
-    await writeLocalUpload(file, buffer instanceof Buffer ? new Uint8Array(buffer) : buffer);
-    return;
-  }
+  const bytes = buffer instanceof Buffer ? new Uint8Array(buffer) : buffer;
 
-  const client = getR2Client();
-  await client.send(
-    new PutObjectCommand({
-      Bucket: file.bucket,
-      Key: file.objectKey,
-      Body: buffer,
-      ContentType: file.mimeType,
-    })
-  );
+  const writeToProvider = async (provider: StorageProvider) => {
+    const target = buildStoredFileWithProvider(file, provider);
+
+    if (provider === "LOCAL") {
+      await writeLocalUpload(target, bytes);
+    } else if (provider === "SUPABASE") {
+      await uploadToSupabaseStorage(target, buffer);
+    } else {
+      const client = getR2Client();
+      await client.send(
+        new PutObjectCommand({
+          Bucket: target.bucket,
+          Key: target.objectKey,
+          Body: buffer,
+          ContentType: target.mimeType,
+        }),
+      );
+    }
+
+    return {
+      provider,
+      bucket: target.bucket,
+      objectKey: target.objectKey,
+      fallbackUsed: provider !== file.provider,
+    } satisfies StorageWriteResult;
+  };
+
+  try {
+    return await writeToProvider(file.provider);
+  } catch (error) {
+    const fallbackProvider = resolveWritableFallbackProvider(file);
+    if (!fallbackProvider) {
+      throw error;
+    }
+
+    logger.warn("[storage] primary write failed, attempting fallback provider", {
+      fileId: file.id,
+      primaryProvider: file.provider,
+      fallbackProvider,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    return writeToProvider(fallbackProvider);
+  }
 }
 
 export async function deleteStoredObject(file: StoredFile) {
   if (file.provider === "LOCAL") {
     const absolutePath = getLocalPath(file.objectKey);
     await fs.rm(absolutePath, { force: true });
+    return;
+  }
+
+  if (file.provider === "SUPABASE") {
+    await deleteSupabaseStoredObject(file);
     return;
   }
 
@@ -367,7 +535,7 @@ export async function cleanupStoredFileLifecycle(input?: {
 }
 
 export async function getStoredFileDownloadUrl(file: StoredFile, expiresInSeconds = 900) {
-  if (file.provider === "LOCAL") {
+  if (file.provider === "LOCAL" || file.provider === "SUPABASE") {
     return `/api/files/${file.id}/content`;
   }
 
@@ -392,6 +560,10 @@ export async function readStoredFileBytes(file: StoredFile) {
     return fs.readFile(absolutePath);
   }
 
+  if (file.provider === "SUPABASE") {
+    return readSupabaseStoredFileBytes(file);
+  }
+
   const client = getR2Client();
   const response = await client.send(
     new GetObjectCommand({
@@ -409,9 +581,10 @@ export async function readStoredFileBytes(file: StoredFile) {
 }
 
 export async function getStoredFileContentResponse(file: StoredFile) {
-  if (file.provider === "LOCAL") {
-    const absolutePath = getLocalPath(file.objectKey);
-    const buffer = await fs.readFile(absolutePath);
+  if (file.provider === "LOCAL" || file.provider === "SUPABASE") {
+    const buffer = file.provider === "LOCAL"
+      ? await fs.readFile(getLocalPath(file.objectKey))
+      : await readSupabaseStoredFileBytes(file);
 
     return new Response(buffer, {
       headers: {
@@ -424,6 +597,118 @@ export async function getStoredFileContentResponse(file: StoredFile) {
 
   const signedUrl = await getStoredFileDownloadUrl(file, 300);
   return Response.redirect(signedUrl, 302);
+}
+
+async function runSupabaseStorageHealthcheck(bucket: string) {
+  const startedAt = Date.now();
+
+  try {
+    const response = await fetch(
+      `${getSupabaseStorageBaseUrl()}/bucket/${encodeURIComponent(bucket)}`,
+      {
+        method: "GET",
+        headers: getSupabaseStorageHeaders(),
+      },
+    );
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      throw new Error(body || `Supabase Storage returned ${response.status}`);
+    }
+
+    return {
+      reachable: true,
+      latencyMs: Date.now() - startedAt,
+    };
+  } catch (error) {
+    return {
+      reachable: false,
+      latencyMs: Date.now() - startedAt,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+async function runR2StorageHealthcheck(bucket: string) {
+  const startedAt = Date.now();
+
+  try {
+    await getR2Client().send(new HeadBucketCommand({ Bucket: bucket }));
+    return {
+      reachable: true,
+      latencyMs: Date.now() - startedAt,
+    };
+  } catch (error) {
+    return {
+      reachable: false,
+      latencyMs: Date.now() - startedAt,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+async function runLocalStorageHealthcheck() {
+  const startedAt = Date.now();
+
+  try {
+    await fs.mkdir(getLocalRoot(), { recursive: true });
+    return {
+      reachable: true,
+      latencyMs: Date.now() - startedAt,
+    };
+  } catch (error) {
+    return {
+      reachable: false,
+      latencyMs: Date.now() - startedAt,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+async function runStorageHealthcheck(target: { provider: StorageProvider; bucket: string }) {
+  if (target.provider === "SUPABASE") {
+    return runSupabaseStorageHealthcheck(target.bucket);
+  }
+
+  if (target.provider === "R2") {
+    return runR2StorageHealthcheck(target.bucket);
+  }
+
+  return runLocalStorageHealthcheck();
+}
+
+export async function getStorageHealthSummary() {
+  const primaryProvider = storageTopology.primary.provider === "SUPABASE"
+    ? "SUPABASE"
+    : storageTopology.primary.provider === "R2"
+      ? "R2"
+      : "LOCAL";
+  const fallbackProvider = storageTopology.fallback?.provider === "R2" ? "R2" : null;
+
+  const [primary, fallback] = await Promise.all([
+    runStorageHealthcheck({ provider: primaryProvider, bucket: storageTopology.primary.bucket }),
+    fallbackProvider && storageTopology.fallback
+      ? runStorageHealthcheck({ provider: fallbackProvider, bucket: storageTopology.fallback.bucket })
+      : Promise.resolve(null),
+  ]);
+
+  return {
+    primary: {
+      provider: primaryProvider,
+      role: storageTopology.primary.role,
+      bucket: storageTopology.primary.bucket,
+      ...primary,
+    },
+    fallback: fallbackProvider && storageTopology.fallback
+      ? {
+          provider: fallbackProvider,
+          role: storageTopology.fallback.role,
+          bucket: storageTopology.fallback.bucket,
+          ...(fallback ?? { reachable: false, latencyMs: 0 }),
+        }
+      : null,
+    failoverMode: storageTopology.failoverMode,
+  };
 }
 
 export function buildFileContentUrl(fileId: string) {

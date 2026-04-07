@@ -8,7 +8,7 @@
 
 - Official app surface: `/app/...`
 - Real features: authentication, project/section CRUD, AI generation, credits, DOCX/PDF export, public outline demo, 2FA/reset password, simulated payments, file storage, knowledge base (RAG), and user settings
-- Recommended production stack: `Neon Postgres` + `Cloudflare R2`
+- Recommended production stack: `Supabase Postgres` + `Supabase Storage`, with `Neon Postgres` and `Cloudflare R2` prepared as fallbacks
 - Recommended local/dev stack: `Postgres` + `LOCAL` storage in `.storage/`
 
 ## Stack
@@ -21,7 +21,7 @@
 | State | `Zustand`, `TanStack React Query`, `TanStack React Table` |
 | Database | `PostgreSQL` via `Prisma` |
 | Auth | `NextAuth` (credentials + Google OAuth), `bcryptjs`, `otplib` (2FA TOTP) |
-| Storage | `LOCAL` or `Cloudflare R2` via `@aws-sdk/client-s3` |
+| Storage | `Supabase Storage` primary, `Cloudflare R2` fallback, or `LOCAL` for dev |
 | Email | `Resend` |
 | Payments | `SIMULATED`, `MPESA`, `EMOLA` |
 | Exports | `docx` (DOCX), `@react-pdf/renderer` (PDF) |
@@ -59,11 +59,13 @@ Copy `.env.example` to `.env` and fill in the values.
 
 ```env
 DATABASE_URL="postgresql://..."
+SUPABASE_DATABASE_URL="postgresql://..." # preferred primary in production
 AUTH_SECRET="replace-me"           # or NEXTAUTH_SECRET
 NEXTAUTH_URL="http://localhost:3000"
 APP_URL="http://localhost:3000"
 ZAI_API_KEY="replace-me"
-STORAGE_PROVIDER="LOCAL"           # LOCAL or R2
+STORAGE_PROVIDER="LOCAL"           # LOCAL, SUPABASE, or R2
+STORAGE_FAILOVER_MODE="manual"     # manual or write-fallback
 STORAGE_LOCAL_ROOT=".storage"
 PAYMENT_DEFAULT_PROVIDER="SIMULATED" # SIMULATED, MPESA, or EMOLA
 ```
@@ -72,6 +74,10 @@ PAYMENT_DEFAULT_PROVIDER="SIMULATED" # SIMULATED, MPESA, or EMOLA
 
 ```env
 DATABASE_URL_DIRECT="postgresql://..."  # Direct DB connection (e.g. Neon)
+SUPABASE_DATABASE_URL_DIRECT="postgresql://..."
+NEON_DATABASE_URL="postgresql://..."    # fallback / contingency target
+NEON_DATABASE_URL_DIRECT="postgresql://..."
+DATABASE_FAILOVER_MODE="manual"         # manual or read-only
 GOOGLE_CLIENT_ID=""                     # Google OAuth
 GOOGLE_CLIENT_SECRET=""
 ZAI_BASE_URL="https://api.z.ai/api/paas/v4"
@@ -84,14 +90,20 @@ R2_ACCESS_KEY_ID=""
 R2_SECRET_ACCESS_KEY=""
 R2_BUCKET=""
 R2_PUBLIC_BASE_URL=""
+
+SUPABASE_URL="https://project.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY=""
+SUPABASE_STORAGE_BUCKET="appto-files"
 ```
 
 ## Storage model
 
 - Canonical project content stays in Postgres (`Project` + `DocumentSection`).
 - Binary files are tracked through `StoredFile` and `ProjectExport`.
-- `LOCAL` storage writes uploads and persisted exports into `.storage/`.
-- `R2` storage uses signed upload/download URLs.
+- `Supabase Storage` is the production primary for uploads, exports, and generated files.
+- `Cloudflare R2` is an explicit fallback target for new writes only when `STORAGE_FAILOVER_MODE=write-fallback`.
+- Reads always follow the persisted `StoredFile.provider`; there is no hidden dual-write or active-active mode.
+- `LOCAL` storage writes uploads and persisted exports into `.storage/` in development.
 - Avatars use the file pipeline.
 - Direct exports can still be downloaded without persistence.
 - Persisted exports are attached to the project through `ProjectExport`.
@@ -110,12 +122,28 @@ R2_PUBLIC_BASE_URL=""
 - `GET /api/export` — export project (DOCX/PDF)
 - `POST /api/export/pdf` — export as PDF
 
+### Storage failover rules
+
+- Primary writes target `Supabase Storage` whenever it is configured.
+- If `STORAGE_FAILOVER_MODE=manual`, a primary write failure returns an error and operators decide whether to switch.
+- If `STORAGE_FAILOVER_MODE=write-fallback`, only the failing write is redirected to `Cloudflare R2`, and the resulting `StoredFile` metadata is updated to `provider=R2`.
+- Reads never guess across providers; they use the persisted provider to avoid metadata drift.
+- Reconciliation back to `Supabase Storage` is an explicit operator task, not an automatic background dual-write.
+
 ### R2 bucket configuration
 
 - Private bucket by default
 - CORS allowing the app origin plus `PUT`, `GET`, and `HEAD`
 - Signed URLs for upload and reads
 - Never use the original filename as the primary object key
+
+## Database topology
+
+- `Supabase` is the operational source of truth when `SUPABASE_DATABASE_URL` is configured.
+- `Neon` is prepared as fallback and exposed in `/api/health`, but automatic write failover is intentionally not enabled.
+- `DATABASE_FAILOVER_MODE=manual` is the default and safest mode for production.
+- Prisma migrations should always run against the primary database to avoid schema drift.
+- If contingency is needed, switch `DATABASE_URL`/`SUPABASE_DATABASE_URL` at deploy time after validating migration parity.
 
 ## Main structure
 
@@ -219,5 +247,6 @@ The app uses `next-intl` for internationalization. Default locale is `pt-MZ` (Po
 - Do not reintroduce public claims for hidden features without implementation and tests.
 - Do not use `.z-ai-config`; AI provider configuration must come from environment variables.
 - `.storage/`, local DB dumps, and temp files must stay out of version control.
-- Prefer `Neon` for Postgres and `Cloudflare R2` for file storage in production.
+- Prefer `Supabase` as the primary Postgres runtime, keep `Neon` warm as fallback.
+- Prefer `Supabase Storage` as the primary file storage runtime, keep `Cloudflare R2` warm as fallback.
 - Run `bun run typecheck && bun run lint` before committing.

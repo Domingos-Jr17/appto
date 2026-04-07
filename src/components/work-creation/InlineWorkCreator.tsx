@@ -65,6 +65,7 @@ export function InlineWorkCreator() {
     createWork,
     isCreating,
     generationStep,
+    generationMessage,
     generationProjectId,
     subscriptionStatus,
   } = useWorkCreation();
@@ -109,6 +110,7 @@ export function InlineWorkCreator() {
           <GenerateWorkProgress
             steps={[...GENERATION_STEPS]}
             activeIndex={generationStep}
+            currentMessage={generationMessage}
           />
         </div>
         <p className="text-center text-xs text-muted-foreground">

@@ -19,9 +19,12 @@ interface UseGenerationStreamOptions {
   onFetch: () => Promise<void>;
   onSectionStarted?: (sectionTitle: string) => void;
   onContentChunk?: (sectionTitle: string, content: string) => void;
-  getDoneCount: () => number;
   enabled?: boolean;
   maxTimeout?: number;
+}
+
+function parseSseEvent(event: Event) {
+  return JSON.parse((event as MessageEvent).data) as SSEEvent;
 }
 
 export function useGenerationStream({
@@ -30,15 +33,13 @@ export function useGenerationStream({
   onFetch,
   onSectionStarted,
   onContentChunk,
-  getDoneCount,
   enabled = true,
-  maxTimeout = 300_000,
+  maxTimeout = 900_000,
 }: UseGenerationStreamOptions) {
   const eventSourceRef = useRef<EventSource | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const maxTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastEventIdRef = useRef<string | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const isGeneratingRef = useRef(false);
   const [useSSE, setUseSSE] = useState(true);
@@ -82,7 +83,7 @@ export function useGenerationStream({
     }
   }, [maxTimeout, onFetch, stopPolling]);
 
-  const connectSSE = useCallback(() => {
+  const connectSSE = useCallback(function connectSSEImpl() {
     stopSSE();
     reconnectAttemptsRef.current = 0;
 
@@ -100,7 +101,7 @@ export function useGenerationStream({
 
     eventSource.addEventListener("section-started", (e) => {
       try {
-        const parsed: SSEEvent = JSON.parse((e as MessageEvent).data);
+        const parsed = parseSseEvent(e);
         onSectionStarted?.(parsed.data.sectionTitle || "");
       } catch {
         // ignore
@@ -114,17 +115,12 @@ export function useGenerationStream({
 
     eventSource.addEventListener("content-chunk", (e) => {
       try {
-        const parsed: SSEEvent = JSON.parse((e as MessageEvent).data);
-        console.log("[SSE] Received content-chunk:", {
-          sectionTitle: parsed.data.sectionTitle,
-          contentLength: parsed.data.content?.length,
-          preview: parsed.data.content?.slice(0, 50),
-        });
+        const parsed = parseSseEvent(e);
         if (parsed.data.sectionTitle && parsed.data.content) {
           onContentChunk?.(parsed.data.sectionTitle, parsed.data.content);
         }
-      } catch (err) {
-        console.error("[SSE] Failed to parse content-chunk:", err);
+      } catch {
+        // ignore malformed chunk events and keep polling fallback active
       }
     });
 
@@ -155,11 +151,11 @@ export function useGenerationStream({
       stopSSE();
       reconnectTimeoutRef.current = setTimeout(() => {
         if (isGeneratingRef.current) {
-          connectSSE();
+          connectSSEImpl();
         }
       }, 3000);
     };
-  }, [projectId, onFetch, onContentChunk, stopSSE, startPolling]);
+  }, [projectId, onFetch, onContentChunk, onSectionStarted, stopSSE, startPolling]);
 
   const stopAll = useCallback(() => {
     isGeneratingRef.current = false;

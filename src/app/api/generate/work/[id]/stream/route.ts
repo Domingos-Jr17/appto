@@ -2,10 +2,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
-import { logger } from "@/lib/logger";
+import { extractActiveSectionTitle } from "@/lib/work-generation-state";
 
 const POLL_INTERVAL_MS = 500;
-const MAX_DURATION_MS = 300_000; // 5 minutes
+const MAX_DURATION_MS = 900_000; // 15 minutes
 const RETRY_MS = 3000;
 
 interface SSEEvent {
@@ -78,7 +78,7 @@ export async function GET(
         });
       }
 
-      let lastSectionTitle: string | undefined;
+      let activeSectionTitle: string | undefined;
       let lastStreamingContent: string | undefined;
 
       const check = async () => {
@@ -98,11 +98,6 @@ export async function GET(
           if (status.streamingContent && status.streamingSectionTitle) {
             if (status.streamingContent !== lastStreamingContent) {
               lastStreamingContent = status.streamingContent;
-              logger.info("[sse] Emitting content-chunk", {
-                projectId: id,
-                sectionTitle: status.streamingSectionTitle,
-                contentLength: status.streamingContent.length,
-              });
               send({
                 type: "content-chunk",
                 data: {
@@ -115,17 +110,25 @@ export async function GET(
             }
           }
 
-          // Detect section transitions from step text
-          const stepMatch = status.step.match(/A gerar\s+(.+)/i);
-          const currentSectionTitle = stepMatch ? stepMatch[1]?.trim() : undefined;
+          const currentSectionTitle = extractActiveSectionTitle(status.step) || undefined;
 
           if (status.progress !== lastProgress || status.step !== lastStep) {
             lastProgress = status.progress;
             lastStep = status.step;
 
-            // Detect section start (new section title we haven't seen yet)
-            if (currentSectionTitle && currentSectionTitle !== lastSectionTitle) {
-              lastSectionTitle = currentSectionTitle;
+            if (activeSectionTitle && activeSectionTitle !== currentSectionTitle) {
+              send({
+                type: "section-complete",
+                data: {
+                  progress: status.progress,
+                  step: status.step,
+                  sectionTitle: activeSectionTitle,
+                },
+              });
+            }
+
+            if (currentSectionTitle && currentSectionTitle !== activeSectionTitle) {
+              activeSectionTitle = currentSectionTitle;
               send({
                 type: "section-started",
                 data: {
@@ -135,6 +138,7 @@ export async function GET(
                 },
               });
             } else {
+              activeSectionTitle = currentSectionTitle;
               send({
                 type: "progress",
                 data: { progress: status.progress, step: status.step },
@@ -142,19 +146,18 @@ export async function GET(
             }
           }
 
-          // Detect section completion (progress changed but section title didn't change = previous section done)
-          if (currentSectionTitle && lastSectionTitle && currentSectionTitle !== lastSectionTitle) {
-            send({
-              type: "section-complete",
-              data: {
-                progress: status.progress,
-                step: status.step,
-                sectionTitle: lastSectionTitle,
-              },
-            });
-          }
-
           if (status.status === "READY") {
+            if (activeSectionTitle) {
+              send({
+                type: "section-complete",
+                data: {
+                  progress: status.progress,
+                  step: status.step,
+                  sectionTitle: activeSectionTitle,
+                },
+              });
+              activeSectionTitle = undefined;
+            }
             send({
               type: "complete",
               data: { progress: 100, step: "Trabalho pronto para revisão" },

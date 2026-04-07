@@ -53,7 +53,7 @@ export function DocumentPreview({
           {/* Cover — first page of the document */}
           {coverSection && (
             <div className="flex min-h-[70vh] flex-col justify-center pb-8 sm:min-h-[80vh] sm:pb-12">
-              <CoverPage brief={brief} />
+              <CoverPage brief={brief} content={coverSection.content} />
             </div>
           )}
 
@@ -296,7 +296,15 @@ function InlineMarkdown({ text }: { text: string }) {
 
 // ── Cover Page (first page of document) ──────────────────────────────────
 
-function CoverPage({ brief }: { brief?: WorkBrief | null }) {
+function CoverPage({ brief, content }: { brief?: WorkBrief | null; content?: string }) {
+  if (content?.trim()) {
+    return (
+      <div className="mx-auto w-full max-w-[36rem] whitespace-pre-wrap text-center text-sm leading-8 text-[var(--doc-heading)] sm:text-base">
+        {content}
+      </div>
+    );
+  }
+
   const workType = formatWorkType(brief?.workType);
   const institution = brief?.institutionName || fallbackInstitution(brief?.educationLevel);
   const course = getCoverCourseLabel(brief);

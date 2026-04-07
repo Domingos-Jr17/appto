@@ -45,6 +45,7 @@ export interface ProjectCardData {
   status: "draft" | "in_progress" | "review" | "completed" | "archived";
   lastUpdated: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export type Project = ProjectCardData;

@@ -3,21 +3,12 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { normalizeStoredContent } from "@/lib/content";
 import { getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
+import { resolveGenerationSnapshot, resolveWorkspaceSectionState } from "@/lib/work-generation-state";
 import type {
     WorkspaceData,
     WorkSection,
     SectionStatus,
 } from "@/types/workspace";
-
-function deriveStatus(
-    content: string | null,
-    wordCount: number,
-    isGenerating: boolean,
-): SectionStatus {
-    if (isGenerating && !content) return "generating";
-    if (wordCount > 0 || (content && content.trim().length > 0)) return "done";
-    return "pending";
-}
 
 export async function getWork(
     projectId: string,
@@ -45,30 +36,35 @@ export async function getWork(
     if (!project) return null;
 
     const liveGeneration = await getWorkGenerationStatusAsync(project.id);
-    const generationStatus =
-        liveGeneration?.status || project.brief?.generationStatus || "BRIEFING";
-    const generationProgress =
-        liveGeneration?.progress ?? (generationStatus === "READY" ? 100 : 0);
-    const generationStep = liveGeneration?.step || null;
-    const isGenerating = generationStatus === "GENERATING";
+    const generationSnapshot = resolveGenerationSnapshot({
+        liveJob: liveGeneration,
+        fallbackStatus: project.brief?.generationStatus,
+    });
 
-    const sections: WorkSection[] = project.sections.map((section) => ({
-        id: section.id,
-        title: section.title,
-        status: deriveStatus(
-            normalizeStoredContent(section.content),
-            section.wordCount,
-            isGenerating,
-        ),
-        content: normalizeStoredContent(section.content) ?? "",
-        order: section.order,
-    }));
+    const sections: WorkSection[] = project.sections.map((section) => {
+        const normalizedContent = normalizeStoredContent(section.content) ?? "";
+        const hasPersistedContent = section.wordCount > 0 || normalizedContent.trim().length > 0;
+
+        return {
+            id: section.id,
+            title: section.title,
+            status: resolveWorkspaceSectionState({
+                generationStatus: generationSnapshot.status,
+                activeSectionTitle: generationSnapshot.activeSectionTitle,
+                hasPersistedContent,
+                title: section.title,
+            }) as SectionStatus,
+            content: normalizedContent,
+            order: section.order,
+        };
+    });
 
     return {
         id: project.id,
         brief: {
             title: project.title,
             workType: project.type,
+            educationLevel: project.brief?.educationLevel ?? project.educationLevel,
             institutionName: project.brief?.institutionName ?? undefined,
             courseName: project.brief?.courseName ?? undefined,
             subjectName: project.brief?.subjectName ?? undefined,
@@ -85,9 +81,9 @@ export async function getWork(
             semester: project.brief?.semester ?? undefined,
         },
         sections,
-        generationStatus,
-        generationProgress,
-        generationStep,
+        generationStatus: generationSnapshot.status,
+        generationProgress: generationSnapshot.progress,
+        generationStep: generationSnapshot.step,
         createdAt: project.createdAt.toISOString(),
         updatedAt: project.updatedAt.toISOString(),
     };

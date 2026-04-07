@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertUploadedFileMatchesMime } from "@/lib/file-signature";
 import { logger } from "@/lib/logger";
-import { writeLocalUpload } from "@/lib/storage";
+import { uploadBufferToStorage } from "@/lib/storage";
 
 export async function PUT(
   request: Request,
@@ -23,7 +23,6 @@ export async function PUT(
       where: {
         id,
         userId: session.user.id,
-        provider: "LOCAL",
         status: "PENDING",
       },
     });
@@ -42,11 +41,27 @@ export async function PUT(
       return apiError("O ficheiro enviado não corresponde ao tamanho declarado.", 400, "FILE_SIZE_MISMATCH");
     }
     await assertUploadedFileMatchesMime(bytes, storedFile.mimeType);
-    await writeLocalUpload(storedFile, bytes);
+
+    const writeResult = await uploadBufferToStorage(storedFile, bytes);
+
+    if (
+      writeResult.provider !== storedFile.provider ||
+      writeResult.bucket !== storedFile.bucket ||
+      writeResult.objectKey !== storedFile.objectKey
+    ) {
+      await db.storedFile.update({
+        where: { id: storedFile.id },
+        data: {
+          provider: writeResult.provider,
+          bucket: writeResult.bucket,
+          objectKey: writeResult.objectKey,
+        },
+      });
+    }
 
     return apiSuccess({ success: true });
   } catch (error) {
-    logger.error("Local upload failed", { error: String(error) });
+    logger.error("Managed storage upload failed", { error: String(error) });
     return handleApiError(error, "Não foi possível guardar o ficheiro");
   }
 }

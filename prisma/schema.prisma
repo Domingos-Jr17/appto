@@ -28,6 +28,8 @@ model User {
   transactions        CreditTransaction[]
   credits             Credit?
   generationJobs      GenerationJob[]
+  generationRuns      GenerationRun[]
+  generationAttempts  GenerationAttempt[]
   knowledgeSources    KnowledgeSource[]
   passwordResetTokens PasswordResetToken[]
   paymentTransactions PaymentTransaction[]
@@ -151,6 +153,7 @@ model Project {
   updatedAt      DateTime          @updatedAt
   sections       DocumentSection[]
   generationJob  GenerationJob?
+  generationRuns GenerationRun[]
   brief          ProjectBrief?
   exports        ProjectExport[]
   user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -201,6 +204,7 @@ model GenerationJob {
   id          String    @id @default(cuid())
   projectId   String    @unique
   userId      String
+  currentRunId String?
   status      String    @default("GENERATING")
   progress    Int       @default(0)
   step        String?
@@ -208,9 +212,90 @@ model GenerationJob {
   startedAt   DateTime  @default(now())
   completedAt DateTime?
   project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  run         GenerationRun? @relation("GenerationJobCurrentRun", fields: [currentRunId], references: [id], onDelete: SetNull)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("generation_jobs")
+}
+
+model GenerationRun {
+  id                   String               @id @default(cuid())
+  projectId            String
+  userId               String
+  status               String               @default("QUEUED")
+  progress             Int                  @default(0)
+  step                 String?
+  error                String?
+  trigger              String               @default("USER_REQUEST")
+  activeSectionKey     String?
+  currentAttemptId     String?
+  currentAttemptNumber Int                  @default(1)
+  queuedAt             DateTime             @default(now())
+  startedAt            DateTime?
+  completedAt          DateTime?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  currentAttempt       GenerationAttempt?   @relation("GenerationRunCurrentAttempt", fields: [currentAttemptId], references: [id], onDelete: SetNull)
+  attempts             GenerationAttempt[]
+  generationJobs       GenerationJob[]      @relation("GenerationJobCurrentRun")
+  project              Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sectionRuns          SectionRun[]
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, status, createdAt])
+  @@index([userId, createdAt])
+  @@map("generation_runs")
+}
+
+model GenerationAttempt {
+  id            String          @id @default(cuid())
+  runId          String
+  userId         String
+  attemptNumber  Int
+  status         String          @default("QUEUED")
+  trigger        String          @default("INITIAL")
+  error          String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  currentForRuns GenerationRun[] @relation("GenerationRunCurrentAttempt")
+  run            GenerationRun   @relation(fields: [runId], references: [id], onDelete: Cascade)
+  sectionRuns    SectionRun[]
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, attemptNumber])
+  @@index([runId, status, createdAt])
+  @@map("generation_attempts")
+}
+
+model SectionRun {
+  id                 String             @id @default(cuid())
+  runId              String
+  attemptId          String
+  sectionId          String?
+  stableKey          String
+  title              String
+  order              Int
+  status             String             @default("PENDING")
+  progress           Int                @default(0)
+  retryCount         Int                @default(0)
+  wordCount          Int                @default(0)
+  lastContentPreview String?
+  error              String?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  lastPersistedAt    DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  attempt            GenerationAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  run                GenerationRun      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  section            DocumentSection?   @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
+  @@unique([attemptId, stableKey])
+  @@index([runId, stableKey])
+  @@index([sectionId])
+  @@map("section_runs")
 }
 
 model DocumentSection {
@@ -226,6 +311,7 @@ model DocumentSection {
   parent    DocumentSection?  @relation("SectionTree", fields: [parentId], references: [id], onDelete: Cascade)
   children  DocumentSection[] @relation("SectionTree")
   project   Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sectionRuns SectionRun[]
 
   @@index([projectId])
   @@index([projectId, title])
@@ -524,6 +610,7 @@ enum PaymentStatus {
 
 enum StorageProvider {
   LOCAL
+  SUPABASE
   R2
 }
 

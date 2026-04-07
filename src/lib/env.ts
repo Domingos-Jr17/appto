@@ -7,6 +7,13 @@ const envSchema = z
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
     DATABASE_URL_DIRECT: z.string().min(1).optional(),
+    SUPABASE_DATABASE_URL: z.string().min(1).optional(),
+    SUPABASE_DATABASE_URL_DIRECT: z.string().min(1).optional(),
+    NEON_DATABASE_URL: z.string().min(1).optional(),
+    NEON_DATABASE_URL_DIRECT: z.string().min(1).optional(),
+    DATABASE_FALLBACK_URL: z.string().min(1).optional(),
+    DATABASE_FALLBACK_URL_DIRECT: z.string().min(1).optional(),
+    DATABASE_FAILOVER_MODE: z.enum(["manual", "read-only"]).optional(),
     NEXTAUTH_SECRET: z.string().min(1).optional(),
     AUTH_SECRET: z.string().min(1).optional(),
     NEXTAUTH_URL: z.string().url().optional(),
@@ -48,8 +55,12 @@ const envSchema = z
     AI_CACHE_PROVIDER: z.enum(["MEMORY", "UPSTASH"]).optional(),
     UPSTASH_REDIS_REST_URL: z.string().url().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
-    STORAGE_PROVIDER: z.enum(["LOCAL", "R2"]).optional(),
+    STORAGE_PROVIDER: z.enum(["LOCAL", "SUPABASE", "R2"]).optional(),
+    STORAGE_FAILOVER_MODE: z.enum(["manual", "write-fallback"]).optional(),
     STORAGE_LOCAL_ROOT: z.string().min(1).optional(),
+    SUPABASE_URL: z.string().url().optional(),
+    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+    SUPABASE_STORAGE_BUCKET: z.string().min(1).optional(),
     R2_ACCOUNT_ID: z.string().min(1).optional(),
     R2_ACCESS_KEY_ID: z.string().min(1).optional(),
     R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
@@ -64,6 +75,24 @@ const envSchema = z
         path: ["AUTH_SECRET"],
         message: "AUTH_SECRET or NEXTAUTH_SECRET must be defined",
       });
+    }
+
+    if (data.STORAGE_PROVIDER === "SUPABASE") {
+      const requiredKeys = [
+        "SUPABASE_URL",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "SUPABASE_STORAGE_BUCKET",
+      ] as const;
+
+      for (const key of requiredKeys) {
+        if (!data[key]) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message: `${key} is required when STORAGE_PROVIDER=SUPABASE`,
+          });
+        }
+      }
     }
 
     if (data.STORAGE_PROVIDER === "R2") {
@@ -149,6 +178,13 @@ const parsedEnv = envSchema.safeParse({
   NODE_ENV: process.env.NODE_ENV,
   DATABASE_URL: process.env.DATABASE_URL,
   DATABASE_URL_DIRECT: process.env.DATABASE_URL_DIRECT,
+  SUPABASE_DATABASE_URL: process.env.SUPABASE_DATABASE_URL,
+  SUPABASE_DATABASE_URL_DIRECT: process.env.SUPABASE_DATABASE_URL_DIRECT,
+  NEON_DATABASE_URL: process.env.NEON_DATABASE_URL,
+  NEON_DATABASE_URL_DIRECT: process.env.NEON_DATABASE_URL_DIRECT,
+  DATABASE_FALLBACK_URL: process.env.DATABASE_FALLBACK_URL,
+  DATABASE_FALLBACK_URL_DIRECT: process.env.DATABASE_FALLBACK_URL_DIRECT,
+  DATABASE_FAILOVER_MODE: process.env.DATABASE_FAILOVER_MODE,
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
   AUTH_SECRET: process.env.AUTH_SECRET,
   NEXTAUTH_URL: process.env.NEXTAUTH_URL,
@@ -188,7 +224,11 @@ const parsedEnv = envSchema.safeParse({
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     STORAGE_PROVIDER: process.env.STORAGE_PROVIDER,
+    STORAGE_FAILOVER_MODE: process.env.STORAGE_FAILOVER_MODE,
   STORAGE_LOCAL_ROOT: process.env.STORAGE_LOCAL_ROOT,
+  SUPABASE_URL: process.env.SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_STORAGE_BUCKET: process.env.SUPABASE_STORAGE_BUCKET,
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
     R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
@@ -215,11 +255,13 @@ export const env = {
   INTERNAL_WORKER_SECRET: parsedEnv.data.INTERNAL_WORKER_SECRET,
   PAYMENT_GATEWAY: parsedEnv.data.PAYMENT_GATEWAY ?? "SIMULATED",
   PAYMENT_DEFAULT_PROVIDER: parsedEnv.data.PAYMENT_DEFAULT_PROVIDER ?? "SIMULATED",
+  DATABASE_FAILOVER_MODE: parsedEnv.data.DATABASE_FAILOVER_MODE ?? "manual",
   PAYSUITE_API_BASE_URL:
     parsedEnv.data.PAYSUITE_API_BASE_URL ?? "https://paysuite.tech",
   RATE_LIMIT_PROVIDER: parsedEnv.data.RATE_LIMIT_PROVIDER ?? "MEMORY",
   AI_CACHE_PROVIDER: parsedEnv.data.AI_CACHE_PROVIDER ?? "MEMORY",
-  STORAGE_PROVIDER: parsedEnv.data.STORAGE_PROVIDER ?? "LOCAL",
+  STORAGE_PROVIDER: parsedEnv.data.STORAGE_PROVIDER ?? (parsedEnv.data.SUPABASE_STORAGE_BUCKET ? "SUPABASE" : "LOCAL"),
+  STORAGE_FAILOVER_MODE: parsedEnv.data.STORAGE_FAILOVER_MODE ?? "manual",
   STORAGE_LOCAL_ROOT: parsedEnv.data.STORAGE_LOCAL_ROOT ?? ".storage",
   AI_PROVIDER: parsedEnv.data.AI_PROVIDER ?? "openrouter",
   AI_FALLBACK_PROVIDER: parsedEnv.data.AI_FALLBACK_PROVIDER,

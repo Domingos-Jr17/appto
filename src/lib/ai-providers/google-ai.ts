@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { createTextStreamFromSse } from "@/lib/ai-stream-parser";
 import type { AIProvider, AIChatRequest, AIChatResponse } from "@/lib/ai-types";
 import { AIRequestError } from "@/lib/ai-types";
 
@@ -25,7 +26,12 @@ function normalizeBaseUrl(baseUrl: string) {
 function getGenerateUrl(baseUrl: string, model: string, stream: boolean) {
   const normalized = normalizeBaseUrl(baseUrl);
   const method = stream ? "streamGenerateContent" : "generateContent";
-  return `${normalized}/models/${model}:${method}?key=`;
+  const query = new URLSearchParams();
+  if (stream) {
+    query.set("alt", "sse");
+  }
+
+  return `${normalized}/models/${model}:${method}?${query.toString()}${query.size > 0 ? "&" : ""}key=`;
 }
 
 async function loadConfig(): Promise<GoogleAIConfig> {
@@ -237,50 +243,6 @@ export class GoogleAIProvider implements AIProvider {
       throw new AIRequestError("Google AI não devolveu body para streaming.", "google-ai", 502);
     }
 
-    // Convert Google SSE stream to text stream
-    return this.convertSSEToTextStream(response.body);
-  }
-
-  private convertSSEToTextStream(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
-
-    return new ReadableStream({
-      async start(controller) {
-        const reader = body.getReader();
-        let buffer = "";
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
-            buffer = lines.pop() || "";
-
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                const data = line.slice(6).trim();
-                if (data === "[DONE]") continue;
-
-                try {
-                  const parsed = JSON.parse(data);
-                  const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-                  if (text) {
-                    controller.enqueue(encoder.encode(text));
-                  }
-                } catch {
-                  // Skip invalid JSON
-                }
-              }
-            }
-          }
-          controller.close();
-        } catch (error) {
-          controller.error(error);
-        }
-      },
-    });
+    return createTextStreamFromSse(response.body, "google-ai");
   }
 }

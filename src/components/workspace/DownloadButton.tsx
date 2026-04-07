@@ -10,21 +10,22 @@ import {
 interface DownloadButtonProps {
   onDownload: () => void;
   hasContent?: boolean;
+  isDownloading?: boolean;
 }
 
-export function DownloadButton({ onDownload, hasContent }: DownloadButtonProps) {
+export function DownloadButton({ onDownload, hasContent, isDownloading = false }: DownloadButtonProps) {
   const button = (
     <Button
       variant="outline"
       className="min-h-11 flex-1 rounded-2xl px-4 text-sm"
       onClick={onDownload}
-      disabled={!hasContent}
+      disabled={!hasContent || isDownloading}
     >
-      Descarregar documento
+      {isDownloading ? "A descarregar..." : "Descarregar documento"}
     </Button>
   );
 
-  if (!hasContent) {
+  if (!hasContent && !isDownloading) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>{button}</TooltipTrigger>

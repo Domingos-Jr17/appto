@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { WorkspaceData, WorkBrief } from "@/types/workspace";
+import type { WorkspaceData, WorkBrief, WorkSection } from "@/types/workspace";
 import { toast } from "@/hooks/use-toast";
 import { useGenerationStream } from "@/hooks/useGenerationStream";
+import { resolveGenerationSnapshot, resolveWorkspaceSectionState } from "@/lib/work-generation-state";
 
 interface UseWorkspaceOptions {
   initialData: WorkspaceData;
@@ -12,6 +13,8 @@ interface UseWorkspaceOptions {
 export function useWorkspace({ initialData }: UseWorkspaceOptions) {
   const [data, setData] = useState(initialData);
   const [error, setError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isSavingExport, setIsSavingExport] = useState<"DOCX" | "PDF" | null>(null);
 
   const allDone = data.sections.length > 0 && data.sections.every((s) => s.status === "done");
   const progress = data.sections.length === 0
@@ -22,43 +25,47 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
           100
       );
 
-  const getDoneCount = useCallback(
-    () => data.sections.filter((s) => s.status === "done").length,
-    [data.sections]
-  );
-
   const refreshProject = useCallback(async () => {
     try {
       const res = await fetch(`/api/projects/${data.id}`);
       if (!res.ok) return;
       const project = await res.json();
 
-      const isComplete = project.generationStatus !== "GENERATING";
+      const generationSnapshot = resolveGenerationSnapshot({
+        liveJob: {
+          status: project.generationStatus,
+          progress: project.generationProgress,
+          step: project.generationStep,
+        },
+        fallbackStatus: project.generationStatus,
+      });
 
       setData((prev) => ({
         ...prev,
-        sections: prev.sections
-          .map((section) => {
-            const updated = project.sections?.find(
-              (s: { id: string; content: string | null; wordCount: number }) =>
-                s.id === section.id
-            );
-            if (!updated) return section;
-
-            const hasContent = updated.wordCount > 0 || (updated.content && updated.content.trim().length > 0);
+        sections: (project.sections ?? [])
+          .map((section: { id: string; title: string; content: string | null; wordCount: number; order: number }) => {
+            const previous = prev.sections.find((item) => item.id === section.id);
+            const hasContent = section.wordCount > 0 || Boolean(section.content && section.content.trim().length > 0);
 
             return {
-              ...section,
-              content: updated.content ?? "",
-              status: isComplete
-                ? (hasContent ? "done" : "pending")
-                : (hasContent ? "done" : section.status),
+              id: section.id,
+              title: section.title,
+              order: section.order,
+              content: section.content ?? "",
+              streamingContent: previous?.streamingContent,
+              status: resolveWorkspaceSectionState({
+                generationStatus: generationSnapshot.status,
+                activeSectionTitle: generationSnapshot.activeSectionTitle,
+                hasPersistedContent: hasContent,
+                title: section.title,
+                hasStreamingContent: Boolean(previous?.streamingContent?.trim()),
+              }),
             };
           })
-          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-        generationStatus: project.generationStatus,
-        generationProgress: isComplete ? 100 : project.generationProgress,
-        generationStep: project.generationStep,
+          .sort((a: WorkSection, b: WorkSection) => (a.order ?? 0) - (b.order ?? 0)),
+        generationStatus: generationSnapshot.status,
+        generationProgress: generationSnapshot.progress,
+        generationStep: generationSnapshot.step,
       }));
     } catch (err) {
       console.warn("[useWorkspace] refreshProject failed:", err);
@@ -66,11 +73,6 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
   }, [data.id]);
 
   const handleContentChunk = useCallback((sectionTitle: string, content: string) => {
-    console.log("[Workspace] handleContentChunk called:", {
-      sectionTitle,
-      contentLength: content.length,
-      preview: content.slice(0, 80),
-    });
     setData((prev) => ({
       ...prev,
       sections: prev.sections.map((s) =>
@@ -88,7 +90,6 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
     generationStatus: data.generationStatus,
     onFetch: refreshProject,
     onContentChunk: handleContentChunk,
-    getDoneCount,
     enabled: isGenerating,
   });
 
@@ -97,9 +98,13 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
 
     setData((prev) => ({
       ...prev,
-      generationStatus: "GENERATING",
+        generationStatus: "GENERATING",
+        generationProgress: Math.max(prev.generationProgress, 5),
+        generationStep: "A preparar geração",
       sections: prev.sections.map((s) =>
-        s.status !== "done" ? { ...s, status: "generating" as const, streamingContent: undefined } : s
+        s.status !== "done"
+          ? { ...s, status: "pending" as const, streamingContent: undefined }
+          : s
       ),
     }));
 
@@ -118,9 +123,11 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
       setData((prev) => ({
         ...prev,
-        generationStatus: "READY",
+        generationStatus: "FAILED",
+        generationProgress: prev.generationProgress,
+        generationStep: "Falha na geração",
         sections: prev.sections.map((s) =>
-          s.status === "generating"
+          s.status === "generating" || s.status === "streaming"
             ? { ...s, status: s.content ? "done" : "pending" }
             : s
         ),
@@ -130,6 +137,7 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
 
   const downloadDocx = useCallback(async () => {
     setError(null);
+    setIsDownloading(true);
     try {
       const res = await fetch(`/api/export?projectId=${data.id}`);
       if (!res.ok) {
@@ -149,8 +157,67 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
       setError(
         err instanceof Error ? err.message : "Não foi possível descarregar"
       );
+    } finally {
+      setIsDownloading(false);
     }
   }, [data.id, data.brief.title]);
+
+  const downloadPdf = useCallback(async () => {
+    setError(null);
+    setIsDownloading(true);
+    try {
+      const res = await fetch(`/api/export/pdf?projectId=${data.id}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Falhou o download do PDF");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const truncate = (text: string, max: number) =>
+        text.length <= max ? text : text.slice(0, max).replace(/\s+\S*$/, "");
+      a.download = `${truncate(data.brief.title, 50)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Não foi possível descarregar o PDF"
+      );
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [data.id, data.brief.title]);
+
+  const saveExport = useCallback(async (format: "DOCX" | "PDF") => {
+    setError(null);
+    setIsSavingExport(format);
+    try {
+      const res = await fetch(`/api/projects/${data.id}/export/save`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ format }),
+      });
+
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.error || `Falhou ao guardar exportação ${format}`);
+      }
+
+      const downloadUrl = body?.data?.export?.file?.downloadUrl;
+      if (downloadUrl) {
+        window.open(downloadUrl, "_blank", "noopener,noreferrer");
+      }
+
+      toast({ title: `${format} guardado`, description: "A exportação foi criada com sucesso." });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Não foi possível guardar a exportação";
+      setError(msg);
+      toast({ title: "Erro ao guardar exportação", description: msg, variant: "destructive" });
+    } finally {
+      setIsSavingExport(null);
+    }
+  }, [data.id]);
 
   const setCoverTemplate = useCallback(
     async (template: string) => {
@@ -255,9 +322,13 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
     progress,
     allDone,
     isGenerating,
+    isDownloading,
+    isSavingExport,
     error,
     generateAll,
     downloadDocx,
+    downloadPdf,
+    saveExport,
     setCoverTemplate,
     saveBrief,
     updateTitle,

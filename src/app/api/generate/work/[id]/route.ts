@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
+import { resolveGenerationSnapshot } from "@/lib/work-generation-state";
 
 export async function GET(
   _request: Request,
@@ -32,28 +33,20 @@ export async function GET(
 
     const liveJob = await getWorkGenerationStatusAsync(id);
 
-    if (liveJob) {
-      return apiSuccess({
-        projectId: id,
-        status: liveJob.status,
-        progress: liveJob.progress,
-        step: liveJob.step,
-        error: liveJob.error || null,
-        ready: liveJob.status === "READY",
-      });
-    }
+    const snapshot = resolveGenerationSnapshot({
+      liveJob,
+      fallbackStatus: project.brief?.generationStatus,
+    });
 
-    const generationStatus = project.brief?.generationStatus || "BRIEFING";
-    const fallbackStatus =
-      generationStatus === "READY"
-        ? { status: "READY", progress: 100, step: "Trabalho pronto para revisão", ready: true }
-        : generationStatus === "FAILED"
-          ? { status: "FAILED", progress: 100, step: "Falha na geração", ready: false }
-          : generationStatus === "GENERATING"
-            ? { status: "GENERATING", progress: 15, step: "A preparar geração", ready: false }
-            : { status: "BRIEFING", progress: 0, step: "Briefing criado", ready: false };
-
-    return apiSuccess({ projectId: id, error: null, ...fallbackStatus });
+    return apiSuccess({
+      projectId: id,
+      status: snapshot.status,
+      progress: snapshot.progress,
+      step: snapshot.step,
+      activeSectionTitle: snapshot.activeSectionTitle,
+      error: liveJob?.error || null,
+      ready: snapshot.status === "READY",
+    });
   } catch (error) {
     return handleApiError(error);
   }

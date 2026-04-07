@@ -5,111 +5,10 @@ import { ZodError } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { deleteStoredObject } from "@/lib/storage";
-import { normalizeStoredContent } from "@/lib/content";
-import { getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
-import { getLastEditedSection, getResumeMode, getSectionSummary } from "@/lib/workspace";
+import { serializeProjectDetail } from "@/lib/projects/project-serialization";
 import { updateProjectSchema } from "@/lib/validators";
 import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
 import { logger } from "@/lib/logger";
-
-function serializeBrief(
-  brief: {
-    workType: string;
-    generationStatus: string;
-    institutionName: string | null;
-    courseName: string | null;
-    subjectName: string | null;
-    educationLevel: string | null;
-    advisorName: string | null;
-    studentName: string | null;
-    city: string | null;
-    academicYear: number | null;
-    dueDate: Date | null;
-    theme: string | null;
-    subtitle: string | null;
-    objective: string | null;
-    researchQuestion: string | null;
-    methodology: string | null;
-    keywords: string | null;
-    referencesSeed: string | null;
-    citationStyle: string;
-    language: string;
-    additionalInstructions: string | null;
-    coverTemplate?: string;
-  } | null,
-) {
-  if (!brief) {
-    return null;
-  }
-
-  return {
-    ...brief,
-    dueDate: brief.dueDate?.toISOString() ?? null,
-  };
-}
-
-async function serializeProject(project: {
-  id: string;
-  title: string;
-  description: string | null;
-  type: string;
-  status: string;
-  wordCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-  sections: {
-    id: string;
-    title: string;
-    content: string | null;
-    order: number;
-    wordCount: number;
-    parentId: string | null;
-    updatedAt: Date;
-  }[];
-  brief: {
-    workType: string;
-    generationStatus: string;
-    institutionName: string | null;
-    courseName: string | null;
-    subjectName: string | null;
-    educationLevel: string | null;
-    advisorName: string | null;
-    studentName: string | null;
-    city: string | null;
-    academicYear: number | null;
-    dueDate: Date | null;
-    theme: string | null;
-    subtitle: string | null;
-    objective: string | null;
-    researchQuestion: string | null;
-    methodology: string | null;
-    keywords: string | null;
-    referencesSeed: string | null;
-    citationStyle: string;
-    language: string;
-    additionalInstructions: string | null;
-  } | null;
-}) {
-  const sections = project.sections.map((section) => ({
-    ...section,
-    content: normalizeStoredContent(section.content),
-  }));
-  const lastEditedSection = getLastEditedSection(sections);
-  const sectionSummary = getSectionSummary(sections);
-  const liveGeneration = await getWorkGenerationStatusAsync(project.id);
-
-  return {
-    ...project,
-    sections,
-    brief: serializeBrief(project.brief),
-    generationStatus: liveGeneration?.status || project.brief?.generationStatus || "BRIEFING",
-    generationProgress: liveGeneration?.progress || (project.brief?.generationStatus === "READY" ? 100 : 0),
-    generationStep: liveGeneration?.step || null,
-    resumeMode: getResumeMode(project, lastEditedSection),
-    lastEditedSection,
-    sectionSummary,
-  };
-}
 
 export async function GET(
   _request: NextRequest,
@@ -149,7 +48,7 @@ export async function GET(
       return apiError("Projecto não encontrado", 404);
     }
 
-    return apiSuccess(await serializeProject(project));
+    return apiSuccess(await serializeProjectDetail(project));
   } catch (error) {
     logger.error("Get project error", { error: String(error) });
     return handleApiError(error);
@@ -258,7 +157,7 @@ export async function PUT(
       },
     });
 
-    return apiSuccess(await serializeProject(project));
+    return apiSuccess(await serializeProjectDetail(project));
   } catch (error) {
     if (error instanceof ZodError) {
       return apiError("Payload inválido", 400, "VALIDATION_ERROR", error.flatten());

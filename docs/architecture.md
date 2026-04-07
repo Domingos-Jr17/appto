@@ -75,7 +75,7 @@ appto-grad is a Next.js 16 App Router application for academic writing assistanc
 - Files: `src/lib/credits.ts`, `src/lib/credit-ledger.ts`, `src/lib/payments.ts`
 
 ### File Storage
-- Storage abstraction supporting LOCAL and Cloudflare R2
+- Storage abstraction supporting Supabase Storage as primary, Cloudflare R2 as fallback, and LOCAL for dev
 - `StoredFile` tracks metadata (kind, provider, bucket, object key, status)
 - `ProjectExport` links exports to projects
 - File kinds: AVATAR, EXPORT, UPLOAD, KNOWLEDGE_SOURCE, ATTACHMENT
@@ -133,8 +133,8 @@ All environment variables are validated at startup via Zod in `src/lib/env.ts`. 
 
 ## Production deployment
 
-- **Database:** Neon PostgreSQL (serverless)
-- **File storage:** Cloudflare R2 (S3-compatible)
+- **Database:** Supabase PostgreSQL as primary, Neon PostgreSQL as operational fallback
+- **File storage:** Supabase Storage as primary, Cloudflare R2 as controlled fallback
 - **Runtime:** Bun with standalone Next.js output
 - **Proxy:** Caddy (see `Caddyfile`)
 - **Email:** Resend

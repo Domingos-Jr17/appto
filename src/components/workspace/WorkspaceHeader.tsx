@@ -6,7 +6,7 @@ import { Edit3, Check, X, Loader2, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GenerateButton } from "./GenerateButton";
-import { DownloadButton } from "./DownloadButton";
+import { ExportActionsButton } from "./ExportActionsButton";
 import { cn } from "@/lib/utils";
 import type { WorkSection } from "@/types/workspace";
 
@@ -14,6 +14,7 @@ interface WorkspaceHeaderProps {
   title: string;
   workType: string;
   progress: number;
+  generationStatus?: string;
   generationProgress: number;
   generationStep: string | null;
   isGenerating: boolean;
@@ -23,6 +24,10 @@ interface WorkspaceHeaderProps {
   coverIncomplete?: boolean;
   onGenerate: () => void;
   onDownload: () => void;
+  onDownloadPdf?: () => void;
+  onSaveExport?: (format: "DOCX" | "PDF") => void;
+  isDownloading?: boolean;
+  isSavingExport?: "DOCX" | "PDF" | null;
   onEditCover: () => void;
   onSaveTitle?: (title: string) => void;
 }
@@ -31,6 +36,7 @@ export function WorkspaceHeader({
   title,
   workType,
   progress,
+  generationStatus,
   generationProgress,
   generationStep,
   isGenerating,
@@ -40,6 +46,10 @@ export function WorkspaceHeader({
   coverIncomplete = false,
   onGenerate,
   onDownload,
+  onDownloadPdf,
+  onSaveExport,
+  isDownloading = false,
+  isSavingExport = null,
   onEditCover,
   onSaveTitle,
 }: WorkspaceHeaderProps) {
@@ -102,6 +112,11 @@ export function WorkspaceHeader({
   };
 
   const hasContent = sections.some((s) => s.status === "done" && s.content.trim().length > 0);
+  const showPostGenerationNotice = !isGenerating && generationStep && (
+    generationStatus === "FAILED" ||
+    generationStatus === "NEEDS_REVIEW" ||
+    (generationStatus === "READY" && generationStep !== "Trabalho pronto para revisão")
+  );
 
   if (isGenerating) {
   return (
@@ -233,18 +248,33 @@ export function WorkspaceHeader({
             <span className="ml-1 h-1.5 w-1.5 rounded-full bg-warning" />
           )}
         </Button>
-          {hasContent && (
-            <GenerateButton
-              isGenerating={isGenerating}
-              allDone={allDone}
-              onGenerate={onGenerate}
-            />
-          )}
-        <DownloadButton
-          onDownload={onDownload}
+          <GenerateButton
+            isGenerating={isGenerating}
+            allDone={allDone}
+            onGenerate={onGenerate}
+          />
+        <ExportActionsButton
+          onDownloadDocx={onDownload}
+          onDownloadPdf={onDownloadPdf || onDownload}
+          onSaveExport={onSaveExport || (() => undefined)}
           hasContent={hasContent}
+          isDownloading={isDownloading}
+          isSavingExport={isSavingExport}
         />
       </div>
+
+      {showPostGenerationNotice && (
+        <div
+          className={cn(
+            "mt-3 rounded-2xl border px-3 py-2 text-xs",
+            generationStatus === "FAILED"
+              ? "border-destructive/30 bg-destructive/5 text-destructive"
+              : "border-warning/30 bg-warning/5 text-warning"
+          )}
+        >
+          {generationStep}
+        </div>
+      )}
     </div>
   );
 }

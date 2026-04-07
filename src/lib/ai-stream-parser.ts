@@ -6,7 +6,11 @@ export function splitSseEvents(buffer: string) {
   return { events: parts.map((part) => part.trim()).filter(Boolean), remainder };
 }
 
-export function extractTextFromSsePayload(payload: unknown) {
+export function extractTextFromSsePayload(payload: unknown): string {
+  if (Array.isArray(payload)) {
+    return payload.map((item) => extractTextFromSsePayload(item)).join("");
+  }
+
   if (!payload || typeof payload !== "object") {
     return "";
   }
@@ -16,6 +20,9 @@ export function extractTextFromSsePayload(payload: unknown) {
       delta?: { content?: string; reasoning_content?: string };
       message?: { content?: string };
       finish_reason?: string | null;
+    }>;
+    candidates?: Array<{
+      content?: { parts?: Array<{ text?: string }> };
     }>;
     error?: { message?: string };
   };
@@ -27,6 +34,7 @@ export function extractTextFromSsePayload(payload: unknown) {
   return (
     candidate.choices?.[0]?.delta?.content ||
     candidate.choices?.[0]?.message?.content ||
+    candidate.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") ||
     ""
   );
 }

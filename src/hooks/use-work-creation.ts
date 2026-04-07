@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { fetchWithRetry } from "@/lib/fetch-retry";
@@ -115,6 +115,9 @@ export function useWorkCreation() {
   const [isCreating, setIsCreating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
   const [generationProjectId, setGenerationProjectId] = useState<string | null>(null);
+  const [generationMessage, setGenerationMessage] = useState("Na fila do worker");
+  const pollingFailureCountRef = useRef(0);
+  const generationEventSourceRef = useRef<EventSource | null>(null);
 
   // Subscription
   const [subscriptionStatus, setSubscriptionStatus] = useState<{
@@ -181,6 +184,8 @@ export function useWorkCreation() {
   );
 
   const resetWorkForm = useCallback(() => {
+    generationEventSourceRef.current?.close();
+    generationEventSourceRef.current = null;
     setIsCreating(false);
     setGenerationStep(0);
     setGenerationProjectId(null);
@@ -271,8 +276,10 @@ export function useWorkCreation() {
       }
 
       if (data.generation?.asynchronous) {
+        pollingFailureCountRef.current = 0;
         setGenerationProjectId(data.project.id);
         setGenerationStep(0);
+        setGenerationMessage(data.generation?.step || "Na fila do worker");
         return data.project.id;
       }
 
@@ -289,6 +296,7 @@ export function useWorkCreation() {
         variant: "destructive",
       });
       setIsCreating(false);
+      setGenerationMessage("Na fila do worker");
       return null;
     }
   }, [workForm, toast, resetWorkForm, router]);
@@ -296,80 +304,142 @@ export function useWorkCreation() {
   // Polling for generation progress
   useEffect(() => {
     if (!isCreating || !generationProjectId) {
+      generationEventSourceRef.current?.close();
+      generationEventSourceRef.current = null;
       setGenerationStep(0);
+      setGenerationMessage("Na fila do worker");
       return;
     }
 
-    const intervalId = window.setInterval(async () => {
-      try {
-        const response = await fetchWithRetry(
-          `/api/generate/work/${generationProjectId}`,
-          {
-            retries: 1,
-            retryDelay: 800,
-            timeout: 8000,
-          },
-        );
-        const data = await response.json();
+    const updateStepFromSnapshot = (snapshot: { progress?: number; step?: string }) => {
+      const nextStep = Math.min(
+        Math.max(
+          Math.round(((snapshot.progress || 0) / 100) * (GENERATION_STEPS.length - 1)),
+          0,
+        ),
+        GENERATION_STEPS.length - 1,
+      );
+      setGenerationStep(nextStep);
+      setGenerationMessage(snapshot.step || "A gerar o trabalho");
+    };
 
-        if (!response.ok) {
-          throw new Error(
-            data.error ||
-              "Não foi possível acompanhar a geração do trabalho.",
-          );
-        }
+    const finishWithNavigation = (options: {
+      title: string;
+      description: string;
+      variant?: "destructive";
+      finalMessage: string;
+    }) => {
+      generationEventSourceRef.current?.close();
+      generationEventSourceRef.current = null;
+      toast({
+        title: options.title,
+        description: options.description,
+        variant: options.variant,
+      });
+      resetWorkForm();
+      setGenerationMessage(options.finalMessage);
+      router.push(`/app/trabalhos/${generationProjectId}`);
+    };
 
-        const nextStep = Math.min(
-          Math.max(
-            Math.round(
-              ((data.progress || 0) / 100) *
-                (GENERATION_STEPS.length - 1),
-            ),
-            0,
-          ),
-          GENERATION_STEPS.length - 1,
-        );
-        setGenerationStep(nextStep);
+    const pollStatus = async () => {
+      const response = await fetchWithRetry(`/api/generate/work/${generationProjectId}`, {
+        retries: 1,
+        retryDelay: 800,
+        timeout: 8000,
+      });
+      const data = await response.json();
 
-        if (data.status === "READY") {
-          window.clearInterval(intervalId);
-          toast({
-            title: "O teu trabalho está pronto!",
-            description:
-              "Explora as secções geradas e usa a IA para fazer ajustes. Boa escrita!",
-          });
-          resetWorkForm();
-          router.push(`/app/trabalhos/${generationProjectId}`);
-        }
-
-        if (data.status === "FAILED") {
-          window.clearInterval(intervalId);
-          toast({
-            title: "Geração interrompida",
-            description:
-              data.error ||
-              "A estrutura do trabalho foi criada, mas a geração automática falhou.",
-            variant: "destructive",
-          });
-          resetWorkForm();
-          router.push(`/app/trabalhos/${generationProjectId}`);
-        }
-      } catch (error) {
-        window.clearInterval(intervalId);
-        toast({
-          title: "Erro",
-          description:
-            error instanceof Error
-              ? error.message
-              : "Não foi possível acompanhar a geração do trabalho.",
-          variant: "destructive",
-        });
-        setIsCreating(false);
-        setGenerationProjectId(null);
+      if (!response.ok) {
+        throw new Error(data.error || "Não foi possível acompanhar a geração do trabalho.");
       }
-    }, 3000);
 
-    return () => window.clearInterval(intervalId);
+      updateStepFromSnapshot(data);
+      pollingFailureCountRef.current = 0;
+
+      if (data.status === "READY") {
+        finishWithNavigation({
+          title: "O teu trabalho está pronto!",
+          description: "Explora as secções geradas e usa a IA para fazer ajustes. Boa escrita!",
+          finalMessage: "Trabalho pronto para revisão",
+        });
+      }
+
+      if (data.status === "FAILED") {
+        finishWithNavigation({
+          title: "Geração interrompida",
+          description: data.error || "A estrutura do trabalho foi criada, mas a geração automática falhou.",
+          variant: "destructive",
+          finalMessage: data.error || "Falha na geração",
+        });
+      }
+    };
+
+    let intervalId: number | null = null;
+    const startPolling = () => {
+      if (intervalId !== null) {
+        return;
+      }
+
+      intervalId = window.setInterval(async () => {
+        try {
+          await pollStatus();
+        } catch (error) {
+          pollingFailureCountRef.current += 1;
+
+          if (pollingFailureCountRef.current >= 3) {
+            if (intervalId !== null) {
+              window.clearInterval(intervalId);
+            }
+            finishWithNavigation({
+              title: "A acompanhar geração com atraso",
+              description: "Não foi possível acompanhar a geração em tempo real. Vamos abrir o trabalho para continuares a acompanhar lá.",
+              variant: "destructive",
+              finalMessage: "A acompanhar geração com atraso",
+            });
+            return;
+          }
+
+          console.warn("[useWorkCreation] generation polling failed", error);
+        }
+      }, 3000);
+    };
+
+    if (typeof window !== "undefined" && typeof window.EventSource !== "undefined") {
+      const eventSource = new EventSource(`/api/generate/work/${generationProjectId}/stream`);
+      generationEventSourceRef.current = eventSource;
+
+      const handleEvent = (event: MessageEvent<string>) => {
+        try {
+          const parsed = JSON.parse(event.data) as { progress?: number; step?: string; error?: string };
+          updateStepFromSnapshot(parsed);
+        } catch {
+          // keep polling fallback available for malformed events
+        }
+      };
+
+      eventSource.addEventListener("job-created", handleEvent as EventListener);
+      eventSource.addEventListener("progress", handleEvent as EventListener);
+      eventSource.addEventListener("section-started", handleEvent as EventListener);
+      eventSource.addEventListener("section-complete", handleEvent as EventListener);
+      eventSource.addEventListener("complete", () => {
+        void pollStatus();
+      });
+      eventSource.addEventListener("error", () => {
+        generationEventSourceRef.current?.close();
+        generationEventSourceRef.current = null;
+        startPolling();
+      });
+    } else {
+      startPolling();
+    }
+
+    return () => {
+      generationEventSourceRef.current?.close();
+      generationEventSourceRef.current = null;
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
+    };
   }, [generationProjectId, isCreating, router, toast, resetWorkForm]);
 
   return {
@@ -381,6 +451,7 @@ export function useWorkCreation() {
     createWork,
     isCreating,
     generationStep,
+    generationMessage,
     generationProjectId,
     subscriptionStatus,
     isGenerating: isCreating && generationProjectId !== null,

@@ -5,9 +5,10 @@ import { Loader2, Sparkles } from "lucide-react";
 interface GenerateWorkProgressProps {
   steps: string[];
   activeIndex: number;
+  currentMessage?: string;
 }
 
-export function GenerateWorkProgress({ steps, activeIndex }: GenerateWorkProgressProps) {
+export function GenerateWorkProgress({ steps, activeIndex, currentMessage }: GenerateWorkProgressProps) {
   return (
     <div className="space-y-5 py-4">
       <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/8 px-4 py-3">
@@ -17,7 +18,7 @@ export function GenerateWorkProgress({ steps, activeIndex }: GenerateWorkProgres
         <div>
           <p className="text-sm font-semibold text-foreground">A aptto está a preparar o teu trabalho</p>
           <p className="text-xs text-muted-foreground">
-            A gerar capa, estrutura e conteúdo inicial com base no teu briefing académico.
+            {currentMessage || "A gerar capa, estrutura e conteúdo inicial com base no teu briefing académico."}
           </p>
         </div>
       </div>

@@ -1,4 +1,10 @@
 import { db } from "@/lib/db";
+import { isTransientGenerationFailure } from "@/lib/generation/run-domain";
+import {
+  createGenerationRetryAttempt,
+  updateGenerationAttemptState,
+  updateGenerationRunState,
+} from "@/lib/generation/run-repository";
 import { logger } from "@/lib/logger";
 import { trackProductEvent } from "@/lib/product-events";
 import { cleanupStoredFileLifecycle } from "@/lib/storage";
@@ -12,7 +18,7 @@ const STALE_JOB_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 async function updateHeartbeat() {
   try {
     await db.$executeRaw`
-      INSERT INTO product_events (id, name, category, metadata, created_at)
+      INSERT INTO product_events (id, name, category, metadata, "createdAt")
       VALUES (${crypto.randomUUID()}, ${WORKER_HEARTBEAT_KEY}, 'ops', ${JSON.stringify({ ts: Date.now() })}::jsonb, NOW())
     `;
   } catch (error) {
@@ -48,7 +54,16 @@ async function getFailedJobsForRetry(limit = 5) {
   });
 }
 
-async function retryFailedJob(jobId: string, projectId: string, _userId: string) {
+async function retryFailedJob(jobId: string, projectId: string, userId: string) {
+  const currentJob = await db.generationJob.findUnique({
+    where: { id: jobId },
+    select: { error: true, currentRunId: true },
+  });
+
+  if (!currentJob?.currentRunId || !isTransientGenerationFailure(currentJob.error)) {
+    return false;
+  }
+
   const retryCount = await db.generationJob.count({
     where: {
       projectId,
@@ -62,9 +77,16 @@ async function retryFailedJob(jobId: string, projectId: string, _userId: string)
     return false;
   }
 
+  const retryAttempt = await createGenerationRetryAttempt({
+    runId: currentJob.currentRunId,
+    userId,
+    trigger: "AUTO_RETRY",
+  });
+
   await db.generationJob.update({
     where: { id: jobId },
     data: {
+      currentRunId: currentJob.currentRunId,
       status: "GENERATING",
       step: "Retentativa automática",
       error: null,
@@ -72,6 +94,23 @@ async function retryFailedJob(jobId: string, projectId: string, _userId: string)
       startedAt: new Date(),
     },
   });
+
+  await Promise.all([
+    updateGenerationRunState(currentJob.currentRunId, {
+      status: "QUEUED",
+      progress: 5,
+      step: `Retentativa automática #${retryAttempt.attemptNumber}`,
+      error: null,
+      completedAt: null,
+      activeSectionKey: null,
+    }),
+    updateGenerationAttemptState(retryAttempt.attemptId, {
+      status: "QUEUED",
+      trigger: "AUTO_RETRY",
+      error: null,
+      completedAt: null,
+    }),
+  ]);
 
   logger.info("[worker] retrying failed generation job", { projectId, jobId, retryCount });
   return true;
@@ -120,10 +159,39 @@ export async function runWorkerPass() {
         data: {
           status: "FAILED",
           step: "Job timed out — marked as stale by worker",
-          error: `Job exceeded ${STALE_JOB_TIMEOUT_MS / 60000} minute timeout`,
+          error: `Stale worker lease expired after ${STALE_JOB_TIMEOUT_MS / 60000} minutes`,
           completedAt: new Date(),
         },
       });
+
+      const runId = await db.generationJob.findUnique({
+        where: { id: job.id },
+        select: { currentRunId: true },
+      }).then((record) => record?.currentRunId ?? null);
+
+      if (runId) {
+        const run = await db.generationRun.findUnique({
+          where: { id: runId },
+          select: { currentAttemptId: true },
+        });
+
+        await updateGenerationRunState(runId, {
+          status: "FAILED",
+          progress: 100,
+          step: "Job timed out — marked as stale by worker",
+          error: `Stale worker lease expired after ${STALE_JOB_TIMEOUT_MS / 60000} minutes`,
+          completedAt: new Date(),
+          activeSectionKey: null,
+        }).catch(() => null);
+
+        if (run?.currentAttemptId) {
+          await updateGenerationAttemptState(run.currentAttemptId, {
+            status: "FAILED",
+            error: `Stale worker lease expired after ${STALE_JOB_TIMEOUT_MS / 60000} minutes`,
+            completedAt: new Date(),
+          }).catch(() => null);
+        }
+      }
 
       await db.projectBrief.update({
         where: { projectId: job.projectId },

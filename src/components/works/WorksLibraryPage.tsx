@@ -69,6 +69,7 @@ export function WorksLibraryPage() {
                 status: mapStatus(project.status),
                 lastUpdated: formatRelativeTime(new Date(project.updatedAt)),
                 createdAt: project.createdAt,
+                updatedAt: project.updatedAt,
             })),
         [rawProjects],
     );
@@ -100,13 +101,13 @@ export function WorksLibraryPage() {
                     );
                 case "updated":
                     return (
-                        new Date(right.lastUpdated).getTime() -
-                        new Date(left.lastUpdated).getTime()
+                        new Date(right.updatedAt || right.createdAt).getTime() -
+                        new Date(left.updatedAt || left.createdAt).getTime()
                     );
                 default:
                     return (
-                        new Date(right.lastUpdated).getTime() -
-                        new Date(left.lastUpdated).getTime()
+                        new Date(right.updatedAt || right.createdAt).getTime() -
+                        new Date(left.updatedAt || left.createdAt).getTime()
                     );
             }
         });

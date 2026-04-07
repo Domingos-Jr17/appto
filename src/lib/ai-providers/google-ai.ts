@@ -3,7 +3,7 @@ import type { AIProvider, AIChatRequest, AIChatResponse } from "@/lib/ai-types";
 import { AIRequestError } from "@/lib/ai-types";
 
 const RETRY_DELAYS_MS = [800, 1600, 3200];
-const DEFAULT_MODEL = "gemini-2.5-flash";
+const DEFAULT_MODEL = "gemini-2.5-flash-lite";
 const DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
 interface GoogleAIConfig {

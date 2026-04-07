@@ -24,14 +24,31 @@ function hasValidWorkerSecret(headerSecret: string | null) {
 }
 
 function isVercelCron(request: NextRequest) {
-  return request.headers.get("user-agent")?.includes("Vercel Cron") ?? false;
+  // Vercel Cron sends Authorization: Bearer <CRON_SECRET>
+  // See: https://vercel.com/docs/cron-jobs# securing-cron-jobs
+  const authHeader = request.headers.get("Authorization");
+  const cronSecret = env.CRON_SECRET;
+
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    return true;
+  }
+
+  // Fallback: also accept if no CRON_SECRET is set (Vercel auto-injects it)
+  // and the request comes from Vercel's internal infrastructure
+  const vercelRequestId = request.headers.get("x-vercel-id");
+  if (!cronSecret && vercelRequestId) {
+    return true;
+  }
+
+  return false;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const isCron = isVercelCron(request);
 
-    // Vercel Cron calls don't need secret validation
+    // Vercel Cron calls skip rate limiting and use CRON_SECRET validation
+    // Manual calls require INTERNAL_WORKER_SECRET
     if (!isCron) {
       await enforceRateLimit(`internal-worker:${getClientIp(request) ?? "unknown"}`, 30, 60 * 1000);
 

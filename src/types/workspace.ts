@@ -1,10 +1,11 @@
-export type SectionStatus = "done" | "generating" | "pending";
+export type SectionStatus = "done" | "generating" | "streaming" | "pending";
 
 export interface WorkSection {
   id: string;
   title: string;
   status: SectionStatus;
   content: string;
+  streamingContent?: string;
   order: number;
 }
 

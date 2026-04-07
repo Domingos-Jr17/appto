@@ -12,6 +12,7 @@ export interface AIChatRequest {
   top_p?: number;
   thinking?: unknown;
   signal?: AbortSignal;
+  responseMimeType?: string;
 }
 
 export interface AIChatResponse {

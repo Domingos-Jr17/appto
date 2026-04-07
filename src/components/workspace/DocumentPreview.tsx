@@ -20,7 +20,9 @@ export function DocumentPreview({
   brief,
 }: DocumentPreviewProps) {
   const hasContent = sections.some(
-    (s) => s.status === "done" && s.content.trim().length > 0,
+    (s) => (s.status === "done" || s.status === "streaming") &&
+           ((s.status === "done" && s.content.trim().length > 0) ||
+            (s.status === "streaming" && !!s.streamingContent && s.streamingContent.trim().length > 0)),
   );
 
   if (!hasContent && !isGenerating) {
@@ -90,7 +92,24 @@ function DocumentSection({ section }: { section: WorkSection }) {
     );
   }
 
-  if (section.status === "generating") {
+  if (section.status === "streaming" && section.streamingContent && section.streamingContent.trim()) {
+    return (
+      <section className="mb-6">
+        <h2 className="mb-3 text-base font-bold text-[var(--doc-heading)]">
+          {section.title}
+        </h2>
+        <div className="animate-pulse">
+          <RenderedMarkdown content={section.streamingContent} />
+        </div>
+        <div className="flex items-center gap-2 py-2">
+          <div className="h-2 w-2 animate-ping rounded-full bg-blue-400" />
+          <span className="text-xs text-[var(--doc-muted)]">A gerar...</span>
+        </div>
+      </section>
+    );
+  }
+
+  if (section.status === "streaming" || section.status === "generating") {
     return (
       <section className="mb-4">
         <h2 className="mb-2 text-base font-bold text-[var(--doc-muted)]">

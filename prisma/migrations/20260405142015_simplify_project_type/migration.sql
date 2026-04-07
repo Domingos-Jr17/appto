@@ -18,8 +18,8 @@ ALTER TABLE "public"."projects" ALTER COLUMN "type" TYPE "ProjectType_new" USING
 );
 ALTER TABLE "public"."projects" ALTER COLUMN "type" SET DEFAULT 'RESEARCH_WORK'::"ProjectType_new";
 
--- Step 3: Migrate work_briefs table
-ALTER TABLE "public"."work_briefs" ALTER COLUMN "workType" TYPE "ProjectType_new" USING (
+-- Step 3: Migrate project_briefs table (mapped as "project_briefs" in schema)
+ALTER TABLE "public"."project_briefs" ALTER COLUMN "workType" TYPE "ProjectType_new" USING (
   CASE
     WHEN "workType"::text = 'SCHOOL_WORK' THEN 'SCHOOL_WORK'::"ProjectType_new"
     WHEN "workType"::text = 'RESEARCH_PROJECT' THEN 'SCHOOL_WORK'::"ProjectType_new"

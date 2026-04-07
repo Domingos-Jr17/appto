@@ -169,51 +169,64 @@ export class SubscriptionService {
   }
 
    async consumeWork(userId: string): Promise<void> {
-     // Step 1: Reset monthly usage if needed (idempotent)
-     await this.checkAndResetMonthlyUsage(userId);
+     // Step 1: Get or create subscription (single call, reused throughout)
+     const subscription = await this.getOrCreate(userId);
 
-     // Step 2: Try to consume from extra works first (atomic)
-     // Find the earliest expiring work purchase with used < quantity and increment used
+     // Step 2: Reset monthly usage if needed (idempotent)
      const now = new Date();
-      const extraWorksResult = await this.dbClient.$executeRaw`
-        UPDATE "work_purchases"
-        SET "used" = "used" + 1
-        WHERE "id" = (
-          SELECT "id" FROM "work_purchases"
-          WHERE "userId" = ${userId}
-            AND "expiresAt" > ${now}
-            AND "used" < "quantity"
-          ORDER BY "expiresAt" ASC
-          LIMIT 1
-        )
-      `;
+     const lastReset = new Date(subscription.lastUsageReset);
+     const crossedCalendarMonth =
+       now.getUTCFullYear() !== lastReset.getUTCFullYear() ||
+       now.getUTCMonth() !== lastReset.getUTCMonth();
+
+     if (crossedCalendarMonth) {
+       await this.dbClient.subscription.update({
+         where: { userId },
+         data: {
+           worksUsed: 0,
+           lastUsageReset: now,
+         },
+       });
+     }
+
+     // Step 3: Try to consume from extra works first (atomic)
+     const extraWorksResult = await this.dbClient.$executeRaw`
+       UPDATE "work_purchases"
+       SET "used" = "used" + 1
+       WHERE "id" = (
+         SELECT "id" FROM "work_purchases"
+         WHERE "userId" = ${userId}
+           AND "expiresAt" > ${now}
+           AND "used" < "quantity"
+         ORDER BY "expiresAt" ASC
+         LIMIT 1
+       )
+     `;
 
      if (extraWorksResult === 1) {
-       await this.checkAndSendLowCreditsAlert(userId);
+       await this.checkAndSendLowCreditsAlert(userId, subscription);
        return;
      }
 
-     // Step 3: Try to consume from plan (atomic — field-to-field comparison)
-     // Uses raw SQL to compare worksUsed < worksPerMonth atomically,
-     // preventing race conditions under concurrent requests.
-      const result = await this.dbClient.$executeRaw`
-        UPDATE "subscriptions"
-        SET "worksUsed" = "worksUsed" + 1
-        WHERE "userId" = ${userId}
-          AND "worksUsed" < "worksPerMonth"
-      `;
+     // Step 4: Try to consume from plan (atomic — field-to-field comparison)
+     const result = await this.dbClient.$executeRaw`
+       UPDATE "subscriptions"
+       SET "worksUsed" = "worksUsed" + 1
+       WHERE "userId" = ${userId}
+         AND "worksUsed" < "worksPerMonth"
+     `;
 
      if (result === 1) {
-       await this.checkAndSendLowCreditsAlert(userId);
+       await this.checkAndSendLowCreditsAlert(userId, subscription);
        return;
      }
 
      throw new ApiRouteError("Limite de trabalhos atingido", 403, "WORK_LIMIT_REACHED");
    }
 
-  private async checkAndSendLowCreditsAlert(userId: string): Promise<void> {
+  private async checkAndSendLowCreditsAlert(userId: string, cachedSubscription?: { worksPerMonth: number; worksUsed: number }): Promise<void> {
     try {
-      const subscription = await this.getOrCreate(userId);
+      const subscription = cachedSubscription ?? await this.getOrCreate(userId);
       const planRemaining = subscription.worksPerMonth - subscription.worksUsed;
       const extraWorks = await this.getAvailableExtraWorks(userId);
       const remaining = planRemaining + extraWorks;

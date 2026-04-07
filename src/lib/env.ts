@@ -125,6 +125,23 @@ const envSchema = z
         message: "RAG_EMBEDDING_DIMENSIONS must be 128 to match the pgvector schema",
       });
     }
+
+    if (data.NODE_ENV === "production") {
+      const resolvedUrl = data.APP_URL || data.NEXTAUTH_URL;
+      if (!resolvedUrl) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["APP_URL"],
+          message: "APP_URL or NEXTAUTH_URL must be explicitly set in production",
+        });
+      } else if (resolvedUrl.includes("localhost") || resolvedUrl.includes("127.0.0.1")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["APP_URL"],
+          message: "APP_URL must not be localhost in production",
+        });
+      }
+    }
   });
 
 const parsedEnv = envSchema.safeParse({

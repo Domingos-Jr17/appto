@@ -2,17 +2,19 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
+import { logger } from "@/lib/logger";
 
 const POLL_INTERVAL_MS = 500;
 const MAX_DURATION_MS = 300_000; // 5 minutes
 const RETRY_MS = 3000;
 
 interface SSEEvent {
-  type: "handshake" | "job-created" | "section-started" | "section-complete" | "progress" | "complete" | "error";
+  type: "handshake" | "job-created" | "section-started" | "section-complete" | "progress" | "content-chunk" | "complete" | "error";
   data: {
     progress: number;
     step: string;
     sectionTitle?: string;
+    content?: string;
     error?: string;
   };
 }
@@ -77,6 +79,7 @@ export async function GET(
       }
 
       let lastSectionTitle: string | undefined;
+      let lastStreamingContent: string | undefined;
 
       const check = async () => {
         try {
@@ -89,6 +92,27 @@ export async function GET(
             });
             cleanup();
             return;
+          }
+
+          // Send content-chunk if there's streaming content
+          if (status.streamingContent && status.streamingSectionTitle) {
+            if (status.streamingContent !== lastStreamingContent) {
+              lastStreamingContent = status.streamingContent;
+              logger.info("[sse] Emitting content-chunk", {
+                projectId: id,
+                sectionTitle: status.streamingSectionTitle,
+                contentLength: status.streamingContent.length,
+              });
+              send({
+                type: "content-chunk",
+                data: {
+                  progress: status.progress,
+                  step: status.step,
+                  sectionTitle: status.streamingSectionTitle,
+                  content: status.streamingContent,
+                },
+              });
+            }
           }
 
           // Detect section transitions from step text

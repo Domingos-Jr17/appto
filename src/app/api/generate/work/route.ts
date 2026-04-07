@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
       return apiError(reason || "Limite de geração atingido", 403, "LIMIT_REACHED", { remaining: 0 });
     }
 
+    const txStart = Date.now();
     const project = await db.$transaction(async (tx) => {
       await new SubscriptionService(tx).consumeWork(session.user.id);
 
@@ -137,7 +138,8 @@ export async function POST(request: NextRequest) {
       });
 
       return createdProject;
-    });
+    }, { timeout: 30000 });
+    logger.info("Transaction completed", { projectId: project.id, durationMs: Date.now() - txStart });
 
     await trackProductEvent({
       name: "work_created",

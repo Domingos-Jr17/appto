@@ -3,9 +3,11 @@ import { logger } from "@/lib/logger";
 import { trackProductEvent } from "@/lib/product-events";
 import { cleanupStoredFileLifecycle } from "@/lib/storage";
 import { processQueuedGenerationJobs } from "@/lib/work-generation-jobs";
+import { subscriptionService } from "@/lib/subscription";
 
 const WORKER_HEARTBEAT_KEY = "worker:heartbeat";
 const MAX_RETRIES = 3;
+const STALE_JOB_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 
 async function updateHeartbeat() {
   try {
@@ -78,7 +80,7 @@ async function retryFailedJob(jobId: string, projectId: string, _userId: string)
 export async function runWorkerPass() {
   const startedAt = Date.now();
   const results = {
-    generation: { processed: 0, retried: 0, errors: 0 },
+    generation: { processed: 0, retried: 0, errors: 0, staleMarkedFailed: 0 },
     storage: { pendingMarkedFailed: 0, removedFailed: 0, removedDeleted: 0 },
     heartbeat: false,
     durationMs: 0,
@@ -92,6 +94,54 @@ export async function runWorkerPass() {
       error: error instanceof Error ? error.message : String(error),
     });
     results.generation.errors += 1;
+  }
+
+  // Mark stale jobs as FAILED (jobs stuck in GENERATING for > 15 minutes)
+  try {
+    const staleCutoff = new Date(Date.now() - STALE_JOB_TIMEOUT_MS);
+    const staleJobs = await db.generationJob.findMany({
+      where: {
+        status: "GENERATING",
+        startedAt: { lt: staleCutoff },
+        completedAt: null,
+      },
+      select: { id: true, projectId: true, userId: true, step: true, startedAt: true },
+    });
+
+    for (const job of staleJobs) {
+      logger.warn("[worker] marking stale job as FAILED", {
+        projectId: job.projectId,
+        step: job.step,
+        startedAt: job.startedAt,
+      });
+
+      await db.generationJob.update({
+        where: { id: job.id },
+        data: {
+          status: "FAILED",
+          step: "Job timed out — marked as stale by worker",
+          error: `Job exceeded ${STALE_JOB_TIMEOUT_MS / 60000} minute timeout`,
+          completedAt: new Date(),
+        },
+      });
+
+      await db.projectBrief.update({
+        where: { projectId: job.projectId },
+        data: { generationStatus: "FAILED" },
+      });
+
+      await subscriptionService.refundWork(job.userId).catch(() => null);
+
+      results.generation.staleMarkedFailed += 1;
+    }
+
+    if (staleJobs.length > 0) {
+      logger.info("[worker] marked stale jobs as FAILED", { count: staleJobs.length });
+    }
+  } catch (error) {
+    logger.error("[worker] stale job cleanup failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 
   try {

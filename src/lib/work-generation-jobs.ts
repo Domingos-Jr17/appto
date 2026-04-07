@@ -1,4 +1,5 @@
-import { getFriendlyAIErrorMessage, runAIChatCompletion } from "@/lib/ai";
+import { getFriendlyAIErrorMessage, runAIChatCompletion, runAIChatStream } from "@/lib/ai";
+import { createTextStreamFromSse } from "@/lib/ai-stream-parser";
 import { enrichReferencesWithAcademicSources } from "@/lib/academic-search";
 import { generateCoverHTML } from "@/lib/cover-templates";
 import { db } from "@/lib/db";
@@ -15,6 +16,7 @@ import {
   getWorkGenerationProfile,
   parseGeneratedWorkContent,
   type SectionTemplate,
+  type WordRange,
   validateGeneratedSection,
 } from "@/lib/work-generation-prompts";
 import type { CitationStyle, CoverTemplate, WorkBriefInput } from "@/types/editor";
@@ -26,6 +28,8 @@ export interface WorkGenerationJobStatus {
   status: JobStatus;
   progress: number;
   step: string;
+  streamingContent?: string;
+  streamingSectionTitle?: string;
   error?: string;
 }
 
@@ -55,6 +59,122 @@ Inclua exemplos relevantes para o contexto profissional.
 Cite fontes quando relevante.`;
   }
   return SYSTEM_PROMPT;
+}
+
+async function generateSectionWithStreaming(
+  projectId: string,
+  sectionTitle: string,
+  systemPrompt: string,
+  sectionPrompt: string,
+  maxTokens: number,
+  onChunk: (content: string) => Promise<void>,
+) {
+  let content = "";
+  let lastEmitTime = 0;
+  const THROTTLE_MS = 200;
+
+  try {
+    logger.info("[stream] Starting AI stream", { projectId, sectionTitle });
+
+    const rawStream = await runAIChatStream({
+      model: "",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: sectionPrompt },
+      ],
+      temperature: 0,
+      max_tokens: maxTokens,
+    });
+
+    // Convert raw SSE bytes to text stream (parses OpenAI-compatible SSE format)
+    const textStream = createTextStreamFromSse(rawStream, "work-generation");
+    const reader = textStream.getReader();
+    const decoder = new TextDecoder();
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const textChunk = decoder.decode(value, { stream: true });
+        content += textChunk;
+
+        logger.info("[stream] Chunk received", {
+          projectId,
+          sectionTitle,
+          chunkLength: textChunk.length,
+          totalLength: content.length,
+          preview: textChunk.slice(0, 50),
+        });
+
+        const now = Date.now();
+        if (now - lastEmitTime >= THROTTLE_MS && content.length > 0) {
+          logger.info("[stream] Calling onChunk", {
+            projectId,
+            sectionTitle,
+            contentLength: content.length,
+          });
+          await onChunk(content);
+          lastEmitTime = now;
+        }
+      }
+
+      logger.info("[stream] Stream complete", { projectId, sectionTitle, contentLength: content.length });
+
+      if (content) {
+        await onChunk(content);
+      }
+
+      return { content: content.trim(), error: null };
+    } finally {
+      reader.releaseLock();
+    }
+  } catch (error) {
+    logger.error("[stream] Stream error", { projectId, sectionTitle, error: String(error) });
+    return {
+      content: null,
+      error: error instanceof Error ? error : new Error(String(error)),
+    };
+  }
+}
+
+async function generateSectionWithRetry(
+  projectId: string,
+  template: SectionTemplate,
+  sectionPlan: { guidance: string; range: WordRange },
+  systemPrompt: string,
+  sectionPrompt: string,
+  onChunk: (content: string) => Promise<void>,
+) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const maxTokens = Math.ceil((sectionPlan.range.max || 800) * 1.8);
+
+    const repairPrompt = attempt === 0
+      ? sectionPrompt
+      : `${sectionPrompt}\n\nA resposta anterior para a secção "${template.title}" não cumpriu os requisitos. Regere a secção respeitando todos os requisitos.`;
+
+    const { content, error } = await generateSectionWithStreaming(
+      projectId,
+      template.title,
+      systemPrompt,
+      repairPrompt,
+      maxTokens,
+      onChunk,
+    );
+
+    if (!content) {
+      continue;
+    }
+
+    const issues = validateGeneratedSection(content, template.title, sectionPlan.range, "");
+    if (issues.length > 0) {
+      continue;
+    }
+
+    return { content, error: null };
+  }
+
+  return { content: null, error: new Error(`A IA não conseguiu gerar conteúdo válido para "${template.title}" após 2 tentativas.`) };
 }
 
 const SECTION_TEMPLATES: Record<string, SectionTemplate[]> = {
@@ -291,11 +411,19 @@ async function generateCompleteWorkContent(
   templates: SectionTemplate[]
 ) {
   // Enrich references with real academic sources from Semantic Scholar
+  // Run with timeout to avoid blocking generation for 5-10s
   let enrichedBrief = brief;
   if (!brief.referencesSeed || brief.referencesSeed.trim().length < 20) {
-    const enriched = await enrichReferencesWithAcademicSources(title, brief.referencesSeed || "", 6);
-    if (enriched && enriched !== brief.referencesSeed) {
-      enrichedBrief = { ...brief, referencesSeed: enriched };
+    try {
+      const enriched = await Promise.race([
+        enrichReferencesWithAcademicSources(title, brief.referencesSeed || "", 6),
+        new Promise<string>((resolve) => setTimeout(() => resolve(""), 2000)),
+      ]);
+      if (enriched && enriched !== brief.referencesSeed) {
+        enrichedBrief = { ...brief, referencesSeed: enriched };
+      }
+    } catch {
+      // Skip enrichment if it fails — generation can proceed without it
     }
   }
 
@@ -316,6 +444,7 @@ async function generateCompleteWorkContent(
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const completion = await runAIChatCompletion({
       model: "", // Provider uses its default model
+      responseMimeType: "application/json", // Explicitly request JSON for structured work generation
       messages:
         attempt === 0
           ? [
@@ -410,11 +539,19 @@ async function generateWorkSectionBySection(
   onProgress: (progress: number, step: string) => Promise<void>,
 ) {
   // Enrich references with real academic sources from Semantic Scholar
+  // Run with timeout to avoid blocking generation for 5-10s
   let enrichedBrief = brief;
   if (!brief.referencesSeed || brief.referencesSeed.trim().length < 20) {
-    const enriched = await enrichReferencesWithAcademicSources(title, brief.referencesSeed || "", 6);
-    if (enriched && enriched !== brief.referencesSeed) {
-      enrichedBrief = { ...brief, referencesSeed: enriched };
+    try {
+      const enriched = await Promise.race([
+        enrichReferencesWithAcademicSources(title, brief.referencesSeed || "", 6),
+        new Promise<string>((resolve) => setTimeout(() => resolve(""), 2000)),
+      ]);
+      if (enriched && enriched !== brief.referencesSeed) {
+        enrichedBrief = { ...brief, referencesSeed: enriched };
+      }
+    } catch {
+      // Skip enrichment if it fails — generation can proceed without it
     }
   }
 
@@ -523,50 +660,44 @@ async function generateWorkSectionBySection(
       factualGuidance: profile.factualGuidance,
     });
 
-    let sectionContent = "";
-    let sectionError: Error | null = null;
+    const handleChunk = async (content: string) => {
+      logger.info("[stream] handleChunk called", {
+        projectId,
+        sectionTitle: template.title,
+        contentLength: content.length,
+        preview: content.slice(0, 100),
+      });
+      setJob(projectId, {
+        progress: progressForStep(),
+        step: `A gerar ${template.title}`,
+        streamingContent: content,
+        streamingSectionTitle: template.title,
+      });
+      await setJobAsync(projectId, {
+        progress: progressForStep(),
+        step: `A gerar ${template.title}`,
+        streamingContent: content,
+        streamingSectionTitle: template.title,
+      });
+    };
 
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        const maxTokens = Math.ceil((sectionPlan.range.max || 800) * 1.8);
-        const completion = await runAIChatCompletion({
-          model: "",
-          messages:
-            attempt === 0
-              ? [
-                  { role: "system", content: systemPrompt },
-                  { role: "user", content: sectionPrompt },
-                ]
-              : [
-                  { role: "system", content: systemPrompt },
-                  { role: "user", content: sectionPrompt },
-                  {
-                    role: "user",
-                    content: `A resposta anterior para a secção "${template.title}" não cumpriu os requisitos: ${sectionError?.message || "Conteúdo insuficiente"}. Regere a secção respeitando todos os requisitos.`,
-                  },
-                ],
-          temperature: 0,
-          max_tokens: maxTokens,
-        });
+    const { content: sectionContent, error: sectionError } = await generateSectionWithRetry(
+      projectId,
+      template,
+      sectionPlan,
+      systemPrompt,
+      sectionPrompt,
+      handleChunk,
+    );
 
-        sectionContent = completion.choices[0]?.message?.content?.trim() || "";
-        if (!sectionContent) {
-          sectionError = new Error(`A IA não devolveu conteúdo para "${template.title}".`);
-          continue;
-        }
-
-        const issues = validateGeneratedSection(sectionContent, template.title, sectionPlan.range, title);
-        if (issues.length > 0) {
-          sectionError = new Error(issues.map((i) => i.message).join(" "));
-          continue;
-        }
-
-        sectionError = null;
-        break;
-      } catch (error) {
-        sectionError = error instanceof Error ? error : new Error(String(error));
-      }
-    }
+    setJob(projectId, {
+      streamingContent: undefined,
+      streamingSectionTitle: undefined,
+    });
+    await setJobAsync(projectId, {
+      streamingContent: null,
+      streamingSectionTitle: null,
+    });
 
     if (sectionContent && !sectionError) {
       await saveSectionToDb(projectId, template.title, sectionContent);
@@ -679,19 +810,21 @@ async function persistJob(
     where: { projectId },
   });
 
+  const { streamingContent, streamingSectionTitle, ...dbPartial } = partial;
+
   if (current) {
     await db.generationJob.update({
       where: { projectId },
-      data: partial,
+      data: dbPartial,
     });
   } else if (userId) {
     await db.generationJob.create({
       data: {
         projectId,
         userId,
-        status: partial.status || "GENERATING",
-        progress: partial.progress || 0,
-        step: partial.step,
+        status: dbPartial.status || "GENERATING",
+        progress: dbPartial.progress || 0,
+        step: dbPartial.step,
         error: partial.error,
       },
     });
@@ -866,7 +999,42 @@ async function processGenerationJob(projectId: string) {
       data: { wordCount: totalWords },
     });
 
-    if (sectionsFailed.length > 0) {
+    // Check if ALL content sections failed (cover/title-page/references don't count)
+    const allContentSectionsFailed = sectionsFailed.length === templates.length;
+
+    if (allContentSectionsFailed) {
+      // ALL sections failed — this is a real failure, not a partial success
+      await db.projectBrief.update({
+        where: { projectId },
+        data: { generationStatus: "FAILED" },
+      });
+
+      await subscriptionService.refundWork(project.userId).catch((err) => {
+        console.error("[Work Generation] Failed to refund subscription work:", err);
+      });
+
+      await setJobAsync(projectId, {
+        status: "FAILED",
+        progress: 100,
+        step: "Falha na geração: nenhum conteúdo foi produzido.",
+        error: "A IA não conseguiu gerar nenhuma secção do trabalho após múltiplas tentativas.",
+        completedAt: new Date(),
+      });
+      setJob(projectId, {
+        status: "FAILED",
+        progress: 100,
+        step: "Falha na geração: nenhum conteúdo foi produzido.",
+        error: "A IA não conseguiu gerar nenhuma secção do trabalho após múltiplas tentativas.",
+      });
+
+      await trackProductEvent({
+        name: "work_generation_failed",
+        category: "workspace",
+        userId: project.userId,
+        projectId,
+        metadata: { error: "All sections failed", sectionsFailed: sectionsFailed.length },
+      }).catch(() => null);
+    } else if (sectionsFailed.length > 0) {
       await db.projectBrief.update({
         where: { projectId },
         data: { generationStatus: "READY" },
@@ -952,10 +1120,13 @@ async function setJobAsync(projectId: string, partial: {
   error?: string | null;
   completedAt?: Date | null;
   startedAt?: Date;
+  streamingContent?: string | null;
+  streamingSectionTitle?: string | null;
 }) {
+  const { streamingContent, streamingSectionTitle, ...dbPartial } = partial;
   await db.generationJob.update({
     where: { projectId },
-    data: partial,
+    data: dbPartial,
   }).catch(() => null);
 }
 
@@ -1011,8 +1182,9 @@ export function triggerQueuedGenerationProcessing() {
   const workerSecret = env.INTERNAL_WORKER_SECRET;
 
   if (workerSecret) {
-    // Try to trigger the worker endpoint with a small delay to ensure DB commit
-    setTimeout(async () => {
+    // Fire-and-forget: trigger the worker endpoint in a new serverless invocation
+    // Do NOT use setTimeout — it won't execute in Vercel serverless after response is sent
+    void (async () => {
       try {
         const response = await fetch(`${env.APP_URL.replace(/\/$/, "")}/api/internal/workers/run`, {
           method: "POST",
@@ -1046,12 +1218,12 @@ export function triggerQueuedGenerationProcessing() {
           });
         }
       }
-    }, 500); // 500ms delay to ensure DB transaction is committed
+    })();
     return;
   }
 
-  // No worker secret: process directly with a delay to ensure DB commit
-  setTimeout(async () => {
+  // No worker secret: process directly (synchronously, before response is sent)
+  void (async () => {
     try {
       logger.info("[worker] starting local generation processing (no worker secret)");
       const result = await processQueuedGenerationJobs(1);
@@ -1061,7 +1233,7 @@ export function triggerQueuedGenerationProcessing() {
         error: error instanceof Error ? error.message : String(error),
       });
     }
-  }, 500);
+  })();
 }
 
 export async function regenerateWorkSection(input: {
@@ -1074,6 +1246,7 @@ export async function regenerateWorkSection(input: {
   const { sectionId, title, type, brief, sectionTitle } = input;
 
   const wordCount = "entre 260 e 420";
+  const systemPrompt = getSystemPromptForEducation(brief.educationLevel || "HIGHER_EDUCATION");
 
   const prompt = `Regere apenas a secção "${sectionTitle}" de um trabalho académico.
 
@@ -1090,7 +1263,6 @@ Requisitos obrigatórios:
 - Não invente dados factuais, leis, autores ou referências bibliográficas sem base no briefing
 - Devolva apenas o conteúdo final da secção, sem markdown extra nem explicações`;
 
-  const systemPrompt = getSystemPromptForEducation("HIGHER_EDUCATION");
   const completion = await runAIChatCompletion({
     model: "", // Provider uses its default model
     messages: [

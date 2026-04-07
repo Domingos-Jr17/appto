@@ -110,8 +110,10 @@ function sanitizeRequestBody(body: AIChatRequest, defaultModel: string) {
     generationConfig.topP = body.top_p;
   }
 
-  // Force JSON output for structured generation
-  generationConfig.responseMimeType = "application/json";
+  // Only force JSON when explicitly requested by the caller
+  if (body.responseMimeType) {
+    generationConfig.responseMimeType = body.responseMimeType;
+  }
 
   if (Object.keys(generationConfig).length > 0) {
     requestBody.generationConfig = generationConfig;

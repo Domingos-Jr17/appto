@@ -23,12 +23,21 @@ function hasValidWorkerSecret(headerSecret: string | null) {
   return timingSafeEqual(expected, provided);
 }
 
+function isVercelCron(request: NextRequest) {
+  return request.headers.get("user-agent")?.includes("Vercel Cron") ?? false;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    await enforceRateLimit(`internal-worker:${getClientIp(request) ?? "unknown"}`, 30, 60 * 1000);
+    const isCron = isVercelCron(request);
 
-    if (!hasValidWorkerSecret(request.headers.get("x-worker-secret"))) {
-      return apiError("Não autorizado", 401);
+    // Vercel Cron calls don't need secret validation
+    if (!isCron) {
+      await enforceRateLimit(`internal-worker:${getClientIp(request) ?? "unknown"}`, 30, 60 * 1000);
+
+      if (!hasValidWorkerSecret(request.headers.get("x-worker-secret"))) {
+        return apiError("Não autorizado", 401);
+      }
     }
 
     const results = await runWorkerPass();

@@ -65,12 +65,29 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
     }
   }, [data.id]);
 
+  const handleContentChunk = useCallback((sectionTitle: string, content: string) => {
+    console.log("[Workspace] handleContentChunk called:", {
+      sectionTitle,
+      contentLength: content.length,
+      preview: content.slice(0, 80),
+    });
+    setData((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s) =>
+        s.title === sectionTitle
+          ? { ...s, streamingContent: content, status: "streaming" as const }
+          : s
+      ),
+    }));
+  }, []);
+
   const isGenerating = data.generationStatus === "GENERATING";
 
   useGenerationStream({
     projectId: data.id,
     generationStatus: data.generationStatus,
     onFetch: refreshProject,
+    onContentChunk: handleContentChunk,
     getDoneCount,
     enabled: isGenerating,
   });
@@ -82,7 +99,7 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
       ...prev,
       generationStatus: "GENERATING",
       sections: prev.sections.map((s) =>
-        s.status !== "done" ? { ...s, status: "generating" as const } : s
+        s.status !== "done" ? { ...s, status: "generating" as const, streamingContent: undefined } : s
       ),
     }));
 

@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface SSEEvent {
-  type: "handshake" | "job-created" | "section-started" | "section-complete" | "progress" | "complete" | "error";
+  type: "handshake" | "job-created" | "section-started" | "section-complete" | "progress" | "content-chunk" | "complete" | "error";
   data: {
     progress: number;
     step: string;
     sectionTitle?: string;
+    content?: string;
     error?: string;
   };
 }
@@ -17,6 +18,7 @@ interface UseGenerationStreamOptions {
   generationStatus: string | undefined;
   onFetch: () => Promise<void>;
   onSectionStarted?: (sectionTitle: string) => void;
+  onContentChunk?: (sectionTitle: string, content: string) => void;
   getDoneCount: () => number;
   enabled?: boolean;
   maxTimeout?: number;
@@ -27,6 +29,7 @@ export function useGenerationStream({
   generationStatus,
   onFetch,
   onSectionStarted,
+  onContentChunk,
   getDoneCount,
   enabled = true,
   maxTimeout = 300_000,
@@ -105,6 +108,26 @@ export function useGenerationStream({
       void onFetch();
     });
 
+    eventSource.addEventListener("progress", () => {
+      void onFetch();
+    });
+
+    eventSource.addEventListener("content-chunk", (e) => {
+      try {
+        const parsed: SSEEvent = JSON.parse((e as MessageEvent).data);
+        console.log("[SSE] Received content-chunk:", {
+          sectionTitle: parsed.data.sectionTitle,
+          contentLength: parsed.data.content?.length,
+          preview: parsed.data.content?.slice(0, 50),
+        });
+        if (parsed.data.sectionTitle && parsed.data.content) {
+          onContentChunk?.(parsed.data.sectionTitle, parsed.data.content);
+        }
+      } catch (err) {
+        console.error("[SSE] Failed to parse content-chunk:", err);
+      }
+    });
+
     eventSource.addEventListener("section-complete", () => {
       void onFetch();
     });
@@ -136,7 +159,7 @@ export function useGenerationStream({
         }
       }, 3000);
     };
-  }, [projectId, onFetch, stopSSE, startPolling]);
+  }, [projectId, onFetch, onContentChunk, stopSSE, startPolling]);
 
   const stopAll = useCallback(() => {
     isGeneratingRef.current = false;

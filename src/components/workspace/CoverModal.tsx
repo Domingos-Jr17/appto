@@ -118,7 +118,7 @@ export function CoverModal({
       year: info.year,
     };
 
-    if (educationLevel === "SECONDARY") {
+    if (educationLevel === "SECONDARY" || educationLevel === "TECHNICAL") {
       updates.className = info.className;
       updates.turma = info.turma;
       updates.studentNumber = info.studentNumber;
@@ -349,6 +349,53 @@ export function CoverModal({
               )}
 
               {educationLevel === "SECONDARY" && (
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cover-class" className="text-xs">
+                      Classe
+                    </Label>
+                    <Select
+                      value={info.className}
+                      onValueChange={(v) => updateField("className", v)}
+                    >
+                      <SelectTrigger id="cover-class" className="text-xs">
+                        <SelectValue placeholder="Selecionar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10ª">10ª Classe</SelectItem>
+                        <SelectItem value="11ª">11ª Classe</SelectItem>
+                        <SelectItem value="12ª">12ª Classe</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cover-turma" className="text-xs">
+                      Turma
+                    </Label>
+                    <Input
+                      id="cover-turma"
+                      value={info.turma}
+                      onChange={(e) => updateField("turma", e.target.value)}
+                      placeholder="Ex.: A"
+                      className="text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cover-student-number" className="text-xs">
+                      Nº Estudante
+                    </Label>
+                    <Input
+                      id="cover-student-number"
+                      value={info.studentNumber}
+                      onChange={(e) => updateField("studentNumber", e.target.value)}
+                      placeholder="Ex.: 15"
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {educationLevel === "TECHNICAL" && (
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="cover-class" className="text-xs">

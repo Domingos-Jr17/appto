@@ -296,7 +296,7 @@ export async function POST(request: NextRequest) {
       });
 
       return newProject;
-    });
+    }, { timeout: 30000 });
 
     // Fetch the complete project with sections
     const completeProject = await db.project.findUnique({

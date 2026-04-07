@@ -3,12 +3,18 @@
 
 BEGIN;
 
+-- Create cuid extension if not exists
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 -- Create new enum type if it doesn't exist
 DO $$ BEGIN
     CREATE TYPE "PlanType_new" AS ENUM ('FREE', 'STARTER', 'PRO');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
+
+-- Drop the default constraint before converting
+ALTER TABLE subscriptions ALTER COLUMN plan DROP DEFAULT;
 
 -- Update the column to use new type
 ALTER TABLE subscriptions ALTER COLUMN plan TYPE "PlanType_new" USING (
@@ -19,6 +25,9 @@ ALTER TABLE subscriptions ALTER COLUMN plan TYPE "PlanType_new" USING (
         ELSE 'FREE'::"PlanType_new"
     END
 );
+
+-- Restore the default with the new type
+ALTER TABLE subscriptions ALTER COLUMN plan SET DEFAULT 'FREE';
 
 -- Drop old enum and rename new one
 DROP TYPE IF EXISTS "PlanType";
@@ -35,7 +44,7 @@ ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS last_usage_reset TIMESTAMP NO
 
 -- Create work_purchases table
 CREATE TABLE IF NOT EXISTS "work_purchases" (
-    id TEXT PRIMARY KEY DEFAULT cuid(),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id TEXT NOT NULL,
     quantity INTEGER NOT NULL,
     price_paid INTEGER NOT NULL,

@@ -5,7 +5,7 @@ import { DocumentPreview } from "@/components/workspace/DocumentPreview";
 import type { WorkBrief, WorkSection } from "@/types/workspace";
 
 const brief: WorkBrief = {
-  title: "A patriarcado moçambicano",
+  title: "O patriarcado moçambicano",
   workType: "SECONDARY_WORK",
   educationLevel: "SECONDARY",
   institutionName: "Escola Secundária Josina Machel",
@@ -47,10 +47,12 @@ describe("DocumentPreview", () => {
     );
 
     expect(markup).toContain("Escola Secundária Josina Machel");
+    expect(markup).toContain("Trabalho Escolar");
     expect(markup).toContain("Estudante Teste");
     expect(markup).toContain("Professora Ana");
     expect(markup).toContain("Conteúdo final da introdução.");
     expect(markup).not.toContain("box-sizing");
     expect(markup).not.toContain("Folha em HTML");
+    expect(markup).not.toContain("Secondary Work");
   });
 });

@@ -104,6 +104,14 @@ export const GENERATION_STEPS = [
   "A guardar as secções",
 ];
 
+type GenerationSectionItem = {
+  key: string;
+  title: string;
+  order: number;
+  generated: boolean;
+  wordCount: number;
+};
+
 // ── Hook ───────────────────────────────────────────────────────────────
 
 export function useWorkCreation() {
@@ -118,6 +126,7 @@ export function useWorkCreation() {
   const [generationMessage, setGenerationMessage] = useState("Na fila do worker");
   const pollingFailureCountRef = useRef(0);
   const generationEventSourceRef = useRef<EventSource | null>(null);
+  const sectionRunnerAbortRef = useRef(false);
 
   // Subscription
   const [subscriptionStatus, setSubscriptionStatus] = useState<{
@@ -186,10 +195,53 @@ export function useWorkCreation() {
   const resetWorkForm = useCallback(() => {
     generationEventSourceRef.current?.close();
     generationEventSourceRef.current = null;
+    sectionRunnerAbortRef.current = true;
     setIsCreating(false);
     setGenerationStep(0);
     setGenerationProjectId(null);
     setWorkForm({ ...INITIAL_WORK_FORM });
+  }, []);
+
+  const runSectionGeneration = useCallback(async (projectId: string) => {
+    sectionRunnerAbortRef.current = false;
+
+    const loadSections = async (): Promise<GenerationSectionItem[]> => {
+      const response = await fetchWithRetry(`/api/generate/work/${projectId}/section/placeholder`.replace("/placeholder", ""), {
+        retries: 1,
+        retryDelay: 500,
+        timeout: 8000,
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || "Não foi possível obter as secções da geração.");
+      }
+      return payload.data?.sections ?? payload.sections ?? [];
+    };
+
+    while (!sectionRunnerAbortRef.current) {
+      const sections = await loadSections();
+      const nextSection = sections.find((section) => !section.generated);
+
+      if (!nextSection) {
+        break;
+      }
+
+      setGenerationMessage(`A gerar ${nextSection.title}`);
+
+      const response = await fetchWithRetry(`/api/generate/work/${projectId}/section/${nextSection.key}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sectionKey: nextSection.key }),
+        retries: 0,
+        timeout: 240000,
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error || `Falha ao gerar ${nextSection.title}.`);
+      }
+    }
   }, []);
 
   const createWork = useCallback(async (): Promise<string | null> => {
@@ -277,9 +329,17 @@ export function useWorkCreation() {
 
       if (data.generation?.asynchronous) {
         pollingFailureCountRef.current = 0;
+        sectionRunnerAbortRef.current = false;
         setGenerationProjectId(data.project.id);
         setGenerationStep(0);
         setGenerationMessage(data.generation?.step || "Na fila do worker");
+        void runSectionGeneration(data.project.id).catch((error) => {
+          toast({
+            title: "Erro na geração",
+            description: error instanceof Error ? error.message : "Falha ao gerar as secções do trabalho.",
+            variant: "destructive",
+          });
+        });
         return data.project.id;
       }
 
@@ -299,7 +359,7 @@ export function useWorkCreation() {
       setGenerationMessage("Na fila do worker");
       return null;
     }
-  }, [workForm, toast, resetWorkForm, router]);
+  }, [workForm, toast, resetWorkForm, router, runSectionGeneration]);
 
   // Polling for generation progress
   useEffect(() => {

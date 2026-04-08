@@ -10,6 +10,17 @@ interface GeneratedSection {
   content: string;
 }
 
+export interface GeneratedSectionContent {
+  title: string;
+  content: string;
+}
+
+export interface CrossSectionRepetitionIssue {
+  sectionA: string;
+  sectionB: string;
+  overlapCount: number;
+}
+
 interface GeneratedWorkContentPayload {
   abstract?: string;
   sections?: GeneratedSection[];
@@ -617,20 +628,9 @@ export function validateGeneratedWorkContent(
   return issues;
 }
 
-export interface GeneratedSectionContent {
-  title: string;
-  content: string;
-}
-
 export interface SectionValidationIssue {
   sectionTitle: string;
   message: string;
-}
-
-export interface CrossSectionRepetitionIssue {
-  sectionA: string;
-  sectionB: string;
-  overlapCount: number;
 }
 
 export function buildSectionGenerationPrompt(input: {
@@ -644,6 +644,8 @@ export function buildSectionGenerationPrompt(input: {
   styleRules: string[];
   citationGuidance: string;
   factualGuidance: string;
+  sectionOutline?: string[];
+  documentPlan?: string[];
 }) {
   const {
     title,
@@ -656,6 +658,8 @@ export function buildSectionGenerationPrompt(input: {
     styleRules,
     citationGuidance,
     factualGuidance,
+    sectionOutline,
+    documentPlan,
   } = input;
 
   const briefContext = buildBriefContext(brief);
@@ -667,12 +671,20 @@ export function buildSectionGenerationPrompt(input: {
     : "";
 
   const styleRulesText = styleRules.map((rule) => `- ${rule}`).join("\n");
+  const sectionOutlineText = sectionOutline && sectionOutline.length > 0
+    ? `\nEstrutura esperada desta secção:\n${sectionOutline.map((item) => `- ${item}`).join("\n")}`
+    : "";
+  const documentPlanText = documentPlan && documentPlan.length > 0
+    ? `\nPlano global do documento (mantenha coerência com esta sequência):\n${documentPlan.map((item) => `- ${item}`).join("\n")}`
+    : "";
 
   return `Tema do trabalho: ${title}
 Tipo de trabalho: ${typeLabel}
 Contexto do briefing:
 ${briefContext || "- Sem detalhes adicionais além do título e tipo do trabalho."}
 ${previousSectionsContext}
+${documentPlanText}
+${sectionOutlineText}
 
 Instrução: Gere APENAS o conteúdo da secção "${sectionTitle}" sobre o tema fornecido.
 
@@ -682,6 +694,7 @@ Requisitos obrigatórios:
 - Escreva em Português académico de Moçambique
 - Siga a norma ${brief.citationStyle || "ABNT"}
 - NÃO repita conteúdo já escrito nas secções anteriores
+- Garanta continuidade lógica com as secções anteriores e prepare a transição para as próximas
 - NÃO invente dados factuais, leis, autores ou referências sem base no briefing
 - Devolva apenas o texto da secção, sem JSON, sem markdown de código, sem explicações antes ou depois
 

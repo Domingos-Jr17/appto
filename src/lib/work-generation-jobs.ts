@@ -34,8 +34,8 @@ import {
 import {
   buildBriefContext,
   buildSectionGenerationPrompt,
-  detectCrossSectionRepetition,
   getWorkGenerationProfile,
+  detectCrossSectionRepetition,
   type SectionValidationIssue,
   type SectionTemplate,
   type WordRange,
@@ -44,6 +44,7 @@ import {
 import type { WorkBriefInput } from "@/types/editor";
 
 export const serializeBrief = serializeProjectBrief;
+export const getSectionTemplatesForType = getSectionTemplates;
 export {
   batchGetWorkGenerationStatusAsync,
   formatProjectType,
@@ -503,6 +504,14 @@ async function loadGeneratedSections(
     .map((s) => ({ title: s.title, content: s.content! }));
 }
 
+function buildDocumentPlan(templates: SectionTemplate[]) {
+  return templates.map((template, index) => `${index + 1}. ${template.title}`);
+}
+
+function buildSectionOutline(template: SectionTemplate, profile: ReturnType<typeof getWorkGenerationProfile>) {
+  return profile.sections.find((section) => section.title === template.title)?.suggestedSubheadings ?? [];
+}
+
 async function generateWorkSectionBySection(
   projectId: string,
   title: string,
@@ -609,7 +618,6 @@ async function generateWorkSectionBySection(
     }
   }
 
-  // Step 3: Generate each content section sequentially
   const sectionOutcomes: SectionGenerationOutcome[] = [];
 
   for (const template of templates) {
@@ -649,6 +657,8 @@ async function generateWorkSectionBySection(
       styleRules: profile.styleRules,
       citationGuidance: profile.citationGuidance,
       factualGuidance: profile.factualGuidance,
+      sectionOutline: buildSectionOutline(template, profile),
+      documentPlan: buildDocumentPlan(templates),
     });
 
     const handleChunk = async (content: string) => {
@@ -717,23 +727,6 @@ async function generateWorkSectionBySection(
         hadAnyContent: sectionResult.hadAnyContent,
         failureReason: sectionResult.failureReason,
       });
-
-      if (sectionResult.degraded) {
-        logger.warn("[work-generation] section generation degraded", {
-          projectId,
-          section: template.title,
-          providerMode: "stream",
-          returnedWordCount: sectionResult.wordCount,
-          validationIssueSummary: sectionResult.validationIssues.map((issue) => issue.message),
-          attempts: sectionResult.attempts.map((attempt) => ({
-            attemptNumber: attempt.attemptNumber,
-            providerMode: attempt.providerMode,
-            failureReason: attempt.failureReason,
-            returnedWordCount: attempt.wordCount,
-            validationIssueSummary: attempt.validationIssues.map((issue) => issue.message),
-          })),
-        });
-      }
     } else {
       sectionOutcomes.push({
         title: template.title,
@@ -742,9 +735,6 @@ async function generateWorkSectionBySection(
         hadAnyContent: sectionResult.hadAnyContent,
         failureReason: sectionResult.failureReason,
       });
-      const sectionFailureMessage =
-        sectionResult.error?.message ?? "Falha ao gerar sec��o";
-      const sectionError = sectionResult.error;
       await updateSectionRunState(generationContext.attemptId, {
         stableKey,
         title: template.title,
@@ -753,104 +743,178 @@ async function generateWorkSectionBySection(
         progress: sectionProgress,
         retryCount: 2,
         completedAt: new Date(),
-        error: sectionError?.message ?? "Falha ao gerar sec��o",
-      });
-      logger.warn("[work-generation] section generation failed", {
-        projectId,
-        section: template.title,
-        providerMode: "stream",
-        failureMessage: sectionFailureMessage,
-        returnedWordCount: sectionResult.wordCount,
-        validationIssueSummary: sectionResult.validationIssues.map((issue) => issue.message),
-        attempts: sectionResult.attempts.map((attempt) => ({
-          attemptNumber: attempt.attemptNumber,
-          providerMode: attempt.providerMode,
-          failureReason: attempt.failureReason,
-          returnedWordCount: attempt.wordCount,
-          validationIssueSummary: attempt.validationIssues.map((issue) => issue.message),
-        })),
-        error: sectionError?.message,
+        error: sectionResult.error?.message ?? "Falha ao gerar secção",
       });
     }
   }
 
-  // Step 4: Cross-section repetition check and repair
-  await onProgress(95, "A validar conte�do");
-  const allSections = await loadGeneratedSections(projectId, templates);
-  const repetitionIssues = detectCrossSectionRepetition(allSections);
-
-  for (const issue of repetitionIssues) {
-    const failedSection = templates.find((t) => t.title === issue.sectionB);
-    if (!failedSection) continue;
-
-    const sectionPlan = profile.sections.find((s) => s.title === failedSection.title);
-    if (!sectionPlan) continue;
-
-    logger.info("[work-generation] repairing cross-section repetition", {
-      projectId,
-      sectionA: issue.sectionA,
-      sectionB: issue.sectionB,
-    });
-
-    const repeatedSectionContent = allSections.find((s) => s.title === issue.sectionB)?.content || "";
-    const originalSectionContent = allSections.find((s) => s.title === issue.sectionA)?.content || "";
-
-    const repairPrompt = `A sec��o "${issue.sectionB}" tem repeti��o significativa de conte�do da sec��o "${issue.sectionA}".
-Regere APENAS a sec��o "${issue.sectionB}" com conte�do NOVO e DIFERENTE.
-
-Conte�do da sec��o "${issue.sectionA}" (N��O repita isto):
-${originalSectionContent}
-
-Conte�do actual da sec��o "${issue.sectionB}" (que precisa ser refeito):
-${repeatedSectionContent}
-
-Instru��o: Gere a sec��o "${issue.sectionB}" com conte�do completamente diferente, sem repetir ideias ou frases da sec��o "${issue.sectionA}".
-Respeite o range de ${sectionPlan.range.min}-${sectionPlan.range.max} palavras.
-Devolva apenas o texto da sec��o.`;
-
-    try {
-      const calculatedTokens = Math.ceil(sectionPlan.range.max * 1.8);
-      const maxTokens = Math.min(calculatedTokens, env.DEFAULT_MAX_OUTPUT_TOKENS || 8000);
-      
-      const completion = await runAIChatCompletion({
-        model: "",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: repairPrompt },
-        ],
-        temperature: 0.3,
-        max_tokens: maxTokens,
-      });
-
-      const repairedContent = completion.choices[0]?.message?.content?.trim() || "";
-      if (repairedContent) {
-        const issues = validateGeneratedSection(repairedContent, failedSection.title, sectionPlan.range, title);
-        if (issues.length === 0) {
-          await saveSectionToDb(projectId, failedSection.title, repairedContent);
-        }
-      }
-    } catch (error) {
-      logger.warn("[work-generation] cross-section repair failed", {
-        projectId,
-        section: issue.sectionB,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
-
-  // Step 5: Save references section with enriched academic sources
   const referenceOrder = Math.max(...templates.map((section) => section.order)) + 1;
   await saveSectionToDb(
     projectId,
-    "Refer�ncias",
-    enrichedBrief.referencesSeed || "Adicione refer�ncias verificadas manualmente antes da submiss�o.",
+    "Referências",
+    enrichedBrief.referencesSeed || "Adicione referências verificadas manualmente antes da submissão.",
   );
   await db.documentSection.updateMany({
-    where: { projectId, title: "Refer�ncias" },
+    where: { projectId, title: "Referências" },
     data: { order: referenceOrder },
   });
 
   return { sectionOutcomes };
+}
+
+async function generateSingleSectionForWorker(
+  projectId: string,
+  sectionTitle: string,
+  systemPrompt: string,
+  sectionPrompt: string,
+  maxTokens: number,
+) {
+  const MAX_OUTPUT_TOKENS = env.DEFAULT_MAX_OUTPUT_TOKENS || 8000;
+  const effectiveMaxTokens = Math.min(maxTokens, MAX_OUTPUT_TOKENS);
+  const MAX_ATTEMPTS = 2;
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    const prompt = attempt === 0
+      ? sectionPrompt
+      : `${sectionPrompt}\n\nA resposta anterior para a secção "${sectionTitle}" não cumpriu os requisitos. Regere a secção respeitando todos os requisitos.`;
+
+    const result = await generateSectionWithStreaming(
+      projectId,
+      sectionTitle,
+      systemPrompt,
+      prompt,
+      effectiveMaxTokens,
+      async () => {},
+    );
+
+    if (result.content && result.content.trim().length > 0) {
+      const wordCount = result.content.trim().split(/\s+/).filter(Boolean).length;
+      const validationIssues = validateGeneratedSection(
+        result.content,
+        sectionTitle,
+        { min: 100, max: 2000, hardMin: 50, hardMax: 3000 },
+        "",
+      );
+      const accepted = validationIssues.length === 0;
+      const degraded = validationIssues.length > 0 && wordCount >= 50;
+
+      if (accepted || degraded) {
+        return {
+          content: result.content.trim(),
+          accepted,
+          degraded,
+          wordCount,
+          error: null,
+        };
+      }
+    }
+
+    if (attempt === MAX_ATTEMPTS - 1) {
+      return {
+        content: result.content?.trim() || null,
+        accepted: false,
+        degraded: false,
+        wordCount: result.content?.trim().split(/\s+/).filter(Boolean).length || 0,
+        error: result.error || new Error("Falha ao gerar secção após múltiplas tentativas"),
+      };
+    }
+  }
+
+  return {
+    content: null,
+    accepted: false,
+    degraded: false,
+    wordCount: 0,
+    error: new Error("Falha ao gerar secção"),
+  };
+}
+
+async function finalizeGeneration(
+  projectId: string,
+  runId: string,
+  attemptId: string,
+  userId: string,
+) {
+  const sectionsWithContent = await db.documentSection.findMany({
+    where: { projectId, content: { not: null } },
+    select: { title: true, content: true },
+    orderBy: { order: "asc" },
+  });
+
+  const repetitionIssues = detectCrossSectionRepetition(
+    sectionsWithContent
+      .filter((section) => section.content && section.content.trim().length > 0)
+      .map((section) => ({ title: section.title, content: section.content! })),
+  );
+
+  if (repetitionIssues.length > 0) {
+    logger.warn("[work-generation] repeated content detected after incremental generation", {
+      projectId,
+      issues: repetitionIssues,
+    });
+  }
+
+  const updatedSections = await db.documentSection.findMany({
+    where: { projectId },
+    select: { wordCount: true, content: true, title: true },
+  });
+
+  const totalWords = updatedSections.reduce((sum, section) => {
+    if (typeof section.wordCount === "number" && section.wordCount > 0) return sum + section.wordCount;
+    if (section.content) return sum + section.content.split(/\s+/).filter(Boolean).length;
+    return sum;
+  }, 0);
+
+  await db.project.update({
+    where: { id: projectId },
+    data: { wordCount: totalWords },
+  });
+
+  await db.projectBrief.update({
+    where: { projectId },
+    data: { generationStatus: "READY" },
+  });
+
+  const generatedSections = updatedSections.filter((s) => s.content && s.content.trim().length > 0);
+  const failedSections = updatedSections.filter((s) => !s.content || s.content.trim().length === 0);
+  const step = failedSections.length > 0
+    ? `${generatedSections.length}/${updatedSections.length} secções geradas`
+    : "Trabalho completo";
+
+  await setPersistedWorkGenerationJob(projectId, {
+    status: "READY",
+    progress: 100,
+    step,
+    completedAt: new Date(),
+  });
+
+  await Promise.all([
+    updateGenerationRunState(runId, {
+      status: "READY",
+      progress: 100,
+      step,
+      activeSectionKey: null,
+      completedAt: new Date(),
+    }),
+    updateGenerationAttemptState(attemptId, {
+      status: "COMPLETED",
+      completedAt: new Date(),
+    }),
+  ]);
+
+  setWorkGenerationJob(projectId, {
+    status: "READY",
+    progress: 100,
+    step,
+  });
+
+  await trackProductEvent({
+    name: "work_generation_completed",
+    category: "workspace",
+    userId,
+    projectId,
+    metadata: { sectionsGenerated: generatedSections.length, totalWords },
+  }).catch(() => null);
 }
 
 async function loadProjectSectionsForRun(projectId: string) {
@@ -941,11 +1005,11 @@ async function processGenerationJob(projectId: string) {
   ]);
 
   if (!project?.brief) {
-    throw new Error("Projecto ou briefing n�o encontrado para processamento.");
+    throw new Error("Projecto ou briefing não encontrado para processamento.");
   }
 
   if (!job?.currentRunId) {
-    throw new Error("Generation run n�o encontrado para o trabalho enfileirado.");
+    throw new Error("Generation run não encontrado para o trabalho enfileirado.");
   }
 
   const currentRun = await db.generationRun.findUnique({
@@ -957,7 +1021,7 @@ async function processGenerationJob(projectId: string) {
   });
 
   if (!currentRun?.currentAttemptId) {
-    throw new Error("Generation attempt n�o encontrado para o trabalho enfileirado.");
+    throw new Error("Generation attempt não encontrado para o trabalho enfileirado.");
   }
 
   const runId = currentRun.id;
@@ -966,265 +1030,130 @@ async function processGenerationJob(projectId: string) {
   const brief = toWorkBriefInput(project.brief);
   const templates = getSectionTemplates(project.type, project.brief.educationLevel);
 
+  const existingSections = await db.documentSection.findMany({
+    where: { projectId },
+    select: { title: true, content: true },
+  });
+  const generatedTitles = new Set(
+    existingSections.filter((s) => s.content && s.content.trim().length > 0).map((s) => s.title)
+  );
+
+  const pendingTemplate = templates.find((t) => !generatedTitles.has(t.title));
+
+  if (!pendingTemplate) {
+    logger.info("[work-generation] all sections already generated, completing job", { projectId });
+    await finalizeGeneration(projectId, runId, attemptId, project.userId);
+    return;
+  }
+
+  const profile = getWorkGenerationProfile(project.type, brief, templates);
+  const sectionPlan = profile.sections.find((s) => s.title === pendingTemplate.title);
+
+  if (!sectionPlan) {
+    throw new Error(`Plano de secção não encontrado para: ${pendingTemplate.title}`);
+  }
+
+  const systemPrompt = getSystemPromptForEducation(brief.educationLevel || "HIGHER_EDUCATION");
+  const typeLabel = formatProjectType(project.type);
+
   try {
     await db.projectBrief.update({
       where: { projectId },
       data: { generationStatus: "GENERATING" },
     });
 
+    const stableKey = buildGenerationSectionKey({ title: pendingTemplate.title, order: pendingTemplate.order });
+    const sectionProgress = 50;
+
     await Promise.all([
-      setPersistedWorkGenerationJob(projectId, { progress: 5, step: "A iniciar gera��o", startedAt: new Date() }),
+      setPersistedWorkGenerationJob(projectId, { progress: sectionProgress, step: `A gerar ${pendingTemplate.title}`, startedAt: new Date() }),
       updateGenerationRunState(runId, {
         status: "GENERATING",
-        progress: 5,
-        step: "A iniciar gera��o",
+        progress: sectionProgress,
+        step: `A gerar ${pendingTemplate.title}`,
+        activeSectionKey: stableKey,
         startedAt: new Date(),
-        completedAt: null,
-        error: null,
       }),
       updateGenerationAttemptState(attemptId, {
         status: "GENERATING",
         startedAt: new Date(),
-        completedAt: null,
+      }),
+      updateSectionRunState(attemptId, {
+        stableKey,
+        title: pendingTemplate.title,
+        order: pendingTemplate.order,
+        status: "STREAMING",
+        progress: sectionProgress,
+        startedAt: new Date(),
         error: null,
       }),
     ]);
 
-    const { sectionOutcomes } = await generateWorkSectionBySection(
-      projectId,
-      project.title,
-      project.type,
+    const previousSections = existingSections
+      .filter((s) => s.content && s.content.trim().length > 0)
+      .map((s) => ({ title: s.title, content: s.content! }));
+
+    const sectionPrompt = buildSectionGenerationPrompt({
+      title: project.title,
+      typeLabel,
       brief,
-      templates,
-      project.userId,
-      { runId, attemptId },
-      async (progress, step) => {
-        setWorkGenerationJob(projectId, { progress, step });
-        await Promise.all([
-          setPersistedWorkGenerationJob(projectId, { progress, step }),
-          updateGenerationRunState(runId, { progress, step }),
-        ]);
-      },
+      sectionTitle: pendingTemplate.title,
+      sectionGuidance: sectionPlan.guidance,
+      sectionRange: sectionPlan.range,
+      previousSections,
+      styleRules: profile.styleRules,
+      citationGuidance: profile.citationGuidance,
+      factualGuidance: profile.factualGuidance,
+      sectionOutline: buildSectionOutline(pendingTemplate, profile),
+      documentPlan: buildDocumentPlan(templates),
+    });
+
+    const maxTokens = Math.ceil((sectionPlan.range.max || 800) * 1.8);
+
+    let generatedContent: string | null = null;
+
+    const result = await generateSingleSectionForWorker(
+      projectId,
+      pendingTemplate.title,
+      systemPrompt,
+      sectionPrompt,
+      maxTokens,
     );
 
-    // Calculate total word count
-    const updatedSections = await db.documentSection.findMany({
-      where: { projectId },
-      select: { wordCount: true, content: true },
-    });
+    generatedContent = result.content;
 
-    const totalWords = updatedSections.reduce((sum, section) => {
-      if (typeof section.wordCount === "number" && section.wordCount > 0) return sum + section.wordCount;
-      if (section.content) return sum + section.content.split(/\s+/).filter(Boolean).length;
-      return sum;
-    }, 0);
-
-    await db.project.update({
-      where: { id: projectId },
-      data: { wordCount: totalWords },
-    });
-
-    const completionDecision = resolveGenerationCompletionDecision(sectionOutcomes);
-    const degradedSections = sectionOutcomes.filter((outcome) => outcome.degraded).length;
-    const failedSections = sectionOutcomes.filter((outcome) => !outcome.accepted && !outcome.degraded).length;
-    const sectionsFailed = sectionOutcomes
-      .filter((outcome) => outcome.degraded || (!outcome.accepted && !outcome.degraded))
-      .map((outcome) => outcome.title);
-    const allContentSectionsFailed = completionDecision.status === "FAILED";
-    const completedAt = new Date();
-
-    if (allContentSectionsFailed) {
-      // ALL sections failed  this is a real failure, not a partial success
-      await db.projectBrief.update({
-        where: { projectId },
-        data: { generationStatus: "FAILED" },
-      });
-
-      if (completionDecision.shouldRefund) {
-        await subscriptionService.refundWork(project.userId).catch((err) => {
-          logger.error("[work-generation] failed to refund work after full failure", {
-            projectId,
-            userId: project.userId,
-            error: err instanceof Error ? err.message : String(err),
-          });
-        });
-      }
-
-      await setPersistedWorkGenerationJob(projectId, {
-        status: "FAILED",
+    if (generatedContent && (result.accepted || result.degraded)) {
+      await saveSectionToDb(projectId, pendingTemplate.title, generatedContent);
+      await updateSectionRunState(attemptId, {
+        stableKey,
+        title: pendingTemplate.title,
+        order: pendingTemplate.order,
+        status: "COMPLETED",
         progress: 100,
-        step: completionDecision.step,
-        error: completionDecision.error,
-        completedAt,
-      });
-      await Promise.all([
-        updateGenerationRunState(runId, {
-          status: "FAILED",
-          progress: 100,
-          step: completionDecision.step,
-          error: completionDecision.error,
-          completedAt,
-          activeSectionKey: null,
-        }),
-        updateGenerationAttemptState(attemptId, {
-          status: "FAILED",
-          error: completionDecision.error,
-          completedAt,
-        }),
-      ]);
-      setWorkGenerationJob(projectId, {
-        status: "FAILED",
-        progress: 100,
-        step: completionDecision.step,
-        error: completionDecision.error ?? undefined,
+        wordCount: result.wordCount,
+        lastContentPreview: generatedContent,
+        completedAt: new Date(),
       });
 
-      await trackProductEvent({
-        name: "work_generation_failed",
-        category: "workspace",
-        userId: project.userId,
-        projectId,
-        metadata: {
-          error: completionDecision.error || completionDecision.step,
-          degradedSections,
-          failedSections,
-        },
-      }).catch(() => null);
-    } else if (sectionsFailed.length > 0) {
-      await db.projectBrief.update({
-        where: { projectId },
-        data: { generationStatus: "READY" },
-      });
-
-      await setPersistedWorkGenerationJob(projectId, {
-        status: "READY",
-        progress: 100,
-        step: completionDecision.step,
-        error: completionDecision.error,
-        completedAt,
-      });
-      await Promise.all([
-        updateGenerationRunState(runId, {
-          status: "READY",
-          progress: 100,
-          step: completionDecision.step,
-          error: completionDecision.error,
-          completedAt,
-          activeSectionKey: null,
-        }),
-        updateGenerationAttemptState(attemptId, {
-          status: "COMPLETED",
-          error: completionDecision.error,
-          completedAt,
-        }),
-      ]);
-      setWorkGenerationJob(projectId, {
-        status: "READY",
-        progress: 100,
-        step: completionDecision.step,
-        error: completionDecision.error ?? undefined,
-      });
+      logger.info("[work-generation] section completed, triggering next", { projectId, section: pendingTemplate.title });
+      triggerQueuedGenerationProcessing();
     } else {
-      await db.projectBrief.update({
-        where: { projectId },
-        data: { generationStatus: "READY" },
-      });
-
-      await setPersistedWorkGenerationJob(projectId, {
-        status: "READY",
+      await updateSectionRunState(attemptId, {
+        stableKey,
+        title: pendingTemplate.title,
+        order: pendingTemplate.order,
+        status: "FAILED",
         progress: 100,
-        step: completionDecision.step,
-        error: completionDecision.error,
-        completedAt,
+        error: result.error?.message || "Falha ao gerar secção",
+        completedAt: new Date(),
       });
-      await Promise.all([
-        updateGenerationRunState(runId, {
-          status: "READY",
-          progress: 100,
-          step: completionDecision.step,
-          error: completionDecision.error,
-          completedAt,
-          activeSectionKey: null,
-        }),
-        updateGenerationAttemptState(attemptId, {
-          status: "COMPLETED",
-          error: completionDecision.error,
-          completedAt,
-        }),
-      ]);
-      setWorkGenerationJob(projectId, {
-        status: "READY",
-        progress: 100,
-        step: completionDecision.step,
-        error: completionDecision.error ?? undefined,
-      });
-    }
-
-    if (!allContentSectionsFailed) {
-      await trackProductEvent({
-        name: "work_generation_completed",
-        category: "workspace",
-        userId: project.userId,
-        projectId,
-        metadata: {
-          type: project.type,
-          degradedSections,
-          failedSections,
-        },
-      }).catch(() => null);
+      logger.warn("[work-generation] section failed, continuing to next", { projectId, section: pendingTemplate.title, error: result.error?.message });
+      triggerQueuedGenerationProcessing();
     }
   } catch (error) {
-    const friendlyMessage = getFriendlyAIErrorMessage(error);
-
-    await db.projectBrief.update({
-      where: { projectId },
-      data: { generationStatus: "FAILED" },
-    });
-
-    await subscriptionService.refundWork(project.userId).catch((err) => {
-      logger.error("[work-generation] failed to refund work after generation error", {
-        projectId,
-        userId: project.userId,
-        error: err instanceof Error ? err.message : String(err),
-      });
-    });
-
-    await setPersistedWorkGenerationJob(projectId, {
-      status: "FAILED",
-      progress: 100,
-      step: "Falha na gera��o",
-      error: friendlyMessage,
-      completedAt: new Date(),
-    });
-    await Promise.all([
-      updateGenerationRunState(runId, {
-        status: "FAILED",
-        progress: 100,
-        step: "Falha na gera��o",
-        error: friendlyMessage,
-        completedAt: new Date(),
-        activeSectionKey: null,
-      }),
-      updateGenerationAttemptState(attemptId, {
-        status: "FAILED",
-        error: friendlyMessage,
-        completedAt: new Date(),
-      }),
-    ]);
-    setWorkGenerationJob(projectId, {
-      status: "FAILED",
-      progress: 100,
-      step: "Falha na gera��o",
-      error: friendlyMessage,
-    });
-
-    await trackProductEvent({
-      name: "work_generation_failed",
-      category: "workspace",
-      userId: project.userId,
-      projectId,
-      metadata: { error: friendlyMessage },
-    }).catch(() => null);
+    logger.error("[work-generation] section generation error", { projectId, section: pendingTemplate.title, error: String(error) });
+    triggerQueuedGenerationProcessing();
+    throw error;
   }
 }
 

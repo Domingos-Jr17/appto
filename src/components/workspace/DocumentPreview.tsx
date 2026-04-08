@@ -468,11 +468,11 @@ function TitlePage({ brief }: { brief?: WorkBrief | null }) {
 // ── Helpers ────────────────────────────────────────────────────────────
 
 function formatWorkType(workType?: string) {
-  if (!workType) return "Trabalho académico";
-  return workType
-    .replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  if (workType === "SECONDARY_WORK") return "Trabalho Escolar";
+  if (workType === "TECHNICAL_WORK") return "Trabalho Técnico";
+  if (workType === "HIGHER_EDUCATION_WORK") return "Trabalho Académico";
+  if (!workType) return "Trabalho Académico";
+  return workType.replace(/_/g, " ");
 }
 
 function fallbackInstitution(educationLevel?: string) {

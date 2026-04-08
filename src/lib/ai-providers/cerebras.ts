@@ -16,10 +16,6 @@ function getDefaultTopP() {
   return env.CEREBRAS_TOP_P ?? 0.95;
 }
 
-function getDefaultTopK() {
-  return env.CEREBRAS_TOP_K ?? 20;
-}
-
 interface CerebrasConfig {
   apiKey: string;
   baseUrl: string;
@@ -110,7 +106,6 @@ function sanitizeRequestBody(body: AIChatRequest, model: string) {
     messages: body.messages,
     temperature: body.temperature ?? getDefaultTemperature(),
     top_p: body.top_p ?? getDefaultTopP(),
-    top_k: getDefaultTopK(),
   };
 
   if (typeof body.stream === "boolean") {

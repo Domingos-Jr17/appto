@@ -73,10 +73,10 @@ export function useGenerationStream({
 
     const tick = async () => {
       await onFetch();
-      timeoutRef.current = setTimeout(tick, 3000);
+      timeoutRef.current = setTimeout(tick, 5000);
     };
 
-    timeoutRef.current = setTimeout(tick, 2000);
+    timeoutRef.current = setTimeout(tick, 3000);
 
     if (maxTimeout > 0) {
       maxTimeoutRef.current = setTimeout(stopPolling, maxTimeout);
@@ -141,7 +141,8 @@ export function useGenerationStream({
     eventSource.onerror = () => {
       reconnectAttemptsRef.current += 1;
 
-      if (reconnectAttemptsRef.current >= 5) {
+      // Quick fallback to polling on Vercel Hobby (SSE often fails due to 10s timeout)
+      if (reconnectAttemptsRef.current >= 2) {
         setUseSSE(false);
         stopSSE();
         startPolling();
@@ -153,7 +154,7 @@ export function useGenerationStream({
         if (isGeneratingRef.current) {
           connectSSEImpl();
         }
-      }, 3000);
+      }, 1000);
     };
   }, [projectId, onFetch, onContentChunk, onSectionStarted, stopSSE, startPolling]);
 

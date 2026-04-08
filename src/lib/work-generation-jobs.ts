@@ -1,6 +1,7 @@
 import { getFriendlyAIErrorMessage, runAIChatCompletion, runAIChatStream } from "@/lib/ai";
 import { enrichReferencesWithAcademicSources } from "@/lib/academic-search";
 import { db } from "@/lib/db";
+import { env } from "@/lib/env";
 import { processQueuedGenerationJobs as processQueuedJobs, triggerQueuedGenerationProcessing as triggerQueuedProcessing } from "@/lib/generation/job-queue";
 import {
   batchGetWorkGenerationStatusAsync,
@@ -150,9 +151,11 @@ async function generateSectionWithRetry(
   onChunk: (content: string) => Promise<void>,
 ) {
   let lastStreamError: Error | null = null;
+  const MAX_OUTPUT_TOKENS = env.DEFAULT_MAX_OUTPUT_TOKENS || 8000;
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    const maxTokens = Math.ceil((sectionPlan.range.max || 800) * 1.8);
+    const calculatedTokens = Math.ceil((sectionPlan.range.max || 800) * 1.8);
+    const maxTokens = Math.min(calculatedTokens, MAX_OUTPUT_TOKENS);
 
     const repairPrompt = attempt === 0
       ? sectionPrompt
@@ -326,6 +329,9 @@ async function generateWorkSectionBySection(
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
+        const calculatedTokens = Math.ceil((profile.abstract.range.max || 260) * 1.5);
+        const maxTokens = Math.min(calculatedTokens, env.DEFAULT_MAX_OUTPUT_TOKENS || 8000);
+        
         const completion = await runAIChatCompletion({
           model: "",
           messages: [
@@ -333,7 +339,7 @@ async function generateWorkSectionBySection(
             { role: "user", content: abstractPrompt },
           ],
           temperature: 0,
-          max_tokens: Math.ceil((profile.abstract.range.max || 260) * 1.5),
+          max_tokens: maxTokens,
         });
 
         abstractContent = completion.choices[0]?.message?.content?.trim() || "";
@@ -515,6 +521,9 @@ Respeite o range de ${sectionPlan.range.min}-${sectionPlan.range.max} palavras.
 Devolva apenas o texto da secção.`;
 
     try {
+      const calculatedTokens = Math.ceil(sectionPlan.range.max * 1.8);
+      const maxTokens = Math.min(calculatedTokens, env.DEFAULT_MAX_OUTPUT_TOKENS || 8000);
+      
       const completion = await runAIChatCompletion({
         model: "",
         messages: [
@@ -522,7 +531,7 @@ Devolva apenas o texto da secção.`;
           { role: "user", content: repairPrompt },
         ],
         temperature: 0.3,
-        max_tokens: Math.ceil(sectionPlan.range.max * 1.8),
+        max_tokens: maxTokens,
       });
 
       const repairedContent = completion.choices[0]?.message?.content?.trim() || "";

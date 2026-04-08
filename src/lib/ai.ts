@@ -14,7 +14,7 @@ import { AIRequestError } from "@/lib/ai-types";
 export type { AIProvider, AIChatRequest, AIChatResponse, AIMessage };
 export { AIRequestError };
 
-type ProviderName = "openrouter" | "zai" | "google-ai";
+type ProviderName = "openrouter" | "zai" | "google-ai" | "cerebras" | "groq";
 
 async function instantiateProvider(provider: ProviderName): Promise<AIProvider> {
   
@@ -26,6 +26,16 @@ async function instantiateProvider(provider: ProviderName): Promise<AIProvider> 
   if (provider === "google-ai") {
     const { GoogleAIProvider } = await import("@/lib/ai-providers/google-ai");
     return new GoogleAIProvider();
+  }
+
+  if (provider === "cerebras") {
+    const { CerebrasProvider } = await import("@/lib/ai-providers/cerebras");
+    return new CerebrasProvider();
+  }
+
+  if (provider === "groq") {
+    const { GroqProvider } = await import("@/lib/ai-providers/groq");
+    return new GroqProvider();
   }
 
   const { OpenRouterProvider } = await import("@/lib/ai-providers/openrouter");

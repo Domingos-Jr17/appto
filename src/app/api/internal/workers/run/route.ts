@@ -43,7 +43,7 @@ function isVercelCron(request: NextRequest) {
   return false;
 }
 
-export async function POST(request: NextRequest) {
+async function handleWorkerRequest(request: NextRequest) {
   try {
     const isCron = isVercelCron(request);
 
@@ -63,4 +63,12 @@ export async function POST(request: NextRequest) {
     logger.error("Internal worker execution failed", { error: String(error) });
     return handleApiError(error, "Não foi possível executar os workers.");
   }
+}
+
+export async function POST(request: NextRequest) {
+  return handleWorkerRequest(request);
+}
+
+export async function GET(request: NextRequest) {
+  return handleWorkerRequest(request);
 }

@@ -27,69 +27,10 @@ async function main() {
 
   console.log(`   ✅ Utilizador criado: ${testUser.email}\n`);
 
-  // ============================================
-  // 2. CRIAR CRÉDITOS
-  // ============================================
-  console.log("💰 Criando créditos...");
-  
-  const credits = await prisma.credit.upsert({
-    where: { userId: testUser.id },
-    update: { balance: 5000, used: 0 },
-    create: {
-      userId: testUser.id,
-      balance: 5000,
-      used: 0,
-    },
-  });
 
-  console.log(`   ✅ Créditos: ${credits.balance} disponíveis\n`);
 
   // ============================================
-  // 3. CRIAR TRANSAÇÕES DE EXEMPLO
-  // ============================================
-  console.log("📊 Criando transações de exemplo...");
-
-  const transactions = [
-    {
-      userId: testUser.id,
-      amount: 5000,
-      type: "BONUS" as const,
-      description: "Bónus de boas-vindas",
-    },
-    {
-      userId: testUser.id,
-      amount: -50,
-      type: "USAGE" as const,
-      description: "Geração de trabalho: Impacto das Tecnologias no Ensino Superior",
-    },
-    {
-      userId: testUser.id,
-      amount: -10,
-      type: "USAGE" as const,
-      description: "IA: generate",
-    },
-    {
-      userId: testUser.id,
-      amount: -5,
-      type: "USAGE" as const,
-      description: "IA: improve",
-    },
-    {
-      userId: testUser.id,
-      amount: 1500,
-      type: "PURCHASE" as const,
-      description: "Compra via M-Pesa",
-    },
-  ];
-
-  for (const tx of transactions) {
-    await prisma.creditTransaction.create({ data: tx });
-  }
-
-  console.log(`   ✅ ${transactions.length} transações criadas\n`);
-
-  // ============================================
-  // 4. CRIAR SUBSCRIÇÃO
+  // 2. CRIAR SUBSCRIÇÃO
   // ============================================
   console.log("📋 Criando subscrição...");
 
@@ -99,17 +40,19 @@ async function main() {
       package: "STARTER",
       status: "ACTIVE",
       worksPerMonth: 4,
+      worksUsed: 0,
     },
     create: {
       userId: testUser.id,
       package: "STARTER",
       status: "ACTIVE",
       worksPerMonth: 4,
+      worksUsed: 0,
       startDate: new Date(),
     },
   });
 
-  console.log(`   ✅ Subscrição: STARTER (Ativa)\n`);
+  console.log(`   ✅ Subscrição: STARTER (4 trabalhos/mês)\n`);
 
   // ============================================
   // 5. CRIAR CONFIGURAÇÕES DO UTILIZADOR
@@ -153,7 +96,7 @@ async function main() {
   });
 
   const projects = [
-    // Projectos para Ensino Secundário
+    // Projectos para Ensino Secundário (2)
     {
       title: "Impacto das Redes Sociais na Aprendizagem dos Estudantes",
       description: "Trabalho escolar sobre o uso de redes sociais na educação",
@@ -166,18 +109,18 @@ async function main() {
     {
       title: "A Importância da Preservação Ambiental em Moçambique",
       description: "Projecto de investigação sobre meio ambiente",
-      type: "RESEARCH_PROJECT" as const,
+      type: "SECONDARY_WORK" as const,
       educationLevel: "SECONDARY" as const,
       status: "COMPLETED" as const,
       wordCount: 1500,
       userId: testUser.id,
     },
-    
-    // Projectos para Técnico Profissional
+
+    // Projectos para Ensino Técnico (3)
     {
       title: "Relatório de Estágio no Instituto Nacional de Meteorologia",
       description: "Relatório de estágio profissional em meteorologia",
-      type: "INTERNSHIP_REPORT" as const,
+      type: "TECHNICAL_WORK" as const,
       educationLevel: "TECHNICAL" as const,
       status: "IN_PROGRESS" as const,
       wordCount: 2100,
@@ -195,18 +138,18 @@ async function main() {
     {
       title: "Trabalho de Conclusão de Curso: Desenvolvimento Web para Pequenas Empresas",
       description: "TCC sobre desenvolvimento web",
-      type: "TCC" as const,
+      type: "TECHNICAL_WORK" as const,
       educationLevel: "TECHNICAL" as const,
       status: "IN_PROGRESS" as const,
       wordCount: 3200,
       userId: testUser.id,
     },
-    
-    // Projectos para Ensino Superior
+
+    // Projectos para Ensino Superior (2)
     {
       title: "Impacto das Tecnologias Digitais no Ensino Superior em Moçambique",
       description: "Monografia sobre a transformação digital nas universidades moçambicanas",
-      type: "MONOGRAPHY" as const,
+      type: "HIGHER_EDUCATION_WORK" as const,
       educationLevel: "HIGHER_EDUCATION" as const,
       status: "IN_PROGRESS" as const,
       wordCount: 4500,
@@ -215,7 +158,7 @@ async function main() {
     {
       title: "Análise da Sustentabilidade Ambiental em Empresas de Maputo",
       description: "Dissertação de mestrado sobre práticas sustentáveis",
-      type: "DISSERTATION" as const,
+      type: "HIGHER_EDUCATION_WORK" as const,
       educationLevel: "HIGHER_EDUCATION" as const,
       status: "DRAFT" as const,
       wordCount: 2100,
@@ -223,7 +166,7 @@ async function main() {
     },
   ];
 
-  const createdProjects = [];
+  const createdProjects: any[] = [];
   for (const project of projects) {
     const created = await prisma.project.create({ data: project });
     createdProjects.push(created);
@@ -232,12 +175,38 @@ async function main() {
   console.log("");
 
   // ============================================
+  // 6. CRIAR BRIEFS DOS PROJECTOS
+  // ============================================
+  console.log("📋 Criando briefs dos projectos...");
+
+  for (const project of createdProjects) {
+    await prisma.projectBrief.create({
+      data: {
+        projectId: project.id,
+        workType: project.type,
+        generationStatus: project.status === "COMPLETED" ? "READY" : "BRIEFING",
+        educationLevel: project.educationLevel,
+        theme: project.title,
+        citationStyle: "ABNT",
+        language: "pt-MZ",
+        // Campos adicionais baseados no tipo
+        ...(project.educationLevel !== "SECONDARY" && {
+          institutionName: "Universidade Eduardo Mondlane",
+          courseName: project.educationLevel === "TECHNICAL" ? "Engenharia Informática" : "Ciências Sociais",
+        }),
+      },
+    });
+  }
+
+  console.log(`   ✅ Briefs criados para ${createdProjects.length} projectos\n`);
+
+  // ============================================
   // 7. CRIAR SECÇÕES DE DOCUMENTOS
   // ============================================
   console.log("📝 Criando secções de documentos...");
 
-  // Secções para o primeiro projecto (Monografia)
-  const mainProject = createdProjects[0];
+  // Secções para o projecto principal (Higher Education Work)
+  const mainProject = createdProjects[5]; // Projecto de monografia
   
   const sections = [
     {
@@ -474,10 +443,12 @@ MINISTÉRIO DA EDUCAÇÃO E DESENVOLVIMENTO HUMANO. Estratégia de Educação 20
   console.log("─".repeat(50));
   console.log(`👤 Utilizador:     teste@aptto.mz`);
   console.log(`🔑 Senha:         teste123`);
-  console.log(`💰 Créditos:      ${credits.balance}`);
-  console.log(`📁 Projectos:     ${projects.length}`);
-  console.log(`📝 Secções:       ${sections.length + (createdProjects.length - 1) * 3}`);
-  console.log(`📊 Transações:    ${transactions.length}`);
+  console.log(`📋 Subscrição:    STARTER (4 trabalhos/mês)`);
+  console.log(`📁 Projectos:     ${projects.length} (2 sec, 3 tec, 2 sup)`);
+  console.log(`📝 Briefs:        ${createdProjects.length}`);
+  console.log(`📄 Secções:       ${sections.length + (createdProjects.length - 1) * 3}`);
+  console.log(`🛒 Trabalhos Ext: ${workPurchase.quantity} (expira em 90 dias)`);
+  console.log(`⚡ Geração Ativa: 1 projecto em progresso`);
   console.log("─".repeat(50));
   console.log("\n🚀 Use as credenciais acima para testar a plataforma!\n");
 }

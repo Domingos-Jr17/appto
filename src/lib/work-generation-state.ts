@@ -10,6 +10,8 @@ export type WorkGenerationLifecycleStatus = (typeof WORK_GENERATION_STATUSES)[nu
 
 export type WorkspaceSectionState = "done" | "generating" | "streaming" | "pending";
 
+const FRONT_MATTER_SECTION_TITLES = new Set(["Capa", "Folha de Rosto"]);
+
 export interface LiveGenerationSnapshot {
   status: string;
   progress: number;
@@ -53,6 +55,22 @@ export function extractActiveSectionTitle(step?: string | null) {
 
   const match = step.match(/A gerar\s+(.+)/i);
   return match?.[1]?.trim() || null;
+}
+
+export function isFrontMatterSectionTitle(title?: string | null) {
+  return title ? FRONT_MATTER_SECTION_TITLES.has(title) : false;
+}
+
+export function isMeaningfulWorkspaceSection(input: {
+  title?: string | null;
+  content?: string | null;
+  streamingContent?: string | null;
+}) {
+  if (isFrontMatterSectionTitle(input.title)) {
+    return false;
+  }
+
+  return Boolean(input.content?.trim() || input.streamingContent?.trim());
 }
 
 export function resolveGenerationSnapshot(input: {

@@ -3,6 +3,8 @@ import { describe, expect, test } from "bun:test";
 import {
   createProgressTracker,
   extractActiveSectionTitle,
+  isFrontMatterSectionTitle,
+  isMeaningfulWorkspaceSection,
   normalizeGenerationProgress,
   resolveGenerationSnapshot,
   resolveWorkspaceSectionState,
@@ -62,5 +64,24 @@ describe("work generation state", () => {
         title: "2. Desenvolvimento",
       }),
     ).toBe("done");
+  });
+
+  test("detects front matter and ignores it as meaningful body content", () => {
+    expect(isFrontMatterSectionTitle("Capa")).toBe(true);
+    expect(isFrontMatterSectionTitle("Folha de Rosto")).toBe(true);
+    expect(isFrontMatterSectionTitle("1. Introdução")).toBe(false);
+
+    expect(
+      isMeaningfulWorkspaceSection({
+        title: "Capa",
+        content: "<style>* { box-sizing: border-box; }</style>",
+      }),
+    ).toBe(false);
+    expect(
+      isMeaningfulWorkspaceSection({
+        title: "1. Introdução",
+        content: "Conteúdo académico final.",
+      }),
+    ).toBe(true);
   });
 });

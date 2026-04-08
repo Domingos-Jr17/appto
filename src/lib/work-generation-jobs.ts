@@ -36,6 +36,7 @@ import {
   buildSectionGenerationPrompt,
   detectCrossSectionRepetition,
   getWorkGenerationProfile,
+  type SectionValidationIssue,
   type SectionTemplate,
   type WordRange,
   validateGeneratedSection,
@@ -52,32 +53,271 @@ export {
   getWorkGenerationStatusAsync,
 };
 
-const SYSTEM_PROMPT = `Você é um especialista em escrita académica para estudantes moçambicanos.
-Gere conteúdo académico de alta qualidade em Português de Moçambique.
-Siga a norma de citação pedida no briefing.
-Adapte o nível de linguagem ao nível educacional indicado:
-- SECONDARY: linguagem simples, frases curtas, vocabulário acessível, sem jargão excessivo
-- TECHNICAL: terminologia técnica prática, foco em aplicações
-- HIGHER_EDUCATION: linguagem formal, terminologia académica, citações obrigatórias
+export type SectionAttemptFailureReason =
+  | "accepted"
+  | "provider_error"
+  | "empty_response"
+  | "validation_failed";
+
+export type SectionGenerationFailureReason =
+  | "provider_error"
+  | "empty_response"
+  | "validation_failed";
+
+export interface SectionAttemptDiagnostics {
+  attemptNumber: number;
+  providerMode: "stream";
+  content: string | null;
+  failureReason: SectionAttemptFailureReason;
+  validationIssues: SectionValidationIssue[];
+  hadAnyContent: boolean;
+  wordCount: number;
+  errorMessage: string | null;
+}
+
+interface SectionGenerationResult {
+  content: string | null;
+  accepted: boolean;
+  degraded: boolean;
+  failureReason: SectionGenerationFailureReason | null;
+  validationIssues: SectionValidationIssue[];
+  hadAnyContent: boolean;
+  wordCount: number;
+  attempts: SectionAttemptDiagnostics[];
+  error: Error | null;
+}
+
+export interface SectionGenerationOutcome {
+  title: string;
+  accepted: boolean;
+  degraded: boolean;
+  hadAnyContent: boolean;
+  failureReason: SectionGenerationFailureReason | null;
+}
+
+interface GenerationCompletionDecision {
+  status: "READY" | "FAILED";
+  step: string;
+  error: string | null;
+  shouldRefund: boolean;
+}
+
+const SYSTEM_PROMPT = `Voc� � um especialista em escrita acad�mica para estudantes mo�ambicanos.
+Gere conte�do acad�mico de alta qualidade em Portugu�s de Mo�ambique.
+Siga a norma de cita��o pedida no briefing.
+Adapte o n�vel de linguagem ao n�vel educacional indicado:
+- SECONDARY: linguagem simples, frases curtas, vocabul�rio acess�vel, sem jarg�o excessivo
+- TECHNICAL: terminologia t�cnica pr�tica, foco em aplica��es
+- HIGHER_EDUCATION: linguagem formal, terminologia acad�mica, cita��es obrigat�rias
 Nunca invente metadados da capa sem base no briefing.`;
 
 function getSystemPromptForEducation(educationLevel?: string | null): string {
   if (educationLevel === "SECONDARY") {
-    return `Você é um assistente de escrita para estudantes do ensino secundário moçambicano.
-Gere conteúdo simples e acessível em Português de Moçambique.
-Use frases curtas e vocabulário acessível.
-Evite jargão técnico excessivo.
-Não é obrigatório incluir citações formais no texto.
-Estrutura básica: Introdução, Desenvolvimento, Conclusão.`;
+    return `Voc� � um assistente de escrita para estudantes do ensino secund�rio mo�ambicano.
+Gere conte�do simples e acess�vel em Portugu�s de Mo�ambique.
+Use frases curtas e vocabul�rio acess�vel.
+Evite jarg�o t�cnico excessivo.
+N�o � obrigat�rio incluir cita��es formais no texto.
+Estrutura b�sica: Introdu��o, Desenvolvimento, Conclus�o.`;
   }
   if (educationLevel === "TECHNICAL") {
-    return `Você é um assistente de escrita para estudantes do ensino técnico profissional moçambicano.
-Gere conteúdo técnico e prático em Português de Moçambique.
-Use terminologia técnica apropriada com foco em aplicações práticas.
+    return `Voc� � um assistente de escrita para estudantes do ensino t�cnico profissional mo�ambicano.
+Gere conte�do t�cnico e pr�tico em Portugu�s de Mo�ambique.
+Use terminologia t�cnica apropriada com foco em aplica��es pr�ticas.
 Inclua exemplos relevantes para o contexto profissional.
 Cite fontes quando relevante.`;
   }
   return SYSTEM_PROMPT;
+}
+
+function countGeneratedWords(content?: string | null) {
+  return content?.trim() ? content.trim().split(/\s+/).filter(Boolean).length : 0;
+}
+
+export function createSectionAttemptDiagnostics(input: {
+  attemptNumber: number;
+  content: string | null;
+  validationIssues?: SectionValidationIssue[];
+  error?: Error | null;
+}): SectionAttemptDiagnostics {
+  const trimmedContent = input.content?.trim() || "";
+  const validationIssues = input.validationIssues ?? [];
+  const hadAnyContent = trimmedContent.length > 0;
+  const wordCount = countGeneratedWords(trimmedContent);
+
+  if (hadAnyContent && validationIssues.length === 0) {
+    return {
+      attemptNumber: input.attemptNumber,
+      providerMode: "stream",
+      content: trimmedContent,
+      failureReason: "accepted",
+      validationIssues,
+      hadAnyContent,
+      wordCount,
+      errorMessage: null,
+    };
+  }
+
+  if (hadAnyContent) {
+    return {
+      attemptNumber: input.attemptNumber,
+      providerMode: "stream",
+      content: trimmedContent,
+      failureReason: "validation_failed",
+      validationIssues,
+      hadAnyContent,
+      wordCount,
+      errorMessage: input.error?.message ?? null,
+    };
+  }
+
+  return {
+    attemptNumber: input.attemptNumber,
+    providerMode: "stream",
+    content: null,
+    failureReason: input.error ? "provider_error" : "empty_response",
+    validationIssues,
+    hadAnyContent: false,
+    wordCount: 0,
+    errorMessage: input.error?.message ?? null,
+  };
+}
+
+export function summarizeSectionGenerationAttempts(
+  attempts: SectionAttemptDiagnostics[],
+): SectionGenerationResult {
+  const acceptedAttempt = attempts.find((attempt) => attempt.failureReason === "accepted");
+  if (acceptedAttempt?.content) {
+    return {
+      content: acceptedAttempt.content,
+      accepted: true,
+      degraded: false,
+      failureReason: null,
+      validationIssues: [],
+      hadAnyContent: true,
+      wordCount: acceptedAttempt.wordCount,
+      attempts,
+      error: null,
+    };
+  }
+
+  const bestRejectedAttempt = attempts
+    .filter((attempt) => attempt.failureReason === "validation_failed" && attempt.content)
+    .sort((left, right) => right.wordCount - left.wordCount)[0];
+
+  if (bestRejectedAttempt?.content) {
+    return {
+      content: bestRejectedAttempt.content,
+      accepted: false,
+      degraded: true,
+      failureReason: "validation_failed",
+      validationIssues: bestRejectedAttempt.validationIssues,
+      hadAnyContent: true,
+      wordCount: bestRejectedAttempt.wordCount,
+      attempts,
+      error: new Error(
+        bestRejectedAttempt.validationIssues.map((issue) => issue.message).join(" "),
+      ),
+    };
+  }
+
+  const lastAttempt = attempts[attempts.length - 1];
+  return {
+    content: null,
+    accepted: false,
+    degraded: false,
+    failureReason:
+      lastAttempt?.failureReason === "accepted" ? null : lastAttempt?.failureReason ?? "empty_response",
+    validationIssues: lastAttempt?.validationIssues ?? [],
+    hadAnyContent: attempts.some((attempt) => attempt.hadAnyContent),
+    wordCount: 0,
+    attempts,
+    error: lastAttempt?.errorMessage ? new Error(lastAttempt.errorMessage) : null,
+  };
+}
+
+function formatFailureReasonSummary(outcomes: SectionGenerationOutcome[]) {
+  const providerErrorCount = outcomes.filter((outcome) => outcome.failureReason === "provider_error").length;
+  const emptyResponseCount = outcomes.filter((outcome) => outcome.failureReason === "empty_response").length;
+  const validationFailureCount = outcomes.filter((outcome) => outcome.failureReason === "validation_failed").length;
+
+  if (providerErrorCount > 0 && emptyResponseCount === 0 && validationFailureCount === 0) {
+    return {
+      step: "Falha na gera��o: a IA n�o respondeu de forma est�vel.",
+      error: "A gera��o falhou porque todas as sec��es terminaram com erro do provider de IA.",
+    };
+  }
+
+  if (emptyResponseCount > 0 && providerErrorCount === 0 && validationFailureCount === 0) {
+    return {
+      step: "Falha na gera��o: a IA devolveu respostas vazias.",
+      error: "A IA respondeu sem conte�do utiliz�vel para todas as sec��es solicitadas.",
+    };
+  }
+
+  if (validationFailureCount > 0 && providerErrorCount === 0 && emptyResponseCount === 0) {
+    return {
+      step: "Falha na gera��o: o conte�do n�o atingiu o m�nimo exigido.",
+      error: "A IA gerou texto, mas nenhuma sec��o cumpriu os requisitos m�nimos de qualidade.",
+    };
+  }
+
+  return {
+    step: "Falha na gera��o: a IA n�o produziu sec��es utiliz�veis.",
+    error: `Resultado sem conte�do utiliz�vel: ${providerErrorCount} erro(s) de provider, ${emptyResponseCount} resposta(s) vazias e ${validationFailureCount} rejei��o(�es) por valida��o.`,
+  };
+}
+
+export function resolveGenerationCompletionDecision(
+  outcomes: SectionGenerationOutcome[],
+): GenerationCompletionDecision {
+  const usableCount = outcomes.filter((outcome) => outcome.accepted || outcome.degraded).length;
+  const degradedCount = outcomes.filter((outcome) => outcome.degraded).length;
+  const failedCount = outcomes.length - usableCount;
+
+  if (usableCount === 0) {
+    const summary = formatFailureReasonSummary(outcomes);
+    return {
+      status: "FAILED",
+      step: summary.step,
+      error: summary.error,
+      shouldRefund: true,
+    };
+  }
+
+  if (degradedCount > 0 && failedCount > 0) {
+    return {
+      status: "READY",
+      step: `Trabalho pronto ��� ${degradedCount} sec��o(�es) precisam de revis�o e ${failedCount} n�o foram conclu�das.`,
+      error: "Algumas sec��es ficaram abaixo do esperado e outras n�o foram conclu�das automaticamente.",
+      shouldRefund: false,
+    };
+  }
+
+  if (degradedCount > 0) {
+    return {
+      status: "READY",
+      step: `Trabalho pronto ��� ${degradedCount} sec��o(�es) precisam de revis�o antes da submiss�o.`,
+      error: "Algumas sec��es foram guardadas como rascunho e precisam de revis�o ou regenera��o.",
+      shouldRefund: false,
+    };
+  }
+
+  if (failedCount > 0) {
+    return {
+      status: "READY",
+      step: `Trabalho pronto ��� ${failedCount} sec��o(�es) n�o foram conclu�das automaticamente. Pode re-gerar individualmente.`,
+      error: "Algumas sec��es n�o foram conclu�das automaticamente e podem ser regeneradas depois.",
+      shouldRefund: false,
+    };
+  }
+
+  return {
+    status: "READY",
+    step: "Trabalho pronto para revis�o",
+    error: null,
+    shouldRefund: false,
+  };
 }
 
 async function generateSectionWithStreaming(
@@ -150,7 +390,7 @@ async function generateSectionWithRetry(
   sectionPrompt: string,
   onChunk: (content: string) => Promise<void>,
 ) {
-  let lastStreamError: Error | null = null;
+  const attemptDiagnostics: SectionAttemptDiagnostics[] = [];
   const MAX_OUTPUT_TOKENS = env.DEFAULT_MAX_OUTPUT_TOKENS || 8000;
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -159,7 +399,7 @@ async function generateSectionWithRetry(
 
     const repairPrompt = attempt === 0
       ? sectionPrompt
-      : `${sectionPrompt}\n\nA resposta anterior para a secção "${template.title}" não cumpriu os requisitos. Regere a secção respeitando todos os requisitos.`;
+      : `${sectionPrompt}\n\nA resposta anterior para a sec��o "${template.title}" n�o cumpriu os requisitos. Regere a sec��o respeitando todos os requisitos.`;
 
     const { content, error } = await generateSectionWithStreaming(
       projectId,
@@ -170,46 +410,47 @@ async function generateSectionWithRetry(
       onChunk,
     );
 
-    if (!content) {
-      lastStreamError = error;
-      continue;
-    }
+    const issues = content
+      ? validateGeneratedSection(content, template.title, sectionPlan.range, "")
+      : [];
+    const diagnostics = createSectionAttemptDiagnostics({
+      attemptNumber: attempt + 1,
+      content,
+      validationIssues: issues,
+      error,
+    });
+    attemptDiagnostics.push(diagnostics);
 
-    const issues = validateGeneratedSection(content, template.title, sectionPlan.range, "");
-    if (issues.length > 0) {
-      continue;
+    if (diagnostics.failureReason === "accepted") {
+      return summarizeSectionGenerationAttempts(attemptDiagnostics);
     }
-
-    return { content, error: null };
   }
 
-  return {
-    content: null,
-    error: lastStreamError || new Error(`A IA não conseguiu gerar conteúdo válido para "${template.title}" após 2 tentativas.`),
-  };
+  return summarizeSectionGenerationAttempts(attemptDiagnostics);
+
 }
 
 const SECTION_TEMPLATES: Record<string, SectionTemplate[]> = {
   SECONDARY_WORK: [
-    { title: "1. Introdução", order: 3 },
+    { title: "1. Introdu��o", order: 3 },
     { title: "2. Desenvolvimento", order: 4 },
-    { title: "3. Conclusão", order: 5 },
+    { title: "3. Conclus�o", order: 5 },
   ],
   TECHNICAL_WORK: [
-    { title: "1. Introdução", order: 3 },
-    { title: "2. Fundamentação Teórica", order: 4 },
+    { title: "1. Introdu��o", order: 3 },
+    { title: "2. Fundamenta��o Te�rica", order: 4 },
     { title: "3. Metodologia", order: 5 },
-    { title: "4. Análise Prática", order: 6 },
-    { title: "5. Conclusão", order: 7 },
-    { title: "6. Recomendações", order: 8 },
+    { title: "4. An�lise Pr�tica", order: 6 },
+    { title: "5. Conclus�o", order: 7 },
+    { title: "6. Recomenda��es", order: 8 },
   ],
   HIGHER_EDUCATION_WORK: [
-    { title: "1. Introdução", order: 6 },
-    { title: "2. Revisão da Literatura", order: 7 },
+    { title: "1. Introdu��o", order: 6 },
+    { title: "2. Revis�o da Literatura", order: 7 },
     { title: "3. Metodologia", order: 8 },
-    { title: "4. Análise e Discussão", order: 9 },
-    { title: "5. Conclusão", order: 10 },
-    { title: "6. Recomendações", order: 11 },
+    { title: "4. An�lise e Discuss�o", order: 9 },
+    { title: "5. Conclus�o", order: 10 },
+    { title: "6. Recomenda��es", order: 11 },
   ],
 };
 
@@ -285,7 +526,7 @@ async function generateWorkSectionBySection(
         enrichedBrief = { ...brief, referencesSeed: enriched };
       }
     } catch {
-      // Skip enrichment if it fails — generation can proceed without it
+      // Skip enrichment if it fails ��� generation can proceed without it
     }
   }
 
@@ -344,7 +585,7 @@ async function generateWorkSectionBySection(
 
         abstractContent = completion.choices[0]?.message?.content?.trim() || "";
         if (!abstractContent) {
-          abstractError = new Error("A IA não devolveu conteúdo para o resumo.");
+          abstractError = new Error("A IA n�o devolveu conte�do para o resumo.");
           continue;
         }
 
@@ -369,7 +610,7 @@ async function generateWorkSectionBySection(
   }
 
   // Step 3: Generate each content section sequentially
-  const sectionsFailed: string[] = [];
+  const sectionOutcomes: SectionGenerationOutcome[] = [];
 
   for (const template of templates) {
     const sectionPlan = profile.sections.find((s) => s.title === template.title);
@@ -434,7 +675,7 @@ async function generateWorkSectionBySection(
       });
     };
 
-    const { content: sectionContent, error: sectionError } = await generateSectionWithRetry(
+    const sectionResult = await generateSectionWithRetry(
       projectId,
       template,
       sectionPlan,
@@ -452,22 +693,58 @@ async function generateWorkSectionBySection(
       streamingSectionTitle: null,
     });
 
-    if (sectionContent && !sectionError) {
-      await saveSectionToDb(projectId, template.title, sectionContent);
+    if (sectionResult.content && (sectionResult.accepted || sectionResult.degraded)) {
+      await saveSectionToDb(projectId, template.title, sectionResult.content);
       await updateSectionRunState(generationContext.attemptId, {
         stableKey,
         title: template.title,
         order: template.order,
         status: "COMPLETED",
         progress: 100,
-        wordCount: sectionContent.split(/\s+/).filter(Boolean).length,
-        lastContentPreview: sectionContent,
+        wordCount: sectionResult.wordCount,
+        lastContentPreview: sectionResult.content,
         lastPersistedAt: new Date(),
         completedAt: new Date(),
-        error: null,
+        error: sectionResult.degraded
+          ? sectionResult.validationIssues.map((issue) => issue.message).join(" ")
+          : null,
       });
+
+      sectionOutcomes.push({
+        title: template.title,
+        accepted: sectionResult.accepted,
+        degraded: sectionResult.degraded,
+        hadAnyContent: sectionResult.hadAnyContent,
+        failureReason: sectionResult.failureReason,
+      });
+
+      if (sectionResult.degraded) {
+        logger.warn("[work-generation] section generation degraded", {
+          projectId,
+          section: template.title,
+          providerMode: "stream",
+          returnedWordCount: sectionResult.wordCount,
+          validationIssueSummary: sectionResult.validationIssues.map((issue) => issue.message),
+          attempts: sectionResult.attempts.map((attempt) => ({
+            attemptNumber: attempt.attemptNumber,
+            providerMode: attempt.providerMode,
+            failureReason: attempt.failureReason,
+            returnedWordCount: attempt.wordCount,
+            validationIssueSummary: attempt.validationIssues.map((issue) => issue.message),
+          })),
+        });
+      }
     } else {
-      sectionsFailed.push(template.title);
+      sectionOutcomes.push({
+        title: template.title,
+        accepted: false,
+        degraded: false,
+        hadAnyContent: sectionResult.hadAnyContent,
+        failureReason: sectionResult.failureReason,
+      });
+      const sectionFailureMessage =
+        sectionResult.error?.message ?? "Falha ao gerar sec��o";
+      const sectionError = sectionResult.error;
       await updateSectionRunState(generationContext.attemptId, {
         stableKey,
         title: template.title,
@@ -476,18 +753,29 @@ async function generateWorkSectionBySection(
         progress: sectionProgress,
         retryCount: 2,
         completedAt: new Date(),
-        error: sectionError?.message ?? "Falha ao gerar secção",
+        error: sectionError?.message ?? "Falha ao gerar sec��o",
       });
       logger.warn("[work-generation] section generation failed", {
         projectId,
         section: template.title,
+        providerMode: "stream",
+        failureMessage: sectionFailureMessage,
+        returnedWordCount: sectionResult.wordCount,
+        validationIssueSummary: sectionResult.validationIssues.map((issue) => issue.message),
+        attempts: sectionResult.attempts.map((attempt) => ({
+          attemptNumber: attempt.attemptNumber,
+          providerMode: attempt.providerMode,
+          failureReason: attempt.failureReason,
+          returnedWordCount: attempt.wordCount,
+          validationIssueSummary: attempt.validationIssues.map((issue) => issue.message),
+        })),
         error: sectionError?.message,
       });
     }
   }
 
   // Step 4: Cross-section repetition check and repair
-  await onProgress(95, "A validar conteúdo");
+  await onProgress(95, "A validar conte�do");
   const allSections = await loadGeneratedSections(projectId, templates);
   const repetitionIssues = detectCrossSectionRepetition(allSections);
 
@@ -507,18 +795,18 @@ async function generateWorkSectionBySection(
     const repeatedSectionContent = allSections.find((s) => s.title === issue.sectionB)?.content || "";
     const originalSectionContent = allSections.find((s) => s.title === issue.sectionA)?.content || "";
 
-    const repairPrompt = `A secção "${issue.sectionB}" tem repetição significativa de conteúdo da secção "${issue.sectionA}".
-Regere APENAS a secção "${issue.sectionB}" com conteúdo NOVO e DIFERENTE.
+    const repairPrompt = `A sec��o "${issue.sectionB}" tem repeti��o significativa de conte�do da sec��o "${issue.sectionA}".
+Regere APENAS a sec��o "${issue.sectionB}" com conte�do NOVO e DIFERENTE.
 
-Conteúdo da secção "${issue.sectionA}" (NÃO repita isto):
+Conte�do da sec��o "${issue.sectionA}" (N��O repita isto):
 ${originalSectionContent}
 
-Conteúdo actual da secção "${issue.sectionB}" (que precisa ser refeito):
+Conte�do actual da sec��o "${issue.sectionB}" (que precisa ser refeito):
 ${repeatedSectionContent}
 
-Instrução: Gere a secção "${issue.sectionB}" com conteúdo completamente diferente, sem repetir ideias ou frases da secção "${issue.sectionA}".
+Instru��o: Gere a sec��o "${issue.sectionB}" com conte�do completamente diferente, sem repetir ideias ou frases da sec��o "${issue.sectionA}".
 Respeite o range de ${sectionPlan.range.min}-${sectionPlan.range.max} palavras.
-Devolva apenas o texto da secção.`;
+Devolva apenas o texto da sec��o.`;
 
     try {
       const calculatedTokens = Math.ceil(sectionPlan.range.max * 1.8);
@@ -554,15 +842,15 @@ Devolva apenas o texto da secção.`;
   const referenceOrder = Math.max(...templates.map((section) => section.order)) + 1;
   await saveSectionToDb(
     projectId,
-    "Referências",
-    enrichedBrief.referencesSeed || "Adicione referências verificadas manualmente antes da submissão.",
+    "Refer�ncias",
+    enrichedBrief.referencesSeed || "Adicione refer�ncias verificadas manualmente antes da submiss�o.",
   );
   await db.documentSection.updateMany({
-    where: { projectId, title: "Referências" },
+    where: { projectId, title: "Refer�ncias" },
     data: { order: referenceOrder },
   });
 
-  return { sectionsFailed };
+  return { sectionOutcomes };
 }
 
 async function loadProjectSectionsForRun(projectId: string) {
@@ -591,7 +879,7 @@ export async function startWorkGenerationJob(input: {
   });
 
   if (existingJob && existingJob.status === "GENERATING") {
-    throw new Error("Geração já está em curso para este trabalho.");
+    throw new Error("Gera��o j� est� em curso para este trabalho.");
   }
 
   // Create/update the job record first - this is the single source of truth for generation status
@@ -653,11 +941,11 @@ async function processGenerationJob(projectId: string) {
   ]);
 
   if (!project?.brief) {
-    throw new Error("Projecto ou briefing não encontrado para processamento.");
+    throw new Error("Projecto ou briefing n�o encontrado para processamento.");
   }
 
   if (!job?.currentRunId) {
-    throw new Error("Generation run não encontrado para o trabalho enfileirado.");
+    throw new Error("Generation run n�o encontrado para o trabalho enfileirado.");
   }
 
   const currentRun = await db.generationRun.findUnique({
@@ -669,7 +957,7 @@ async function processGenerationJob(projectId: string) {
   });
 
   if (!currentRun?.currentAttemptId) {
-    throw new Error("Generation attempt não encontrado para o trabalho enfileirado.");
+    throw new Error("Generation attempt n�o encontrado para o trabalho enfileirado.");
   }
 
   const runId = currentRun.id;
@@ -685,11 +973,11 @@ async function processGenerationJob(projectId: string) {
     });
 
     await Promise.all([
-      setPersistedWorkGenerationJob(projectId, { progress: 5, step: "A iniciar geração", startedAt: new Date() }),
+      setPersistedWorkGenerationJob(projectId, { progress: 5, step: "A iniciar gera��o", startedAt: new Date() }),
       updateGenerationRunState(runId, {
         status: "GENERATING",
         progress: 5,
-        step: "A iniciar geração",
+        step: "A iniciar gera��o",
         startedAt: new Date(),
         completedAt: null,
         error: null,
@@ -702,7 +990,7 @@ async function processGenerationJob(projectId: string) {
       }),
     ]);
 
-    const { sectionsFailed } = await generateWorkSectionBySection(
+    const { sectionOutcomes } = await generateWorkSectionBySection(
       projectId,
       project.title,
       project.type,
@@ -736,51 +1024,59 @@ async function processGenerationJob(projectId: string) {
       data: { wordCount: totalWords },
     });
 
-    // Check if ALL content sections failed (cover/title-page/references don't count)
-    const allContentSectionsFailed = sectionsFailed.length === templates.length;
+    const completionDecision = resolveGenerationCompletionDecision(sectionOutcomes);
+    const degradedSections = sectionOutcomes.filter((outcome) => outcome.degraded).length;
+    const failedSections = sectionOutcomes.filter((outcome) => !outcome.accepted && !outcome.degraded).length;
+    const sectionsFailed = sectionOutcomes
+      .filter((outcome) => outcome.degraded || (!outcome.accepted && !outcome.degraded))
+      .map((outcome) => outcome.title);
+    const allContentSectionsFailed = completionDecision.status === "FAILED";
+    const completedAt = new Date();
 
     if (allContentSectionsFailed) {
-      // ALL sections failed — this is a real failure, not a partial success
+      // ALL sections failed  this is a real failure, not a partial success
       await db.projectBrief.update({
         where: { projectId },
         data: { generationStatus: "FAILED" },
       });
 
-      await subscriptionService.refundWork(project.userId).catch((err) => {
-        logger.error("[work-generation] failed to refund work after full failure", {
-          projectId,
-          userId: project.userId,
-          error: err instanceof Error ? err.message : String(err),
+      if (completionDecision.shouldRefund) {
+        await subscriptionService.refundWork(project.userId).catch((err) => {
+          logger.error("[work-generation] failed to refund work after full failure", {
+            projectId,
+            userId: project.userId,
+            error: err instanceof Error ? err.message : String(err),
+          });
         });
-      });
+      }
 
       await setPersistedWorkGenerationJob(projectId, {
         status: "FAILED",
         progress: 100,
-        step: "Falha na geração: nenhum conteúdo foi produzido.",
-        error: "A IA não conseguiu gerar nenhuma secção do trabalho após múltiplas tentativas.",
-        completedAt: new Date(),
+        step: completionDecision.step,
+        error: completionDecision.error,
+        completedAt,
       });
       await Promise.all([
         updateGenerationRunState(runId, {
           status: "FAILED",
           progress: 100,
-          step: "Falha na geração: nenhum conteúdo foi produzido.",
-          error: "A IA não conseguiu gerar nenhuma secção do trabalho após múltiplas tentativas.",
-          completedAt: new Date(),
+          step: completionDecision.step,
+          error: completionDecision.error,
+          completedAt,
           activeSectionKey: null,
         }),
         updateGenerationAttemptState(attemptId, {
           status: "FAILED",
-          error: "A IA não conseguiu gerar nenhuma secção do trabalho após múltiplas tentativas.",
-          completedAt: new Date(),
+          error: completionDecision.error,
+          completedAt,
         }),
       ]);
       setWorkGenerationJob(projectId, {
         status: "FAILED",
         progress: 100,
-        step: "Falha na geração: nenhum conteúdo foi produzido.",
-        error: "A IA não conseguiu gerar nenhuma secção do trabalho após múltiplas tentativas.",
+        step: completionDecision.step,
+        error: completionDecision.error ?? undefined,
       });
 
       await trackProductEvent({
@@ -788,7 +1084,11 @@ async function processGenerationJob(projectId: string) {
         category: "workspace",
         userId: project.userId,
         projectId,
-        metadata: { error: "All sections failed", sectionsFailed: sectionsFailed.length },
+        metadata: {
+          error: completionDecision.error || completionDecision.step,
+          degradedSections,
+          failedSections,
+        },
       }).catch(() => null);
     } else if (sectionsFailed.length > 0) {
       await db.projectBrief.update({
@@ -799,26 +1099,30 @@ async function processGenerationJob(projectId: string) {
       await setPersistedWorkGenerationJob(projectId, {
         status: "READY",
         progress: 100,
-        step: `Trabalho pronto — ${sectionsFailed.length} secção(ões) com qualidade abaixo do esperado. Pode re-gerar individualmente.`,
-        completedAt: new Date(),
+        step: completionDecision.step,
+        error: completionDecision.error,
+        completedAt,
       });
       await Promise.all([
         updateGenerationRunState(runId, {
           status: "READY",
           progress: 100,
-          step: `Trabalho pronto — ${sectionsFailed.length} secção(ões) com qualidade abaixo do esperado. Pode re-gerar individualmente.`,
-          completedAt: new Date(),
+          step: completionDecision.step,
+          error: completionDecision.error,
+          completedAt,
           activeSectionKey: null,
         }),
         updateGenerationAttemptState(attemptId, {
           status: "COMPLETED",
-          completedAt: new Date(),
+          error: completionDecision.error,
+          completedAt,
         }),
       ]);
       setWorkGenerationJob(projectId, {
         status: "READY",
         progress: 100,
-        step: `Trabalho pronto — ${sectionsFailed.length} secção(ões) com qualidade abaixo do esperado. Pode re-gerar individualmente.`,
+        step: completionDecision.step,
+        error: completionDecision.error ?? undefined,
       });
     } else {
       await db.projectBrief.update({
@@ -829,26 +1133,30 @@ async function processGenerationJob(projectId: string) {
       await setPersistedWorkGenerationJob(projectId, {
         status: "READY",
         progress: 100,
-        step: "Trabalho pronto para revisão",
-        completedAt: new Date(),
+        step: completionDecision.step,
+        error: completionDecision.error,
+        completedAt,
       });
       await Promise.all([
         updateGenerationRunState(runId, {
           status: "READY",
           progress: 100,
-          step: "Trabalho pronto para revisão",
-          completedAt: new Date(),
+          step: completionDecision.step,
+          error: completionDecision.error,
+          completedAt,
           activeSectionKey: null,
         }),
         updateGenerationAttemptState(attemptId, {
           status: "COMPLETED",
-          completedAt: new Date(),
+          error: completionDecision.error,
+          completedAt,
         }),
       ]);
       setWorkGenerationJob(projectId, {
         status: "READY",
         progress: 100,
-        step: "Trabalho pronto para revisão",
+        step: completionDecision.step,
+        error: completionDecision.error ?? undefined,
       });
     }
 
@@ -858,7 +1166,11 @@ async function processGenerationJob(projectId: string) {
         category: "workspace",
         userId: project.userId,
         projectId,
-        metadata: { type: project.type, sectionsFailed: sectionsFailed.length },
+        metadata: {
+          type: project.type,
+          degradedSections,
+          failedSections,
+        },
       }).catch(() => null);
     }
   } catch (error) {
@@ -880,7 +1192,7 @@ async function processGenerationJob(projectId: string) {
     await setPersistedWorkGenerationJob(projectId, {
       status: "FAILED",
       progress: 100,
-      step: "Falha na geração",
+      step: "Falha na gera��o",
       error: friendlyMessage,
       completedAt: new Date(),
     });
@@ -888,7 +1200,7 @@ async function processGenerationJob(projectId: string) {
       updateGenerationRunState(runId, {
         status: "FAILED",
         progress: 100,
-        step: "Falha na geração",
+        step: "Falha na gera��o",
         error: friendlyMessage,
         completedAt: new Date(),
         activeSectionKey: null,
@@ -902,7 +1214,7 @@ async function processGenerationJob(projectId: string) {
     setWorkGenerationJob(projectId, {
       status: "FAILED",
       progress: 100,
-      step: "Falha na geração",
+      step: "Falha na gera��o",
       error: friendlyMessage,
     });
 
@@ -936,20 +1248,20 @@ export async function regenerateWorkSection(input: {
   const wordCount = "entre 260 e 420";
   const systemPrompt = getSystemPromptForEducation(brief.educationLevel || "HIGHER_EDUCATION");
 
-  const prompt = `Regere apenas a secção "${sectionTitle}" de um trabalho académico.
+  const prompt = `Regere apenas a sec��o "${sectionTitle}" de um trabalho acad�mico.
 
-Título do trabalho: ${title}
+T�tulo do trabalho: ${title}
 Tipo de trabalho: ${formatProjectType(type)}
 Contexto do briefing:
 ${buildBriefContext(brief)}
 
-Requisitos obrigatórios:
-- Escreva em Português académico de Moçambique
+Requisitos obrigat�rios:
+- Escreva em Portugu�s acad�mico de Mo�ambique
 - Use a norma ${brief.citationStyle || "ABNT"}
 - Produza ${wordCount} palavras
-- Mantenha tom formal, coerente e plausível
-- Não invente dados factuais, leis, autores ou referências bibliográficas sem base no briefing
-- Devolva apenas o conteúdo final da secção, sem markdown extra nem explicações`;
+- Mantenha tom formal, coerente e plaus�vel
+- N�o invente dados factuais, leis, autores ou refer�ncias bibliogr�ficas sem base no briefing
+- Devolva apenas o conte�do final da sec��o, sem markdown extra nem explica��es`;
 
   const completion = await runAIChatCompletion({
     model: "", // Provider uses its default model
@@ -963,7 +1275,7 @@ Requisitos obrigatórios:
   const content = completion.choices[0]?.message?.content?.trim();
 
   if (!content) {
-    throw new Error("A IA não devolveu conteúdo para a secção.");
+    throw new Error("A IA n�o devolveu conte�do para a sec��o.");
   }
 
   await db.documentSection.update({

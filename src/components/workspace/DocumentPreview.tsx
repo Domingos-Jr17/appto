@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { parseMarkdownBlocks } from "@/lib/content";
 import type { WorkBrief, WorkSection } from "@/types/workspace";
+import { isFrontMatterSectionTitle, isMeaningfulWorkspaceSection } from "@/lib/work-generation-state";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -19,11 +20,16 @@ export function DocumentPreview({
   isGenerating,
   brief,
 }: DocumentPreviewProps) {
-  const hasContent = sections.some(
-    (s) => (s.status === "done" || s.status === "streaming") &&
-           ((s.status === "done" && s.content.trim().length > 0) ||
-            (s.status === "streaming" && !!s.streamingContent && s.streamingContent.trim().length > 0)),
+  const coverSection = sections.find((section) => section.title === "Capa");
+  const titlePageSection = sections.find((section) => section.title === "Folha de Rosto");
+  const hasBodyContent = sections.some((section) =>
+    isMeaningfulWorkspaceSection({
+      title: section.title,
+      content: section.status === "done" ? section.content : undefined,
+      streamingContent: section.status === "streaming" ? section.streamingContent : undefined,
+    }),
   );
+  const hasContent = Boolean(coverSection || titlePageSection) || hasBodyContent;
 
   if (!hasContent && !isGenerating) {
     return (
@@ -40,9 +46,8 @@ export function DocumentPreview({
     );
   }
 
-  const coverSection = sections.find((s) => s.title === "Capa");
   const contentSections = sections
-    .filter((s) => s.title !== "Capa")
+    .filter((section) => !isFrontMatterSectionTitle(section.title))
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   return (
@@ -53,12 +58,26 @@ export function DocumentPreview({
           {/* Cover — first page of the document */}
           {coverSection && (
             <div className="flex min-h-[70vh] flex-col justify-center pb-8 sm:min-h-[80vh] sm:pb-12">
-              <CoverPage brief={brief} content={coverSection.content} />
+              <CoverPage brief={brief} />
+            </div>
+          )}
+
+          {coverSection && titlePageSection && (
+            <div className="mb-8 flex items-center gap-3">
+              <div className="h-px flex-1 bg-[var(--doc-border)]" />
+              <span className="text-xs text-[var(--doc-muted)]">• • •</span>
+              <div className="h-px flex-1 bg-[var(--doc-border)]" />
+            </div>
+          )}
+
+          {titlePageSection && (
+            <div className="flex min-h-[70vh] flex-col justify-center pb-8 sm:min-h-[80vh] sm:pb-12">
+              <TitlePage brief={brief} />
             </div>
           )}
 
           {/* Page separator */}
-          {coverSection && contentSections.length > 0 && (
+          {(coverSection || titlePageSection) && contentSections.length > 0 && (
             <div className="mb-8 flex items-center gap-3">
               <div className="h-px flex-1 bg-[var(--doc-border)]" />
               <span className="text-xs text-[var(--doc-muted)]">• • •</span>
@@ -296,15 +315,7 @@ function InlineMarkdown({ text }: { text: string }) {
 
 // ── Cover Page (first page of document) ──────────────────────────────────
 
-function CoverPage({ brief, content }: { brief?: WorkBrief | null; content?: string }) {
-  if (content?.trim()) {
-    return (
-      <div className="mx-auto w-full max-w-[36rem] whitespace-pre-wrap text-center text-sm leading-8 text-[var(--doc-heading)] sm:text-base">
-        {content}
-      </div>
-    );
-  }
-
+function CoverPage({ brief }: { brief?: WorkBrief | null }) {
   const workType = formatWorkType(brief?.workType);
   const institution = brief?.institutionName || fallbackInstitution(brief?.educationLevel);
   const course = getCoverCourseLabel(brief);
@@ -373,6 +384,74 @@ function CoverPage({ brief, content }: { brief?: WorkBrief | null; content?: str
             </span>
           </div>
         )}
+        <div className="flex items-start justify-between gap-4">
+          <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
+            Local
+          </span>
+          <span className="text-right text-[var(--doc-text)]">
+            {city} — {year}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TitlePage({ brief }: { brief?: WorkBrief | null }) {
+  const workType = formatWorkType(brief?.workType);
+  const institution = brief?.institutionName || fallbackInstitution(brief?.educationLevel);
+  const title = brief?.title || "Título do trabalho";
+  const subtitle = brief?.subjectName || brief?.courseName || "";
+  const student = brief?.studentName || "Nome do estudante";
+  const advisor = brief?.advisorName || "Nome do orientador";
+  const city = brief?.city || "Maputo";
+  const year = brief?.year || String(new Date().getFullYear());
+  const faculty = brief?.facultyName || brief?.departmentName || brief?.courseName || "";
+
+  return (
+    <div className="mx-auto flex w-full max-w-[36rem] flex-1 flex-col justify-between text-center">
+      <div className="space-y-2">
+        <p className="text-sm font-semibold uppercase leading-snug text-[var(--doc-heading)] sm:text-base">
+          {institution}
+        </p>
+        {faculty && (
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--doc-muted)] sm:text-sm">
+            {faculty}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-[var(--doc-muted)] sm:text-xs">
+          {workType}
+        </p>
+        <h3 className="text-lg font-semibold leading-tight sm:text-2xl text-[var(--doc-heading)]">
+          {title}
+        </h3>
+        {subtitle && (
+          <p className="text-sm italic text-[var(--doc-muted)] sm:text-base">
+            {subtitle}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-3 text-left text-xs text-[var(--doc-muted)] sm:text-sm">
+        <div className="flex items-start justify-between gap-4">
+          <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
+            Estudante
+          </span>
+          <span className="max-w-[60%] text-right font-medium text-[var(--doc-heading)]">
+            {student}
+          </span>
+        </div>
+        <div className="flex items-start justify-between gap-4">
+          <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
+            Orientador
+          </span>
+          <span className="max-w-[60%] text-right text-[var(--doc-text)]">
+            {advisor}
+          </span>
+        </div>
         <div className="flex items-start justify-between gap-4">
           <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
             Local

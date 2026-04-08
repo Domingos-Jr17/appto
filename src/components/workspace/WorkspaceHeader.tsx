@@ -9,6 +9,7 @@ import { GenerateButton } from "./GenerateButton";
 import { ExportActionsButton } from "./ExportActionsButton";
 import { cn } from "@/lib/utils";
 import type { WorkSection } from "@/types/workspace";
+import { isMeaningfulWorkspaceSection } from "@/lib/work-generation-state";
 
 interface WorkspaceHeaderProps {
   title: string;
@@ -111,7 +112,13 @@ export function WorkspaceHeader({
     }
   };
 
-  const hasContent = sections.some((s) => s.status === "done" && s.content.trim().length > 0);
+  const hasContent = sections.some((section) =>
+    isMeaningfulWorkspaceSection({
+      title: section.title,
+      content: section.status === "done" ? section.content : undefined,
+      streamingContent: section.status === "streaming" ? section.streamingContent : undefined,
+    }),
+  );
   const showPostGenerationNotice = !isGenerating && generationStep && (
     generationStatus === "FAILED" ||
     generationStatus === "NEEDS_REVIEW" ||

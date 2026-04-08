@@ -4,7 +4,12 @@ import { useState, useCallback } from "react";
 import type { WorkspaceData, WorkBrief, WorkSection } from "@/types/workspace";
 import { toast } from "@/hooks/use-toast";
 import { useGenerationStream } from "@/hooks/useGenerationStream";
-import { resolveGenerationSnapshot, resolveWorkspaceSectionState } from "@/lib/work-generation-state";
+import {
+  isFrontMatterSectionTitle,
+  isMeaningfulWorkspaceSection,
+  resolveGenerationSnapshot,
+  resolveWorkspaceSectionState,
+} from "@/lib/work-generation-state";
 
 interface UseWorkspaceOptions {
   initialData: WorkspaceData;
@@ -16,12 +21,13 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSavingExport, setIsSavingExport] = useState<"DOCX" | "PDF" | null>(null);
 
-  const allDone = data.sections.length > 0 && data.sections.every((s) => s.status === "done");
-  const progress = data.sections.length === 0
+  const bodySections = data.sections.filter((section) => !isFrontMatterSectionTitle(section.title));
+  const allDone = bodySections.length > 0 && bodySections.every((section) => section.status === "done");
+  const progress = bodySections.length === 0
     ? 0
     : Math.round(
-        (data.sections.filter((s) => s.status === "done").length /
-          data.sections.length) *
+        (bodySections.filter((section) => section.status === "done").length /
+          bodySections.length) *
           100
       );
 
@@ -45,7 +51,10 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
         sections: (project.sections ?? [])
           .map((section: { id: string; title: string; content: string | null; wordCount: number; order: number }) => {
             const previous = prev.sections.find((item) => item.id === section.id);
-            const hasContent = section.wordCount > 0 || Boolean(section.content && section.content.trim().length > 0);
+            const hasContent = section.wordCount > 0 || isMeaningfulWorkspaceSection({
+              title: section.title,
+              content: section.content,
+            });
 
             return {
               id: section.id,
@@ -56,7 +65,7 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
               status: resolveWorkspaceSectionState({
                 generationStatus: generationSnapshot.status,
                 activeSectionTitle: generationSnapshot.activeSectionTitle,
-                hasPersistedContent: hasContent,
+                hasPersistedContent: !isFrontMatterSectionTitle(section.title) && hasContent,
                 title: section.title,
                 hasStreamingContent: Boolean(previous?.streamingContent?.trim()),
               }),

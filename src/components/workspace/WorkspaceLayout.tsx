@@ -9,6 +9,7 @@ import { DocumentPreview } from "./DocumentPreview";
 import { CoverModal } from "./CoverModal";
 import type { WorkspaceData, WorkBrief } from "@/types/workspace";
 import type { AcademicEducationLevel } from "@/types/editor";
+import { isMeaningfulWorkspaceSection } from "@/lib/work-generation-state";
 
 function isCoverIncomplete(brief?: WorkBrief | null): boolean {
   if (!brief) return true;
@@ -48,7 +49,12 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
   }, []);
 
   const hasContent = (workspace.data?.sections ?? []).some(
-    (s) => s.status === "done" && s.content.trim().length > 0
+    (section) =>
+      isMeaningfulWorkspaceSection({
+        title: section.title,
+        content: section.status === "done" ? section.content : undefined,
+        streamingContent: section.status === "streaming" ? section.streamingContent : undefined,
+      })
   );
 
   return (

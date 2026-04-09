@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { shouldRefetchProjectOnGenerationEvent } from "@/lib/generation-stream-events";
 
 interface SSEEvent {
   type: "handshake" | "job-created" | "section-started" | "section-complete" | "progress" | "content-chunk" | "complete" | "error";
@@ -17,7 +18,15 @@ interface UseGenerationStreamOptions {
   projectId: string;
   generationStatus: string | undefined;
   onFetch: () => Promise<void>;
+  onProgress?: (snapshot: {
+    type: SSEEvent["type"];
+    progress: number;
+    step: string;
+    sectionTitle?: string;
+    error?: string;
+  }) => void;
   onSectionStarted?: (sectionTitle: string) => void;
+  onSectionComplete?: (sectionTitle: string) => void;
   onContentChunk?: (sectionTitle: string, content: string) => void;
   enabled?: boolean;
   maxTimeout?: number;
@@ -31,7 +40,9 @@ export function useGenerationStream({
   projectId,
   generationStatus,
   onFetch,
+  onProgress,
   onSectionStarted,
+  onSectionComplete,
   onContentChunk,
   enabled = true,
   maxTimeout = 900_000,
@@ -91,50 +102,71 @@ export function useGenerationStream({
     const eventSource = new EventSource(url);
     eventSourceRef.current = eventSource;
 
-    eventSource.addEventListener("handshake", () => {
-      // Connection established
+    const handleSnapshot = (e: Event, type: SSEEvent["type"]) => {
+      try {
+        const parsed = parseSseEvent(e);
+        onProgress?.({
+          type,
+          progress: parsed.data.progress,
+          step: parsed.data.step,
+          sectionTitle: parsed.data.sectionTitle,
+          error: parsed.data.error,
+        });
+        return parsed;
+      } catch {
+        return null;
+      }
+    };
+
+    eventSource.addEventListener("handshake", (e) => {
+      handleSnapshot(e, "handshake");
     });
 
-    eventSource.addEventListener("job-created", () => {
-      // Job exists — connection confirmed
+    eventSource.addEventListener("job-created", (e) => {
+      handleSnapshot(e, "job-created");
     });
 
     eventSource.addEventListener("section-started", (e) => {
-      try {
-        const parsed = parseSseEvent(e);
-        onSectionStarted?.(parsed.data.sectionTitle || "");
-      } catch {
-        // ignore
+      const parsed = handleSnapshot(e, "section-started");
+      if (parsed?.data.sectionTitle) {
+        onSectionStarted?.(parsed.data.sectionTitle);
       }
-      void onFetch();
     });
 
-    eventSource.addEventListener("progress", () => {
-      void onFetch();
+    eventSource.addEventListener("progress", (e) => {
+      handleSnapshot(e, "progress");
     });
 
     eventSource.addEventListener("content-chunk", (e) => {
-      try {
-        const parsed = parseSseEvent(e);
-        if (parsed.data.sectionTitle && parsed.data.content) {
-          onContentChunk?.(parsed.data.sectionTitle, parsed.data.content);
-        }
-      } catch {
-        // ignore malformed chunk events and keep polling fallback active
+      const parsed = handleSnapshot(e, "content-chunk");
+      if (parsed?.data.sectionTitle && parsed.data.content) {
+        onContentChunk?.(parsed.data.sectionTitle, parsed.data.content);
       }
     });
 
-    eventSource.addEventListener("section-complete", () => {
-      void onFetch();
+    eventSource.addEventListener("section-complete", (e) => {
+      const parsed = handleSnapshot(e, "section-complete");
+      if (parsed?.data.sectionTitle) {
+        onSectionComplete?.(parsed.data.sectionTitle);
+      }
+      if (shouldRefetchProjectOnGenerationEvent("section-complete")) {
+        void onFetch();
+      }
     });
 
-    eventSource.addEventListener("complete", () => {
-      void onFetch();
+    eventSource.addEventListener("complete", (e) => {
+      handleSnapshot(e, "complete");
+      if (shouldRefetchProjectOnGenerationEvent("complete")) {
+        void onFetch();
+      }
       stopSSE();
     });
 
-    eventSource.addEventListener("error", () => {
-      void onFetch();
+    eventSource.addEventListener("error", (e) => {
+      const parsed = handleSnapshot(e, "error");
+      if (parsed) {
+        void onFetch();
+      }
       stopSSE();
     });
 
@@ -156,7 +188,7 @@ export function useGenerationStream({
         }
       }, 1000);
     };
-  }, [projectId, onFetch, onContentChunk, onSectionStarted, stopSSE, startPolling]);
+  }, [projectId, onFetch, onProgress, onContentChunk, onSectionStarted, onSectionComplete, stopSSE, startPolling]);
 
   const stopAll = useCallback(() => {
     isGeneratingRef.current = false;
@@ -166,13 +198,14 @@ export function useGenerationStream({
 
   const startAll = useCallback(() => {
     isGeneratingRef.current = true;
+    void onFetch();
 
     if (useSSE) {
       connectSSE();
     } else {
       startPolling();
     }
-  }, [useSSE, connectSSE, startPolling]);
+  }, [useSSE, connectSSE, onFetch, startPolling]);
 
   useEffect(() => {
     if (!enabled || !isGenerating) {

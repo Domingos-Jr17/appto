@@ -1,4 +1,4 @@
-import { getFriendlyAIErrorMessage, runAIChatCompletion, runAIChatStream } from "@/lib/ai";
+import { runAIChatCompletion, runAIChatStream } from "@/lib/ai";
 import { enrichReferencesWithAcademicSources } from "@/lib/academic-search";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -459,6 +459,19 @@ export function getSectionTemplates(type: string, _educationLevel?: string | nul
   return SECTION_TEMPLATES[type] || SECTION_TEMPLATES.HIGHER_EDUCATION_WORK;
 }
 
+export function getPendingGenerationTemplates(
+  templates: SectionTemplate[],
+  existingSections: Array<{ title: string; content: string | null }>,
+) {
+  const generatedTitles = new Set(
+    existingSections
+      .filter((section) => section.content && section.content.trim().length > 0)
+      .map((section) => section.title),
+  );
+
+  return templates.filter((template) => !generatedTitles.has(template.title));
+}
+
 async function saveSectionToDb(
   projectId: string,
   title: string,
@@ -512,7 +525,7 @@ function buildSectionOutline(template: SectionTemplate, profile: ReturnType<type
   return profile.sections.find((section) => section.title === template.title)?.suggestedSubheadings ?? [];
 }
 
-async function generateWorkSectionBySection(
+async function _generateWorkSectionBySection(
   projectId: string,
   title: string,
   type: string,
@@ -762,7 +775,7 @@ async function generateWorkSectionBySection(
   return { sectionOutcomes };
 }
 
-async function generateSingleSectionForWorker(
+async function _generateSingleSectionForWorker(
   projectId: string,
   sectionTitle: string,
   systemPrompt: string,
@@ -834,6 +847,16 @@ async function finalizeGeneration(
   runId: string,
   attemptId: string,
   userId: string,
+  options?: {
+    outcomes?: SectionGenerationOutcome[];
+    metrics?: {
+      queuedAt?: Date | null;
+      claimedAt?: Date | null;
+      firstChunkAt?: Date | null;
+      firstSectionDoneAt?: Date | null;
+      pendingTemplatesCount?: number;
+    };
+  },
 ) {
   const sectionsWithContent = await db.documentSection.findMany({
     where: { projectId, content: { not: null } },
@@ -870,50 +893,99 @@ async function finalizeGeneration(
     data: { wordCount: totalWords },
   });
 
+  const fallbackOutcomes = updatedSections.map((section) => ({
+    title: section.title,
+    accepted: Boolean(section.content && section.content.trim().length > 0),
+    degraded: false,
+    hadAnyContent: Boolean(section.content && section.content.trim().length > 0),
+    failureReason: (section.content && section.content.trim().length > 0)
+      ? null
+      : "empty_response" as const,
+  }));
+  const decision = resolveGenerationCompletionDecision(options?.outcomes ?? fallbackOutcomes);
+  const completedAt = new Date();
+
   await db.projectBrief.update({
     where: { projectId },
-    data: { generationStatus: "READY" },
+    data: { generationStatus: decision.status },
   });
 
-  const generatedSections = updatedSections.filter((s) => s.content && s.content.trim().length > 0);
-  const failedSections = updatedSections.filter((s) => !s.content || s.content.trim().length === 0);
-  const step = failedSections.length > 0
-    ? `${generatedSections.length}/${updatedSections.length} secções geradas`
-    : "Trabalho completo";
+  const generatedSections = updatedSections.filter((section) => section.content && section.content.trim().length > 0);
+  const failedSections = updatedSections.filter((section) => !section.content || section.content.trim().length === 0);
 
   await setPersistedWorkGenerationJob(projectId, {
-    status: "READY",
+    status: decision.status,
     progress: 100,
-    step,
-    completedAt: new Date(),
+    step: decision.step,
+    error: decision.error,
+    completedAt,
+    streamingContent: null,
+    streamingSectionTitle: null,
   });
 
   await Promise.all([
     updateGenerationRunState(runId, {
-      status: "READY",
+      status: decision.status,
       progress: 100,
-      step,
+      step: decision.step,
+      error: decision.error,
       activeSectionKey: null,
-      completedAt: new Date(),
+      completedAt,
     }),
     updateGenerationAttemptState(attemptId, {
-      status: "COMPLETED",
-      completedAt: new Date(),
+      status: decision.status === "FAILED" ? "FAILED" : "COMPLETED",
+      error: decision.error,
+      completedAt,
     }),
   ]);
 
   setWorkGenerationJob(projectId, {
-    status: "READY",
+    status: decision.status,
     progress: 100,
-    step,
+    step: decision.step,
+    error: decision.error ?? undefined,
+    streamingContent: undefined,
+    streamingSectionTitle: undefined,
   });
+
+  if (decision.shouldRefund) {
+    await subscriptionService.refundWork(userId).catch(() => null);
+  }
+
+  const queueToClaimMs = options?.metrics?.queuedAt && options.metrics.claimedAt
+    ? options.metrics.claimedAt.getTime() - options.metrics.queuedAt.getTime()
+    : null;
+  const queueToFirstChunkMs = options?.metrics?.queuedAt && options.metrics.firstChunkAt
+    ? options.metrics.firstChunkAt.getTime() - options.metrics.queuedAt.getTime()
+    : null;
+  const queueToFirstSectionDoneMs = options?.metrics?.queuedAt && options.metrics.firstSectionDoneAt
+    ? options.metrics.firstSectionDoneAt.getTime() - options.metrics.queuedAt.getTime()
+    : null;
+  const queueToReadyMs = options?.metrics?.queuedAt
+    ? completedAt.getTime() - options.metrics.queuedAt.getTime()
+    : null;
 
   await trackProductEvent({
     name: "work_generation_completed",
     category: "workspace",
     userId,
     projectId,
-    metadata: { sectionsGenerated: generatedSections.length, totalWords },
+    metadata: {
+      status: decision.status,
+      sectionsGenerated: generatedSections.length,
+      sectionsFailed: failedSections.length,
+      pendingTemplatesCount: options?.metrics?.pendingTemplatesCount ?? null,
+      totalWords,
+      queuedAt: options?.metrics?.queuedAt?.toISOString() ?? null,
+      claimedAt: options?.metrics?.claimedAt?.toISOString() ?? null,
+      firstChunkAt: options?.metrics?.firstChunkAt?.toISOString() ?? null,
+      firstSectionDoneAt: options?.metrics?.firstSectionDoneAt?.toISOString() ?? null,
+      readyAt: completedAt.toISOString(),
+      queueToClaimMs,
+      queueToFirstChunkMs,
+      queueToFirstSectionDoneMs,
+      queueToReadyMs,
+    },
   }).catch(() => null);
 }
 
@@ -1017,6 +1089,7 @@ async function processGenerationJob(projectId: string) {
     select: {
       id: true,
       currentAttemptId: true,
+      queuedAt: true,
     },
   });
 
@@ -1026,133 +1099,287 @@ async function processGenerationJob(projectId: string) {
 
   const runId = currentRun.id;
   const attemptId = currentRun.currentAttemptId;
-
   const brief = toWorkBriefInput(project.brief);
   const templates = getSectionTemplates(project.type, project.brief.educationLevel);
-
   const existingSections = await db.documentSection.findMany({
     where: { projectId },
     select: { title: true, content: true },
   });
-  const generatedTitles = new Set(
-    existingSections.filter((s) => s.content && s.content.trim().length > 0).map((s) => s.title)
-  );
+  const pendingTemplates = getPendingGenerationTemplates(templates, existingSections);
+  const executionMetrics: {
+    queuedAt?: Date | null;
+    claimedAt?: Date | null;
+    firstChunkAt?: Date | null;
+    firstSectionDoneAt?: Date | null;
+    pendingTemplatesCount?: number;
+  } = {
+    queuedAt: currentRun.queuedAt,
+    claimedAt: new Date(),
+    pendingTemplatesCount: pendingTemplates.length,
+  };
 
-  const pendingTemplate = templates.find((t) => !generatedTitles.has(t.title));
-
-  if (!pendingTemplate) {
+  if (pendingTemplates.length === 0) {
     logger.info("[work-generation] all sections already generated, completing job", { projectId });
-    await finalizeGeneration(projectId, runId, attemptId, project.userId);
+    await finalizeGeneration(projectId, runId, attemptId, project.userId, {
+      metrics: executionMetrics,
+    });
     return;
   }
 
   const profile = getWorkGenerationProfile(project.type, brief, templates);
-  const sectionPlan = profile.sections.find((s) => s.title === pendingTemplate.title);
-
-  if (!sectionPlan) {
-    throw new Error(`Plano de secção não encontrado para: ${pendingTemplate.title}`);
-  }
-
   const systemPrompt = getSystemPromptForEducation(brief.educationLevel || "HIGHER_EDUCATION");
   const typeLabel = formatProjectType(project.type);
+  const progressTracker = createProgressTracker(pendingTemplates.length, 10);
+  const previousSections = existingSections
+    .filter((section) => section.content && section.content.trim().length > 0)
+    .map((section) => ({ title: section.title, content: section.content! }));
+  const sectionOutcomes: SectionGenerationOutcome[] = previousSections.map((section) => ({
+    title: section.title,
+    accepted: true,
+    degraded: false,
+    hadAnyContent: true,
+    failureReason: null,
+  }));
 
   try {
-    await db.projectBrief.update({
-      where: { projectId },
-      data: { generationStatus: "GENERATING" },
-    });
-
-    const stableKey = buildGenerationSectionKey({ title: pendingTemplate.title, order: pendingTemplate.order });
-    const sectionProgress = 50;
-
     await Promise.all([
-      setPersistedWorkGenerationJob(projectId, { progress: sectionProgress, step: `A gerar ${pendingTemplate.title}`, startedAt: new Date() }),
+      db.projectBrief.update({
+        where: { projectId },
+        data: { generationStatus: "GENERATING" },
+      }),
+      setPersistedWorkGenerationJob(projectId, {
+        progress: 10,
+        step: "Worker assumiu a geração",
+        startedAt: executionMetrics.claimedAt ?? undefined,
+        error: null,
+      }),
       updateGenerationRunState(runId, {
         status: "GENERATING",
-        progress: sectionProgress,
-        step: `A gerar ${pendingTemplate.title}`,
-        activeSectionKey: stableKey,
-        startedAt: new Date(),
+        progress: 10,
+        step: "Worker assumiu a geração",
+        activeSectionKey: null,
+        error: null,
+        startedAt: executionMetrics.claimedAt ?? undefined,
       }),
       updateGenerationAttemptState(attemptId, {
         status: "GENERATING",
-        startedAt: new Date(),
-      }),
-      updateSectionRunState(attemptId, {
-        stableKey,
-        title: pendingTemplate.title,
-        order: pendingTemplate.order,
-        status: "STREAMING",
-        progress: sectionProgress,
-        startedAt: new Date(),
         error: null,
+        startedAt: executionMetrics.claimedAt ?? undefined,
       }),
     ]);
 
-    const previousSections = existingSections
-      .filter((s) => s.content && s.content.trim().length > 0)
-      .map((s) => ({ title: s.title, content: s.content! }));
-
-    const sectionPrompt = buildSectionGenerationPrompt({
-      title: project.title,
-      typeLabel,
-      brief,
-      sectionTitle: pendingTemplate.title,
-      sectionGuidance: sectionPlan.guidance,
-      sectionRange: sectionPlan.range,
-      previousSections,
-      styleRules: profile.styleRules,
-      citationGuidance: profile.citationGuidance,
-      factualGuidance: profile.factualGuidance,
-      sectionOutline: buildSectionOutline(pendingTemplate, profile),
-      documentPlan: buildDocumentPlan(templates),
-    });
-
-    const maxTokens = Math.ceil((sectionPlan.range.max || 800) * 1.8);
-
-    let generatedContent: string | null = null;
-
-    const result = await generateSingleSectionForWorker(
+    await trackProductEvent({
+      name: "work_generation_claimed",
+      category: "workspace",
+      userId: project.userId,
       projectId,
-      pendingTemplate.title,
-      systemPrompt,
-      sectionPrompt,
-      maxTokens,
-    );
+      metadata: {
+        queuedAt: executionMetrics.queuedAt?.toISOString() ?? null,
+        claimedAt: executionMetrics.claimedAt?.toISOString() ?? null,
+        queueToClaimMs: executionMetrics.queuedAt && executionMetrics.claimedAt
+          ? executionMetrics.claimedAt.getTime() - executionMetrics.queuedAt.getTime()
+          : null,
+        pendingTemplatesCount: pendingTemplates.length,
+      },
+    }).catch(() => null);
 
-    generatedContent = result.content;
+    for (const pendingTemplate of pendingTemplates) {
+      const sectionPlan = profile.sections.find((section) => section.title === pendingTemplate.title);
+      if (!sectionPlan) {
+        throw new Error(`Plano de secção não encontrado para: ${pendingTemplate.title}`);
+      }
 
-    if (generatedContent && (result.accepted || result.degraded)) {
-      await saveSectionToDb(projectId, pendingTemplate.title, generatedContent);
-      await updateSectionRunState(attemptId, {
-        stableKey,
-        title: pendingTemplate.title,
-        order: pendingTemplate.order,
-        status: "COMPLETED",
-        progress: 100,
-        wordCount: result.wordCount,
-        lastContentPreview: generatedContent,
-        completedAt: new Date(),
+      const stableKey = buildGenerationSectionKey({ title: pendingTemplate.title, order: pendingTemplate.order });
+      const sectionProgress = progressTracker.advance();
+      const sectionStartedAt = new Date();
+
+      await Promise.all([
+        setPersistedWorkGenerationJob(projectId, {
+          progress: sectionProgress,
+          step: `A gerar ${pendingTemplate.title}`,
+          error: null,
+        }),
+        updateGenerationRunState(runId, {
+          status: "GENERATING",
+          progress: sectionProgress,
+          step: `A gerar ${pendingTemplate.title}`,
+          activeSectionKey: stableKey,
+        }),
+        updateSectionRunState(attemptId, {
+          stableKey,
+          title: pendingTemplate.title,
+          order: pendingTemplate.order,
+          status: "STREAMING",
+          progress: sectionProgress,
+          startedAt: sectionStartedAt,
+          error: null,
+          lastContentPreview: null,
+        }),
+      ]);
+
+      const sectionPrompt = buildSectionGenerationPrompt({
+        title: project.title,
+        typeLabel,
+        brief,
+        sectionTitle: pendingTemplate.title,
+        sectionGuidance: sectionPlan.guidance,
+        sectionRange: sectionPlan.range,
+        previousSections,
+        styleRules: profile.styleRules,
+        citationGuidance: profile.citationGuidance,
+        factualGuidance: profile.factualGuidance,
+        sectionOutline: buildSectionOutline(pendingTemplate, profile),
+        documentPlan: buildDocumentPlan(templates),
       });
 
-      logger.info("[work-generation] section completed, triggering next", { projectId, section: pendingTemplate.title });
-      triggerQueuedGenerationProcessing();
-    } else {
-      await updateSectionRunState(attemptId, {
-        stableKey,
-        title: pendingTemplate.title,
-        order: pendingTemplate.order,
-        status: "FAILED",
-        progress: 100,
-        error: result.error?.message || "Falha ao gerar secção",
-        completedAt: new Date(),
+      const handleChunk = async (content: string) => {
+        const persistedAt = new Date();
+        if (!executionMetrics.firstChunkAt) {
+          executionMetrics.firstChunkAt = persistedAt;
+          await trackProductEvent({
+            name: "work_generation_first_chunk",
+            category: "workspace",
+            userId: project.userId,
+            projectId,
+            metadata: {
+              queuedAt: executionMetrics.queuedAt?.toISOString() ?? null,
+              claimedAt: executionMetrics.claimedAt?.toISOString() ?? null,
+              firstChunkAt: executionMetrics.firstChunkAt.toISOString(),
+              queueToFirstChunkMs: executionMetrics.queuedAt
+                ? executionMetrics.firstChunkAt.getTime() - executionMetrics.queuedAt.getTime()
+                : null,
+            },
+          }).catch(() => null);
+        }
+
+        setWorkGenerationJob(projectId, {
+          progress: sectionProgress,
+          step: `A gerar ${pendingTemplate.title}`,
+          streamingContent: content,
+          streamingSectionTitle: pendingTemplate.title,
+        });
+        await Promise.all([
+          setPersistedWorkGenerationJob(projectId, {
+            progress: sectionProgress,
+            step: `A gerar ${pendingTemplate.title}`,
+            streamingContent: content,
+            streamingSectionTitle: pendingTemplate.title,
+          }),
+          updateSectionRunState(attemptId, {
+            stableKey,
+            title: pendingTemplate.title,
+            order: pendingTemplate.order,
+            status: "STREAMING",
+            progress: sectionProgress,
+            lastContentPreview: content,
+            lastPersistedAt: persistedAt,
+          }),
+        ]);
+      };
+
+      const result = await generateSectionWithRetry(
+        projectId,
+        pendingTemplate,
+        sectionPlan,
+        systemPrompt,
+        sectionPrompt,
+        handleChunk,
+      );
+
+      setWorkGenerationJob(projectId, {
+        streamingContent: undefined,
+        streamingSectionTitle: undefined,
       });
-      logger.warn("[work-generation] section failed, continuing to next", { projectId, section: pendingTemplate.title, error: result.error?.message });
-      triggerQueuedGenerationProcessing();
+      await setPersistedWorkGenerationJob(projectId, {
+        streamingContent: null,
+        streamingSectionTitle: null,
+      });
+
+      if (result.content && (result.accepted || result.degraded)) {
+        const persistedAt = new Date();
+        await setPersistedWorkGenerationJob(projectId, {
+          progress: sectionProgress,
+          step: `A guardar ${pendingTemplate.title}`,
+        });
+        await saveSectionToDb(projectId, pendingTemplate.title, result.content);
+        await updateSectionRunState(attemptId, {
+          stableKey,
+          title: pendingTemplate.title,
+          order: pendingTemplate.order,
+          status: "COMPLETED",
+          progress: 100,
+          wordCount: result.wordCount,
+          lastContentPreview: result.content,
+          lastPersistedAt: persistedAt,
+          completedAt: persistedAt,
+          error: result.degraded
+            ? result.validationIssues.map((issue) => issue.message).join(" ")
+            : null,
+        });
+
+        previousSections.push({ title: pendingTemplate.title, content: result.content });
+        sectionOutcomes.push({
+          title: pendingTemplate.title,
+          accepted: result.accepted,
+          degraded: result.degraded,
+          hadAnyContent: result.hadAnyContent,
+          failureReason: result.failureReason,
+        });
+
+        if (!executionMetrics.firstSectionDoneAt) {
+          executionMetrics.firstSectionDoneAt = persistedAt;
+          await trackProductEvent({
+            name: "work_generation_first_section_completed",
+            category: "workspace",
+            userId: project.userId,
+            projectId,
+            metadata: {
+              title: pendingTemplate.title,
+              queuedAt: executionMetrics.queuedAt?.toISOString() ?? null,
+              firstSectionDoneAt: executionMetrics.firstSectionDoneAt.toISOString(),
+              queueToFirstSectionDoneMs: executionMetrics.queuedAt
+                ? executionMetrics.firstSectionDoneAt.getTime() - executionMetrics.queuedAt.getTime()
+                : null,
+            },
+          }).catch(() => null);
+        }
+
+        logger.info("[work-generation] section completed within single-pass worker", {
+          projectId,
+          section: pendingTemplate.title,
+        });
+      } else {
+        sectionOutcomes.push({
+          title: pendingTemplate.title,
+          accepted: false,
+          degraded: false,
+          hadAnyContent: result.hadAnyContent,
+          failureReason: result.failureReason,
+        });
+        await updateSectionRunState(attemptId, {
+          stableKey,
+          title: pendingTemplate.title,
+          order: pendingTemplate.order,
+          status: "FAILED",
+          progress: sectionProgress,
+          retryCount: 2,
+          error: result.error?.message || "Falha ao gerar secção",
+          completedAt: new Date(),
+        });
+        logger.warn("[work-generation] section failed within single-pass worker", {
+          projectId,
+          section: pendingTemplate.title,
+          error: result.error?.message,
+        });
+      }
     }
+
+    await finalizeGeneration(projectId, runId, attemptId, project.userId, {
+      outcomes: sectionOutcomes,
+      metrics: executionMetrics,
+    });
   } catch (error) {
-    logger.error("[work-generation] section generation error", { projectId, section: pendingTemplate.title, error: String(error) });
-    triggerQueuedGenerationProcessing();
+    logger.error("[work-generation] section generation error", { projectId, error: String(error) });
     throw error;
   }
 }

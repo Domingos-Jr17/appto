@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
+import { shouldPauseNonCriticalAppFetch } from "@/lib/app-shell-fetch-policy";
 
 interface AccountData {
   id: string;
@@ -37,10 +39,12 @@ interface AccountState {
 const AccountDataContext = React.createContext<AccountState | null>(null);
 
 export function AccountDataProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [user, setUser] = React.useState<AccountData | null>(null);
   const [settings, setSettings] = React.useState<SettingsData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const pauseAutoFetch = shouldPauseNonCriticalAppFetch(pathname);
 
   const refresh = React.useCallback(async () => {
     setIsLoading(true);
@@ -71,8 +75,13 @@ export function AccountDataProvider({ children }: { children: React.ReactNode })
   }, []);
 
   React.useEffect(() => {
+    if (pauseAutoFetch) {
+      setIsLoading(false);
+      return;
+    }
+
     void refresh();
-  }, [refresh]);
+  }, [pauseAutoFetch, refresh]);
 
   const value = React.useMemo(
     () => ({ user, settings, isLoading, error, refresh }),

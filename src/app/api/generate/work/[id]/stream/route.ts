@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
 import { extractActiveSectionTitle } from "@/lib/work-generation-state";
 
-const POLL_INTERVAL_MS = 500;
+const POLL_INTERVAL_MS = 1500;
 const MAX_DURATION_MS = 900_000; // 15 minutes
 const RETRY_MS = 3000;
 

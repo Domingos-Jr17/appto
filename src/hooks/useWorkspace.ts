@@ -5,6 +5,7 @@ import type { WorkspaceData, WorkBrief, WorkSection } from "@/types/workspace";
 import { toast } from "@/hooks/use-toast";
 import { useGenerationStream } from "@/hooks/useGenerationStream";
 import {
+  extractActiveSectionTitle,
   isFrontMatterSectionTitle,
   isMeaningfulWorkspaceSection,
   resolveGenerationSnapshot,
@@ -81,6 +82,77 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
     }
   }, [data.id]);
 
+  const applyLiveSnapshot = useCallback((snapshot: {
+    type: "handshake" | "job-created" | "section-started" | "section-complete" | "progress" | "content-chunk" | "complete" | "error";
+    progress: number;
+    step: string;
+    sectionTitle?: string;
+    error?: string;
+  }) => {
+    const activeSectionTitle = snapshot.sectionTitle || extractActiveSectionTitle(snapshot.step) || null;
+    const nextGenerationStatus = snapshot.type === "complete"
+      ? "READY"
+      : snapshot.type === "error"
+        ? "FAILED"
+        : "GENERATING";
+
+    if (snapshot.type === "error" && snapshot.error) {
+      setError(snapshot.error);
+    }
+
+    setData((prev) => ({
+      ...prev,
+      generationStatus: nextGenerationStatus,
+      generationProgress: nextGenerationStatus === "GENERATING" ? snapshot.progress : 100,
+      generationStep: snapshot.error || snapshot.step,
+      sections: prev.sections.map((section) => {
+        const hasPersistedContent = Boolean(section.content?.trim());
+        const hasStreamingContent = Boolean(section.streamingContent?.trim());
+
+        if (snapshot.type === "section-complete" && snapshot.sectionTitle === section.title) {
+          return {
+            ...section,
+            content: section.content || section.streamingContent || "",
+            status: "done" as const,
+          };
+        }
+
+        if (hasPersistedContent) {
+          return {
+            ...section,
+            status: "done" as const,
+          };
+        }
+
+        if (hasStreamingContent && activeSectionTitle !== section.title) {
+          return {
+            ...section,
+            content: section.content || section.streamingContent || "",
+            status: "done" as const,
+          };
+        }
+
+        if (activeSectionTitle === section.title && nextGenerationStatus === "GENERATING") {
+          return {
+            ...section,
+            status: hasStreamingContent ? "streaming" as const : "generating" as const,
+          };
+        }
+
+        return {
+          ...section,
+          status: resolveWorkspaceSectionState({
+            generationStatus: nextGenerationStatus,
+            activeSectionTitle,
+            hasPersistedContent,
+            title: section.title,
+            hasStreamingContent,
+          }),
+        };
+      }),
+    }));
+  }, []);
+
   const handleContentChunk = useCallback((sectionTitle: string, content: string) => {
     setData((prev) => ({
       ...prev,
@@ -98,6 +170,7 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
     projectId: data.id,
     generationStatus: data.generationStatus,
     onFetch: refreshProject,
+    onProgress: applyLiveSnapshot,
     onContentChunk: handleContentChunk,
     enabled: isGenerating,
   });

@@ -31,6 +31,10 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
   } | null>(null);
 
   useEffect(() => {
+    if (workspace.isGenerating) {
+      return;
+    }
+
     fetch("/api/subscription")
       .then((res) => res.json())
       .then((data) => {
@@ -46,7 +50,7 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
       .catch(() => {
         // silent — subscription info is optional
       });
-  }, []);
+  }, [workspace.isGenerating]);
 
   const hasContent = (workspace.data?.sections ?? []).some(
     (section) =>

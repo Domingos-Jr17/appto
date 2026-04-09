@@ -10,6 +10,7 @@ mock.module("server-only", () => ({}));
 
 const {
   createSectionAttemptDiagnostics,
+  getPendingGenerationTemplates,
   resolveGenerationCompletionDecision,
   summarizeSectionGenerationAttempts,
 } = await import("@/lib/work-generation-jobs");
@@ -143,5 +144,25 @@ describe("work generation jobs", () => {
     expect(decision.status).toBe("READY");
     expect(decision.shouldRefund).toBe(false);
     expect(decision.step).toContain("conclu");
+  });
+
+  test("returns every pending template for a single worker pass", () => {
+    const pending = getPendingGenerationTemplates(
+      [
+        { title: "1. Introdução", order: 1 },
+        { title: "2. Desenvolvimento", order: 2 },
+        { title: "3. Conclusão", order: 3 },
+      ],
+      [
+        { title: "1. Introdução", content: "Conteúdo já existente" },
+        { title: "2. Desenvolvimento", content: null },
+        { title: "3. Conclusão", content: "" },
+      ],
+    );
+
+    expect(pending.map((template) => template.title)).toEqual([
+      "2. Desenvolvimento",
+      "3. Conclusão",
+    ]);
   });
 });

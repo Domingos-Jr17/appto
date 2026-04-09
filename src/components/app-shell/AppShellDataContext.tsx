@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import { fetchAppProjects, sortProjectsByUpdatedAt, type AppProjectRecord } from "@/lib/app-data";
+import { shouldPauseNonCriticalAppFetch } from "@/lib/app-shell-fetch-policy";
 
 interface AppShellDataContextValue {
   projects: AppProjectRecord[];
@@ -15,10 +17,12 @@ const STALE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
 const BACKGROUND_REFRESH_INTERVAL = 60 * 1000; // 1 minute
 
 export function AppShellDataProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [projects, setProjects] = React.useState<AppProjectRecord[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [lastFetchTime, setLastFetchTime] = React.useState<number>(0);
   const refreshRef = React.useRef<((silent: boolean) => Promise<void>) | null>(null);
+  const pauseAutoFetch = shouldPauseNonCriticalAppFetch(pathname);
 
   const refresh = React.useCallback(async (silent = false) => {
     if (!silent) {
@@ -40,11 +44,16 @@ export function AppShellDataProvider({ children }: { children: React.ReactNode }
   }, [refresh]);
 
   React.useEffect(() => {
+    if (pauseAutoFetch) {
+      setIsLoading(false);
+      return;
+    }
+
      const timer = setTimeout(() => {
        refreshRef.current?.(true);
      }, 100);
     return () => clearTimeout(timer);
-  }, []);
+  }, [pauseAutoFetch]);
 
   // Background refresh when stale
   const lastFetchTimeRef = React.useRef(lastFetchTime);
@@ -59,6 +68,10 @@ export function AppShellDataProvider({ children }: { children: React.ReactNode }
   }, [isLoading]);
 
   React.useEffect(() => {
+    if (pauseAutoFetch) {
+      return;
+    }
+
     const interval = setInterval(() => {
       const isStale = Date.now() - lastFetchTimeRef.current > STALE_THRESHOLD;
       if (isStale && !isLoadingRef.current) {
@@ -67,7 +80,7 @@ export function AppShellDataProvider({ children }: { children: React.ReactNode }
     }, BACKGROUND_REFRESH_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [refresh]);
+  }, [pauseAutoFetch, refresh]);
 
   const value = React.useMemo(
     () => ({

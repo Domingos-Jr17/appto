@@ -30,6 +30,11 @@ export async function searchAcademicSources(
       },
     });
 
+    if (response.status === 429) {
+      console.warn("[academic-search] Rate limited - using existing references");
+      return [];
+    }
+
     if (!response.ok) {
       console.error(`[academic-search] API error: ${response.status}`);
       return [];

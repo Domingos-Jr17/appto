@@ -11,6 +11,7 @@ mock.module("server-only", () => ({}));
 const {
   createSectionAttemptDiagnostics,
   getPendingGenerationTemplates,
+  shouldYieldGenerationPass,
   resolveGenerationCompletionDecision,
   summarizeSectionGenerationAttempts,
 } = await import("@/lib/work-generation-jobs");
@@ -164,5 +165,23 @@ describe("work generation jobs", () => {
       "2. Desenvolvimento",
       "3. Conclusão",
     ]);
+  });
+
+  test("yields the worker before the runtime limit is reached", () => {
+    expect(
+      shouldYieldGenerationPass({
+        passStartedAt: 0,
+        now: 250_000,
+      }),
+    ).toBe(true);
+  });
+
+  test("keeps processing when there is still safe runtime budget", () => {
+    expect(
+      shouldYieldGenerationPass({
+        passStartedAt: 0,
+        now: 120_000,
+      }),
+    ).toBe(false);
   });
 });

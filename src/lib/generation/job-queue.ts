@@ -33,6 +33,7 @@ export async function processQueuedGenerationJobs(
       completedAt: null,
       OR: [
         { step: "Na fila do worker" },
+        { step: "A continuar no próximo worker" },
         { startedAt: { lt: staleCutoff } },
       ],
     },

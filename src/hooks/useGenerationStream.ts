@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { shouldRefetchProjectOnGenerationEvent } from "@/lib/generation-stream-events";
+import {
+  classifyGenerationStreamFailure,
+  shouldRefetchProjectOnGenerationEvent,
+} from "@/lib/generation-stream-events";
 
 interface SSEEvent {
   type: "handshake" | "job-created" | "section-started" | "section-complete" | "progress" | "content-chunk" | "complete" | "error";
@@ -53,6 +56,8 @@ export function useGenerationStream({
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const isGeneratingRef = useRef(false);
+  const connectionStartedAtRef = useRef(0);
+  const lastEventAtRef = useRef(0);
   const [useSSE, setUseSSE] = useState(true);
 
   const isGenerating = generationStatus === "GENERATING";
@@ -96,7 +101,8 @@ export function useGenerationStream({
 
   const connectSSE = useCallback(function connectSSEImpl() {
     stopSSE();
-    reconnectAttemptsRef.current = 0;
+    connectionStartedAtRef.current = Date.now();
+    lastEventAtRef.current = connectionStartedAtRef.current;
 
     const url = `/api/generate/work/${projectId}/stream`;
     const eventSource = new EventSource(url);
@@ -105,6 +111,8 @@ export function useGenerationStream({
     const handleSnapshot = (e: Event, type: SSEEvent["type"]) => {
       try {
         const parsed = parseSseEvent(e);
+        lastEventAtRef.current = Date.now();
+        reconnectAttemptsRef.current = 0;
         onProgress?.({
           type,
           progress: parsed.data.progress,
@@ -171,22 +179,28 @@ export function useGenerationStream({
     });
 
     eventSource.onerror = () => {
-      reconnectAttemptsRef.current += 1;
+      const decision = classifyGenerationStreamFailure({
+        connectionStartedAt: connectionStartedAtRef.current,
+        lastEventAt: lastEventAtRef.current,
+        consecutiveFailures: reconnectAttemptsRef.current,
+      });
 
-      // Quick fallback to polling on Vercel Hobby (SSE often fails due to 10s timeout)
-      if (reconnectAttemptsRef.current >= 2) {
+      reconnectAttemptsRef.current = decision.nextFailureCount;
+      stopSSE();
+
+      if (decision.shouldFallbackToPolling) {
         setUseSSE(false);
-        stopSSE();
         startPolling();
         return;
       }
 
-      stopSSE();
-      reconnectTimeoutRef.current = setTimeout(() => {
-        if (isGeneratingRef.current) {
-          connectSSEImpl();
-        }
-      }, 1000);
+      if (decision.shouldReconnect) {
+        reconnectTimeoutRef.current = setTimeout(() => {
+          if (isGeneratingRef.current) {
+            connectSSEImpl();
+          }
+        }, decision.countsAsFailure ? 1000 : 250);
+      }
     };
   }, [projectId, onFetch, onProgress, onContentChunk, onSectionStarted, onSectionComplete, stopSSE, startPolling]);
 

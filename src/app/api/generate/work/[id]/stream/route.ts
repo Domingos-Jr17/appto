@@ -5,7 +5,7 @@ import { getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
 import { extractActiveSectionTitle } from "@/lib/work-generation-state";
 
 const POLL_INTERVAL_MS = 1500;
-const MAX_DURATION_MS = 900_000; // 15 minutes
+const MAX_DURATION_MS = 240_000; // rotate before Vercel's effective 300s timeout
 const RETRY_MS = 3000;
 
 interface SSEEvent {
@@ -193,10 +193,6 @@ export async function GET(
       const intervalId = setInterval(check, POLL_INTERVAL_MS);
 
       const timeoutId = setTimeout(() => {
-        send({
-          type: "error",
-          data: { progress: lastProgress || 0, step: "Timeout de stream" },
-        });
         cleanup();
       }, MAX_DURATION_MS);
 

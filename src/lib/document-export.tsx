@@ -14,6 +14,7 @@ import {
   TextRun,
 } from "docx";
 import { normalizeStoredContent, parseMarkdownBlocks } from "@/lib/content";
+import { formatProjectType } from "@/lib/generation/work-generation-artifacts";
 import type { ReferenceData } from "@/types/editor";
 
 export interface ExportSection {
@@ -120,6 +121,117 @@ const pdfStyles = StyleSheet.create({
     textAlign: "left",
   },
 });
+
+const FRONT_MATTER_SECTION_TITLES = new Set(["Capa", "Folha de Rosto"]);
+
+function normalizeHeadingForComparison(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/^#+\s*/, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+export function isFrontMatterSectionTitle(title: string) {
+  return FRONT_MATTER_SECTION_TITLES.has(title.trim());
+}
+
+export function stripLeadingDuplicateHeading(content: string, sectionTitle: string) {
+  const normalized = normalizeStoredContent(content);
+  if (!normalized) {
+    return "";
+  }
+
+  const lines = normalized.split("\n");
+  while (lines[0]?.trim() === "") {
+    lines.shift();
+  }
+
+  const firstLine = lines[0]?.trim();
+  if (
+    firstLine &&
+    normalizeHeadingForComparison(firstLine) === normalizeHeadingForComparison(sectionTitle)
+  ) {
+    lines.shift();
+    while (lines[0]?.trim() === "") {
+      lines.shift();
+    }
+    return lines.join("\n").trim();
+  }
+
+  return normalized;
+}
+
+interface InlineMarkdownSegment {
+  text: string;
+  bold?: boolean;
+  italics?: boolean;
+}
+
+function sanitizeInlinePlainText(value: string) {
+  return value.replace(/\*\*|__|\*|_/g, "");
+}
+
+function parseInlineMarkdownSegments(text: string): InlineMarkdownSegment[] {
+  const normalized = text.replace(/\r\n/g, "\n");
+  const pattern = /(\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|_[^_]+_)/g;
+  const segments: InlineMarkdownSegment[] = [];
+  let lastIndex = 0;
+
+  for (const match of normalized.matchAll(pattern)) {
+    const token = match[0];
+    const tokenIndex = match.index ?? 0;
+
+    if (tokenIndex > lastIndex) {
+      const plainText = sanitizeInlinePlainText(normalized.slice(lastIndex, tokenIndex));
+      if (plainText) {
+        segments.push({ text: plainText });
+      }
+    }
+
+    const innerText = token.slice(token.startsWith("**") || token.startsWith("__") ? 2 : 1, token.endsWith("**") || token.endsWith("__") ? -2 : -1);
+    if (innerText) {
+      const isBoldToken = token.startsWith("**") || token.startsWith("__");
+      segments.push({
+        text: innerText,
+        bold: isBoldToken,
+        italics: !isBoldToken && (token.startsWith("*") || token.startsWith("_")),
+      });
+    }
+    lastIndex = tokenIndex + token.length;
+  }
+
+  if (lastIndex < normalized.length) {
+    const trailingText = sanitizeInlinePlainText(normalized.slice(lastIndex));
+    if (trailingText) {
+      segments.push({ text: trailingText });
+    }
+  }
+
+  if (segments.length === 0) {
+    return [{ text: sanitizeInlinePlainText(normalized) }];
+  }
+
+  return segments;
+}
+
+function buildInlineTextRuns(
+  text: string,
+  options: { size: number; font: string; bold?: boolean; italics?: boolean },
+) {
+  return parseInlineMarkdownSegments(text).map(
+    (segment) =>
+      new TextRun({
+        text: segment.text,
+        size: options.size,
+        font: options.font,
+        bold: options.bold || segment.bold || false,
+        italics: options.italics || segment.italics || false,
+      }),
+  );
+}
 
 function renderPdfCover(model: ExportDocument) {
   const template = model.brief?.coverTemplate || "ABNT_GENERIC";
@@ -274,7 +386,7 @@ function buildCoverParagraphs(model: ExportDocument) {
         spacing: { after: 200 },
       }),
       new Paragraph({
-        children: [new TextRun({ text: model.description || model.type, size: 24, font: "Arial" })],
+        children: [new TextRun({ text: model.type, size: 24, font: "Arial" })],
         alignment: AlignmentType.CENTER,
       }),
       new Paragraph({
@@ -436,7 +548,7 @@ function buildCoverParagraphs(model: ExportDocument) {
         alignment: AlignmentType.CENTER,
       }),
       new Paragraph({
-        children: [new TextRun({ text: model.description || model.type, size: 24, font: "Arial" })],
+        children: [new TextRun({ text: model.type, size: 24, font: "Arial" })],
         alignment: AlignmentType.CENTER,
         spacing: { after: 200 },
       }),
@@ -470,7 +582,7 @@ function buildCoverParagraphs(model: ExportDocument) {
       spacing: { after: 200 },
     }),
     new Paragraph({
-      children: [new TextRun({ text: model.description || model.type, size: 24, font: "Arial" })],
+      children: [new TextRun({ text: model.type, size: 24, font: "Arial" })],
       alignment: AlignmentType.CENTER,
       spacing: { after: 200 },
     }),
@@ -511,15 +623,17 @@ export class DocumentExportService {
     return {
       title: project.title,
       description: project.description,
-      type: project.type,
+      type: formatProjectType(project.type),
       brief: project.brief || undefined,
-      sections: project.sections.map((section) => ({
-        id: section.id,
-        title: section.title,
-        content: normalizeStoredContent(section.content ?? ""),
-        order: section.order,
-        level: /^\d+\./.test(section.title) ? 1 : 2,
-      })),
+      sections: project.sections
+        .filter((section) => !isFrontMatterSectionTitle(section.title))
+        .map((section) => ({
+          id: section.id,
+          title: section.title,
+          content: stripLeadingDuplicateHeading(section.content ?? "", section.title),
+          order: section.order,
+          level: /^\d+\./.test(section.title) ? 1 : 2,
+        })),
     };
   }
 
@@ -551,14 +665,11 @@ export class DocumentExportService {
 
       bodyChildren.push(
         new Paragraph({
-          children: [
-            new TextRun({
-              text: section.title,
-              bold: true,
-              size: section.level === 1 ? 28 : 24,
-              font: "Arial",
-            }),
-          ],
+          children: buildInlineTextRuns(section.title, {
+            bold: true,
+            size: section.level === 1 ? 28 : 24,
+            font: "Arial",
+          }),
           heading: section.level === 1 ? HeadingLevel.HEADING_1 : HeadingLevel.HEADING_2,
           spacing: { before: 300, after: 160 },
         })
@@ -569,7 +680,7 @@ export class DocumentExportService {
         for (const entry of entries) {
           bodyChildren.push(
             new Paragraph({
-              children: [new TextRun({ text: entry, size: 24, font: "Arial" })],
+              children: buildInlineTextRuns(entry, { size: 24, font: "Arial" }),
               spacing: { after: 120, line: 280 },
               alignment: AlignmentType.LEFT,
             }),
@@ -600,7 +711,11 @@ export class DocumentExportService {
 
           bodyChildren.push(
             new Paragraph({
-              children: [new TextRun({ text: block.text, bold: true, size: fontSize, font: "Arial" })],
+              children: buildInlineTextRuns(block.text, {
+                bold: true,
+                size: fontSize,
+                font: "Arial",
+              }),
               heading: headingLevel,
               spacing: { before: isSubheading ? 220 : 120, after: 120 },
             })
@@ -610,7 +725,7 @@ export class DocumentExportService {
         if (block.type === "paragraph" && block.text) {
           bodyChildren.push(
             new Paragraph({
-              children: [new TextRun({ text: block.text, size: 24, font: "Arial" })],
+              children: buildInlineTextRuns(block.text, { size: 24, font: "Arial" }),
               spacing: { after: 200, line: 360 },
               alignment: AlignmentType.JUSTIFIED,
               indent: { firstLine: 709 },
@@ -621,7 +736,11 @@ export class DocumentExportService {
         if (block.type === "quote" && block.text) {
           bodyChildren.push(
             new Paragraph({
-              children: [new TextRun({ text: block.text, size: 20, font: "Arial" })],
+              children: buildInlineTextRuns(block.text, {
+                size: 20,
+                font: "Arial",
+                italics: true,
+              }),
               spacing: { after: 180, line: 240 },
               indent: { left: 2268 },
             })
@@ -632,7 +751,7 @@ export class DocumentExportService {
           for (const item of block.items) {
             bodyChildren.push(
               new Paragraph({
-                children: [new TextRun({ text: item, size: 24, font: "Arial" })],
+                children: buildInlineTextRuns(item, { size: 24, font: "Arial" }),
                 bullet: { level: 0 },
                 spacing: { after: 120, line: 320 },
                 indent: { firstLine: 709 },
@@ -698,18 +817,12 @@ export class DocumentExportService {
   }
 
   static createPdfComponent(model: ExportDocument) {
-    const skipFrontMatter = new Set(["Capa", "Folha de Rosto"]);
-    let contentPageCount = 0;
-
     return (
       <PdfDocument>
         <Page size="A4" style={pdfStyles.page}>
           {renderPdfCover(model)}
           {model.description ? <Text style={pdfStyles.paragraph}>{model.description}</Text> : null}
           {model.sections.map((section) => {
-            const isFrontMatter = skipFrontMatter.has(section.title);
-            if (!isFrontMatter) contentPageCount++;
-
             return (
             <View key={section.id}>
               <Text style={pdfStyles.sectionTitle}>{section.title}</Text>

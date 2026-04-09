@@ -112,6 +112,8 @@ Adapte o nível de linguagem ao nível educacional indicado:
 - HIGHER_EDUCATION: linguagem formal, terminologia académica, citações obrigatórias
 Nunca invente metadados da capa sem base no briefing.`;
 
+const WORKER_PASS_RUNTIME_BUDGET_MS = 240_000;
+
 function getSystemPromptForEducation(educationLevel?: string | null): string {
   if (educationLevel === "SECONDARY") {
     return `Você é um assistente de escrita para estudantes do ensino secundário moçambicano.
@@ -470,6 +472,16 @@ export function getPendingGenerationTemplates(
   );
 
   return templates.filter((template) => !generatedTitles.has(template.title));
+}
+
+export function shouldYieldGenerationPass(input: {
+  passStartedAt: number;
+  now?: number;
+  runtimeBudgetMs?: number;
+}) {
+  const now = input.now ?? Date.now();
+  const runtimeBudgetMs = input.runtimeBudgetMs ?? WORKER_PASS_RUNTIME_BUDGET_MS;
+  return now - input.passStartedAt >= runtimeBudgetMs;
 }
 
 async function saveSectionToDb(
@@ -1140,6 +1152,7 @@ async function processGenerationJob(projectId: string) {
     hadAnyContent: true,
     failureReason: null,
   }));
+  const passStartedAt = Date.now();
 
   try {
     await Promise.all([
@@ -1183,7 +1196,7 @@ async function processGenerationJob(projectId: string) {
       },
     }).catch(() => null);
 
-    for (const pendingTemplate of pendingTemplates) {
+    for (const [pendingIndex, pendingTemplate] of pendingTemplates.entries()) {
       const sectionPlan = profile.sections.find((section) => section.title === pendingTemplate.title);
       if (!sectionPlan) {
         throw new Error(`Plano de secção não encontrado para: ${pendingTemplate.title}`);
@@ -1371,6 +1384,61 @@ async function processGenerationJob(projectId: string) {
           section: pendingTemplate.title,
           error: result.error?.message,
         });
+      }
+
+      const hasMorePendingTemplates = pendingIndex < pendingTemplates.length - 1;
+      if (hasMorePendingTemplates && shouldYieldGenerationPass({ passStartedAt })) {
+        const yieldedAt = new Date();
+        const nextSectionTitle = pendingTemplates[pendingIndex + 1]?.title ?? null;
+
+        setWorkGenerationJob(projectId, {
+          progress: sectionProgress,
+          step: "A continuar no próximo worker",
+          streamingContent: undefined,
+          streamingSectionTitle: undefined,
+        });
+        await Promise.all([
+          setPersistedWorkGenerationJob(projectId, {
+            progress: sectionProgress,
+            step: "A continuar no próximo worker",
+            streamingContent: null,
+            streamingSectionTitle: null,
+            error: null,
+          }),
+          updateGenerationRunState(runId, {
+            status: "GENERATING",
+            progress: sectionProgress,
+            step: "A continuar no próximo worker",
+            activeSectionKey: null,
+          }),
+          updateGenerationAttemptState(attemptId, {
+            status: "GENERATING",
+            error: null,
+          }),
+        ]);
+
+        await trackProductEvent({
+          name: "work_generation_yielded",
+          category: "workspace",
+          userId: project.userId,
+          projectId,
+          metadata: {
+            yieldedAt: yieldedAt.toISOString(),
+            nextSectionTitle,
+            queuedAt: executionMetrics.queuedAt?.toISOString() ?? null,
+            claimedAt: executionMetrics.claimedAt?.toISOString() ?? null,
+            progress: sectionProgress,
+          },
+        }).catch(() => null);
+
+        logger.info("[work-generation] yielding before runtime limit", {
+          projectId,
+          nextSectionTitle,
+          progress: sectionProgress,
+        });
+
+        triggerQueuedGenerationProcessing();
+        return;
       }
     }
 

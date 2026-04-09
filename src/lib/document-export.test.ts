@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
-import { formatReferenceEntry, getAbntChecklist, parseReferenceEntries } from "@/lib/document-export";
+import {
+  DocumentExportService,
+  formatReferenceEntry,
+  getAbntChecklist,
+  parseReferenceEntries,
+  stripLeadingDuplicateHeading,
+} from "@/lib/document-export";
 
 describe("document export references", () => {
   test("formats book references in ABNT-like style", () => {
@@ -34,5 +40,33 @@ describe("document export references", () => {
 
     expect(checklist.template).toBe("UEM_STANDARD");
     expect(checklist.items.some((item) => item.includes("Universidade Eduardo Mondlane"))).toBe(true);
+  });
+
+  test("filters front matter and humanizes project type in the export model", () => {
+    const model = DocumentExportService.createModel({
+      title: "A teoria da vida",
+      description: null,
+      type: "SECONDARY_WORK",
+      brief: {
+        coverTemplate: "SCHOOL_MOZ",
+      },
+      sections: [
+        { id: "cover", title: "Capa", content: "<style>*{box-sizing:border-box;}</style>", order: 1 },
+        { id: "title-page", title: "Folha de Rosto", content: "<div>Folha</div>", order: 2 },
+        { id: "intro", title: "1. Introdução", content: "Conteúdo", order: 3 },
+      ],
+    });
+
+    expect(model.type).toBe("Trabalho Escolar");
+    expect(model.sections.map((section) => section.title)).toEqual(["1. Introdução"]);
+  });
+
+  test("strips a repeated heading from the beginning of exported section content", () => {
+    const content = stripLeadingDuplicateHeading(
+      "1. Introdução\n\nTexto final da introdução.",
+      "1. Introdução",
+    );
+
+    expect(content).toBe("Texto final da introdução.");
   });
 });

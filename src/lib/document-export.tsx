@@ -161,15 +161,19 @@ export function stripLeadingDuplicateHeading(content: string, sectionTitle: stri
   }
 
   const firstLine = lines[0]?.trim();
-  if (
-    firstLine &&
-    normalizeHeadingForComparison(firstLine) === normalizeHeadingForComparison(sectionTitle)
-  ) {
-    lines.shift();
-    while (lines[0]?.trim() === "") {
+  if (firstLine) {
+    const cleanFirstLine = firstLine.replace(/^#+\s*/, "").trim();
+    const normalizedSection = normalizeHeadingForComparison(sectionTitle);
+    const firstLineMatches = normalizeHeadingForComparison(cleanFirstLine) === normalizedSection;
+    const firstLineIsNumberedSection = /^\d+(\.\d+)*\.?\s+/.test(cleanFirstLine);
+
+    if (firstLineMatches || firstLineIsNumberedSection) {
       lines.shift();
+      while (lines[0]?.trim() === "") {
+        lines.shift();
+      }
+      return lines.join("\n").trim();
     }
-    return lines.join("\n").trim();
   }
 
   return normalized;
@@ -379,17 +383,18 @@ function buildCoverParagraphs(model: ExportDocument) {
   const author = model.brief?.studentName || "Nome do Autor";
   const courseLine = resolveDocumentCourseLabel(model.profile, model.brief);
   const cityYear = [model.brief?.city || "Maputo", model.brief?.academicYear].filter(Boolean).join(", ");
-  const _referenceMeta = resolveDocumentReferenceMeta(model.profile, model.brief);
+  const referenceMeta = resolveDocumentReferenceMeta(model.profile, model.brief);
+  const typeLabel = formatProjectType(model.profile.projectType);
 
   if (template === "UEM_STANDARD") {
     return [
       new Paragraph({
-        children: [new TextRun({ text: "UNIVERSIDADE EDUARDO MONDLANE", size: 24, font: "Arial", bold: true })],
+        children: [new TextRun({ text: institution.toUpperCase(), size: 24, font: "Arial", bold: true })],
         alignment: AlignmentType.CENTER,
         spacing: { after: 120 },
       }),
       new Paragraph({
-        children: [new TextRun({ text: model.brief?.facultyName || institution, size: 24, font: "Arial" })],
+        children: [new TextRun({ text: model.brief?.facultyName || courseLine, size: 24, font: "Arial" })],
         alignment: AlignmentType.CENTER,
         spacing: { after: 120 },
       }),
@@ -406,21 +411,22 @@ function buildCoverParagraphs(model: ExportDocument) {
       new Paragraph({
         children: [new TextRun({ text: model.title.toUpperCase(), bold: true, size: 28, font: "Arial" })],
         alignment: AlignmentType.CENTER,
+        spacing: { after: 240 },
+      }),
+      new Paragraph({
+        children: [new TextRun({ text: typeLabel, size: 24, font: "Arial" })],
+        alignment: AlignmentType.CENTER,
         spacing: { after: 200 },
       }),
       new Paragraph({
-        children: [new TextRun({ text: model.type, size: 24, font: "Arial" })],
+        children: [new TextRun({ text: model.brief?.advisorName ? `${model.profile.coverFieldPolicy.advisorLabel}: ${model.brief.advisorName}` : "", size: 24, font: "Arial" })],
         alignment: AlignmentType.CENTER,
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: model.brief?.advisorName ? `Orientador: ${model.brief.advisorName}` : "", size: 24, font: "Arial" })],
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 1600 },
+        spacing: { before: 1600, after: 200 },
       }),
       new Paragraph({
         children: [new TextRun({ text: cityYear, size: 24, font: "Arial" })],
         alignment: AlignmentType.CENTER,
-        spacing: { before: 4200, after: 200 },
+        spacing: { before: 2400, after: 200 },
       }),
     ];
   }
@@ -650,12 +656,13 @@ function buildCoverParagraphs(model: ExportDocument) {
 }
 
 function buildTitlePageParagraphs(model: ExportDocument) {
-  const institution = resolveDocumentInstitutionName(model.profile, model.brief);
+  const institution = resolveDocumentInstitutionName(model.profile, model.brief).toUpperCase();
   const title = model.title.toUpperCase();
   const subtitle = resolveDocumentCourseLabel(model.profile, model.brief);
   const student = model.brief?.studentName || "Nome do Autor";
   const advisor = model.brief?.advisorName;
   const cityYear = [model.brief?.city || "Maputo", model.brief?.academicYear].filter(Boolean).join(", ");
+  const typeLabel = formatProjectType(model.profile.projectType);
 
   return [
     new Paragraph({
@@ -674,7 +681,7 @@ function buildTitlePageParagraphs(model: ExportDocument) {
       spacing: { after: 240 },
     }),
     new Paragraph({
-      children: [new TextRun({ text: model.type, size: 24, font: "Arial" })],
+      children: [new TextRun({ text: typeLabel, size: 24, font: "Arial" })],
       alignment: AlignmentType.CENTER,
       spacing: { after: 1800 },
     }),
@@ -771,6 +778,7 @@ export class DocumentExportService {
     coverChildren.push(new Paragraph({ children: [new PageBreak()] }));
 
     const bodyChildren: (Paragraph | TableOfContents)[] = [];
+    let isFirstFrontMatter = true;
 
     for (const section of model.frontMatterSections) {
       bodyChildren.push(
@@ -781,9 +789,10 @@ export class DocumentExportService {
             font: "Arial",
           }),
           heading: HeadingLevel.HEADING_1,
-          spacing: { before: 0, after: 160 },
+          spacing: { before: isFirstFrontMatter ? 0 : 720, after: 160 },
         }),
       );
+      isFirstFrontMatter = false;
 
       for (const block of parseMarkdownBlocks(section.content)) {
         if (block.type === "paragraph" && block.text) {

@@ -328,7 +328,7 @@ async function deleteSupabaseStoredObject(file: StoredFile) {
     },
   );
 
-  if (!response.ok && response.status !== 404) {
+  if (!response.ok && response.status !== 400 && response.status !== 404) {
     const body = await response.text().catch(() => "");
     throw new ApiRouteError(
       `Falha ao remover ficheiro do Supabase Storage (${response.status})`,
@@ -464,12 +464,20 @@ export async function deleteStoredObject(file: StoredFile) {
   }
 
   const client = getR2Client();
-  await client.send(
-    new DeleteObjectCommand({
-      Bucket: file.bucket,
-      Key: file.objectKey,
-    })
-  );
+  try {
+    await client.send(
+      new DeleteObjectCommand({
+        Bucket: file.bucket,
+        Key: file.objectKey,
+      }),
+    );
+  } catch (error: unknown) {
+    const errorName = error instanceof Error ? error.name : String(error);
+    if (errorName === "NoSuchKey" || errorName === "NoSuchObject") {
+      return;
+    }
+    throw error;
+  }
 }
 
 export async function cleanupStoredFileLifecycle(input?: {

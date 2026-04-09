@@ -2,8 +2,6 @@ import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 
 import { apiError, apiSuccess, handleApiError, parseBody } from "@/lib/api";
-import { CreditLedgerService } from "@/lib/credit-ledger";
-import { CREDIT_DEFAULTS } from "@/lib/credits";
 import { db } from "@/lib/db";
 import { sendWelcomeEmail } from "@/lib/email";
 import { logger } from "@/lib/logger";
@@ -28,7 +26,6 @@ export async function POST(request: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    new CreditLedgerService(db);
 
     const user = await db.$transaction(async (tx) => {
       const createdUser = await tx.user.create({
@@ -39,14 +36,6 @@ export async function POST(request: NextRequest) {
           role: "STUDENT",
         },
       });
-
-      const scopedLedger = new CreditLedgerService(tx);
-      await scopedLedger.grant(
-        createdUser.id,
-        CREDIT_DEFAULTS.initialBalance,
-        "BONUS",
-        "Créditos iniciais de boas-vindas",
-      );
 
       await tx.subscription.create({
         data: {

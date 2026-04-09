@@ -158,6 +158,13 @@ export function useWorkCreation() {
     fetchSubscription();
   }, []);
 
+  // Cleanup: abort section generation on unmount
+  useEffect(() => {
+    return () => {
+      sectionRunnerAbortRef.current = true;
+    };
+  }, []);
+
   // Actions
   const updateWorkForm = useCallback(
     <K extends keyof WorkFormState>(key: K, value: WorkFormState[K]) => {
@@ -327,19 +334,15 @@ export function useWorkCreation() {
         });
       }
 
-      if (data.generation?.asynchronous) {
+if (data.generation?.asynchronous) {
         pollingFailureCountRef.current = 0;
         sectionRunnerAbortRef.current = false;
         setGenerationProjectId(data.project.id);
         setGenerationStep(0);
         setGenerationMessage(data.generation?.step || "Na fila do worker");
-        void runSectionGeneration(data.project.id).catch((error) => {
-          toast({
-            title: "Erro na geração",
-            description: error instanceof Error ? error.message : "Falha ao gerar as secções do trabalho.",
-            variant: "destructive",
-          });
-        });
+        
+        // Worker processes sections in background - no need for direct generation calls
+        // SSE stream will show progress via worker job status
         return data.project.id;
       }
 

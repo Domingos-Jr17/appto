@@ -6,6 +6,7 @@ import { apiError, apiSuccess, handleApiError } from "@/lib/api";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
+import { withDistributedLock } from "@/lib/distributed-lock";
 import { trackProductEvent } from "@/lib/product-events";
 import { normalizeWorkBriefForGeneration } from "@/lib/projects/project-brief";
 import { createProjectWithStructureTx } from "@/lib/projects/project-creation";
@@ -71,19 +72,25 @@ export async function POST(request: NextRequest) {
         return apiError("Geração já está em curso ou concluída para este trabalho.", 409);
       }
 
-      try {
-        await startWorkGenerationJob({
-          projectId: project.id,
-          userId: session.user.id,
-          title,
-          type,
-          brief,
-          contentCost: 0,
-          baseCost: 0,
-        });
-      } catch (error) {
-        await subscriptionService.refundWork(session.user.id).catch(() => null);
-        throw error;
+try {
+        await withDistributedLock(
+          `generate-work:${project.id}`,
+          60000, // 60s TTL
+          async () => {
+            await startWorkGenerationJob({
+              projectId: project.id,
+              userId: session.user.id,
+              title,
+              type,
+              brief,
+              contentCost: 0,
+              baseCost: 0,
+            });
+          },
+          "Geração já está em curso para este projeto"
+        );
+      } catch (err) {
+        logger.error("Failed to start generation job", { error: String(err), projectId: project.id });
       }
     }
 

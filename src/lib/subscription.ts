@@ -168,61 +168,80 @@ export class SubscriptionService {
     };
   }
 
-   async consumeWork(userId: string): Promise<void> {
-     // Step 1: Get or create subscription (single call, reused throughout)
-     const subscription = await this.getOrCreate(userId);
+async consumeWork(userId: string): Promise<void> {
+      // Envolver toda a operação numa transação para evitar race conditions
+      const txClient = "$transaction" in this.dbClient 
+        ? (this.dbClient as PrismaClient) 
+        : this.dbClient;
+      
+      await (txClient as PrismaClient).$transaction(async (tx) => {
+        // Step 1: Get or create subscription (inside transaction)
+        const subscription = await tx.subscription.findUnique({
+          where: { userId },
+        });
 
-     // Step 2: Reset monthly usage if needed (idempotent)
-     const now = new Date();
-     const lastReset = new Date(subscription.lastUsageReset);
-     const crossedCalendarMonth =
-       now.getUTCFullYear() !== lastReset.getUTCFullYear() ||
-       now.getUTCMonth() !== lastReset.getUTCMonth();
+        if (!subscription) {
+          await tx.subscription.create({
+            data: {
+              userId,
+              package: PackageType.FREE,
+              status: SubscriptionStatus.ACTIVE,
+              worksPerMonth: PACKAGE_PRICES.FREE.worksPerMonth,
+              worksUsed: 0,
+              lastUsageReset: new Date(),
+            },
+          });
+        }
 
-     if (crossedCalendarMonth) {
-       await this.dbClient.subscription.update({
-         where: { userId },
-         data: {
-           worksUsed: 0,
-           lastUsageReset: now,
-         },
-       });
-     }
+        // Step 2: Reset monthly usage if needed (inside transaction)
+        const now = new Date();
+        const lastReset = new Date(subscription?.lastUsageReset ?? new Date());
+        const crossedCalendarMonth =
+          now.getUTCFullYear() !== lastReset.getUTCFullYear() ||
+          now.getUTCMonth() !== lastReset.getUTCMonth();
 
-     // Step 3: Try to consume from extra works first (atomic)
-     const extraWorksResult = await this.dbClient.$executeRaw`
-       UPDATE "work_purchases"
-       SET "used" = "used" + 1
-       WHERE "id" = (
-         SELECT "id" FROM "work_purchases"
-         WHERE "userId" = ${userId}
-           AND "expiresAt" > ${now}
-           AND "used" < "quantity"
-         ORDER BY "expiresAt" ASC
-         LIMIT 1
-       )
-     `;
+        let currentSubscription = subscription;
+        if (crossedCalendarMonth) {
+          currentSubscription = await tx.subscription.update({
+            where: { userId },
+            data: {
+              worksUsed: 0,
+              lastUsageReset: now,
+            },
+          });
+        }
 
-     if (extraWorksResult === 1) {
-       await this.checkAndSendLowCreditsAlert(userId, subscription);
-       return;
-     }
+        // Step 3: Try to consume from extra works first (atomic)
+        const extraWorksResult = await tx.$executeRaw`
+          UPDATE "work_purchases"
+          SET "used" = "used" + 1
+          WHERE "id" = (
+            SELECT "id" FROM "work_purchases"
+            WHERE "userId" = ${userId}
+              AND "expiresAt" > ${now}
+              AND "used" < "quantity"
+            ORDER BY "expiresAt" ASC
+            LIMIT 1
+          )
+        `;
 
-     // Step 4: Try to consume from plan (atomic — field-to-field comparison)
-     const result = await this.dbClient.$executeRaw`
-       UPDATE "subscriptions"
-       SET "worksUsed" = "worksUsed" + 1
-       WHERE "userId" = ${userId}
-         AND "worksUsed" < "worksPerMonth"
-     `;
+        if (extraWorksResult === 1) {
+          return;
+        }
 
-     if (result === 1) {
-       await this.checkAndSendLowCreditsAlert(userId, subscription);
-       return;
-     }
+        // Step 4: Try to consume from plan (atomic — field-to-field comparison)
+        const result = await tx.$executeRaw`
+          UPDATE "subscriptions"
+          SET "worksUsed" = "worksUsed" + 1
+          WHERE "userId" = ${userId}
+            AND "worksUsed" < "worksPerMonth"
+        `;
 
-     throw new ApiRouteError("Limite de trabalhos atingido", 403, "WORK_LIMIT_REACHED");
-   }
+        if (result !== 1) {
+          throw new ApiRouteError("Limite de trabalhos atingido", 403, "WORK_LIMIT_REACHED");
+        }
+      });
+    }
 
   private async checkAndSendLowCreditsAlert(userId: string, cachedSubscription?: { worksPerMonth: number; worksUsed: number }): Promise<void> {
     try {

@@ -6,8 +6,6 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { AuthSecurityService } from "@/lib/auth-security";
-import { CreditLedgerService } from "@/lib/credit-ledger";
-import { CREDIT_DEFAULTS } from "@/lib/credits";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { verifySync } from "otplib";
 import { decryptText } from "@/lib/crypto";
@@ -266,21 +264,12 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async signIn({ user, account }) {
-      const ledger = new CreditLedgerService(db);
       const security = new AuthSecurityService(db);
-      const existingCredits = await db.credit.findUnique({
+      const existingSubscription = await db.subscription.findUnique({
         where: { userId: user.id },
       });
 
-      if (!existingCredits) {
-        await ledger.grant(
-          user.id,
-          CREDIT_DEFAULTS.initialBalance,
-          "BONUS",
-          "Créditos iniciais de boas-vindas",
-          { source: account?.provider ?? "credentials" }
-        );
-
+      if (!existingSubscription) {
         await db.subscription.create({
           data: {
             userId: user.id,

@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
 import { PaymentProvider as PaymentProviderEnum, PaymentStatus, PackageType, type Prisma, type PrismaClient } from "@prisma/client";
-import { CREDIT_PACKAGES, PACKAGE_PRICING, EXTRA_WORK_PRICE, type CreditPackageKey } from "@/lib/credits";
-import { CreditLedgerService } from "@/lib/credit-ledger";
-import { EXTRA_WORKS } from "@/lib/billing";
+import { BILLING_PLANS, EXTRA_WORKS } from "@/lib/billing";
+
+const EXTRA_WORK_PRICE = EXTRA_WORKS.price;
 import { SubscriptionService } from "@/lib/subscription";
 import { env } from "@/lib/env";
 import { resolvePaymentGateway } from "@/lib/payment-gateway";
@@ -35,8 +35,6 @@ export type PackageKey = "STARTER" | "PRO";
 export type PurchaseType = "subscription" | "extra_work";
 
 export interface PaymentProviderContract {
-  provider: PaymentProviderEnum;
-  createCheckout(input: { paymentId: string; packageKey: CreditPackageKey }): Promise<CheckoutResult>;
   createPackageCheckout(input: { paymentId: string; packageType: PackageKey }): Promise<CheckoutResult>;
   createExtraWorkCheckout(input: { paymentId: string; quantity: number }): Promise<CheckoutResult>;
   parseCallback(payload: unknown): Promise<{ providerReference: string; status: PaymentStatus; providerPayload?: unknown }>;
@@ -47,14 +45,6 @@ class SimulatedPaymentProvider implements PaymentProviderContract {
 
   constructor(provider: PaymentProviderEnum = PaymentProviderEnum.SIMULATED) {
     this.provider = provider;
-  }
-
-  async createCheckout(input: { paymentId: string; packageKey: CreditPackageKey }): Promise<CheckoutResult> {
-    return {
-      providerReference: `sim-${input.paymentId}`,
-      status: PaymentStatus.CONFIRMED,
-      instructions: `Pagamento sandbox confirmado para o pacote ${input.packageKey}.`,
-    };
   }
 
   async createPackageCheckout(input: { paymentId: string; packageType: PackageKey }): Promise<CheckoutResult> {
@@ -91,18 +81,8 @@ class PaySuitePaymentProvider implements PaymentProviderContract {
     this.provider = provider;
   }
 
-  async createCheckout(input: { paymentId: string; packageKey: CreditPackageKey }): Promise<CheckoutResult> {
-    const selectedPackage = CREDIT_PACKAGES[input.packageKey];
-    return createPaySuitePayment({
-      amount: selectedPackage.price,
-      paymentId: input.paymentId,
-      method: this.provider,
-      description: `Compra legacy de créditos (${input.packageKey})`,
-    });
-  }
-
   async createPackageCheckout(input: { paymentId: string; packageType: PackageKey }): Promise<CheckoutResult> {
-    const packagePricing = PACKAGE_PRICING[input.packageType];
+    const packagePricing = BILLING_PLANS[input.packageType];
     return createPaySuitePayment({
       amount: packagePricing.price,
       paymentId: input.paymentId,
@@ -199,63 +179,15 @@ export function getPaymentProvider(provider: PaymentProviderEnum): PaymentProvid
 export class PaymentService {
   constructor(private readonly db: DbClient) {}
 
-  async createCheckout(userId: string, provider: PaymentProviderEnum, packageKey: CreditPackageKey) {
-    const selectedPackage = CREDIT_PACKAGES[packageKey];
-    const payment = await this.db.paymentTransaction.create({
-      data: {
-        userId,
-        provider,
-        providerReference: crypto.randomUUID(),
-        status: PaymentStatus.PENDING,
-        creditsAmount: selectedPackage.credits,
-        moneyAmount: selectedPackage.price,
-        currency: selectedPackage.currency,
-        payloadJson: { packageKey },
-      },
-    });
-
-    const checkout = await getPaymentProvider(provider).createCheckout({
-      paymentId: payment.id,
-      packageKey,
-    });
-
-    await this.db.paymentTransaction.update({
-      where: { id: payment.id },
-      data: {
-        providerReference: checkout.providerReference,
-        status:
-          checkout.status === PaymentStatus.CONFIRMED
-            ? PaymentStatus.PENDING
-            : checkout.status,
-        payloadJson: {
-          packageKey,
-          gateway: env.PAYMENT_GATEWAY,
-          checkoutInstructions: checkout.instructions,
-          checkoutUrl: checkout.checkoutUrl,
-        },
-      },
-    });
-
-    if (checkout.status === PaymentStatus.CONFIRMED) {
-      await this.confirmPayment(payment.id, checkout.providerReference, {
-        checkoutInstructions: checkout.instructions,
-      });
-    }
-
-    return this.db.paymentTransaction.findUniqueOrThrow({
-      where: { id: payment.id },
-    });
-  }
-
   async createPackageCheckout(userId: string, provider: PaymentProviderEnum, packageType: PackageKey) {
-    const packagePricing = PACKAGE_PRICING[packageType];
+    const packagePricing = BILLING_PLANS[packageType];
     const payment = await this.db.paymentTransaction.create({
       data: {
         userId,
         provider,
         providerReference: crypto.randomUUID(),
         status: PaymentStatus.PENDING,
-        creditsAmount: packagePricing.works,
+        creditsAmount: packagePricing.worksPerMonth,
         moneyAmount: packagePricing.price,
         currency: "MZN",
         payloadJson: { purchaseType: "subscription", package: packageType },
@@ -415,48 +347,32 @@ export class PaymentService {
     });
   }
 
-  async confirmPayment(paymentId: string, providerReference: string, providerPayload?: unknown) {
-    return withOptionalTransaction(this.db, async (tx) => {
-      const payment = await tx.paymentTransaction.findUnique({
-        where: { id: paymentId },
-      });
+  async confirmPayment(paymentId: string, providerReference: string, payload: unknown) {
+    const payment = await this.db.paymentTransaction.findUnique({
+      where: { id: paymentId },
+    });
 
-      if (!payment) {
-        throw new Error("Pagamento não encontrado.");
-      }
+    if (!payment) {
+      throw new Error("Pagamento não encontrado.");
+    }
 
-      if (payment.status === PaymentStatus.CONFIRMED) {
-        return payment;
-      }
+    if (payment.status === PaymentStatus.CONFIRMED) {
+      return payment;
+    }
 
-      const ledger = new CreditLedgerService(tx);
+    const existingPayload = (payment.payloadJson as Record<string, unknown> | null) ?? {};
+    const newPayload = typeof payload === "object" && payload !== null 
+      ? (payload as Record<string, unknown>) 
+      : {};
 
-      await ledger.grant(
-        payment.userId,
-        payment.creditsAmount,
-        "PURCHASE",
-        `Compra de créditos via ${payment.provider}`,
-        {
-          paymentId,
-          providerReference,
-          providerPayload: toJsonValue(providerPayload ?? {}),
-        }
-      );
-
-      return tx.paymentTransaction.update({
-        where: { id: paymentId },
-        data: {
-          status: PaymentStatus.CONFIRMED,
-          confirmedAt: new Date(),
-          payloadJson: providerPayload
-            ? toJsonValue({
-                ...((payment.payloadJson as Record<string, unknown> | null) ?? {}),
-                providerReference,
-                providerPayload,
-              })
-            : (payment.payloadJson as Prisma.InputJsonValue | undefined),
-        },
-      });
+    return this.db.paymentTransaction.update({
+      where: { id: paymentId },
+      data: {
+        status: PaymentStatus.CONFIRMED,
+        confirmedAt: new Date(),
+        providerReference,
+        payloadJson: { ...existingPayload, ...newPayload } as Prisma.InputJsonValue,
+      },
     });
   }
 }

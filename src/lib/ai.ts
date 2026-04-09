@@ -48,16 +48,20 @@ export async function getAIProvider(): Promise<AIProvider> {
 
 function getProviderCandidates(): ProviderName[] {
   const primary = (env.AI_PROVIDER?.toLowerCase()?.trim() || "openrouter") as ProviderName;
-  const configuredFallback = env.AI_FALLBACK_PROVIDER?.toLowerCase()?.trim() as ProviderName | undefined;
-  const fallback = configuredFallback && configuredFallback !== primary
-    ? configuredFallback
-    : primary === "openrouter"
-      ? "google-ai"
-      : primary === "google-ai"
-        ? "openrouter"
-        : "openrouter";
+  const fallback2 = env.AI_FALLBACK_PROVIDER?.toLowerCase()?.trim() as ProviderName | undefined;
+  const fallback3 = env.AI_FALLBACK_PROVIDER_3?.toLowerCase()?.trim() as ProviderName | undefined;
 
-  return [primary, fallback];
+  const candidates: ProviderName[] = [primary];
+
+  if (fallback2 && fallback2 !== primary) {
+    candidates.push(fallback2);
+  }
+
+  if (fallback3 && !candidates.includes(fallback3)) {
+    candidates.push(fallback3);
+  }
+
+  return candidates.slice(0, 3);
 }
 
 function shouldFallback(error: unknown) {

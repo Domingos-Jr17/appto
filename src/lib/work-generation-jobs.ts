@@ -103,28 +103,28 @@ interface GenerationCompletionDecision {
   shouldRefund: boolean;
 }
 
-const SYSTEM_PROMPT = `Voc� � um especialista em escrita acad�mica para estudantes mo�ambicanos.
-Gere conte�do acad�mico de alta qualidade em Portugu�s de Mo�ambique.
-Siga a norma de cita��o pedida no briefing.
-Adapte o n�vel de linguagem ao n�vel educacional indicado:
-- SECONDARY: linguagem simples, frases curtas, vocabul�rio acess�vel, sem jarg�o excessivo
-- TECHNICAL: terminologia t�cnica pr�tica, foco em aplica��es
-- HIGHER_EDUCATION: linguagem formal, terminologia acad�mica, cita��es obrigat�rias
+const SYSTEM_PROMPT = `Você é um especialista em escrita académica para estudantes moçambicanos.
+Gere conteúdo académico de alta qualidade em Português de Moçambique.
+Siga a norma de citação pedida no briefing.
+Adapte o nível de linguagem ao nível educacional indicado:
+- SECONDARY: linguagem simples, frases curtas, vocabulário acessível, sem jargão excessivo
+- TECHNICAL: terminologia técnica prática, foco em aplicações
+- HIGHER_EDUCATION: linguagem formal, terminologia académica, citações obrigatórias
 Nunca invente metadados da capa sem base no briefing.`;
 
 function getSystemPromptForEducation(educationLevel?: string | null): string {
   if (educationLevel === "SECONDARY") {
-    return `Voc� � um assistente de escrita para estudantes do ensino secund�rio mo�ambicano.
-Gere conte�do simples e acess�vel em Portugu�s de Mo�ambique.
-Use frases curtas e vocabul�rio acess�vel.
-Evite jarg�o t�cnico excessivo.
-N�o � obrigat�rio incluir cita��es formais no texto.
-Estrutura b�sica: Introdu��o, Desenvolvimento, Conclus�o.`;
+    return `Você é um assistente de escrita para estudantes do ensino secundário moçambicano.
+Gere conteúdo simples e acessível em Português de Moçambique.
+Use frases curtas e vocabulário acessível.
+Evite jargão técnico excessivo.
+Não é obrigatório incluir citações formais no texto.
+Estrutura básica: Introdução, Desenvolvimento, Conclusão.`;
   }
   if (educationLevel === "TECHNICAL") {
-    return `Voc� � um assistente de escrita para estudantes do ensino t�cnico profissional mo�ambicano.
-Gere conte�do t�cnico e pr�tico em Portugu�s de Mo�ambique.
-Use terminologia t�cnica apropriada com foco em aplica��es pr�ticas.
+    return `Você é um assistente de escrita para estudantes do ensino técnico profissional moçambicano.
+Gere conteúdo técnico e prático em Português de Moçambique.
+Use terminologia técnica apropriada com foco em aplicações práticas.
 Inclua exemplos relevantes para o contexto profissional.
 Cite fontes quando relevante.`;
   }
@@ -244,28 +244,28 @@ function formatFailureReasonSummary(outcomes: SectionGenerationOutcome[]) {
 
   if (providerErrorCount > 0 && emptyResponseCount === 0 && validationFailureCount === 0) {
     return {
-      step: "Falha na gera��o: a IA n�o respondeu de forma est�vel.",
-      error: "A gera��o falhou porque todas as sec��es terminaram com erro do provider de IA.",
+      step: "Falha na geração: a IA não respondeu de forma estável.",
+      error: "A geração falhou porque todas as secções terminaram com erro do provider de IA.",
     };
   }
 
   if (emptyResponseCount > 0 && providerErrorCount === 0 && validationFailureCount === 0) {
     return {
-      step: "Falha na gera��o: a IA devolveu respostas vazias.",
-      error: "A IA respondeu sem conte�do utiliz�vel para todas as sec��es solicitadas.",
+      step: "Falha na geração: a IA devolveu respostas vazias.",
+      error: "A IA respondeu sem conteúdo utilizável para todas as secções solicitadas.",
     };
   }
 
   if (validationFailureCount > 0 && providerErrorCount === 0 && emptyResponseCount === 0) {
     return {
-      step: "Falha na gera��o: o conte�do n�o atingiu o m�nimo exigido.",
-      error: "A IA gerou texto, mas nenhuma sec��o cumpriu os requisitos m�nimos de qualidade.",
+      step: "Falha na geração: o conteúdo não atingiu o mínimo exigido.",
+      error: "A IA gerou texto, mas nenhuma secção cumpriu os requisitos mínimos de qualidade.",
     };
   }
 
   return {
-    step: "Falha na gera��o: a IA n�o produziu sec��es utiliz�veis.",
-    error: `Resultado sem conte�do utiliz�vel: ${providerErrorCount} erro(s) de provider, ${emptyResponseCount} resposta(s) vazias e ${validationFailureCount} rejei��o(�es) por valida��o.`,
+    step: "Falha na geração: a IA não produziu secções utilizáveis.",
+    error: `Resultado sem conteúdo utilizável: ${providerErrorCount} erro(s) de provider, ${emptyResponseCount} resposta(s) vazias e ${validationFailureCount} rejeição(ões) por validação.`,
   };
 }
 
@@ -289,8 +289,8 @@ export function resolveGenerationCompletionDecision(
   if (degradedCount > 0 && failedCount > 0) {
     return {
       status: "READY",
-      step: `Trabalho pronto ��� ${degradedCount} sec��o(�es) precisam de revis�o e ${failedCount} n�o foram conclu�das.`,
-      error: "Algumas sec��es ficaram abaixo do esperado e outras n�o foram conclu�das automaticamente.",
+      step: `Trabalho pronto - ${degradedCount} secção(ões) precisam de revisão e ${failedCount} não foram concluídas.`,
+      error: "Algumas secções ficaram abaixo do esperado e outras não foram concluídas automaticamente.",
       shouldRefund: false,
     };
   }
@@ -298,8 +298,8 @@ export function resolveGenerationCompletionDecision(
   if (degradedCount > 0) {
     return {
       status: "READY",
-      step: `Trabalho pronto ��� ${degradedCount} sec��o(�es) precisam de revis�o antes da submiss�o.`,
-      error: "Algumas sec��es foram guardadas como rascunho e precisam de revis�o ou regenera��o.",
+      step: `Trabalho pronto - ${degradedCount} secção(ões) precisam de revisão antes da submissão.`,
+      error: "Algumas secções foram guardadas como rascunho e precisam de revisão ou regeneração.",
       shouldRefund: false,
     };
   }
@@ -307,15 +307,15 @@ export function resolveGenerationCompletionDecision(
   if (failedCount > 0) {
     return {
       status: "READY",
-      step: `Trabalho pronto ��� ${failedCount} sec��o(�es) n�o foram conclu�das automaticamente. Pode re-gerar individualmente.`,
-      error: "Algumas sec��es n�o foram conclu�das automaticamente e podem ser regeneradas depois.",
+      step: `Trabalho pronto - ${failedCount} secção(ões) não foram concluídas automaticamente. Pode re-gerar individualmente.`,
+      error: "Algumas secções não foram concluídas automaticamente e podem ser regeneradas depois.",
       shouldRefund: false,
     };
   }
 
   return {
     status: "READY",
-    step: "Trabalho pronto para revis�o",
+    step: "Trabalho pronto para revisão",
     error: null,
     shouldRefund: false,
   };
@@ -433,25 +433,25 @@ async function generateSectionWithRetry(
 
 const SECTION_TEMPLATES: Record<string, SectionTemplate[]> = {
   SECONDARY_WORK: [
-    { title: "1. Introdu��o", order: 3 },
+    { title: "1. Introdução", order: 3 },
     { title: "2. Desenvolvimento", order: 4 },
-    { title: "3. Conclus�o", order: 5 },
+    { title: "3. Conclusão", order: 5 },
   ],
   TECHNICAL_WORK: [
-    { title: "1. Introdu��o", order: 3 },
-    { title: "2. Fundamenta��o Te�rica", order: 4 },
+    { title: "1. Introdução", order: 3 },
+    { title: "2. Fundamentação Teórica", order: 4 },
     { title: "3. Metodologia", order: 5 },
-    { title: "4. An�lise Pr�tica", order: 6 },
-    { title: "5. Conclus�o", order: 7 },
-    { title: "6. Recomenda��es", order: 8 },
+    { title: "4. Análise Prática", order: 6 },
+    { title: "5. Conclusão", order: 7 },
+    { title: "6. Recomendações", order: 8 },
   ],
   HIGHER_EDUCATION_WORK: [
-    { title: "1. Introdu��o", order: 6 },
-    { title: "2. Revis�o da Literatura", order: 7 },
+    { title: "1. Introdução", order: 6 },
+    { title: "2. Revisão da Literatura", order: 7 },
     { title: "3. Metodologia", order: 8 },
-    { title: "4. An�lise e Discuss�o", order: 9 },
-    { title: "5. Conclus�o", order: 10 },
-    { title: "6. Recomenda��es", order: 11 },
+    { title: "4. Análise e Discussão", order: 9 },
+    { title: "5. Conclusão", order: 10 },
+    { title: "6. Recomendações", order: 11 },
   ],
 };
 
@@ -535,7 +535,7 @@ async function generateWorkSectionBySection(
         enrichedBrief = { ...brief, referencesSeed: enriched };
       }
     } catch {
-      // Skip enrichment if it fails ��� generation can proceed without it
+      // Skip enrichment if it fails; generation can proceed without it
     }
   }
 
@@ -1177,20 +1177,20 @@ export async function regenerateWorkSection(input: {
   const wordCount = "entre 260 e 420";
   const systemPrompt = getSystemPromptForEducation(brief.educationLevel || "HIGHER_EDUCATION");
 
-  const prompt = `Regere apenas a sec��o "${sectionTitle}" de um trabalho acad�mico.
+  const prompt = `Regere apenas a secção "${sectionTitle}" de um trabalho académico.
 
-T�tulo do trabalho: ${title}
+Título do trabalho: ${title}
 Tipo de trabalho: ${formatProjectType(type)}
 Contexto do briefing:
 ${buildBriefContext(brief)}
 
-Requisitos obrigat�rios:
-- Escreva em Portugu�s acad�mico de Mo�ambique
+Requisitos obrigatórios:
+- Escreva em Português académico de Moçambique
 - Use a norma ${brief.citationStyle || "ABNT"}
 - Produza ${wordCount} palavras
-- Mantenha tom formal, coerente e plaus�vel
-- N�o invente dados factuais, leis, autores ou refer�ncias bibliogr�ficas sem base no briefing
-- Devolva apenas o conte�do final da sec��o, sem markdown extra nem explica��es`;
+- Mantenha tom formal, coerente e plausível
+- Não invente dados factuais, leis, autores ou referências bibliográficas sem base no briefing
+- Devolva apenas o conteúdo final da secção, sem markdown extra nem explicações`;
 
   const completion = await runAIChatCompletion({
     model: "", // Provider uses its default model
@@ -1204,7 +1204,7 @@ Requisitos obrigat�rios:
   const content = completion.choices[0]?.message?.content?.trim();
 
   if (!content) {
-    throw new Error("A IA n�o devolveu conte�do para a sec��o.");
+    throw new Error("A IA não devolveu conteúdo para a secção.");
   }
 
   await db.documentSection.update({

@@ -7,30 +7,25 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import {
-  batchGetWorkGenerationStatusAsync,
-  getWorkGenerationStatusAsync,
   setPersistedWorkGenerationJob,
   setWorkGenerationJob,
 } from "@/lib/generation/job-status-store";
 import { buildGenerationSectionKey } from "@/lib/generation/run-domain";
 import type { SectionTemplate, WordRange } from "@/lib/work-generation-prompts";
 import {
-  createGenerationRun,
   updateGenerationAttemptState,
   updateGenerationRunState,
   updateSectionRunState,
 } from "@/lib/generation/run-repository";
 import { getSectionTemplates } from "@/lib/work-generation-jobs";
 import {
-  buildBriefContext,
   buildSectionGenerationPrompt,
   getWorkGenerationProfile,
   validateGeneratedSection,
 } from "@/lib/work-generation-prompts";
 import { toWorkBriefInput } from "@/lib/projects/project-brief";
-import { createProgressTracker } from "@/lib/work-generation-state";
 import { enrichReferencesWithAcademicSources } from "@/lib/academic-search";
-import { getFriendlyAIErrorMessage, runAIChatStream } from "@/lib/ai";
+import { runAIChatStream } from "@/lib/ai";
 import { env } from "@/lib/env";
 import type { WorkBriefInput } from "@/types/editor";
 

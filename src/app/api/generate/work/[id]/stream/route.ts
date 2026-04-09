@@ -80,6 +80,7 @@ export async function GET(
 
       let activeSectionTitle: string | undefined;
       let lastStreamingContent: string | undefined;
+      let lastCompletedSectionTitle: string | undefined;
 
       const check = async () => {
         try {
@@ -110,13 +111,13 @@ export async function GET(
             }
           }
 
-          const currentSectionTitle = extractActiveSectionTitle(status.step) || undefined;
+          const currentSectionTitle = status.streamingSectionTitle || extractActiveSectionTitle(status.step) || undefined;
 
           if (status.progress !== lastProgress || status.step !== lastStep) {
             lastProgress = status.progress;
             lastStep = status.step;
 
-            if (activeSectionTitle && activeSectionTitle !== currentSectionTitle) {
+            if (activeSectionTitle && activeSectionTitle !== currentSectionTitle && activeSectionTitle !== lastCompletedSectionTitle) {
               send({
                 type: "section-complete",
                 data: {
@@ -125,6 +126,7 @@ export async function GET(
                   sectionTitle: activeSectionTitle,
                 },
               });
+              lastCompletedSectionTitle = activeSectionTitle;
             }
 
             if (currentSectionTitle && currentSectionTitle !== activeSectionTitle) {
@@ -156,6 +158,7 @@ export async function GET(
                   sectionTitle: activeSectionTitle,
                 },
               });
+              lastCompletedSectionTitle = activeSectionTitle;
               activeSectionTitle = undefined;
             }
             send({

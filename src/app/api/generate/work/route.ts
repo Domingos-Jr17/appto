@@ -37,9 +37,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const txStart = Date.now();
+const txStart = Date.now();
     const project = await db.$transaction(async (tx) => {
       if (generateContent) {
+        // Pass the transaction client - consumeWork will detect it's in a transaction
         await new SubscriptionService(tx).consumeWork(session.user.id);
       }
 

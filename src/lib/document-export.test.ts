@@ -39,7 +39,9 @@ describe("document export references", () => {
     const checklist = getAbntChecklist("UEM_STANDARD");
 
     expect(checklist.template).toBe("UEM_STANDARD");
-    expect(checklist.items.some((item) => item.includes("Universidade Eduardo Mondlane"))).toBe(true);
+    expect(
+      checklist.items.some((item) => item.includes("Universidade Eduardo Mondlane")),
+    ).toBe(true);
   });
 
   test("filters front matter and humanizes project type in the export model", () => {
@@ -48,16 +50,60 @@ describe("document export references", () => {
       description: null,
       type: "SECONDARY_WORK",
       brief: {
+        educationLevel: "SECONDARY",
         coverTemplate: "SCHOOL_MOZ",
       },
       sections: [
-        { id: "cover", title: "Capa", content: "<style>*{box-sizing:border-box;}</style>", order: 1 },
-        { id: "title-page", title: "Folha de Rosto", content: "<div>Folha</div>", order: 2 },
-        { id: "intro", title: "1. Introdução", content: "Conteúdo", order: 3 },
+        {
+          id: "cover",
+          title: "Capa",
+          content: "<style>*{box-sizing:border-box;}</style>",
+          order: 1,
+        },
+        {
+          id: "title-page",
+          title: "Folha de Rosto",
+          content: "<div>Folha</div>",
+          order: 2,
+        },
+        {
+          id: "toc",
+          title: "Índice",
+          content: "",
+          order: 3,
+        },
+        {
+          id: "intro",
+          title: "1. Introdução",
+          content: "Conteúdo",
+          order: 4,
+        },
       ],
     });
 
     expect(model.type).toBe("Trabalho Escolar");
+    expect(model.profile.coverTemplate).toBe("SCHOOL_MOZ");
+    expect(model.frontMatterSections).toHaveLength(0);
+    expect(model.sections.map((section) => section.title)).toEqual(["1. Introdução"]);
+  });
+
+  test("preserves front matter summaries separately from body sections", () => {
+    const model = DocumentExportService.createModel({
+      title: "Tema",
+      description: null,
+      type: "HIGHER_EDUCATION_WORK",
+      brief: {
+        educationLevel: "HIGHER_EDUCATION",
+        institutionName: "Universidade Eduardo Mondlane",
+      },
+      sections: [
+        { id: "cover", title: "Capa", content: "", order: 1 },
+        { id: "summary", title: "Resumo", content: "Resumo formal.", order: 3 },
+        { id: "intro", title: "1. Introdução", content: "Conteúdo", order: 6 },
+      ],
+    });
+
+    expect(model.frontMatterSections.map((section) => section.title)).toEqual(["Resumo"]);
     expect(model.sections.map((section) => section.title)).toEqual(["1. Introdução"]);
   });
 

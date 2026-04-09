@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { parseMarkdownBlocks } from "@/lib/content";
+import { resolveDocumentProfile } from "@/lib/document-profile";
 import type { WorkBrief, WorkSection } from "@/types/workspace";
 import { isFrontMatterSectionTitle, isMeaningfulWorkspaceSection } from "@/lib/work-generation-state";
 
@@ -100,25 +101,31 @@ export function DocumentPreview({
 // ── Section Renderer ───────────────────────────────────────────────────
 
 function DocumentSection({ section }: { section: WorkSection }) {
-  if (section.status === "done" && section.content.trim()) {
+  const normalizedContent = normalizeDisplayedSectionContent(section.content, section.title);
+  const normalizedStreamingContent = normalizeDisplayedSectionContent(
+    section.streamingContent,
+    section.title,
+  );
+
+  if (section.status === "done" && normalizedContent.trim()) {
     return (
       <section className="mb-6">
         <h2 className="mb-3 text-base font-bold text-[var(--doc-heading)]">
           {section.title}
         </h2>
-        <RenderedMarkdown content={section.content} />
+        <RenderedMarkdown content={normalizedContent} />
       </section>
     );
   }
 
-  if (section.status === "streaming" && section.streamingContent && section.streamingContent.trim()) {
+  if (section.status === "streaming" && normalizedStreamingContent && normalizedStreamingContent.trim()) {
     return (
       <section className="mb-6">
         <h2 className="mb-3 text-base font-bold text-[var(--doc-heading)]">
           {section.title}
         </h2>
         <div className="animate-pulse">
-          <RenderedMarkdown content={section.streamingContent} />
+          <RenderedMarkdown content={normalizedStreamingContent} />
         </div>
         <div className="flex items-center gap-2 py-2">
           <div className="h-2 w-2 animate-ping rounded-full bg-blue-400" />
@@ -316,8 +323,19 @@ function InlineMarkdown({ text }: { text: string }) {
 // ── Cover Page (first page of document) ──────────────────────────────────
 
 function CoverPage({ brief }: { brief?: WorkBrief | null }) {
+  const profile = resolveDocumentProfile({
+    type: brief?.workType,
+    educationLevel: brief?.educationLevel,
+    institutionName: brief?.institutionName,
+    coverTemplate: brief?.coverTemplate,
+  });
   const workType = formatWorkType(brief?.workType);
-  const institution = brief?.institutionName || fallbackInstitution(brief?.educationLevel);
+  const institution = fallbackInstitution(
+    brief?.educationLevel,
+    brief?.institutionName,
+    brief?.workType,
+    brief?.coverTemplate,
+  );
   const course = getCoverCourseLabel(brief);
   const title = brief?.title || "Título do trabalho";
   const student = brief?.studentName || "Nome do estudante";
@@ -368,7 +386,7 @@ function CoverPage({ brief }: { brief?: WorkBrief | null }) {
         </div>
         <div className="flex items-start justify-between gap-4">
           <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
-            Orientador
+            {profile.coverFieldPolicy.advisorLabel}
           </span>
           <span className="max-w-[60%] text-right text-[var(--doc-text)]">
             {advisor}
@@ -397,16 +415,64 @@ function CoverPage({ brief }: { brief?: WorkBrief | null }) {
   );
 }
 
+function normalizeDisplayedSectionContent(content?: string, sectionTitle?: string) {
+  if (!content?.trim() || !sectionTitle?.trim()) {
+    return content || "";
+  }
+
+  const normalizeHeadingForComparison = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/^#+\s*/, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+
+  const lines = content.split("\n");
+  while (lines[0]?.trim() === "") {
+    lines.shift();
+  }
+
+  const firstLine = lines[0]?.trim();
+  if (
+    firstLine &&
+    normalizeHeadingForComparison(firstLine) ===
+      normalizeHeadingForComparison(sectionTitle)
+  ) {
+    lines.shift();
+    while (lines[0]?.trim() === "") {
+      lines.shift();
+    }
+  }
+
+  return lines.join("\n").trim();
+}
+
 function TitlePage({ brief }: { brief?: WorkBrief | null }) {
+  const profile = resolveDocumentProfile({
+    type: brief?.workType,
+    educationLevel: brief?.educationLevel,
+    institutionName: brief?.institutionName,
+    coverTemplate: brief?.coverTemplate,
+  });
   const workType = formatWorkType(brief?.workType);
-  const institution = brief?.institutionName || fallbackInstitution(brief?.educationLevel);
+  const institution = fallbackInstitution(
+    brief?.educationLevel,
+    brief?.institutionName,
+    brief?.workType,
+    brief?.coverTemplate,
+  );
   const title = brief?.title || "Título do trabalho";
-  const subtitle = brief?.subjectName || brief?.courseName || "";
+  const subtitle = getCoverCourseLabel(brief);
   const student = brief?.studentName || "Nome do estudante";
   const advisor = brief?.advisorName || "Nome do orientador";
   const city = brief?.city || "Maputo";
   const year = brief?.year || String(new Date().getFullYear());
-  const faculty = brief?.facultyName || brief?.departmentName || brief?.courseName || "";
+  const faculty =
+    profile.educationLevel === "HIGHER_EDUCATION"
+      ? brief?.facultyName || brief?.departmentName || brief?.courseName || ""
+      : "";
 
   return (
     <div className="mx-auto flex w-full max-w-[36rem] flex-1 flex-col justify-between text-center">
@@ -446,7 +512,7 @@ function TitlePage({ brief }: { brief?: WorkBrief | null }) {
         </div>
         <div className="flex items-start justify-between gap-4">
           <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
-            Orientador
+            {profile.coverFieldPolicy.advisorLabel}
           </span>
           <span className="max-w-[60%] text-right text-[var(--doc-text)]">
             {advisor}
@@ -475,7 +541,13 @@ function formatWorkType(workType?: string) {
   return workType.replace(/_/g, " ");
 }
 
-function fallbackInstitution(educationLevel?: string) {
+function fallbackInstitution(
+  educationLevel?: string,
+  institutionName?: string,
+  _workType?: string,
+  _coverTemplate?: string,
+) {
+  if (institutionName) return institutionName;
   if (educationLevel === "SECONDARY") return "Escola Secundária";
   if (educationLevel === "TECHNICAL") return "Instituto Técnico";
   return "Instituição académica";

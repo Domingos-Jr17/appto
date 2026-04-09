@@ -11,7 +11,10 @@ mock.module("server-only", () => ({}));
 const {
   createSectionAttemptDiagnostics,
   getPendingGenerationTemplates,
+  getSectionTemplates,
+  resolveReferencesSectionContent,
   shouldYieldGenerationPass,
+  shouldRequireReferenceReview,
   resolveGenerationCompletionDecision,
   summarizeSectionGenerationAttempts,
 } = await import("@/lib/work-generation-jobs");
@@ -183,5 +186,40 @@ describe("work generation jobs", () => {
         now: 120_000,
       }),
     ).toBe(false);
+  });
+
+  test("derives section templates from the canonical secondary document profile", () => {
+    const templates = getSectionTemplates("SECONDARY_WORK", "SECONDARY");
+
+    expect(templates.map((template) => template.title)).toEqual([
+      "1. Introdução",
+      "2. Desenvolvimento",
+      "3. Conclusão",
+    ]);
+  });
+
+  test("uses trimmed references content when seeds are available", () => {
+    expect(
+      resolveReferencesSectionContent({
+        educationLevel: "HIGHER_EDUCATION",
+        referencesSeed: "  Autor, 2024. Obra.  ",
+      }),
+    ).toBe("Autor, 2024. Obra.");
+  });
+
+  test("requires manual reference review only for non-secondary empty references", () => {
+    expect(
+      shouldRequireReferenceReview({
+        educationLevel: "SECONDARY",
+        referencesContent: "",
+      }),
+    ).toBe(false);
+
+    expect(
+      shouldRequireReferenceReview({
+        educationLevel: "TECHNICAL",
+        referencesContent: "",
+      }),
+    ).toBe(true);
   });
 });

@@ -14,6 +14,14 @@ import {
   TextRun,
 } from "docx";
 import { normalizeStoredContent, parseMarkdownBlocks } from "@/lib/content";
+import {
+  isFrontMatterDocumentSectionTitle,
+  resolveDocumentCourseLabel,
+  resolveDocumentInstitutionName,
+  resolveDocumentProfile,
+  resolveDocumentReferenceMeta,
+  type DocumentProfile,
+} from "@/lib/document-profile";
 import { formatProjectType } from "@/lib/generation/work-generation-artifacts";
 import type { ReferenceData } from "@/types/editor";
 
@@ -29,6 +37,7 @@ export interface ExportDocument {
   title: string;
   description?: string | null;
   type: string;
+  profile: DocumentProfile;
   brief?: {
     institutionName?: string | null;
     studentName?: string | null;
@@ -42,7 +51,11 @@ export interface ExportDocument {
     coverTemplate?: string | null;
     city?: string | null;
     academicYear?: number | null;
+    educationLevel?: string | null;
+    studentNumber?: string | null;
+    semester?: string | null;
   };
+  frontMatterSections: ExportSection[];
   sections: ExportSection[];
 }
 
@@ -122,8 +135,6 @@ const pdfStyles = StyleSheet.create({
   },
 });
 
-const FRONT_MATTER_SECTION_TITLES = new Set(["Capa", "Folha de Rosto"]);
-
 function normalizeHeadingForComparison(value: string) {
   return value
     .normalize("NFD")
@@ -135,7 +146,7 @@ function normalizeHeadingForComparison(value: string) {
 }
 
 export function isFrontMatterSectionTitle(title: string) {
-  return FRONT_MATTER_SECTION_TITLES.has(title.trim());
+  return isFrontMatterDocumentSectionTitle(title);
 }
 
 export function stripLeadingDuplicateHeading(content: string, sectionTitle: string) {
@@ -246,8 +257,10 @@ function renderPdfCover(model: ExportDocument) {
           "República de Moçambique",
           institution,
           [model.brief?.className, model.brief?.turma ? `Turma ${model.brief.turma}` : null].filter(Boolean).join(" - "),
-          author,
+          courseLine,
           model.title,
+          author,
+          model.brief?.advisorName ? `${model.profile.coverFieldPolicy.advisorLabel}: ${model.brief.advisorName}` : "",
           cityYear,
         ]
       : template === "UEM_STANDARD"
@@ -257,7 +270,16 @@ function renderPdfCover(model: ExportDocument) {
           : template === "UDM"
             ? ["Universidade de Moçambique", model.brief?.facultyName || courseLine, model.brief?.departmentName || "", author, model.title, cityYear]
             : template === "DISCIPLINARY_MOZ"
-              ? [institution, model.brief?.departmentName || courseLine, model.brief?.subjectName || "", author, model.title, cityYear]
+              ? [
+                  institution,
+                  model.brief?.departmentName || courseLine,
+                  model.brief?.subjectName || "",
+                  model.title,
+                  model.type,
+                  author,
+                  model.brief?.advisorName ? `${model.profile.coverFieldPolicy.advisorLabel}: ${model.brief.advisorName}` : "",
+                  cityYear,
+                ]
               : [institution, courseLine, author, model.title, cityYear];
 
   return lines
@@ -352,11 +374,12 @@ export function parseReferenceEntries(content: string) {
 }
 
 function buildCoverParagraphs(model: ExportDocument) {
-  const template = model.brief?.coverTemplate || "ABNT_GENERIC";
-  const institution = model.brief?.institutionName || "Instituição";
+  const template = model.profile.coverTemplate;
+  const institution = resolveDocumentInstitutionName(model.profile, model.brief);
   const author = model.brief?.studentName || "Nome do Autor";
-  const courseLine = model.brief?.courseName || model.brief?.subjectName || "Curso";
+  const courseLine = resolveDocumentCourseLabel(model.profile, model.brief);
   const cityYear = [model.brief?.city || "Maputo", model.brief?.academicYear].filter(Boolean).join(", ");
+  const _referenceMeta = resolveDocumentReferenceMeta(model.profile, model.brief);
 
   if (template === "UEM_STANDARD") {
     return [
@@ -500,17 +523,30 @@ function buildCoverParagraphs(model: ExportDocument) {
         spacing: { after: 1200 },
       }),
       new Paragraph({
-        children: [new TextRun({ text: author, size: 24, font: "Arial" })],
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 1600 },
-      }),
-      new Paragraph({
         children: [new TextRun({ text: model.title.toUpperCase(), bold: true, size: 28, font: "Arial" })],
         alignment: AlignmentType.CENTER,
         spacing: { after: 300 },
       }),
       new Paragraph({
         children: [new TextRun({ text: courseLine, size: 24, font: "Arial" })],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 1600 },
+      }),
+      new Paragraph({
+        children: [new TextRun({ text: author, size: 24, font: "Arial" })],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 200 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: model.brief?.advisorName
+              ? `${model.profile.coverFieldPolicy.advisorLabel}: ${model.brief.advisorName}`
+              : "",
+            size: 24,
+            font: "Arial",
+          }),
+        ],
         alignment: AlignmentType.CENTER,
       }),
       new Paragraph({
@@ -539,16 +575,30 @@ function buildCoverParagraphs(model: ExportDocument) {
         spacing: { after: 1600 },
       }),
       new Paragraph({
-        children: [new TextRun({ text: author, size: 24, font: "Arial" })],
+        children: [new TextRun({ text: model.title.toUpperCase(), bold: true, size: 28, font: "Arial" })],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 240 },
+      }),
+      new Paragraph({
+        children: [new TextRun({ text: model.type, size: 24, font: "Arial" })],
         alignment: AlignmentType.CENTER,
         spacing: { after: 1600 },
       }),
       new Paragraph({
-        children: [new TextRun({ text: model.title.toUpperCase(), bold: true, size: 28, font: "Arial" })],
+        children: [new TextRun({ text: author, size: 24, font: "Arial" })],
         alignment: AlignmentType.CENTER,
+        spacing: { after: 200 },
       }),
       new Paragraph({
-        children: [new TextRun({ text: model.type, size: 24, font: "Arial" })],
+        children: [
+          new TextRun({
+            text: model.brief?.advisorName
+              ? `${model.profile.coverFieldPolicy.advisorLabel}: ${model.brief.advisorName}`
+              : "",
+            size: 24,
+            font: "Arial",
+          }),
+        ],
         alignment: AlignmentType.CENTER,
         spacing: { after: 200 },
       }),
@@ -599,6 +649,53 @@ function buildCoverParagraphs(model: ExportDocument) {
   ];
 }
 
+function buildTitlePageParagraphs(model: ExportDocument) {
+  const institution = resolveDocumentInstitutionName(model.profile, model.brief);
+  const title = model.title.toUpperCase();
+  const subtitle = resolveDocumentCourseLabel(model.profile, model.brief);
+  const student = model.brief?.studentName || "Nome do Autor";
+  const advisor = model.brief?.advisorName;
+  const cityYear = [model.brief?.city || "Maputo", model.brief?.academicYear].filter(Boolean).join(", ");
+
+  return [
+    new Paragraph({
+      children: [new TextRun({ text: institution, size: 24, font: "Arial", bold: true })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 160 },
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: subtitle, size: 24, font: "Arial" })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 1800 },
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: title, size: 28, font: "Arial", bold: true })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 240 },
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: model.type, size: 24, font: "Arial" })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 1800 },
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: student, size: 24, font: "Arial" })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 200 },
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: advisor ? `${model.profile.coverFieldPolicy.advisorLabel}: ${advisor}` : "", size: 24, font: "Arial" })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 200 },
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: cityYear, size: 24, font: "Arial" })],
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 4200, after: 200 },
+    }),
+  ];
+}
+
 export class DocumentExportService {
   static createModel(project: {
     title: string;
@@ -617,14 +714,42 @@ export class DocumentExportService {
       coverTemplate?: string | null;
       city?: string | null;
       academicYear?: number | null;
+      educationLevel?: string | null;
+      studentNumber?: string | null;
+      semester?: string | null;
     } | null;
     sections: { id: string; title: string; content: string | null; order: number }[];
   }): ExportDocument {
+    const profile = resolveDocumentProfile({
+      type: project.type,
+      educationLevel: project.brief?.educationLevel,
+      institutionName: project.brief?.institutionName,
+      coverTemplate: project.brief?.coverTemplate,
+    });
+    const frontMatterSections = project.sections
+      .filter(
+        (section) =>
+          isFrontMatterSectionTitle(section.title) &&
+          !["Capa", "Folha de Rosto", "Índice", "Sumário"].includes(section.title),
+      )
+      .map((section) => ({
+        id: section.id,
+        title: section.title,
+        content: stripLeadingDuplicateHeading(section.content ?? "", section.title),
+        order: section.order,
+        level: 1 as const,
+      }));
+
     return {
       title: project.title,
       description: project.description,
-      type: formatProjectType(project.type),
-      brief: project.brief || undefined,
+      type: formatProjectType(profile.projectType),
+      profile,
+      brief: {
+        ...project.brief,
+        coverTemplate: profile.coverTemplate,
+      },
+      frontMatterSections,
       sections: project.sections
         .filter((section) => !isFrontMatterSectionTitle(section.title))
         .map((section) => ({
@@ -639,10 +764,42 @@ export class DocumentExportService {
 
   static async generateDocx(model: ExportDocument) {
     const coverChildren = [...buildCoverParagraphs(model)];
-    // End cover page without page number
-    coverChildren.push(new Paragraph({ children: [], pageBreakBefore: false }));
+    if (model.profile.frontMatterPolicy.includeTitlePage) {
+      coverChildren.push(new Paragraph({ children: [new PageBreak()] }));
+      coverChildren.push(...buildTitlePageParagraphs(model));
+    }
+    coverChildren.push(new Paragraph({ children: [new PageBreak()] }));
 
     const bodyChildren: (Paragraph | TableOfContents)[] = [];
+
+    for (const section of model.frontMatterSections) {
+      bodyChildren.push(
+        new Paragraph({
+          children: buildInlineTextRuns(section.title, {
+            bold: true,
+            size: 28,
+            font: "Arial",
+          }),
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 0, after: 160 },
+        }),
+      );
+
+      for (const block of parseMarkdownBlocks(section.content)) {
+        if (block.type === "paragraph" && block.text) {
+          bodyChildren.push(
+            new Paragraph({
+              children: buildInlineTextRuns(block.text, { size: 24, font: "Arial" }),
+              spacing: { after: 200, line: 360 },
+              alignment: AlignmentType.JUSTIFIED,
+              indent: { firstLine: 709 },
+            }),
+          );
+        }
+      }
+
+      bodyChildren.push(new Paragraph({ children: [new PageBreak()] }));
+    }
 
     bodyChildren.push(
       new Paragraph({
@@ -822,6 +979,18 @@ export class DocumentExportService {
         <Page size="A4" style={pdfStyles.page}>
           {renderPdfCover(model)}
           {model.description ? <Text style={pdfStyles.paragraph}>{model.description}</Text> : null}
+          {model.frontMatterSections.map((section) => (
+            <View key={`front-${section.id}`}>
+              <Text style={pdfStyles.sectionTitle}>{section.title}</Text>
+              {parseMarkdownBlocks(section.content).map((block, index) =>
+                block.text ? (
+                  <Text key={`front-${section.id}-${index}`} style={pdfStyles.paragraph}>
+                    {block.text}
+                  </Text>
+                ) : null,
+              )}
+            </View>
+          ))}
           {model.sections.map((section) => {
             return (
             <View key={section.id}>

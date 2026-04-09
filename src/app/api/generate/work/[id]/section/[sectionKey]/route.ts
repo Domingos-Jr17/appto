@@ -6,6 +6,7 @@ import { apiError, apiSuccess, handleApiError } from "@/lib/api";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
+import { resolveDocumentProfile } from "@/lib/document-profile";
 import {
   setPersistedWorkGenerationJob,
   setWorkGenerationJob,
@@ -19,6 +20,7 @@ import {
 } from "@/lib/generation/run-repository";
 import { getSectionTemplates } from "@/lib/work-generation-jobs";
 import {
+  buildWorkGenerationSystemPrompt,
   buildSectionGenerationPrompt,
   getWorkGenerationProfile,
   validateGeneratedSection,
@@ -90,8 +92,14 @@ export async function POST(
       return apiError("Plano de secção não encontrado", 500);
     }
 
-    const systemPrompt = getSystemPromptForEducation(resolvedEducationLevel);
-    const typeLabel = project.type.replace(/_/g, " ");
+    const documentProfile = resolveDocumentProfile({
+      type: project.type,
+      educationLevel: resolvedEducationLevel,
+      institutionName: brief.institutionName,
+      coverTemplate: brief.coverTemplate,
+    });
+    const systemPrompt = buildWorkGenerationSystemPrompt(documentProfile);
+    const typeLabel = documentProfile.displayTypeLabel;
 
     const enrichedBrief = await enrichBriefWithAcademicSources(project.title, brief);
 
@@ -302,7 +310,7 @@ async function saveSectionToDb(projectId: string, title: string, content: string
   }
 }
 
-function getSystemPromptForEducation(educationLevel?: string | null): string {
+function _getSystemPromptForEducation(educationLevel?: string | null): string {
   if (educationLevel === "SECONDARY") {
     return `Você é um assistente de escrita para estudantes do ensino secundário moçambicano.
 Gere conteúdo simples e acessível em Português de Moçambique.

@@ -1,3 +1,4 @@
+import type { DocumentProfile } from "@/lib/document-profile";
 import type { AcademicEducationLevel, WorkBriefInput } from "@/types/editor";
 
 export interface SectionTemplate {
@@ -60,6 +61,34 @@ export interface ParsedGeneratedWorkContent {
   sections: GeneratedSection[];
 }
 
+export function buildWorkGenerationSystemPrompt(profile: Pick<
+  DocumentProfile,
+  "educationLevel" | "displayTypeLabel" | "citationPolicy"
+>) {
+  if (profile.educationLevel === "SECONDARY") {
+    return `Você é um assistente de escrita para estudantes do ensino secundário moçambicano.
+Gere conteúdo claro, simples e adequado a um ${profile.displayTypeLabel.toLowerCase()}.
+Use Português de Moçambique, frases acessíveis e exemplos concretos.
+Não introduza metadados universitários nem estrutura universitária.
+As citações formais são opcionais; se usar, só use fontes sustentadas pelo briefing.
+Nunca invente metadados da capa, autores, obras ou referências.`;
+  }
+
+  if (profile.educationLevel === "TECHNICAL") {
+    return `Você é um assistente de escrita para estudantes do ensino técnico profissional moçambicano.
+Gere conteúdo técnico e prático em Português de Moçambique para um ${profile.displayTypeLabel.toLowerCase()}.
+Use terminologia aplicada, exemplos de contexto profissional e estrutura técnica coerente.
+Use citações apenas quando puder sustentá-las com o briefing ou referências iniciais.
+Nunca invente metadados da capa, autores, obras ou referências.`;
+  }
+
+  return `Você é um especialista em escrita académica para estudantes moçambicanos do ensino superior.
+Gere conteúdo académico rigoroso em Português de Moçambique para um ${profile.displayTypeLabel.toLowerCase()}.
+Mantenha linguagem formal, estrutura universitária coerente e referências sustentadas.
+As citações são obrigatórias quando houver base suficiente; nunca invente autores, obras, leis ou dados.
+Nunca invente metadados da capa sem base no briefing.`;
+}
+
 function isSchoolContext(educationLevel?: string | null) {
   return educationLevel === "SECONDARY";
 }
@@ -68,7 +97,7 @@ function isTechnicalContext(educationLevel?: string | null) {
   return educationLevel === "TECHNICAL";
 }
 
-function isHigherEducation(type: string, educationLevel?: string | null) {
+function _isHigherEducation(type: string, educationLevel?: string | null) {
   return !isSchoolContext(educationLevel) && !isTechnicalContext(educationLevel);
 }
 
@@ -428,6 +457,19 @@ export function getWorkGenerationProfile(
   };
 }
 
+function startsWithDuplicateSectionHeading(content: string, sectionTitle: string) {
+  const firstMeaningfulLine = content
+    .split("\n")
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  if (!firstMeaningfulLine) {
+    return false;
+  }
+
+  return normalizeTitle(firstMeaningfulLine) === normalizeTitle(sectionTitle);
+}
+
 function buildJsonSchema(profile: WorkGenerationProfile, templates: SectionTemplate[]) {
   const abstractField = profile.abstract.required
     ? `    "abstract": "resumo académico com ${profile.abstract.range?.min ?? 140} a ${profile.abstract.range?.max ?? 260} palavras",`
@@ -701,7 +743,8 @@ Requisitos obrigatórios:
 Regras de estilo:
 ${styleRulesText}
 - ${citationGuidance}
-- ${factualGuidance}`;
+- ${factualGuidance}
+- NÃO repita o título da secção "${sectionTitle}" como primeiro heading ou primeira linha do conteúdo`;
 }
 
 export function validateGeneratedSection(
@@ -718,6 +761,13 @@ export function validateGeneratedSection(
     issues.push({
       sectionTitle,
       message: `A secção "${sectionTitle}" ficou com ${words} palavras; esperado aproximadamente ${range.min}-${range.max}.`,
+    });
+  }
+
+  if (startsWithDuplicateSectionHeading(content, sectionTitle)) {
+    issues.push({
+      sectionTitle,
+      message: "A secção repete o próprio título na primeira linha; comece directamente pelo conteúdo.",
     });
   }
 

@@ -2,6 +2,7 @@ import { runAIChatCompletion, runAIChatStream } from "@/lib/ai";
 import { enrichReferencesWithAcademicSources } from "@/lib/academic-search";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { resolveDocumentProfile } from "@/lib/document-profile";
 import { processQueuedGenerationJobs as processQueuedJobs, triggerQueuedGenerationProcessing as triggerQueuedProcessing } from "@/lib/generation/job-queue";
 import {
   batchGetWorkGenerationStatusAsync,
@@ -32,6 +33,7 @@ import {
   createProgressTracker,
 } from "@/lib/work-generation-state";
 import {
+  buildWorkGenerationSystemPrompt,
   buildBriefContext,
   buildSectionGenerationPrompt,
   getWorkGenerationProfile,
@@ -114,7 +116,7 @@ Nunca invente metadados da capa sem base no briefing.`;
 
 const WORKER_PASS_RUNTIME_BUDGET_MS = 240_000;
 
-function getSystemPromptForEducation(educationLevel?: string | null): string {
+function _getSystemPromptForEducation(educationLevel?: string | null): string {
   if (educationLevel === "SECONDARY") {
     return `Você é um assistente de escrita para estudantes do ensino secundário moçambicano.
 Gere conteúdo simples e acessível em Português de Moçambique.
@@ -458,7 +460,20 @@ const SECTION_TEMPLATES: Record<string, SectionTemplate[]> = {
 };
 
 export function getSectionTemplates(type: string, _educationLevel?: string | null) {
-  return SECTION_TEMPLATES[type] || SECTION_TEMPLATES.HIGHER_EDUCATION_WORK;
+  const profile = resolveDocumentProfile({
+    type,
+    educationLevel: _educationLevel,
+  });
+  const fallbackTemplates = SECTION_TEMPLATES[type] || SECTION_TEMPLATES.HIGHER_EDUCATION_WORK;
+
+  if (profile.bodySections.length === 0) {
+    return fallbackTemplates;
+  }
+
+  return profile.bodySections.map((section) => ({
+    title: section.title,
+    order: section.order,
+  }));
 }
 
 export function getPendingGenerationTemplates(
@@ -472,6 +487,29 @@ export function getPendingGenerationTemplates(
   );
 
   return templates.filter((template) => !generatedTitles.has(template.title));
+}
+
+export function resolveReferencesSectionContent(input: {
+  educationLevel?: string | null;
+  referencesSeed?: string | null;
+}) {
+  const references = input.referencesSeed?.trim() || "";
+  if (!references) {
+    return "";
+  }
+
+  return references;
+}
+
+export function shouldRequireReferenceReview(input: {
+  educationLevel?: string | null;
+  referencesContent: string;
+}) {
+  if (input.educationLevel === "SECONDARY") {
+    return false;
+  }
+
+  return input.referencesContent.trim().length === 0;
 }
 
 export function shouldYieldGenerationPass(input: {
@@ -566,7 +604,14 @@ async function _generateWorkSectionBySection(
 
   const profile = getWorkGenerationProfile(type, enrichedBrief, templates);
   const resolvedEducationLevel = enrichedBrief.educationLevel || "HIGHER_EDUCATION";
-  const systemPrompt = getSystemPromptForEducation(resolvedEducationLevel);
+  const systemPrompt = buildWorkGenerationSystemPrompt(
+    resolveDocumentProfile({
+      type,
+      educationLevel: resolvedEducationLevel,
+      institutionName: enrichedBrief.institutionName,
+      coverTemplate: enrichedBrief.coverTemplate,
+    }),
+  );
   const typeLabel = formatProjectType(type);
   const isHigherEd = enrichedBrief.educationLevel === "HIGHER_EDUCATION";
 
@@ -773,6 +818,52 @@ async function _generateWorkSectionBySection(
     }
   }
 
+  const referenceSection = resolveDocumentProfile({
+    type,
+    educationLevel: enrichedBrief.educationLevel,
+    institutionName: enrichedBrief.institutionName,
+    coverTemplate: enrichedBrief.coverTemplate,
+  }).referenceSection;
+  const referencesContent = resolveReferencesSectionContent({
+    educationLevel: enrichedBrief.educationLevel,
+    referencesSeed: enrichedBrief.referencesSeed,
+  });
+  const referencesNeedReview = shouldRequireReferenceReview({
+    educationLevel: enrichedBrief.educationLevel,
+    referencesContent,
+  });
+
+  if (referencesContent) {
+    await saveSectionToDb(projectId, referenceSection.title, referencesContent);
+  }
+
+  await db.documentSection.updateMany({
+    where: { projectId, title: referenceSection.title },
+    data: { order: referenceSection.order },
+  });
+
+  if (referencesNeedReview) {
+    sectionOutcomes.push({
+      title: referenceSection.title,
+      accepted: false,
+      degraded: true,
+      hadAnyContent: false,
+      failureReason: "validation_failed",
+    });
+  } else if (referencesContent) {
+    sectionOutcomes.push({
+      title: referenceSection.title,
+      accepted: true,
+      degraded: false,
+      hadAnyContent: true,
+      failureReason: null,
+    });
+  }
+
+  return { sectionOutcomes };
+}
+
+  /* legacy reference fallback retained for migration history
   const referenceOrder = Math.max(...templates.map((section) => section.order)) + 1;
   await saveSectionToDb(
     projectId,
@@ -787,6 +878,7 @@ async function _generateWorkSectionBySection(
   return { sectionOutcomes };
 }
 
+*/
 async function _generateSingleSectionForWorker(
   projectId: string,
   sectionTitle: string,
@@ -1139,7 +1231,14 @@ async function processGenerationJob(projectId: string) {
   }
 
   const profile = getWorkGenerationProfile(project.type, brief, templates);
-  const systemPrompt = getSystemPromptForEducation(brief.educationLevel || "HIGHER_EDUCATION");
+  const systemPrompt = buildWorkGenerationSystemPrompt(
+    resolveDocumentProfile({
+      type: project.type,
+      educationLevel: brief.educationLevel || "HIGHER_EDUCATION",
+      institutionName: brief.institutionName,
+      coverTemplate: brief.coverTemplate,
+    }),
+  );
   const typeLabel = formatProjectType(project.type);
   const progressTracker = createProgressTracker(pendingTemplates.length, 10);
   const previousSections = existingSections
@@ -1470,7 +1569,14 @@ export async function regenerateWorkSection(input: {
   const { sectionId, title, type, brief, sectionTitle } = input;
 
   const wordCount = "entre 260 e 420";
-  const systemPrompt = getSystemPromptForEducation(brief.educationLevel || "HIGHER_EDUCATION");
+  const systemPrompt = buildWorkGenerationSystemPrompt(
+    resolveDocumentProfile({
+      type,
+      educationLevel: brief.educationLevel || "HIGHER_EDUCATION",
+      institutionName: brief.institutionName,
+      coverTemplate: brief.coverTemplate,
+    }),
+  );
 
   const prompt = `Regere apenas a secção "${sectionTitle}" de um trabalho académico.
 

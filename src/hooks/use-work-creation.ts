@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { resolveDocumentProfile } from "@/lib/document-profile";
 import { fetchWithRetry } from "@/lib/fetch-retry";
 import type {
   AcademicEducationLevel,
@@ -40,9 +41,40 @@ export type WorkFormState = {
   semester: string;
 };
 
+const INITIAL_DOCUMENT_PROFILE = resolveDocumentProfile({
+  type: "SECONDARY_WORK",
+  educationLevel: "SECONDARY",
+});
+
+function applyCanonicalDocumentSelection(
+  form: Pick<WorkFormState, "type" | "educationLevel" | "institutionName" | "coverTemplate">,
+) {
+  const profile = resolveDocumentProfile({
+    type: form.type,
+    educationLevel: form.educationLevel,
+    institutionName: form.institutionName,
+    coverTemplate: form.coverTemplate,
+  });
+  const fallbackTemplate = getSmartTemplate(
+    profile.educationLevel,
+    form.institutionName,
+  );
+
+  return {
+    type: profile.projectType,
+    educationLevel: profile.educationLevel,
+    coverTemplate: resolveDocumentProfile({
+      type: profile.projectType,
+      educationLevel: profile.educationLevel,
+      institutionName: form.institutionName,
+      coverTemplate: form.coverTemplate || fallbackTemplate,
+    }).coverTemplate,
+  };
+}
+
 export const INITIAL_WORK_FORM: WorkFormState = {
   title: "",
-  type: "HIGHER_EDUCATION_WORK",
+  type: INITIAL_DOCUMENT_PROFILE.projectType,
   institutionName: "",
   courseName: "",
   subjectName: "",
@@ -50,13 +82,13 @@ export const INITIAL_WORK_FORM: WorkFormState = {
   advisorName: "",
   studentName: "",
   city: "",
-  educationLevel: "HIGHER_EDUCATION",
+  educationLevel: INITIAL_DOCUMENT_PROFILE.educationLevel,
   objective: "",
   methodology: "",
   citationStyle: "ABNT",
   referencesSeed: "",
   additionalInstructions: "",
-  coverTemplate: "SCHOOL_MOZ",
+  coverTemplate: INITIAL_DOCUMENT_PROFILE.coverTemplate,
   researchQuestion: "",
   keywords: "",
   subtitle: "",
@@ -168,7 +200,21 @@ export function useWorkCreation() {
   // Actions
   const updateWorkForm = useCallback(
     <K extends keyof WorkFormState>(key: K, value: WorkFormState[K]) => {
-      setWorkForm((current) => ({ ...current, [key]: value }));
+      setWorkForm((current) => {
+        const next = { ...current, [key]: value };
+        if (
+          key === "type" ||
+          key === "educationLevel" ||
+          key === "institutionName" ||
+          key === "coverTemplate"
+        ) {
+          return {
+            ...next,
+            ...applyCanonicalDocumentSelection(next),
+          };
+        }
+        return next;
+      });
     },
     [],
   );
@@ -176,12 +222,14 @@ export function useWorkCreation() {
   const handleEducationLevelChange = useCallback(
     (value: AcademicEducationLevel) => {
       setWorkForm((current) => {
-        const coverTemplate = getSmartTemplate(value, current.institutionName);
-        return {
+        const next = {
           ...current,
           educationLevel: value,
           type: EDUCATION_TO_TYPE[value],
-          coverTemplate,
+        };
+        return {
+          ...next,
+          ...applyCanonicalDocumentSelection(next),
         };
       });
     },
@@ -190,11 +238,16 @@ export function useWorkCreation() {
 
   const handleInstitutionChange = useCallback(
     (value: string) => {
-      setWorkForm((current) => ({
-        ...current,
-        institutionName: value,
-        coverTemplate: getSmartTemplate(current.educationLevel, value),
-      }));
+      setWorkForm((current) => {
+        const next = {
+          ...current,
+          institutionName: value,
+        };
+        return {
+          ...next,
+          ...applyCanonicalDocumentSelection(next),
+        };
+      });
     },
     [],
   );
@@ -209,7 +262,7 @@ export function useWorkCreation() {
     setWorkForm({ ...INITIAL_WORK_FORM });
   }, []);
 
-  const runSectionGeneration = useCallback(async (projectId: string) => {
+  const _runSectionGeneration = useCallback(async (projectId: string) => {
     sectionRunnerAbortRef.current = false;
 
     const loadSections = async (): Promise<GenerationSectionItem[]> => {
@@ -362,7 +415,7 @@ if (data.generation?.asynchronous) {
       setGenerationMessage("Na fila do worker");
       return null;
     }
-  }, [workForm, toast, resetWorkForm, router, runSectionGeneration]);
+  }, [workForm, toast, resetWorkForm, router]);
 
   // Polling for generation progress
   useEffect(() => {

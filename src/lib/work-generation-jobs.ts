@@ -27,6 +27,9 @@ import {
 } from "@/lib/generation/work-generation-artifacts";
 import { logger } from "@/lib/logger";
 import { trackProductEvent } from "@/lib/product-events";
+import {
+  resolveReferenceSectionData,
+} from "@/lib/reference-section";
 import { serializeProjectBrief, toWorkBriefInput } from "@/lib/projects/project-brief";
 import { subscriptionService } from "@/lib/subscription";
 import {
@@ -115,6 +118,50 @@ Adapte o nível de linguagem ao nível educacional indicado:
 Nunca invente metadados da capa sem base no briefing.`;
 
 const WORKER_PASS_RUNTIME_BUDGET_MS = 240_000;
+
+function getAcademicReferenceSourceLimit(educationLevel?: string | null) {
+  if (educationLevel === "SECONDARY") {
+    return 4;
+  }
+
+  if (educationLevel === "TECHNICAL") {
+    return 5;
+  }
+
+  return 6;
+}
+
+async function enrichBriefReferencesIfNeeded(title: string, brief: WorkBriefInput) {
+  const existingRefs = brief.referencesSeed?.trim() || "";
+
+  try {
+    const assistedReferences = await Promise.race([
+      enrichReferencesWithAcademicSources(
+        title,
+        existingRefs,
+        getAcademicReferenceSourceLimit(brief.educationLevel),
+      ),
+      new Promise<string>((resolve) => setTimeout(() => resolve(existingRefs), 4000)),
+    ]);
+
+    if (!assistedReferences.trim() || assistedReferences === existingRefs) {
+      return {
+        enrichedBrief: brief,
+        assistedReferences: existingRefs ? " (com referências do utilizador)" : "",
+      };
+    }
+
+    return {
+      enrichedBrief: { ...brief, referencesSeed: assistedReferences },
+      assistedReferences,
+    };
+  } catch {
+    return {
+      enrichedBrief: brief,
+      assistedReferences: existingRefs ? " (com referências do utilizador)" : "",
+    };
+  }
+}
 
 function _getSystemPromptForEducation(educationLevel?: string | null): string {
   if (educationLevel === "SECONDARY") {
@@ -492,24 +539,27 @@ export function getPendingGenerationTemplates(
 export function resolveReferencesSectionContent(input: {
   educationLevel?: string | null;
   referencesSeed?: string | null;
+  assistedReferences?: string | null;
+  generatedSections?: Array<{ title: string; content: string }>;
 }) {
-  const references = input.referencesSeed?.trim() || "";
-  if (!references) {
-    return "";
-  }
-
-  return references;
+  return resolveReferenceSectionData({
+    educationLevel: input.educationLevel as WorkBriefInput["educationLevel"],
+    userReferences: input.referencesSeed,
+    assistedReferences: input.assistedReferences,
+    generatedSections: input.generatedSections,
+  }).content;
 }
 
 export function shouldRequireReferenceReview(input: {
   educationLevel?: string | null;
   referencesContent: string;
+  generatedSections?: Array<{ title: string; content: string }>;
 }) {
-  if (input.educationLevel === "SECONDARY") {
-    return false;
-  }
-
-  return input.referencesContent.trim().length === 0;
+  return resolveReferenceSectionData({
+    educationLevel: input.educationLevel as WorkBriefInput["educationLevel"],
+    userReferences: input.referencesContent,
+    generatedSections: input.generatedSections,
+  }).status === "NEEDS_REVIEW";
 }
 
 export function shouldYieldGenerationPass(input: {
@@ -585,22 +635,7 @@ async function _generateWorkSectionBySection(
   generationContext: { runId: string; attemptId: string },
   onProgress: (progress: number, step: string) => Promise<void>,
 ) {
-  // Enrich references with real academic sources from Semantic Scholar
-  // Run with timeout to avoid blocking generation for 5-10s
-  let enrichedBrief = brief;
-  if (!brief.referencesSeed || brief.referencesSeed.trim().length < 20) {
-    try {
-      const enriched = await Promise.race([
-        enrichReferencesWithAcademicSources(title, brief.referencesSeed || "", 6),
-        new Promise<string>((resolve) => setTimeout(() => resolve(""), 2000)),
-      ]);
-      if (enriched && enriched !== brief.referencesSeed) {
-        enrichedBrief = { ...brief, referencesSeed: enriched };
-      }
-    } catch {
-      // Skip enrichment if it fails; generation can proceed without it
-    }
-  }
+  const { enrichedBrief, assistedReferences } = await enrichBriefReferencesIfNeeded(title, brief);
 
   const profile = getWorkGenerationProfile(type, enrichedBrief, templates);
   const resolvedEducationLevel = enrichedBrief.educationLevel || "HIGHER_EDUCATION";
@@ -827,10 +862,13 @@ async function _generateWorkSectionBySection(
   const referencesContent = resolveReferencesSectionContent({
     educationLevel: enrichedBrief.educationLevel,
     referencesSeed: enrichedBrief.referencesSeed,
+    assistedReferences,
+    generatedSections: await loadGeneratedSections(projectId, templates),
   });
   const referencesNeedReview = shouldRequireReferenceReview({
     educationLevel: enrichedBrief.educationLevel,
     referencesContent,
+    generatedSections: await loadGeneratedSections(projectId, templates),
   });
 
   if (referencesContent) {
@@ -1165,7 +1203,7 @@ export async function startWorkGenerationJob(input: {
     projectId,
   }).catch(() => null);
 
-  triggerQueuedGenerationProcessing();
+  triggerQueuedGenerationProcessing({ fastStartLocal: true });
 }
 
 async function processGenerationJob(projectId: string) {
@@ -1204,6 +1242,10 @@ async function processGenerationJob(projectId: string) {
   const runId = currentRun.id;
   const attemptId = currentRun.currentAttemptId;
   const brief = toWorkBriefInput(project.brief);
+  const { enrichedBrief, assistedReferences } = await enrichBriefReferencesIfNeeded(
+    project.title,
+    brief,
+  );
   const templates = getSectionTemplates(project.type, project.brief.educationLevel);
   const existingSections = await db.documentSection.findMany({
     where: { projectId },
@@ -1230,13 +1272,13 @@ async function processGenerationJob(projectId: string) {
     return;
   }
 
-  const profile = getWorkGenerationProfile(project.type, brief, templates);
+  const profile = getWorkGenerationProfile(project.type, enrichedBrief, templates);
   const systemPrompt = buildWorkGenerationSystemPrompt(
     resolveDocumentProfile({
       type: project.type,
-      educationLevel: brief.educationLevel || "HIGHER_EDUCATION",
-      institutionName: brief.institutionName,
-      coverTemplate: brief.coverTemplate,
+      educationLevel: enrichedBrief.educationLevel || "HIGHER_EDUCATION",
+      institutionName: enrichedBrief.institutionName,
+      coverTemplate: enrichedBrief.coverTemplate,
     }),
   );
   const typeLabel = formatProjectType(project.type);
@@ -1332,7 +1374,7 @@ async function processGenerationJob(projectId: string) {
       const sectionPrompt = buildSectionGenerationPrompt({
         title: project.title,
         typeLabel,
-        brief,
+        brief: enrichedBrief,
         sectionTitle: pendingTemplate.title,
         sectionGuidance: sectionPlan.guidance,
         sectionRange: sectionPlan.range,
@@ -1541,6 +1583,64 @@ async function processGenerationJob(projectId: string) {
       }
     }
 
+    const documentProfile = resolveDocumentProfile({
+      type: project.type,
+      educationLevel: enrichedBrief.educationLevel,
+      institutionName: enrichedBrief.institutionName,
+      coverTemplate: enrichedBrief.coverTemplate,
+    });
+    const referenceSection = documentProfile.referenceSection;
+    const persistedReferenceSection = previousSections.find(
+      (section) => section.title === referenceSection.title && section.content.trim().length > 0,
+    );
+    const generatedBodySections = previousSections.filter((section) =>
+      templates.some((template) => template.title === section.title),
+    );
+    const resolvedReferenceSection = resolveReferenceSectionData({
+      educationLevel: enrichedBrief.educationLevel,
+      userReferences: brief.referencesSeed,
+      assistedReferences,
+      generatedSections: generatedBodySections,
+    });
+    const referencesContent =
+      persistedReferenceSection?.content ||
+      resolvedReferenceSection.content;
+    const referencesNeedReview = shouldRequireReferenceReview({
+      educationLevel: enrichedBrief.educationLevel,
+      referencesContent,
+      generatedSections: generatedBodySections,
+    });
+
+    if (!persistedReferenceSection && referencesContent) {
+      await saveSectionToDb(projectId, referenceSection.title, referencesContent);
+      previousSections.push({ title: referenceSection.title, content: referencesContent });
+    }
+
+    await db.documentSection.updateMany({
+      where: { projectId, title: referenceSection.title },
+      data: { order: referenceSection.order },
+    });
+
+    if (!sectionOutcomes.some((outcome) => outcome.title === referenceSection.title)) {
+      if (referencesNeedReview) {
+        sectionOutcomes.push({
+          title: referenceSection.title,
+          accepted: false,
+          degraded: true,
+          hadAnyContent: referencesContent.trim().length > 0,
+          failureReason: "validation_failed",
+        });
+      } else if (referencesContent.trim().length > 0) {
+        sectionOutcomes.push({
+          title: referenceSection.title,
+          accepted: true,
+          degraded: false,
+          hadAnyContent: true,
+          failureReason: null,
+        });
+      }
+    }
+
     await finalizeGeneration(projectId, runId, attemptId, project.userId, {
       outcomes: sectionOutcomes,
       metrics: executionMetrics,
@@ -1555,8 +1655,8 @@ export async function processQueuedGenerationJobs(limit = 2) {
   return processQueuedJobs(processGenerationJob, limit);
 }
 
-export function triggerQueuedGenerationProcessing() {
-  triggerQueuedProcessing(processQueuedGenerationJobs);
+export function triggerQueuedGenerationProcessing(options?: { fastStartLocal?: boolean }) {
+  triggerQueuedProcessing(processQueuedGenerationJobs, options);
 }
 
 export async function regenerateWorkSection(input: {

@@ -1,6 +1,5 @@
 import { db } from "@/lib/db";
 import { getPersistedGenerationSnapshot } from "@/lib/generation/run-repository";
-import { logger } from "@/lib/logger";
 import {
   getDefaultGenerationStep,
   normalizeGenerationProgress,
@@ -34,36 +33,6 @@ function normalizeJobStatus(status?: string | null): JobStatus {
   }
 
   return "GENERATING";
-}
-
-async function persistJob(projectId: string, partial: Partial<WorkGenerationJobStatus>, userId?: string) {
-  const current = await db.generationJob.findUnique({ where: { projectId } });
-  const { streamingContent, streamingSectionTitle, status, progress, step, ...rest } = partial;
-  const normalizedStatus = normalizeJobStatus(status || current?.status);
-  const dbPartial = {
-    ...rest,
-    status: normalizedStatus,
-    progress: normalizeGenerationProgress(normalizedStatus, progress ?? current?.progress),
-    step: step || current?.step || getDefaultGenerationStep(normalizedStatus),
-  };
-
-  if (current) {
-    await db.generationJob.update({
-      where: { projectId },
-      data: dbPartial,
-    });
-  } else if (userId) {
-    await db.generationJob.create({
-      data: {
-        projectId,
-        userId,
-        status: dbPartial.status || "GENERATING",
-        progress: dbPartial.progress || 0,
-        step: dbPartial.step,
-        error: partial.error,
-      },
-    });
-  }
 }
 
 export function getWorkGenerationStatus(projectId: string): WorkGenerationJobStatus | null {
@@ -140,13 +109,6 @@ export function setWorkGenerationJob(projectId: string, partial: Partial<WorkGen
     step: partial.step || current.step || getDefaultGenerationStep(nextStatus),
   };
   jobs.set(projectId, updated);
-
-  persistJob(projectId, updated).catch((error) => {
-    logger.error("[work-generation] failed to persist in-memory job state", {
-      projectId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  });
 }
 
 export async function setPersistedWorkGenerationJob(

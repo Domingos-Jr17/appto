@@ -10,7 +10,6 @@ import {
   PageNumber,
   Paragraph,
   SectionType,
-  TableOfContents,
   TextRun,
 } from "docx";
 import { normalizeStoredContent, parseMarkdownBlocks } from "@/lib/content";
@@ -63,6 +62,11 @@ export interface ExportDocument {
   };
 }
 
+export interface StaticSummaryEntry {
+  title: string;
+  level: 1 | 2 | 3;
+}
+
 export function getAbntChecklist(template: string | null | undefined) {
   const resolvedTemplate = template || "ABNT_GENERIC";
   const baseItems = [
@@ -70,7 +74,7 @@ export function getAbntChecklist(template: string | null | undefined) {
     "Fonte principal Arial 12 com alinhamento justificado.",
     "Espaçamento 1.5 e recuo de 1,25 cm na primeira linha.",
     "Citações longas com recuo ampliado e fonte menor.",
-    "Sumário com títulos hierárquicos e paginação automática.",
+    "Sumário visível com títulos hierárquicos coerentes.",
     "Referências ordenadas alfabeticamente por autor.",
   ];
 
@@ -379,6 +383,57 @@ export function parseReferenceEntries(content: string) {
     .map((entry) => entry.replace(/^[-*+]\s*/, "").trim())
     .filter(Boolean)
     .sort((left, right) => left.localeCompare(right, "pt"));
+}
+
+function getMarkdownHeadingLevel(blockLevel?: number, title?: string): 2 | 3 | null {
+  if (blockLevel && blockLevel >= 3) {
+    return 3;
+  }
+
+  if (blockLevel === 2) {
+    return 2;
+  }
+
+  if (title && /^\d+\.\d+\.\d+/.test(title)) {
+    return 3;
+  }
+
+  if (title && /^\d+\.\d+/.test(title)) {
+    return 2;
+  }
+
+  return null;
+}
+
+export function buildStaticSummaryEntries(model: Pick<ExportDocument, "frontMatterSections" | "sections">) {
+  const entries: StaticSummaryEntry[] = [];
+
+  for (const section of model.frontMatterSections) {
+    entries.push({ title: section.title, level: 1 });
+  }
+
+  for (const section of model.sections) {
+    entries.push({ title: section.title, level: 1 });
+
+    for (const block of parseMarkdownBlocks(section.content)) {
+      if (block.type !== "heading" || !block.text) {
+        continue;
+      }
+
+      if (normalizeHeadingForComparison(block.text) === normalizeHeadingForComparison(section.title)) {
+        continue;
+      }
+
+      const level = getMarkdownHeadingLevel(block.level, block.text);
+      if (!level) {
+        continue;
+      }
+
+      entries.push({ title: block.text, level });
+    }
+  }
+
+  return entries;
 }
 
 function buildCoverParagraphs(model: ExportDocument) {
@@ -806,7 +861,7 @@ export class DocumentExportService {
     }
     coverChildren.push(new Paragraph({ children: [new PageBreak()] }));
 
-    const bodyChildren: (Paragraph | TableOfContents)[] = [];
+    const bodyChildren: Paragraph[] = [];
     let isFirstFrontMatter = true;
 
     for (const section of model.frontMatterSections) {
@@ -839,21 +894,27 @@ export class DocumentExportService {
       bodyChildren.push(new Paragraph({ children: [new PageBreak()] }));
     }
 
-    bodyChildren.push(
-      new Paragraph({
-        children: [new TextRun({ text: "SUMÁRIO", bold: true, size: 28, font: "Arial" })],
-        heading: HeadingLevel.HEADING_1,
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 0, after: 200 },
-      })
-    );
-    bodyChildren.push(
-      new TableOfContents("Sumário", {
-        hyperlink: true,
-        headingStyleRange: "1-3",
-      })
-    );
-    bodyChildren.push(new Paragraph({ children: [new PageBreak()] }));
+    if (model.profile.frontMatterPolicy.includeAutomaticTableOfContents) {
+      bodyChildren.push(
+        new Paragraph({
+          children: [new TextRun({ text: "ÍNDICE", bold: true, size: 28, font: "Arial" })],
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 0, after: 200 },
+        })
+      );
+
+      for (const entry of buildStaticSummaryEntries(model)) {
+        bodyChildren.push(
+          new Paragraph({
+            children: buildInlineTextRuns(entry.title, { size: 24, font: "Arial" }),
+            spacing: { after: 120, line: 280 },
+            indent: entry.level === 1 ? undefined : { left: entry.level === 2 ? 360 : 720 },
+          })
+        );
+      }
+
+      bodyChildren.push(new Paragraph({ children: [new PageBreak()] }));
+    }
 
     for (const section of model.sections) {
       const isReferenceSection = /refer[eê]ncias/i.test(section.title);

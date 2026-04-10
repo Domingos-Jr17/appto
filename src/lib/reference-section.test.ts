@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   buildReferenceReviewNotice,
+  extractInlineCitationKeys,
   hasReferenceSensitiveSignals,
   isReferenceReviewNotice,
   normalizeReferenceEntries,
@@ -63,6 +64,37 @@ describe("reference section", () => {
     expect(resolved.status).toBe("NEEDS_REVIEW");
     expect(isReferenceReviewNotice(resolved.content)).toBe(true);
     expect(resolved.message).toContain("afirmações factuais");
+  });
+
+  test("extracts inline citations and includes them in the review notice", () => {
+    const citations = extractInlineCitationKeys([
+      {
+        title: "4. Discussão",
+        content:
+          "A análise confirma a tendência descrita por Matusse (2022) e reforça a leitura de (Cossa; Tembe, 2021) e (Mondlane, 2022a).",
+      },
+    ]);
+
+    expect(citations).toEqual([
+      "Cossa; Tembe, 2021",
+      "Matusse, 2022",
+      "Mondlane, 2022a",
+    ]);
+
+    const resolved = resolveReferenceSectionData({
+      educationLevel: "HIGHER_EDUCATION",
+      generatedSections: [
+        {
+          title: "4. Discussão",
+          content:
+            "A análise confirma a tendência descrita por Matusse (2022) e reforça a leitura de (Cossa; Tembe, 2021).",
+        },
+      ],
+    });
+
+    expect(resolved.status).toBe("NEEDS_REVIEW");
+    expect(resolved.content).toContain("Citações detectadas no texto");
+    expect(resolved.content).toContain("Matusse, 2022");
   });
 
   test("detects factual sensitivity in generated content", () => {

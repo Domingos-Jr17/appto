@@ -93,10 +93,10 @@ export function PreviewPane({ project, sections }: PreviewPaneProps) {
             </div>
           </div>
 
-          {/* Indice */}
+          {/* Índice */}
           {numberedSections.length > 0 ? (
             <div className="mb-12">
-              <h2 className="mb-4 text-lg font-semibold text-foreground">Indice</h2>
+              <h2 className="mb-4 text-lg font-semibold text-foreground">Índice</h2>
               <div className="space-y-1.5">
                 {numberedSections.map((section) => (
                   <a

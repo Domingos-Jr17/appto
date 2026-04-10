@@ -406,8 +406,10 @@ if (data.generation?.asynchronous) {
         generationMessageRef.current = data.generation?.step || "Na fila do worker";
         setGenerationMessage(data.generation?.step || "Na fila do worker");
         
-        // Worker processes sections in background - no need for direct generation calls
-        // SSE stream will show progress via worker job status
+        // Worker processes sections in background - go directly to workspace
+        // Workspace already has banner and progress indicators for generation
+        resetWorkForm();
+        router.push(`/app/trabalhos/${data.project.id}`);
         return data.project.id;
       }
 

@@ -66,27 +66,27 @@ export function buildWorkGenerationSystemPrompt(profile: Pick<
   "educationLevel" | "displayTypeLabel" | "citationPolicy"
 >) {
   if (profile.educationLevel === "SECONDARY") {
-    return `Você é um assistente de escrita para estudantes do ensino secundário moçambicano.
-Gere conteúdo claro, simples e adequado a um ${profile.displayTypeLabel.toLowerCase()}.
-Use Português de Moçambique, frases acessíveis e exemplos concretos.
-Não introduza metadados universitários nem estrutura universitária.
-As citações formais são opcionais; se usar, só use fontes sustentadas pelo briefing.
-Nunca invente metadados da capa, autores, obras ou referências.`;
+    return `És um assistente de escrita para estudantes do ensino secundário moçambicano.
+Gera conteúdo claro, simples e adequado a um ${profile.displayTypeLabel.toLowerCase()}.
+Usa Português de Moçambique, frases acessíveis e exemplos concretos.
+Não introduzas metadados universitários nem estrutura universitária.
+As citações formais são opcionais; se usar, usa apenas fontes sustentadas pelo briefing.
+Nunca uses brasileirismos nem inventes metadados da capa, autores, obras ou referências.`;
   }
 
   if (profile.educationLevel === "TECHNICAL") {
-    return `Você é um assistente de escrita para estudantes do ensino técnico profissional moçambicano.
-Gere conteúdo técnico e prático em Português de Moçambique para um ${profile.displayTypeLabel.toLowerCase()}.
-Use terminologia aplicada, exemplos de contexto profissional e estrutura técnica coerente.
-Use citações apenas quando puder sustentá-las com o briefing ou referências iniciais.
-Nunca invente metadados da capa, autores, obras ou referências.`;
+    return `És um assistente de escrita para estudantes do ensino técnico profissional moçambicano.
+Gera conteúdo técnico e prático em Português de Moçambique para um ${profile.displayTypeLabel.toLowerCase()}.
+Usa terminologia aplicada, exemplos de contexto profissional e estrutura técnica coerente.
+Usa citações apenas quando puderes sustentá-las com o briefing ou referências iniciais.
+Nunca uses brasileirismos nem inventes metadados da capa, autores, obras ou referências.`;
   }
 
-  return `Você é um especialista em escrita académica para estudantes moçambicanos do ensino superior.
-Gere conteúdo académico rigoroso em Português de Moçambique para um ${profile.displayTypeLabel.toLowerCase()}.
-Mantenha linguagem formal, estrutura universitária coerente e referências sustentadas.
-As citações são obrigatórias quando houver base suficiente; nunca invente autores, obras, leis ou dados.
-Nunca invente metadados da capa sem base no briefing.`;
+  return `És um especialista em escrita académica para estudantes moçambicanos do ensino superior.
+Gera conteúdo académico rigoroso em Português de Moçambique para um ${profile.displayTypeLabel.toLowerCase()}.
+Mantém linguagem formal, estrutura universitária coerente e referências sustentadas.
+As citações são obrigatórias quando houver base suficiente; nunca inventes autores, obras, leis ou dados.
+Nunca uses brasileirismos nem inventes metadados da capa sem base no briefing.`;
 }
 
 function isSchoolContext(educationLevel?: string | null) {
@@ -423,10 +423,12 @@ export function getWorkGenerationProfile(
       ? `Se citar fontes nominalmente, use apenas as referências iniciais fornecidas e siga a norma ${brief.citationStyle || "ABNT"}.`
       : `Evite inventar autores, datas e referências. As citações formais no texto são opcionais; se usar, siga a norma ${brief.citationStyle || "ABNT"}.`
     : technicalContext
-      ? `Use citações para sustentar a fundamentação teórica e siga a norma ${brief.citationStyle || "ABNT"}. Não invente autores ou fontes.`
+      ? brief.referencesSeed
+        ? `Use as referências iniciais para sustentar a fundamentação teórica e siga a norma ${brief.citationStyle || "ABNT"} sem inventar novas fontes específicas.`
+        : `Se o briefing não trouxer referências verificáveis, escreva sem citações parentéticas formais e sem inventar autores ou fontes.`
       : brief.referencesSeed
         ? `Use as referências iniciais como base para sustentar o texto e siga a norma ${brief.citationStyle || "ABNT"} sem inventar novas fontes específicas. Inclua citações no formato (SOBRENOME, ano) ao longo do texto.`
-        : `Mantenha tom académico e siga a norma ${brief.citationStyle || "ABNT"}. Inclua citações de autores reais no formato (SOBRENOME, ano) para sustentar a argumentação. Não invente autores, obras, leis ou estatísticas.`;
+        : `Mantenha tom académico e siga a norma ${brief.citationStyle || "ABNT"}. Se o briefing não trouxer referências verificáveis, escreva sem citações parentéticas formais e não invente autores, obras, leis ou estatísticas.`;
 
   const factualGuidance = brief.referencesSeed
     ? "Use as referências iniciais apenas como base explícita; não acrescente metadados bibliográficos não confirmados."

@@ -108,16 +108,24 @@ interface GenerationCompletionDecision {
   shouldRefund: boolean;
 }
 
-const SYSTEM_PROMPT = `Você é um especialista em escrita académica para estudantes moçambicanos.
-Gere conteúdo académico de alta qualidade em Português de Moçambique.
-Siga a norma de citação pedida no briefing.
-Adapte o nível de linguagem ao nível educacional indicado:
-- SECONDARY: linguagem simples, frases curtas, vocabulário acessível, sem jargão excessivo
-- TECHNICAL: terminologia técnica prática, foco em aplicações
-- HIGHER_EDUCATION: linguagem formal, terminologia académica, citações obrigatórias
-Nunca invente metadados da capa sem base no briefing.`;
-
 const WORKER_PASS_RUNTIME_BUDGET_MS = 240_000;
+const STREAMING_PREVIEW_PERSIST_INTERVAL_MS = 3_000;
+
+export function buildSectionRepairPrompt(sectionPrompt: string, sectionTitle: string) {
+  return `${sectionPrompt}\n\nA resposta anterior para a secção "${sectionTitle}" não cumpriu os requisitos. Regere a secção respeitando todos os requisitos.`;
+}
+
+export function shouldPersistStreamingPreview(input: {
+  now: number;
+  lastPersistedAt: number | null;
+  minIntervalMs?: number;
+}) {
+  if (input.lastPersistedAt === null) {
+    return true;
+  }
+
+  return input.now - input.lastPersistedAt >= (input.minIntervalMs ?? STREAMING_PREVIEW_PERSIST_INTERVAL_MS);
+}
 
 function getAcademicReferenceSourceLimit(educationLevel?: string | null) {
   if (educationLevel === "SECONDARY") {
@@ -131,7 +139,7 @@ function getAcademicReferenceSourceLimit(educationLevel?: string | null) {
   return 6;
 }
 
-async function enrichBriefReferencesIfNeeded(title: string, brief: WorkBriefInput) {
+export async function enrichBriefReferencesIfNeeded(title: string, brief: WorkBriefInput) {
   const existingRefs = brief.referencesSeed?.trim() || "";
 
   try {
@@ -147,7 +155,7 @@ async function enrichBriefReferencesIfNeeded(title: string, brief: WorkBriefInpu
     if (!assistedReferences.trim() || assistedReferences === existingRefs) {
       return {
         enrichedBrief: brief,
-        assistedReferences: existingRefs ? " (com referências do utilizador)" : "",
+        assistedReferences: "",
       };
     }
 
@@ -158,28 +166,9 @@ async function enrichBriefReferencesIfNeeded(title: string, brief: WorkBriefInpu
   } catch {
     return {
       enrichedBrief: brief,
-      assistedReferences: existingRefs ? " (com referências do utilizador)" : "",
+      assistedReferences: "",
     };
   }
-}
-
-function _getSystemPromptForEducation(educationLevel?: string | null): string {
-  if (educationLevel === "SECONDARY") {
-    return `Você é um assistente de escrita para estudantes do ensino secundário moçambicano.
-Gere conteúdo simples e acessível em Português de Moçambique.
-Use frases curtas e vocabulário acessível.
-Evite jargão técnico excessivo.
-Não é obrigatório incluir citações formais no texto.
-Estrutura básica: Introdução, Desenvolvimento, Conclusão.`;
-  }
-  if (educationLevel === "TECHNICAL") {
-    return `Você é um assistente de escrita para estudantes do ensino técnico profissional moçambicano.
-Gere conteúdo técnico e prático em Português de Moçambique.
-Use terminologia técnica apropriada com foco em aplicações práticas.
-Inclua exemplos relevantes para o contexto profissional.
-Cite fontes quando relevante.`;
-  }
-  return SYSTEM_PROMPT;
 }
 
 function countGeneratedWords(content?: string | null) {
@@ -451,7 +440,7 @@ async function generateSectionWithRetry(
 
     const repairPrompt = attempt === 0
       ? sectionPrompt
-      : `${sectionPrompt}\n\nA resposta anterior para a sec��o "${template.title}" n�o cumpriu os requisitos. Regere a sec��o respeitando todos os requisitos.`;
+      : buildSectionRepairPrompt(sectionPrompt, template.title);
 
     const { content, error } = await generateSectionWithStreaming(
       projectId,
@@ -699,7 +688,7 @@ async function _generateWorkSectionBySection(
 
         abstractContent = completion.choices[0]?.message?.content?.trim() || "";
         if (!abstractContent) {
-          abstractError = new Error("A IA n�o devolveu conte�do para o resumo.");
+          abstractError = new Error("A IA não devolveu conteúdo para o resumo.");
           continue;
         }
 
@@ -724,6 +713,7 @@ async function _generateWorkSectionBySection(
   }
 
   const sectionOutcomes: SectionGenerationOutcome[] = [];
+  const previousSections = await loadGeneratedSections(projectId, templates);
 
   for (const template of templates) {
     const sectionPlan = profile.sections.find((s) => s.title === template.title);
@@ -749,8 +739,6 @@ async function _generateWorkSectionBySection(
       }),
     ]);
 
-    const previousSections = await loadGeneratedSections(projectId, templates);
-
     const sectionPrompt = buildSectionGenerationPrompt({
       title,
       typeLabel,
@@ -766,6 +754,8 @@ async function _generateWorkSectionBySection(
       documentPlan: buildDocumentPlan(templates),
     });
 
+    let lastPersistedPreviewAt: number | null = null;
+
     const handleChunk = async (content: string) => {
       setWorkGenerationJob(projectId, {
         progress: sectionProgress,
@@ -773,11 +763,17 @@ async function _generateWorkSectionBySection(
         streamingContent: content,
         streamingSectionTitle: template.title,
       });
+
+      const now = Date.now();
+      if (!shouldPersistStreamingPreview({ now, lastPersistedAt: lastPersistedPreviewAt })) {
+        return;
+      }
+
+      lastPersistedPreviewAt = now;
+      const persistedAt = new Date(now);
       await setPersistedWorkGenerationJob(projectId, {
         progress: sectionProgress,
         step: `A gerar ${template.title}`,
-        streamingContent: content,
-        streamingSectionTitle: template.title,
       });
       await updateSectionRunState(generationContext.attemptId, {
         stableKey,
@@ -786,7 +782,7 @@ async function _generateWorkSectionBySection(
         status: "STREAMING",
         progress: sectionProgress,
         lastContentPreview: content,
-        lastPersistedAt: new Date(),
+        lastPersistedAt: persistedAt,
       });
     };
 
@@ -810,6 +806,7 @@ async function _generateWorkSectionBySection(
 
     if (sectionResult.content && (sectionResult.accepted || sectionResult.degraded)) {
       await saveSectionToDb(projectId, template.title, sectionResult.content);
+      previousSections.push({ title: template.title, content: sectionResult.content });
       await updateSectionRunState(generationContext.attemptId, {
         stableKey,
         title: template.title,
@@ -863,12 +860,12 @@ async function _generateWorkSectionBySection(
     educationLevel: enrichedBrief.educationLevel,
     referencesSeed: enrichedBrief.referencesSeed,
     assistedReferences,
-    generatedSections: await loadGeneratedSections(projectId, templates),
+    generatedSections: previousSections,
   });
   const referencesNeedReview = shouldRequireReferenceReview({
     educationLevel: enrichedBrief.educationLevel,
     referencesContent,
-    generatedSections: await loadGeneratedSections(projectId, templates),
+    generatedSections: previousSections,
   });
 
   if (referencesContent) {
@@ -931,7 +928,7 @@ async function _generateSingleSectionForWorker(
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const prompt = attempt === 0
       ? sectionPrompt
-      : `${sectionPrompt}\n\nA resposta anterior para a secção "${sectionTitle}" não cumpriu os requisitos. Regere a secção respeitando todos os requisitos.`;
+      : buildSectionRepairPrompt(sectionPrompt, sectionTitle);
 
     const result = await generateSectionWithStreaming(
       projectId,
@@ -1157,7 +1154,7 @@ export async function startWorkGenerationJob(input: {
   });
 
   if (existingJob && existingJob.status === "GENERATING") {
-    throw new Error("Gera��o j� est� em curso para este trabalho.");
+    throw new Error("Geração já está em curso para este trabalho.");
   }
 
   // Create/update the job record first - this is the single source of truth for generation status
@@ -1386,8 +1383,11 @@ async function processGenerationJob(projectId: string) {
         documentPlan: buildDocumentPlan(templates),
       });
 
+      let lastPersistedPreviewAt: number | null = null;
+
       const handleChunk = async (content: string) => {
-        const persistedAt = new Date();
+        const now = Date.now();
+        const persistedAt = new Date(now);
         if (!executionMetrics.firstChunkAt) {
           executionMetrics.firstChunkAt = persistedAt;
           await trackProductEvent({
@@ -1412,12 +1412,16 @@ async function processGenerationJob(projectId: string) {
           streamingContent: content,
           streamingSectionTitle: pendingTemplate.title,
         });
+
+        if (!shouldPersistStreamingPreview({ now, lastPersistedAt: lastPersistedPreviewAt })) {
+          return;
+        }
+
+        lastPersistedPreviewAt = now;
         await Promise.all([
           setPersistedWorkGenerationJob(projectId, {
             progress: sectionProgress,
             step: `A gerar ${pendingTemplate.title}`,
-            streamingContent: content,
-            streamingSectionTitle: pendingTemplate.title,
           }),
           updateSectionRunState(attemptId, {
             stableKey,

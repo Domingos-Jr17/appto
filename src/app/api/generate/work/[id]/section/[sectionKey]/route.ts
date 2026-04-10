@@ -18,7 +18,11 @@ import {
   updateGenerationRunState,
   updateSectionRunState,
 } from "@/lib/generation/run-repository";
-import { getSectionTemplates } from "@/lib/work-generation-jobs";
+import {
+  enrichBriefReferencesIfNeeded,
+  getSectionTemplates,
+  shouldPersistStreamingPreview,
+} from "@/lib/work-generation-jobs";
 import {
   buildWorkGenerationSystemPrompt,
   buildSectionGenerationPrompt,
@@ -26,10 +30,8 @@ import {
   validateGeneratedSection,
 } from "@/lib/work-generation-prompts";
 import { toWorkBriefInput } from "@/lib/projects/project-brief";
-import { enrichReferencesWithAcademicSources } from "@/lib/academic-search";
 import { runAIChatStream } from "@/lib/ai";
 import { env } from "@/lib/env";
-import type { WorkBriefInput } from "@/types/editor";
 
 const generateSectionSchema = z.object({
   sectionKey: z.string().min(1),
@@ -83,9 +85,12 @@ export async function POST(
       return apiError("Execução de geração não encontrada", 500);
     }
 
+    const attemptId = run.currentAttemptId;
+
     const brief = toWorkBriefInput(project.brief);
-    const profile = getWorkGenerationProfile(project.type, brief, templates);
     const resolvedEducationLevel = brief.educationLevel || "HIGHER_EDUCATION";
+    const { enrichedBrief } = await enrichBriefReferencesIfNeeded(project.title, brief);
+    const profile = getWorkGenerationProfile(project.type, enrichedBrief, templates);
     const sectionPlan = profile.sections.find((s) => s.title === template.title);
 
     if (!sectionPlan) {
@@ -101,8 +106,6 @@ export async function POST(
     const systemPrompt = buildWorkGenerationSystemPrompt(documentProfile);
     const typeLabel = documentProfile.displayTypeLabel;
 
-    const enrichedBrief = await enrichBriefWithAcademicSources(project.title, brief);
-
     await db.projectBrief.update({
       where: { projectId },
       data: { generationStatus: "GENERATING" },
@@ -115,7 +118,7 @@ export async function POST(
         step: `A gerar ${template.title}`,
         startedAt: new Date(),
       }),
-      updateGenerationAttemptState(run.currentAttemptId, {
+      updateGenerationAttemptState(attemptId, {
         status: "GENERATING",
         startedAt: new Date(),
       }),
@@ -137,28 +140,45 @@ export async function POST(
 
     const stableKey = buildGenerationSectionKey({ title: template.title, order: template.order });
     const maxTokens = Math.ceil((sectionPlan.range.max || 800) * 1.8);
+    let lastPersistedPreviewAt: number | null = null;
 
     const sectionResult = await generateSingleSection(
-      projectId,
       template.title,
       systemPrompt,
       sectionPrompt,
+      sectionPlan.range,
       maxTokens,
       async (content): Promise<void> => {
         const chunkText = String(content ?? "");
-        
+
         setWorkGenerationJob(projectId, {
           progress: 50,
           step: `A gerar ${template.title}`,
           streamingContent: chunkText,
           streamingSectionTitle: template.title,
         });
-        await setPersistedWorkGenerationJob(projectId, {
-          progress: 50,
-          step: `A gerar ${template.title}`,
-          streamingContent: chunkText,
-          streamingSectionTitle: template.title,
-        });
+
+        const now = Date.now();
+        if (!shouldPersistStreamingPreview({ now, lastPersistedAt: lastPersistedPreviewAt })) {
+          return;
+        }
+
+        lastPersistedPreviewAt = now;
+        await Promise.all([
+          setPersistedWorkGenerationJob(projectId, {
+            progress: 50,
+            step: `A gerar ${template.title}`,
+          }),
+          updateSectionRunState(attemptId, {
+            stableKey,
+            title: template.title,
+            order: template.order,
+            status: "STREAMING",
+            progress: 50,
+            lastContentPreview: chunkText,
+            lastPersistedAt: new Date(now),
+          }),
+        ]);
       },
     );
 
@@ -173,7 +193,7 @@ export async function POST(
 
     if (sectionResult.content && (sectionResult.accepted || sectionResult.degraded)) {
       await saveSectionToDb(projectId, template.title, sectionResult.content);
-      await updateSectionRunState(run.currentAttemptId, {
+      await updateSectionRunState(attemptId, {
         stableKey,
         title: template.title,
         order: template.order,
@@ -193,7 +213,7 @@ export async function POST(
       });
     }
 
-    await updateSectionRunState(run.currentAttemptId, {
+    await updateSectionRunState(attemptId, {
       stableKey,
       title: template.title,
       order: template.order,
@@ -256,23 +276,6 @@ export async function GET(
   }
 }
 
-async function enrichBriefWithAcademicSources(title: string, brief: WorkBriefInput): Promise<WorkBriefInput> {
-  if (!brief.referencesSeed || brief.referencesSeed.trim().length < 20) {
-    try {
-      const enriched = await Promise.race([
-        enrichReferencesWithAcademicSources(title, brief.referencesSeed || "", 6),
-        new Promise<string>((resolve) => setTimeout(() => resolve(""), 2000)),
-      ]);
-      if (enriched && enriched !== brief.referencesSeed) {
-        return { ...brief, referencesSeed: enriched };
-      }
-    } catch {
-      // Skip enrichment if it fails - generation can proceed without it
-    }
-  }
-  return brief;
-}
-
 async function loadPreviousSections(projectId: string, templates: SectionTemplate[]) {
   const sections = await db.documentSection.findMany({
     where: { projectId, title: { in: templates.map((t) => t.title) } },
@@ -310,32 +313,6 @@ async function saveSectionToDb(projectId: string, title: string, content: string
   }
 }
 
-function _getSystemPromptForEducation(educationLevel?: string | null): string {
-  if (educationLevel === "SECONDARY") {
-    return `Você é um assistente de escrita para estudantes do ensino secundário moçambicano.
-Gere conteúdo simples e acessível em Português de Moçambique.
-Use frases curtas e vocabulário acessível.
-Evite jargão técnico excessivo.
-Não é obrigatório incluir citações formais no texto.
-Estrutura básica: Introdução, Desenvolvimento, Conclusão.`;
-  }
-  if (educationLevel === "TECHNICAL") {
-    return `Você é um assistente de escrita para estudantes do ensino técnico profissional moçambicano.
-Gere conteúdo técnico e prático em Português de Moçambique.
-Use terminologia técnica apropriada com foco em aplicações práticas.
-Inclua exemplos relevantes para o contexto profissional.
-Cite fontes quando relevante.`;
-  }
-  return `Você é um especialista em escrita académica para estudantes moçambicanos.
-Gere conteúdo académico de alta qualidade em Português de Moçambique.
-Siga a norma de citação pedida no briefing.
-Adapte o nível de linguagem ao nível educacional indicado:
-- SECONDARY: linguagem simples, frases curtas, vocabulário acessível, sem jargão excessivo
-- TECHNICAL: terminologia técnica prática, foco em aplicações
-- HIGHER_EDUCATION: linguagem formal, terminologia académica, citações obrigatórias
-Nunca invente metadados da capa sem base no briefing.`;
-}
-
 interface SectionResult {
   content: string | null;
   accepted: boolean;
@@ -345,10 +322,10 @@ interface SectionResult {
 }
 
 async function generateSingleSection(
-  projectId: string,
   sectionTitle: string,
   systemPrompt: string,
   sectionPrompt: string,
+  sectionRange: WordRange,
   maxTokens: number,
   onChunk: (content: string | null) => Promise<void>,
 ): Promise<SectionResult> {
@@ -413,7 +390,7 @@ async function generateSingleSection(
       const validationIssues = validateGeneratedSection(
         trimmedContent,
         sectionTitle,
-        { min: 100, max: 2000, hardMin: 50, hardMax: 3000 } as WordRange,
+        sectionRange,
         "",
       );
 

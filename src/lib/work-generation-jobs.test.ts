@@ -9,10 +9,12 @@ import type {
 mock.module("server-only", () => ({}));
 
 const {
+  buildSectionRepairPrompt,
   createSectionAttemptDiagnostics,
   getPendingGenerationTemplates,
   getSectionTemplates,
   resolveReferencesSectionContent,
+  shouldPersistStreamingPreview,
   shouldYieldGenerationPass,
   shouldRequireReferenceReview,
   resolveGenerationCompletionDecision,
@@ -73,6 +75,39 @@ describe("work generation jobs", () => {
     expect(result.accepted).toBe(true);
     expect(result.failureReason).toBeNull();
     expect(result.content).toContain("Palavra");
+  });
+
+  test("builds a repair prompt with healthy PT-MZ text", () => {
+    const prompt = buildSectionRepairPrompt("Prompt base", "1. Introdução");
+
+    expect(prompt).toContain('secção "1. Introdução"');
+    expect(prompt).toContain("não cumpriu os requisitos");
+    expect(prompt).not.toContain("sec��o");
+  });
+
+  test("throttles persisted streaming previews until the interval elapses", () => {
+    expect(
+      shouldPersistStreamingPreview({
+        now: 1_000,
+        lastPersistedAt: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      shouldPersistStreamingPreview({
+        now: 4_000,
+        lastPersistedAt: 2_000,
+        minIntervalMs: 3_000,
+      }),
+    ).toBe(false);
+
+    expect(
+      shouldPersistStreamingPreview({
+        now: 5_500,
+        lastPersistedAt: 2_000,
+        minIntervalMs: 3_000,
+      }),
+    ).toBe(true);
   });
 
   test("marks all degraded sections as ready with review guidance", () => {

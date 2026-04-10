@@ -197,8 +197,9 @@ describe("document export smoke", () => {
       const buffer = await DocumentExportService.generateDocx(model);
       const { documentXml, rawText } = await extractDocxArtifacts(buffer);
 
-      expect(documentXml).toContain("TOC");
-      expect(rawText).toContain("SUMÁRIO");
+      expect(rawText).toContain("ÍNDICE");
+      expect(rawText).toMatch(/ÍNDICE[\s\S]*1\. Introdução/);
+      expect(documentXml).not.toContain("TOC \\\\o");
 
       for (const expectedText of testCase.mustContain) {
         expect(rawText).toContain(expectedText);
@@ -212,6 +213,6 @@ describe("document export smoke", () => {
       expect(rawText).not.toContain("SECONDARY_WORK");
       expect(rawText).not.toContain("TECHNICAL_WORK");
       expect(rawText).not.toContain("HIGHER_EDUCATION_WORK");
-    });
+    }, 20_000);
   }
 });

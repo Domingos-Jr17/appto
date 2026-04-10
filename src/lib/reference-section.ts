@@ -14,6 +14,8 @@ export interface ResolvedReferenceSectionData {
 }
 
 const REFERENCE_REVIEW_NOTICE_PREFIX = "Pendência de revisão manual:";
+const PARENTHETICAL_CITATION_PATTERN = /\(([^()]*?(?:19|20)\d{2}[a-z]?[^()]*)\)/giu;
+const NARRATIVE_CITATION_PATTERN = /\b([\p{Lu}][\p{L}'-]+(?:\s+[\p{Lu}][\p{L}'-]+)*)\s*\(((?:19|20)\d{2}[a-z]?)\)/gu;
 
 function normalizeReferenceKey(value: string) {
   return value
@@ -24,12 +26,43 @@ function normalizeReferenceKey(value: string) {
     .toLowerCase();
 }
 
-export function buildReferenceReviewNotice(hasFactualSignals = false) {
-  if (hasFactualSignals) {
-    return `${REFERENCE_REVIEW_NOTICE_PREFIX} o conteúdo gerado contém afirmações factuais e não foi possível confirmar referências verificáveis automaticamente. Adicione e valide fontes reais antes da submissão.`;
+export function extractInlineCitationKeys(sections?: Array<{ title: string; content: string }>) {
+  if (!sections || sections.length === 0) {
+    return [];
   }
 
-  return `${REFERENCE_REVIEW_NOTICE_PREFIX} não foi possível confirmar referências verificáveis automaticamente. Adicione e valide fontes reais antes da submissão.`;
+  const citations = new Set<string>();
+
+  for (const section of sections) {
+    for (const match of section.content.matchAll(PARENTHETICAL_CITATION_PATTERN)) {
+      const candidate = match[1]?.replace(/\s+/g, " ").trim();
+      if (candidate && /(?:19|20)\d{2}/.test(candidate) && /\p{L}/u.test(candidate)) {
+        citations.add(candidate);
+      }
+    }
+
+    for (const match of section.content.matchAll(NARRATIVE_CITATION_PATTERN)) {
+      const author = match[1]?.replace(/\s+/g, " ").trim();
+      const year = match[2]?.trim();
+      if (author && year) {
+        citations.add(`${author}, ${year}`);
+      }
+    }
+  }
+
+  return [...citations].sort((left, right) => left.localeCompare(right, "pt"));
+}
+
+export function buildReferenceReviewNotice(hasFactualSignals = false, detectedCitations: string[] = []) {
+  const baseMessage = hasFactualSignals
+    ? `${REFERENCE_REVIEW_NOTICE_PREFIX} o conteúdo gerado contém afirmações factuais e não foi possível confirmar referências verificáveis automaticamente. Adicione e valide fontes reais antes da submissão.`
+    : `${REFERENCE_REVIEW_NOTICE_PREFIX} não foi possível confirmar referências verificáveis automaticamente. Adicione e valide fontes reais antes da submissão.`;
+
+  if (detectedCitations.length === 0) {
+    return baseMessage;
+  }
+
+  return `${baseMessage}\nCitações detectadas no texto:\n${detectedCitations.map((citation) => `- ${citation}`).join("\n")}`;
 }
 
 export function isReferenceReviewNotice(content?: string | null) {
@@ -157,7 +190,8 @@ export function resolveReferenceSectionData(input: {
   const hasFactualSignals = (input.generatedSections ?? []).some((section) =>
     hasReferenceSensitiveSignals(section.content),
   );
-  const message = buildReferenceReviewNotice(hasFactualSignals);
+  const detectedCitations = extractInlineCitationKeys(input.generatedSections);
+  const message = buildReferenceReviewNotice(hasFactualSignals, detectedCitations);
 
   return {
     content: message,

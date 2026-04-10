@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  buildStaticSummaryEntries,
   DocumentExportService,
   formatReferenceEntry,
   getAbntChecklist,
@@ -108,6 +109,60 @@ describe("document export references", () => {
 
     expect(model.frontMatterSections.map((section) => section.title)).toEqual(["Resumo"]);
     expect(model.sections.map((section) => section.title)).toEqual(["1. Introdução"]);
+  });
+
+  test("builds a visible static sumario from body sections and markdown headings", () => {
+    const model = DocumentExportService.createModel({
+      title: "Tema",
+      description: null,
+      type: "HIGHER_EDUCATION_WORK",
+      brief: {
+        educationLevel: "HIGHER_EDUCATION",
+        institutionName: "Universidade Eduardo Mondlane",
+      },
+      sections: [
+        { id: "summary", title: "Resumo", content: "Resumo formal.", order: 3 },
+        {
+          id: "intro",
+          title: "1. Introdução",
+          content: "## 1.1 Contextualização\n\nTexto introdutório.",
+          order: 6,
+        },
+        { id: "refs", title: "Referências", content: "COUTO, 2020. Título Um.", order: 12 },
+      ],
+    });
+
+    expect(buildStaticSummaryEntries(model)).toEqual([
+      { title: "Resumo", level: 1 },
+      { title: "1. Introdução", level: 1 },
+      { title: "1.1 Contextualização", level: 2 },
+      { title: "Referências", level: 1 },
+    ]);
+  });
+
+  test("includes unnumbered markdown headings in the static sumario", () => {
+    const model = DocumentExportService.createModel({
+      title: "Tema",
+      description: null,
+      type: "HIGHER_EDUCATION_WORK",
+      brief: {
+        educationLevel: "HIGHER_EDUCATION",
+      },
+      sections: [
+        {
+          id: "method",
+          title: "3. Metodologia",
+          content: "## Contexto\n\nTexto.\n\n### Amostra\n\nDetalhes.",
+          order: 8,
+        },
+      ],
+    });
+
+    expect(buildStaticSummaryEntries(model)).toEqual([
+      { title: "3. Metodologia", level: 1 },
+      { title: "Contexto", level: 2 },
+      { title: "Amostra", level: 3 },
+    ]);
   });
 
   test("strips a repeated heading from the beginning of exported section content", () => {

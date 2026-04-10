@@ -1,5 +1,8 @@
 import { runAIChatCompletion, runAIChatStream } from "@/lib/ai";
-import { enrichReferencesWithAcademicSources } from "@/lib/academic-search";
+import {
+  enrichReferencesWithAcademicSources,
+  resolveAcademicReferences,
+} from "@/lib/academic-search";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { resolveDocumentProfile } from "@/lib/document-profile";
@@ -28,6 +31,7 @@ import {
 import { logger } from "@/lib/logger";
 import { trackProductEvent } from "@/lib/product-events";
 import {
+  extractInlineCitationKeys,
   resolveReferenceSectionData,
 } from "@/lib/reference-section";
 import { serializeProjectBrief, toWorkBriefInput } from "@/lib/projects/project-brief";
@@ -539,6 +543,52 @@ export function resolveReferencesSectionContent(input: {
   }).content;
 }
 
+export async function resolveFinalReferenceSectionData(input: {
+  projectTitle: string;
+  educationLevel?: WorkBriefInput["educationLevel"] | null;
+  referencesSeed?: string | null;
+  assistedReferences?: string | null;
+  generatedSections?: Array<{ title: string; content: string }>;
+  resolveAcademicReferences?: typeof resolveAcademicReferences;
+}) {
+  const initialResolution = resolveReferenceSectionData({
+    educationLevel: input.educationLevel,
+    userReferences: input.referencesSeed,
+    assistedReferences: input.assistedReferences,
+    generatedSections: input.generatedSections,
+  });
+
+  const citationKeys = extractInlineCitationKeys(input.generatedSections);
+  const resolver = input.resolveAcademicReferences ?? resolveAcademicReferences;
+  const shouldResolveAcademicSources = initialResolution.status === "NEEDS_REVIEW"
+    || citationKeys.length > 0;
+
+  if (!shouldResolveAcademicSources) {
+    return initialResolution;
+  }
+
+  try {
+    const resolvedAcademicReferences = await resolver({
+      theme: input.projectTitle,
+      citationKeys,
+      maxSources: getAcademicReferenceSourceLimit(input.educationLevel),
+    });
+
+    if (resolvedAcademicReferences.length === 0) {
+      return initialResolution;
+    }
+
+    return resolveReferenceSectionData({
+      educationLevel: input.educationLevel,
+      userReferences: input.referencesSeed,
+      assistedReferences: JSON.stringify(resolvedAcademicReferences),
+      generatedSections: input.generatedSections,
+    });
+  } catch {
+    return initialResolution;
+  }
+}
+
 export function shouldRequireReferenceReview(input: {
   educationLevel?: string | null;
   referencesContent: string;
@@ -856,12 +906,14 @@ async function _generateWorkSectionBySection(
     institutionName: enrichedBrief.institutionName,
     coverTemplate: enrichedBrief.coverTemplate,
   }).referenceSection;
-  const referencesContent = resolveReferencesSectionContent({
+  const resolvedReferenceSection = await resolveFinalReferenceSectionData({
+    projectTitle: title,
     educationLevel: enrichedBrief.educationLevel,
     referencesSeed: enrichedBrief.referencesSeed,
     assistedReferences,
     generatedSections: previousSections,
   });
+  const referencesContent = resolvedReferenceSection.content;
   const referencesNeedReview = shouldRequireReferenceReview({
     educationLevel: enrichedBrief.educationLevel,
     referencesContent,
@@ -1600,9 +1652,10 @@ async function processGenerationJob(projectId: string) {
     const generatedBodySections = previousSections.filter((section) =>
       templates.some((template) => template.title === section.title),
     );
-    const resolvedReferenceSection = resolveReferenceSectionData({
+    const resolvedReferenceSection = await resolveFinalReferenceSectionData({
+      projectTitle: project.title,
       educationLevel: enrichedBrief.educationLevel,
-      userReferences: brief.referencesSeed,
+      referencesSeed: brief.referencesSeed,
       assistedReferences,
       generatedSections: generatedBodySections,
     });

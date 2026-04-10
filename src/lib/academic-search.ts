@@ -3,6 +3,8 @@
  * para enriquecer a secção de referências.
  */
 
+import type { ReferenceData } from "@/types/editor";
+
 const SEMANTIC_SCHOLAR_API = "https://api.semanticscholar.org/graph/v1";
 const DEFAULT_TIMEOUT_MS = 4000;
 const MAX_RETRIES = 1;
@@ -17,6 +19,16 @@ interface ScholarResult {
   doi: string | null;
   venue: string | null;
   paperId: string | null;
+}
+
+function normalizePersonToken(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function normalizeTitleKey(title: string) {
@@ -44,6 +56,68 @@ function extractTitleFromReference(ref: string): string | null {
     return potentialTitle.length > 10 ? potentialTitle : null;
   }
   return null;
+}
+
+function splitCitationAuthors(value: string) {
+  return value
+    .split(/[;,]|\be\b/iu)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((author) => normalizePersonToken(author).split(" ").filter(Boolean).pop() || "")
+    .filter(Boolean);
+}
+
+function parseCitationKey(citationKey: string) {
+  const match = citationKey.match(/^(.*?)(?:,\s*((?:19|20)\d{2}[a-z]?))$/i);
+  if (!match) {
+    return {
+      authors: splitCitationAuthors(citationKey),
+      year: null,
+    };
+  }
+
+  return {
+    authors: splitCitationAuthors(match[1] || ""),
+    year: (match[2] || "").toLowerCase(),
+  };
+}
+
+function buildScholarResultKey(source: ScholarResult) {
+  return source.doi?.toLowerCase()
+    || source.paperId?.toLowerCase()
+    || normalizeTitleKey(source.title);
+}
+
+function scoreScholarResultForCitation(source: ScholarResult, citationKey: string) {
+  const citation = parseCitationKey(citationKey);
+  const normalizedAuthors = normalizePersonToken(source.authors);
+  const year = source.year ? String(source.year).toLowerCase() : null;
+  let score = 0;
+
+  if (citation.year && year === citation.year.replace(/[a-z]$/i, "")) {
+    score += 3;
+  }
+
+  const matchedAuthors = citation.authors.filter((author) => normalizedAuthors.includes(author)).length;
+  score += matchedAuthors * 2;
+
+  if (normalizeTitleKey(source.title).includes(normalizeTitleKey(citationKey))) {
+    score += 1;
+  }
+
+  return score;
+}
+
+function toReferenceData(source: ScholarResult): ReferenceData {
+  return {
+    type: source.venue ? "article" : source.url ? "website" : "article",
+    authors: source.authors,
+    title: source.title,
+    year: source.year ? String(source.year) : "s.d.",
+    journal: source.venue || undefined,
+    publisher: source.venue || undefined,
+    url: source.url || undefined,
+  };
 }
 
 async function fetchWithTimeout(
@@ -229,4 +303,55 @@ export async function enrichReferencesWithAcademicSources(
 
   const newReferences = formatReferencesForPrompt(sources);
   return newReferences;
+}
+
+export async function resolveAcademicReferences(input: {
+  theme: string;
+  citationKeys?: string[];
+  maxSources?: number;
+}) {
+  const maxSources = input.maxSources ?? 6;
+  const resolved: ScholarResult[] = [];
+  const seen = new Set<string>();
+
+  for (const citationKey of (input.citationKeys ?? []).slice(0, maxSources)) {
+    const queries = [`${citationKey} ${input.theme}`.trim(), citationKey].filter(Boolean);
+    let bestMatch: ScholarResult | null = null;
+    let bestScore = 0;
+
+    for (const query of queries) {
+      const candidates = await searchAcademicSourcesWithRetry(query, 5);
+      for (const candidate of candidates) {
+        const score = scoreScholarResultForCitation(candidate, citationKey);
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = candidate;
+        }
+      }
+    }
+
+    if (bestMatch && bestScore >= 3) {
+      const key = buildScholarResultKey(bestMatch);
+      if (!seen.has(key)) {
+        seen.add(key);
+        resolved.push(bestMatch);
+      }
+    }
+  }
+
+  if (resolved.length < maxSources) {
+    const themeResults = await searchAcademicSourcesWithRetry(input.theme, maxSources);
+    for (const candidate of themeResults) {
+      const key = buildScholarResultKey(candidate);
+      if (!seen.has(key)) {
+        seen.add(key);
+        resolved.push(candidate);
+      }
+      if (resolved.length >= maxSources) {
+        break;
+      }
+    }
+  }
+
+  return resolved.map(toReferenceData);
 }

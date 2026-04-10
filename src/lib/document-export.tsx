@@ -10,6 +10,7 @@ import {
   PageNumber,
   Paragraph,
   SectionType,
+  TableOfContents,
   TextRun,
 } from "docx";
 import { normalizeStoredContent, parseMarkdownBlocks } from "@/lib/content";
@@ -861,7 +862,7 @@ export class DocumentExportService {
     }
     coverChildren.push(new Paragraph({ children: [new PageBreak()] }));
 
-    const bodyChildren: Paragraph[] = [];
+    const bodyChildren: (Paragraph | TableOfContents)[] = [];
     let isFirstFrontMatter = true;
 
     for (const section of model.frontMatterSections) {
@@ -903,15 +904,12 @@ export class DocumentExportService {
         })
       );
 
-      for (const entry of buildStaticSummaryEntries(model)) {
-        bodyChildren.push(
-          new Paragraph({
-            children: buildInlineTextRuns(entry.title, { size: 24, font: "Arial" }),
-            spacing: { after: 120, line: 280 },
-            indent: entry.level === 1 ? undefined : { left: entry.level === 2 ? 360 : 720 },
-          })
-        );
-      }
+      bodyChildren.push(
+        new TableOfContents("Índice", {
+          hyperlink: true,
+          headingStyleRange: "1-3",
+        })
+      );
 
       bodyChildren.push(new Paragraph({ children: [new PageBreak()] }));
     }

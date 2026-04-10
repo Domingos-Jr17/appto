@@ -1,4 +1,4 @@
-import type { AcademicEducationLevel } from "@/types/editor";
+import type { AcademicEducationLevel, ReferenceData } from "@/types/editor";
 
 export type ReferenceSectionStatus =
   | "AUTO_FILLED"
@@ -82,6 +82,41 @@ function looksLikeJsonReferencePayload(content: string) {
   return trimmed.startsWith("[") && trimmed.endsWith("]");
 }
 
+function parseStructuredReferencePayload(content?: string | null): ReferenceData[] {
+  const trimmed = (content || "").trim();
+  if (!looksLikeJsonReferencePayload(trimmed)) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as ReferenceData[];
+    return Array.isArray(parsed)
+      ? parsed.filter((entry) => entry && typeof entry.title === "string" && typeof entry.authors === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function normalizeStructuredReferenceKey(reference: ReferenceData) {
+  return normalizeReferenceKey(`${reference.authors} ${reference.title} ${reference.year}`);
+}
+
+function mergeStructuredReferences(primary: ReferenceData[], secondary: ReferenceData[]) {
+  const merged = [...primary];
+  const seen = new Set(primary.map(normalizeStructuredReferenceKey));
+
+  for (const reference of secondary) {
+    const key = normalizeStructuredReferenceKey(reference);
+    if (!seen.has(key)) {
+      seen.add(key);
+      merged.push(reference);
+    }
+  }
+
+  return merged;
+}
+
 export function hasReferenceSensitiveSignals(content: string) {
   if (!content.trim()) {
     return false;
@@ -145,11 +180,27 @@ export function resolveReferenceSectionData(input: {
 }): ResolvedReferenceSectionData {
   const userReferences = input.userReferences?.trim() || "";
   const assistedReferences = input.assistedReferences?.trim() || "";
+  const structuredUserReferences = parseStructuredReferencePayload(userReferences);
+  const structuredAssistedReferences = parseStructuredReferencePayload(assistedReferences);
 
-  if (looksLikeJsonReferencePayload(userReferences)) {
+  if (structuredUserReferences.length > 0) {
+    const mergedStructuredReferences = mergeStructuredReferences(
+      structuredUserReferences,
+      structuredAssistedReferences,
+    );
+
     return {
-      content: userReferences,
+      content: JSON.stringify(mergedStructuredReferences),
       status: "USER_PROVIDED",
+      message: null,
+      entries: [],
+    };
+  }
+
+  if (structuredAssistedReferences.length > 0 && !userReferences) {
+    return {
+      content: JSON.stringify(structuredAssistedReferences),
+      status: "AUTO_FILLED",
       message: null,
       entries: [],
     };

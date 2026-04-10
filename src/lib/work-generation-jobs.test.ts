@@ -13,6 +13,7 @@ const {
   createSectionAttemptDiagnostics,
   getPendingGenerationTemplates,
   getSectionTemplates,
+  resolveFinalReferenceSectionData,
   resolveReferencesSectionContent,
   shouldPersistStreamingPreview,
   shouldYieldGenerationPass,
@@ -288,5 +289,51 @@ describe("work generation jobs", () => {
         ],
       }),
     ).toBe(false);
+  });
+
+  test("resolves detected citations into real references before falling back to review notice", async () => {
+    const resolved = await resolveFinalReferenceSectionData({
+      projectTitle: "História da Cidade de Maputo",
+      educationLevel: "HIGHER_EDUCATION",
+      generatedSections: [
+        {
+          title: "2. Desenvolvimento",
+          content:
+            "A análise dialoga com Matusse (2022) e confirma tendências já observadas em (Cossa; Tembe, 2021).",
+        },
+      ],
+      resolveAcademicReferences: async () => [
+        {
+          type: "article",
+          authors: "Paula Cossa; Nelson Tembe",
+          title: "Urbanização e memória histórica em Maputo",
+          year: "2021",
+          journal: "Revista Moçambicana de Estudos Urbanos",
+          url: "https://example.com/cossa-tembe",
+        },
+      ],
+    });
+
+    expect(resolved.status).toBe("AUTO_FILLED");
+    expect(resolved.content).toContain("Urbanização e memória histórica em Maputo");
+    expect(resolved.content).not.toContain("Pendência de revisão manual");
+  });
+
+  test("keeps manual review fallback when detected citations cannot be resolved", async () => {
+    const resolved = await resolveFinalReferenceSectionData({
+      projectTitle: "História da Cidade de Maputo",
+      educationLevel: "HIGHER_EDUCATION",
+      generatedSections: [
+        {
+          title: "2. Desenvolvimento",
+          content: "A análise dialoga com Matusse (2022).",
+        },
+      ],
+      resolveAcademicReferences: async () => [],
+    });
+
+    expect(resolved.status).toBe("NEEDS_REVIEW");
+    expect(resolved.content).toContain("Pendência de revisão manual");
+    expect(resolved.content).toContain("Matusse, 2022");
   });
 });

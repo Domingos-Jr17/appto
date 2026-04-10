@@ -425,6 +425,7 @@ function normalizeDisplayedSectionContent(content?: string, sectionTitle?: strin
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/^#+\s*/, "")
+      .replace(/^\d+(?:\.\d+)*\.?\s+/, "")
       .replace(/\s+/g, " ")
       .trim()
       .toLowerCase();

@@ -249,6 +249,17 @@ describe("work generation prompts", () => {
     expect(issues[0]?.message).toContain("palavras");
   });
 
+  test("validateGeneratedSection rejects a semantic duplicate heading on the first line", () => {
+    const brief: WorkBriefInput = { educationLevel: "SECONDARY" };
+    const profile = getWorkGenerationProfile("SECONDARY_WORK", brief, schoolTemplates);
+    const conclusionRange = profile.sections[2]!.range;
+
+    const content = `${schoolTemplates[2]!.title.replace(/^3\.\s+/, "")}\n\n${"Texto final ".repeat(120)}`;
+    const issues = validateGeneratedSection(content, schoolTemplates[2]!.title, conclusionRange);
+
+    expect(issues.some((issue) => issue.message.includes("repete o"))).toBe(true);
+  });
+
   test("validateGeneratedSection checks thematic coverage", () => {
     const range = { min: 100, max: 200, hardMin: 85, hardMax: 230 };
     const content = "Texto genérico sem relação com o tema específico solicitado. ".repeat(20);

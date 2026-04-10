@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { getWorkGenerationStatusAsync } from "@/lib/work-generation-jobs";
 import { extractActiveSectionTitle } from "@/lib/work-generation-state";
 
-const POLL_INTERVAL_MS = 1500;
+const POLL_INTERVAL_MS = 750;
 const MAX_DURATION_MS = 240_000; // rotate before Vercel's effective 300s timeout
 const RETRY_MS = 3000;
 

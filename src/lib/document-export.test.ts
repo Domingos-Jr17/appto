@@ -7,6 +7,7 @@ import {
   parseReferenceEntries,
   stripLeadingDuplicateHeading,
 } from "@/lib/document-export";
+import { buildReferenceReviewNotice } from "@/lib/reference-section";
 
 describe("document export references", () => {
   test("formats book references in ABNT-like style", () => {
@@ -35,13 +36,15 @@ describe("document export references", () => {
     expect(entries[1]).toContain("Zeta Autor");
   });
 
+  test("ignores explicit manual-review notices when parsing references", () => {
+    expect(parseReferenceEntries(buildReferenceReviewNotice(true))).toEqual([]);
+  });
+
   test("exposes template-specific ABNT checklist items", () => {
     const checklist = getAbntChecklist("UEM_STANDARD");
 
     expect(checklist.template).toBe("UEM_STANDARD");
-    expect(
-      checklist.items.some((item) => item.includes("Universidade Eduardo Mondlane")),
-    ).toBe(true);
+    expect(checklist.items.some((item) => item.includes("Universidade Eduardo Mondlane"))).toBe(true);
   });
 
   test("filters front matter and humanizes project type in the export model", () => {
@@ -114,5 +117,33 @@ describe("document export references", () => {
     );
 
     expect(content).toBe("Texto final da introdução.");
+  });
+
+  test("strips a semantic duplicate heading even when numbering differs", () => {
+    const content = stripLeadingDuplicateHeading(
+      "Conclusão\n\nTexto final da conclusão.",
+      "3. Conclusão",
+    );
+
+    expect(content).toBe("Texto final da conclusão.");
+  });
+
+  test("marks references as pending review when the section contains an explicit notice", () => {
+    const reviewNotice = buildReferenceReviewNotice(true);
+    const model = DocumentExportService.createModel({
+      title: "Tema",
+      description: null,
+      type: "SECONDARY_WORK",
+      brief: {
+        educationLevel: "SECONDARY",
+      },
+      sections: [
+        { id: "intro", title: "1. Introdução", content: "Conteúdo", order: 1 },
+        { id: "refs", title: "Referências", content: reviewNotice, order: 2 },
+      ],
+    });
+
+    expect(model.references.status).toBe("NEEDS_REVIEW");
+    expect(model.references.content).toContain("Pendência");
   });
 });

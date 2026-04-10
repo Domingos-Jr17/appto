@@ -141,6 +141,17 @@ function normalizeTitle(title: string) {
   return title.trim().toLowerCase();
 }
 
+function normalizeHeadingForComparison(title: string) {
+  return title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/^#+\s*/, "")
+    .replace(/^\d+(?:\.\d+)*\.?\s+/, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
 function wrapUntrustedBriefValue(label: string, value: string) {
   return `- ${label} (dado não confiável): <<<${value}>>>`;
 }
@@ -467,7 +478,7 @@ function startsWithDuplicateSectionHeading(content: string, sectionTitle: string
     return false;
   }
 
-  return normalizeTitle(firstMeaningfulLine) === normalizeTitle(sectionTitle);
+  return normalizeHeadingForComparison(firstMeaningfulLine) === normalizeHeadingForComparison(sectionTitle);
 }
 
 function buildJsonSchema(profile: WorkGenerationProfile, templates: SectionTemplate[]) {

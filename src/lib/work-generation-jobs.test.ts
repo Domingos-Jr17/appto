@@ -207,13 +207,13 @@ describe("work generation jobs", () => {
     ).toBe("Autor, 2024. Obra.");
   });
 
-  test("requires manual reference review only for non-secondary empty references", () => {
+  test("requires manual reference review for non-secondary empty references", () => {
     expect(
       shouldRequireReferenceReview({
         educationLevel: "SECONDARY",
         referencesContent: "",
       }),
-    ).toBe(false);
+    ).toBe(true);
 
     expect(
       shouldRequireReferenceReview({
@@ -221,5 +221,37 @@ describe("work generation jobs", () => {
         referencesContent: "",
       }),
     ).toBe(true);
+  });
+
+  test("requires manual reference review when secondary content contains factual signals without references", () => {
+    expect(
+      shouldRequireReferenceReview({
+        educationLevel: "SECONDARY",
+        referencesContent: "",
+        generatedSections: [
+          {
+            title: "2. Desenvolvimento",
+            content:
+              "Segundo a Teoria Nebular, a Terra formou-se há cerca de 4,6 mil milhões de anos. A experiência de Miller-Urey, em 1953, mostrou a formação de aminoácidos em condições laboratoriais.",
+          },
+        ],
+      }),
+    ).toBe(true);
+  });
+
+  test("does not force manual reference review for descriptive secondary content without factual signals", () => {
+    expect(
+      shouldRequireReferenceReview({
+        educationLevel: "SECONDARY",
+        referencesContent: "COUTO, 2020. Título Um.",
+        generatedSections: [
+          {
+            title: "1. Introdução",
+            content:
+              "O tema é importante para a escola porque ajuda os estudantes a compreender melhor a realidade e a desenvolver pensamento crítico.",
+          },
+        ],
+      }),
+    ).toBe(false);
   });
 });

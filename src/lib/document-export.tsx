@@ -19,10 +19,10 @@ import {
   resolveDocumentCourseLabel,
   resolveDocumentInstitutionName,
   resolveDocumentProfile,
-  resolveDocumentReferenceMeta,
   type DocumentProfile,
 } from "@/lib/document-profile";
 import { formatProjectType } from "@/lib/generation/work-generation-artifacts";
+import { isReferenceReviewNotice } from "@/lib/reference-section";
 import type { ReferenceData } from "@/types/editor";
 
 export interface ExportSection {
@@ -57,6 +57,10 @@ export interface ExportDocument {
   };
   frontMatterSections: ExportSection[];
   sections: ExportSection[];
+  references: {
+    status: "AUTO_FILLED" | "USER_PROVIDED" | "NEEDS_REVIEW" | "EMPTY";
+    content: string;
+  };
 }
 
 export function getAbntChecklist(template: string | null | undefined) {
@@ -140,6 +144,7 @@ function normalizeHeadingForComparison(value: string) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/^#+\s*/, "")
+    .replace(/^\d+(?:\.\d+)*\.?\s+/, "")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
@@ -165,9 +170,8 @@ export function stripLeadingDuplicateHeading(content: string, sectionTitle: stri
     const cleanFirstLine = firstLine.replace(/^#+\s*/, "").trim();
     const normalizedSection = normalizeHeadingForComparison(sectionTitle);
     const firstLineMatches = normalizeHeadingForComparison(cleanFirstLine) === normalizedSection;
-    const firstLineIsNumberedSection = /^\d+(\.\d+)*\.?\s+/.test(cleanFirstLine);
 
-    if (firstLineMatches || firstLineIsNumberedSection) {
+    if (firstLineMatches) {
       lines.shift();
       while (lines[0]?.trim() === "") {
         lines.shift();
@@ -355,7 +359,7 @@ export function formatReferenceEntry(reference: Partial<ReferenceData>) {
 
 export function parseReferenceEntries(content: string) {
   const normalized = normalizeStoredContent(content);
-  if (!normalized) {
+  if (!normalized || isReferenceReviewNotice(normalized)) {
     return [];
   }
 
@@ -383,7 +387,6 @@ function buildCoverParagraphs(model: ExportDocument) {
   const author = model.brief?.studentName || "Nome do Autor";
   const courseLine = resolveDocumentCourseLabel(model.profile, model.brief);
   const cityYear = [model.brief?.city || "Maputo", model.brief?.academicYear].filter(Boolean).join(", ");
-  const referenceMeta = resolveDocumentReferenceMeta(model.profile, model.brief);
   const typeLabel = formatProjectType(model.profile.projectType);
 
   if (template === "UEM_STANDARD") {
@@ -766,6 +769,32 @@ export class DocumentExportService {
           order: section.order,
           level: /^\d+\./.test(section.title) ? 1 : 2,
         })),
+      references: (() => {
+        const referenceSection = project.sections.find((section) => /refer[eê]ncias/i.test(section.title));
+        const referenceContent = stripLeadingDuplicateHeading(
+          referenceSection?.content ?? "",
+          referenceSection?.title ?? "Referências",
+        );
+
+        if (!referenceContent) {
+          return {
+            status: "EMPTY" as const,
+            content: "",
+          };
+        }
+
+        if (isReferenceReviewNotice(referenceContent)) {
+          return {
+            status: "NEEDS_REVIEW" as const,
+            content: referenceContent,
+          };
+        }
+
+        return {
+          status: "USER_PROVIDED" as const,
+          content: referenceContent,
+        };
+      })(),
     };
   }
 
@@ -842,15 +871,31 @@ export class DocumentExportService {
       );
 
       if (isReferenceSection) {
-        const entries = parseReferenceEntries(section.content);
-        for (const entry of entries) {
-          bodyChildren.push(
-            new Paragraph({
-              children: buildInlineTextRuns(entry, { size: 24, font: "Arial" }),
-              spacing: { after: 120, line: 280 },
-              alignment: AlignmentType.LEFT,
-            }),
-          );
+        if (model.references.status === "NEEDS_REVIEW") {
+          for (const block of parseMarkdownBlocks(model.references.content)) {
+            if (!block.text) {
+              continue;
+            }
+
+            bodyChildren.push(
+              new Paragraph({
+                children: buildInlineTextRuns(block.text, { size: 24, font: "Arial" }),
+                spacing: { after: 200, line: 360 },
+                alignment: AlignmentType.LEFT,
+              }),
+            );
+          }
+        } else {
+          const entries = parseReferenceEntries(section.content);
+          for (const entry of entries) {
+            bodyChildren.push(
+              new Paragraph({
+                children: buildInlineTextRuns(entry, { size: 24, font: "Arial" }),
+                spacing: { after: 120, line: 280 },
+                alignment: AlignmentType.LEFT,
+              }),
+            );
+          }
         }
         continue;
       }

@@ -8,8 +8,35 @@ import type { ReferenceData } from "@/types/editor";
 const SEMANTIC_SCHOLAR_API = "https://api.semanticscholar.org/graph/v1";
 const DEFAULT_TIMEOUT_MS = 4000;
 const MAX_RETRIES = 1;
+const GENERIC_THEME_WORDS = new Set([
+  "tema",
+  "trabalho",
+  "secção",
+  "seccao",
+  "estudo",
+  "análise",
+  "analise",
+  "introdução",
+  "introducao",
+  "desenvolvimento",
+  "conclusão",
+  "conclusao",
+  "contexto",
+  "conceito",
+  "conceitos",
+  "importância",
+  "importancia",
+  "características",
+  "caracteristicas",
+]);
+const PORTUGUESE_STOPWORDS = new Set([
+  "a", "o", "os", "as", "de", "do", "da", "dos", "das", "e", "em", "no", "na", "nos", "nas",
+  "por", "para", "com", "sem", "um", "uma", "uns", "umas", "que", "como", "sobre", "entre",
+  "mais", "menos", "muito", "muita", "muitos", "muitas", "ser", "estar", "foi", "são", "sao",
+  "ao", "aos", "à", "às", "ou", "se", "sua", "seu", "suas", "seus", "lhe", "lhes", "dos",
+]);
 
-interface ScholarResult {
+export interface ScholarResult {
   title: string;
   authors: string;
   year: number | null;
@@ -19,6 +46,54 @@ interface ScholarResult {
   doi: string | null;
   venue: string | null;
   paperId: string | null;
+}
+
+function tokenizeRelevantTerms(value: string, minLength = 5) {
+  return normalizeTitleKey(value)
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= minLength)
+    .filter((token) => !PORTUGUESE_STOPWORDS.has(token))
+    .filter((token) => !GENERIC_THEME_WORDS.has(token));
+}
+
+function buildSemanticContext(input: {
+  theme: string;
+  generatedSections?: Array<{ title: string; content: string }>;
+}) {
+  const themeKeywords = [...new Set(tokenizeRelevantTerms(input.theme, 4))];
+  const counts = new Map<string, number>();
+
+  for (const section of input.generatedSections ?? []) {
+    for (const token of tokenizeRelevantTerms(`${section.title} ${section.content}`)) {
+      counts.set(token, (counts.get(token) ?? 0) + 1);
+    }
+  }
+
+  const contextKeywords = [...counts.entries()]
+    .filter(([token]) => !themeKeywords.includes(token))
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 12)
+    .map(([token]) => token);
+
+  return { themeKeywords, contextKeywords };
+}
+
+function scoreSemanticRelevance(
+  source: ScholarResult,
+  context: ReturnType<typeof buildSemanticContext>,
+) {
+  const titleText = normalizeTitleKey(source.title);
+  const corpus = normalizeTitleKey([source.title, source.venue, source.abstract].filter(Boolean).join(" "));
+  const titleMatches = context.themeKeywords.filter((keyword) => titleText.includes(keyword)).length;
+  const contextMatches = context.contextKeywords.filter((keyword) => corpus.includes(keyword)).length;
+
+  return {
+    titleMatches,
+    contextMatches,
+    score: titleMatches * 2 + contextMatches * 3,
+  };
 }
 
 function normalizePersonToken(value: string) {
@@ -101,11 +176,16 @@ function scoreScholarResultForCitation(source: ScholarResult, citationKey: strin
   const matchedAuthors = citation.authors.filter((author) => normalizedAuthors.includes(author)).length;
   score += matchedAuthors * 2;
 
-  if (normalizeTitleKey(source.title).includes(normalizeTitleKey(citationKey))) {
+  const titleMatch = normalizeTitleKey(source.title).includes(normalizeTitleKey(citationKey));
+  if (titleMatch) {
     score += 1;
   }
 
-  return score;
+  return {
+    score,
+    matchedAuthors,
+    titleMatch,
+  };
 }
 
 function toReferenceData(source: ScholarResult): ReferenceData {
@@ -309,10 +389,17 @@ export async function resolveAcademicReferences(input: {
   theme: string;
   citationKeys?: string[];
   maxSources?: number;
+  generatedSections?: Array<{ title: string; content: string }>;
+  searchAcademicSourcesFn?: (query: string, limit: number) => Promise<ScholarResult[]>;
 }) {
   const maxSources = input.maxSources ?? 6;
   const resolved: ScholarResult[] = [];
   const seen = new Set<string>();
+  const searchFn = input.searchAcademicSourcesFn ?? searchAcademicSourcesWithRetry;
+  const semanticContext = buildSemanticContext({
+    theme: input.theme,
+    generatedSections: input.generatedSections,
+  });
 
   for (const citationKey of (input.citationKeys ?? []).slice(0, maxSources)) {
     const queries = [`${citationKey} ${input.theme}`.trim(), citationKey].filter(Boolean);
@@ -320,17 +407,32 @@ export async function resolveAcademicReferences(input: {
     let bestScore = 0;
 
     for (const query of queries) {
-      const candidates = await searchAcademicSourcesWithRetry(query, 5);
+      const candidates = await searchFn(query, 5);
       for (const candidate of candidates) {
-        const score = scoreScholarResultForCitation(candidate, citationKey);
-        if (score > bestScore) {
-          bestScore = score;
+        const identity = scoreScholarResultForCitation(candidate, citationKey);
+        const semantic = scoreSemanticRelevance(candidate, semanticContext);
+        const combinedScore = identity.score + semantic.score;
+
+        if (combinedScore > bestScore) {
+          bestScore = combinedScore;
           bestMatch = candidate;
         }
       }
     }
 
-    if (bestMatch && bestScore >= 3) {
+    if (bestMatch) {
+      const identity = scoreScholarResultForCitation(bestMatch, citationKey);
+      const semantic = scoreSemanticRelevance(bestMatch, semanticContext);
+      const hasIdentityMatch = identity.matchedAuthors > 0 || identity.titleMatch;
+      const hasStrongIdentity = identity.score >= 5;
+      const hasSemanticSupport = semanticContext.contextKeywords.length === 0
+        || semantic.contextMatches > 0
+        || hasStrongIdentity;
+
+      if (bestScore < 3 || !hasIdentityMatch || !hasSemanticSupport) {
+        continue;
+      }
+
       const key = buildScholarResultKey(bestMatch);
       if (!seen.has(key)) {
         seen.add(key);
@@ -340,8 +442,16 @@ export async function resolveAcademicReferences(input: {
   }
 
   if (resolved.length < maxSources) {
-    const themeResults = await searchAcademicSourcesWithRetry(input.theme, maxSources);
+    const themeResults = await searchFn(input.theme, maxSources);
     for (const candidate of themeResults) {
+      const semantic = scoreSemanticRelevance(candidate, semanticContext);
+      const hasEnoughSemanticSignal = semanticContext.contextKeywords.length > 0
+        ? semantic.contextMatches > 0
+        : semantic.titleMatches > 0;
+      if (!hasEnoughSemanticSignal) {
+        continue;
+      }
+
       const key = buildScholarResultKey(candidate);
       if (!seen.has(key)) {
         seen.add(key);

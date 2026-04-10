@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   buildStaticSummaryEntries,
+  buildVisibleSummaryParagraphs,
   DocumentExportService,
   formatReferenceEntry,
   getAbntChecklist,
@@ -163,6 +164,29 @@ describe("document export references", () => {
       { title: "Contexto", level: 2 },
       { title: "Amostra", level: 3 },
     ]);
+  });
+
+  test("builds visible summary paragraphs so the index is readable before Word updates fields", () => {
+    const model = DocumentExportService.createModel({
+      title: "Tema",
+      description: null,
+      type: "SECONDARY_WORK",
+      brief: {
+        educationLevel: "SECONDARY",
+      },
+      sections: [
+        { id: "intro", title: "1. Introdução", content: "Conteúdo", order: 3 },
+        {
+          id: "dev",
+          title: "2. Desenvolvimento",
+          content: "## Características\n\nTexto.",
+          order: 4,
+        },
+      ],
+    });
+
+    const paragraphs = buildVisibleSummaryParagraphs(model);
+    expect(paragraphs).toHaveLength(3);
   });
 
   test("strips a repeated heading from the beginning of exported section content", () => {

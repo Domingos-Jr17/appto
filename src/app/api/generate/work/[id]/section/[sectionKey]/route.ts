@@ -27,6 +27,7 @@ import {
   buildWorkGenerationSystemPrompt,
   buildSectionGenerationPrompt,
   getWorkGenerationProfile,
+  normalizeMozambicanPortuguese,
   validateGeneratedSection,
 } from "@/lib/work-generation-prompts";
 import { toWorkBriefInput } from "@/lib/projects/project-brief";
@@ -143,6 +144,7 @@ export async function POST(
     let lastPersistedPreviewAt: number | null = null;
 
     const sectionResult = await generateSingleSection(
+      project.title,
       template.title,
       systemPrompt,
       sectionPrompt,
@@ -322,6 +324,7 @@ interface SectionResult {
 }
 
 async function generateSingleSection(
+  theme: string,
   sectionTitle: string,
   systemPrompt: string,
   sectionPrompt: string,
@@ -330,53 +333,64 @@ async function generateSingleSection(
   onChunk: (content: string | null) => Promise<void>,
 ): Promise<SectionResult> {
   const MAX_OUTPUT_TOKENS = env.DEFAULT_MAX_OUTPUT_TOKENS || 8000;
-  const effectiveMaxTokens = Math.min(maxTokens, MAX_OUTPUT_TOKENS);
-
-  let content = "";
-  let lastEmitTime = 0;
   const THROTTLE_MS = 200;
-  let hadAnyContent = false;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const effectiveMaxTokens = Math.min(
+      Math.ceil(maxTokens * (attempt === 0 ? 1 : 1.25)),
+      MAX_OUTPUT_TOKENS,
+    );
+    let content = "";
+    let lastEmitTime = 0;
+    let hadAnyContent = false;
 
-  const handleChunk = async (text: string) => {
-    content += text;
-    hadAnyContent = true;
+    const handleChunk = async (text: string) => {
+      content += text;
+      hadAnyContent = true;
 
-    const now = Date.now();
-    if (now - lastEmitTime >= THROTTLE_MS && content.length > 0) {
-      await onChunk(content);
-      lastEmitTime = now;
-    }
-  };
-
-  try {
-    const textStream = await runAIChatStream({
-      model: "",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: sectionPrompt },
-      ],
-      temperature: 0,
-      max_tokens: effectiveMaxTokens,
-    });
-
-    const reader = textStream.getReader();
-    const decoder = new TextDecoder();
+      const now = Date.now();
+      if (now - lastEmitTime >= THROTTLE_MS && content.length > 0) {
+        await onChunk(content);
+        lastEmitTime = now;
+      }
+    };
 
     try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      const textStream = await runAIChatStream({
+        model: "",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: sectionPrompt },
+        ],
+        temperature: 0,
+        max_tokens: effectiveMaxTokens,
+      });
 
-        const textChunk = decoder.decode(value, { stream: true });
-        await handleChunk(textChunk);
+      const reader = textStream.getReader();
+      const decoder = new TextDecoder();
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const textChunk = decoder.decode(value, { stream: true });
+          await handleChunk(textChunk);
+        }
+
+        if (content) {
+          await onChunk(content);
+        }
+      } finally {
+        reader.releaseLock();
       }
 
-      if (content) {
-        await onChunk(content);
-      }
-
-      const trimmedContent = content.trim();
+      const trimmedContent = normalizeMozambicanPortuguese(content.trim());
       if (!trimmedContent) {
+        if (attempt === 0) {
+          await onChunk("");
+          continue;
+        }
+
         return {
           content: null,
           accepted: false,
@@ -391,29 +405,47 @@ async function generateSingleSection(
         trimmedContent,
         sectionTitle,
         sectionRange,
-        "",
+        theme,
       );
-
+      const hasAbruptEnding = validationIssues.some((issue) =>
+        issue.message.includes("termina de forma abrupta"),
+      );
       const accepted = validationIssues.length === 0;
-      const degraded = validationIssues.length > 0 && wordCount >= 50;
+      const degraded = validationIssues.length > 0 && wordCount >= 50 && !hasAbruptEnding;
 
-      return {
-        content: accepted || degraded ? trimmedContent : null,
-        accepted,
-        degraded,
-        wordCount,
-        error: null,
-      };
-    } finally {
-      reader.releaseLock();
+      if (accepted || degraded || attempt === 1 || !hasAbruptEnding) {
+        return {
+          content: accepted || degraded ? trimmedContent : null,
+          accepted,
+          degraded,
+          wordCount,
+          error: accepted || degraded
+            ? null
+            : new Error(validationIssues.map((issue) => issue.message).join(" ")),
+        };
+      }
+
+      await onChunk("");
+    } catch (error) {
+      if (attempt === 1) {
+        return {
+          content: hadAnyContent ? content.trim() : null,
+          accepted: false,
+          degraded: false,
+          wordCount: content.trim().split(/\s+/).filter(Boolean).length,
+          error: error instanceof Error ? error : new Error(String(error)),
+        };
+      }
+
+      await onChunk("");
     }
-  } catch (error) {
-    return {
-      content: hadAnyContent ? content.trim() : null,
-      accepted: false,
-      degraded: false,
-      wordCount: content.trim().split(/\s+/).filter(Boolean).length,
-      error: error instanceof Error ? error : new Error(String(error)),
-    };
   }
+
+  return {
+    content: null,
+    accepted: false,
+    degraded: false,
+    wordCount: 0,
+    error: new Error("A IA não devolveu conteúdo válido para a secção."),
+  };
 }

@@ -45,6 +45,7 @@ import {
   buildSectionGenerationPrompt,
   getWorkGenerationProfile,
   detectCrossSectionRepetition,
+  normalizeMozambicanPortuguese,
   type SectionValidationIssue,
   type SectionTemplate,
   type WordRange,
@@ -179,6 +180,10 @@ function countGeneratedWords(content?: string | null) {
   return content?.trim() ? content.trim().split(/\s+/).filter(Boolean).length : 0;
 }
 
+function hasAbruptEndingIssue(issues: SectionValidationIssue[]) {
+  return issues.some((issue) => issue.message.includes("termina de forma abrupta"));
+}
+
 export function createSectionAttemptDiagnostics(input: {
   attemptNumber: number;
   content: string | null;
@@ -248,6 +253,7 @@ export function summarizeSectionGenerationAttempts(
 
   const bestRejectedAttempt = attempts
     .filter((attempt) => attempt.failureReason === "validation_failed" && attempt.content)
+    .filter((attempt) => !hasAbruptEndingIssue(attempt.validationIssues))
     .sort((left, right) => right.wordCount - left.wordCount)[0];
 
   if (bestRejectedAttempt?.content) {
@@ -429,6 +435,7 @@ async function generateSectionWithStreaming(
 
 async function generateSectionWithRetry(
   projectId: string,
+  theme: string,
   template: SectionTemplate,
   sectionPlan: { guidance: string; range: WordRange },
   systemPrompt: string,
@@ -439,7 +446,7 @@ async function generateSectionWithRetry(
   const MAX_OUTPUT_TOKENS = env.DEFAULT_MAX_OUTPUT_TOKENS || 8000;
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    const calculatedTokens = Math.ceil((sectionPlan.range.max || 800) * 1.8);
+    const calculatedTokens = Math.ceil((sectionPlan.range.max || 800) * (attempt === 0 ? 1.8 : 2.3));
     const maxTokens = Math.min(calculatedTokens, MAX_OUTPUT_TOKENS);
 
     const repairPrompt = attempt === 0
@@ -455,12 +462,13 @@ async function generateSectionWithRetry(
       onChunk,
     );
 
-    const issues = content
-      ? validateGeneratedSection(content, template.title, sectionPlan.range, "")
+    const normalizedContent = content ? normalizeMozambicanPortuguese(content) : content;
+    const issues = normalizedContent
+      ? validateGeneratedSection(normalizedContent, template.title, sectionPlan.range, theme)
       : [];
     const diagnostics = createSectionAttemptDiagnostics({
       attemptNumber: attempt + 1,
-      content,
+      content: normalizedContent,
       validationIssues: issues,
       error,
     });
@@ -572,6 +580,7 @@ export async function resolveFinalReferenceSectionData(input: {
       theme: input.projectTitle,
       citationKeys,
       maxSources: getAcademicReferenceSourceLimit(input.educationLevel),
+      generatedSections: input.generatedSections,
     });
 
     if (resolvedAcademicReferences.length === 0) {
@@ -723,7 +732,7 @@ async function _generateWorkSectionBySection(
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
-        const calculatedTokens = Math.ceil((profile.abstract.range.max || 260) * 1.5);
+        const calculatedTokens = Math.ceil((profile.abstract.range.max || 260) * (attempt === 0 ? 1.5 : 2));
         const maxTokens = Math.min(calculatedTokens, env.DEFAULT_MAX_OUTPUT_TOKENS || 8000);
         
         const completion = await runAIChatCompletion({
@@ -736,7 +745,9 @@ async function _generateWorkSectionBySection(
           max_tokens: maxTokens,
         });
 
-        abstractContent = completion.choices[0]?.message?.content?.trim() || "";
+        abstractContent = normalizeMozambicanPortuguese(
+          completion.choices[0]?.message?.content?.trim() || "",
+        );
         if (!abstractContent) {
           abstractError = new Error("A IA não devolveu conteúdo para o resumo.");
           continue;
@@ -838,6 +849,7 @@ async function _generateWorkSectionBySection(
 
     const sectionResult = await generateSectionWithRetry(
       projectId,
+      title,
       template,
       sectionPlan,
       systemPrompt,
@@ -1489,6 +1501,7 @@ async function processGenerationJob(projectId: string) {
 
       const result = await generateSectionWithRetry(
         projectId,
+        project.title,
         pendingTemplate,
         sectionPlan,
         systemPrompt,

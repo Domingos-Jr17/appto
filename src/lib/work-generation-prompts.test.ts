@@ -6,6 +6,7 @@ import {
   buildWorkGenerationPrompt,
   detectCrossSectionRepetition,
   getWorkGenerationProfile,
+  normalizeMozambicanPortuguese,
   parseGeneratedWorkContent,
   type SectionTemplate,
   validateGeneratedSection,
@@ -255,7 +256,7 @@ describe("work generation prompts", () => {
     const profile = getWorkGenerationProfile("SECONDARY_WORK", brief, schoolTemplates);
     const introRange = profile.sections.find((s) => s.title === "1. Introdução")!.range;
 
-    const content = "Palavra ".repeat(350);
+    const content = `${"Palavra ".repeat(349)}palavra.`;
     const issues = validateGeneratedSection(content, "1. Introdução", introRange);
 
     expect(issues).toHaveLength(0);
@@ -292,6 +293,28 @@ describe("work generation prompts", () => {
 
     expect(issues.length).toBeGreaterThan(0);
     expect(issues[0]?.message).toContain("palavras-chave do tema");
+  });
+
+  test("validateGeneratedSection rejects content with a truncated ending", () => {
+    const brief: WorkBriefInput = { educationLevel: "SECONDARY" };
+    const profile = getWorkGenerationProfile("SECONDARY_WORK", brief, schoolTemplates);
+    const conclusionRange = profile.sections[2]!.range;
+    const content = `${"Texto conclusivo ".repeat(120)} Quando o conceito é abord`;
+
+    const issues = validateGeneratedSection(content, "3. Conclusão", conclusionRange, "destino");
+
+    expect(issues.some((issue) => issue.message.includes("termina de forma abrupta"))).toBe(true);
+  });
+
+  test("normalizes common brasileirismos into PT-MZ wording", () => {
+    const normalized = normalizeMozambicanPortuguese(
+      "A importância do tema reside no fato de afetar o cotidiano da equipe.",
+    );
+
+    expect(normalized).toContain("facto");
+    expect(normalized).toContain("afectar");
+    expect(normalized).toContain("quotidiano");
+    expect(normalized).toContain("equipa");
   });
 
   test("detectCrossSectionRepetition finds repeated content", () => {

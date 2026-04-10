@@ -747,6 +747,7 @@ Requisitos obrigatórios:
 - Produza entre ${sectionRange.min} e ${sectionRange.max} palavras
 - ${sectionGuidance}
 - Escreva em Português académico de Moçambique
+- Evite brasileirismos como "fato", "afetar", "cotidiano" e "equipe"
 - Siga a norma ${brief.citationStyle || "ABNT"}
 - NÃO repita conteúdo já escrito nas secções anteriores
 - Garanta continuidade lógica com as secções anteriores e prepare a transição para as próximas
@@ -758,6 +759,51 @@ ${styleRulesText}
 - ${citationGuidance}
 - ${factualGuidance}
 - NÃO repita o título da secção "${sectionTitle}" como primeiro heading ou primeira linha do conteúdo`;
+}
+
+const MOZAMBICAN_PORTUGUESE_REPLACEMENTS: Array<[RegExp, string]> = [
+  [/\bfato\b/giu, "facto"],
+  [/\bfatos\b/giu, "factos"],
+  [/\bafet/giu, "afect"],
+  [/\bcotidiano\b/giu, "quotidiano"],
+  [/\bcotidiana\b/giu, "quotidiana"],
+  [/\bcotidianos\b/giu, "quotidianos"],
+  [/\bcotidianas\b/giu, "quotidianas"],
+  [/\bequipe\b/giu, "equipa"],
+  [/\bequipes\b/giu, "equipas"],
+];
+
+export function normalizeMozambicanPortuguese(content: string) {
+  let normalized = content;
+
+  for (const [pattern, replacement] of MOZAMBICAN_PORTUGUESE_REPLACEMENTS) {
+    normalized = normalized.replace(pattern, (match) => {
+      if (match.toUpperCase() === match) {
+        return replacement.toUpperCase();
+      }
+
+      if (match[0] && match[0] === match[0].toUpperCase()) {
+        return replacement[0]!.toUpperCase() + replacement.slice(1);
+      }
+
+      return replacement;
+    });
+  }
+
+  return normalized;
+}
+
+function hasAbruptEnding(content: string) {
+  const trimmed = content.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  if (/[.!?;:)"»]$/.test(trimmed)) {
+    return false;
+  }
+
+  return true;
 }
 
 export function validateGeneratedSection(
@@ -781,6 +827,13 @@ export function validateGeneratedSection(
     issues.push({
       sectionTitle,
       message: "A secção repete o próprio título na primeira linha; comece directamente pelo conteúdo.",
+    });
+  }
+
+  if (hasAbruptEnding(content)) {
+    issues.push({
+      sectionTitle,
+      message: `A secção "${sectionTitle}" termina de forma abrupta; complete a última ideia antes de encerrar o texto.`,
     });
   }
 

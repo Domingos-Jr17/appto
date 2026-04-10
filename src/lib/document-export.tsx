@@ -437,6 +437,16 @@ export function buildStaticSummaryEntries(model: Pick<ExportDocument, "frontMatt
   return entries;
 }
 
+export function buildVisibleSummaryParagraphs(model: Pick<ExportDocument, "frontMatterSections" | "sections">) {
+  return buildStaticSummaryEntries(model).map((entry) =>
+    new Paragraph({
+      children: buildInlineTextRuns(entry.title, { size: 22, font: "Arial" }),
+      spacing: { after: 100, line: 280 },
+      indent: entry.level === 1 ? undefined : { left: entry.level === 2 ? 360 : 720 },
+    })
+  );
+}
+
 function buildCoverParagraphs(model: ExportDocument) {
   const template = model.profile.coverTemplate;
   const institution = resolveDocumentInstitutionName(model.profile, model.brief);
@@ -899,7 +909,7 @@ export class DocumentExportService {
       bodyChildren.push(
         new Paragraph({
           children: [new TextRun({ text: "ÍNDICE", bold: true, size: 28, font: "Arial" })],
-          heading: HeadingLevel.HEADING_1,
+          alignment: AlignmentType.CENTER,
           spacing: { before: 0, after: 200 },
         })
       );
@@ -908,6 +918,10 @@ export class DocumentExportService {
         new TableOfContents("Índice", {
           hyperlink: true,
           headingStyleRange: "1-3",
+          cachedEntries: buildStaticSummaryEntries(model).map((entry) => ({
+            title: entry.title,
+            level: entry.level,
+          })),
         })
       );
 

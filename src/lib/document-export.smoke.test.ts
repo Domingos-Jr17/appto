@@ -198,6 +198,7 @@ describe("document export smoke", () => {
       const { documentXml, rawText } = await extractDocxArtifacts(buffer);
 
       expect(rawText).toContain("ÍNDICE");
+      expect(rawText).toMatch(/ÍNDICE[\s\S]*1\. Introdução/);
       expect(documentXml).toContain("fldCharType=\"begin\"");
       expect(documentXml).toContain("TOC ");
       expect(documentXml).toContain("1-3");

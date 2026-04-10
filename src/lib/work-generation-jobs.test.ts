@@ -78,6 +78,26 @@ describe("work generation jobs", () => {
     expect(result.content).toContain("Palavra");
   });
 
+  test("does not keep truncated content as degraded output after retries", () => {
+    const attempts: SectionAttemptDiagnostics[] = [
+      createSectionAttemptDiagnostics({
+        attemptNumber: 1,
+        content: `${"Palavra ".repeat(120)}quando o conceito é abord`,
+        validationIssues: [createValidationIssue("A secção \"3. Conclusão\" termina de forma abrupta; complete a última ideia antes de encerrar o texto.")],
+      }),
+      createSectionAttemptDiagnostics({
+        attemptNumber: 2,
+        content: `${"Palavra ".repeat(140)}quando o conceito é abord`,
+        validationIssues: [createValidationIssue("A secção \"3. Conclusão\" termina de forma abrupta; complete a última ideia antes de encerrar o texto.")],
+      }),
+    ];
+
+    const result = summarizeSectionGenerationAttempts(attempts);
+
+    expect(result.degraded).toBe(false);
+    expect(result.content).toBeNull();
+  });
+
   test("builds a repair prompt with healthy PT-MZ text", () => {
     const prompt = buildSectionRepairPrompt("Prompt base", "1. Introdução");
 

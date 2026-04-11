@@ -19,6 +19,12 @@
     "optional": "Opcional",
     "error": "Erro",
     "success": "Sucesso",
+    "theme": {
+      "toggle": "Alternar tema",
+      "light": "Claro",
+      "dark": "Escuro",
+      "system": "Sistema"
+    },
     "tryAgain": "Tentar novamente"
   },
   "auth": {

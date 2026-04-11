@@ -19,7 +19,13 @@
     "optional": "Optional",
     "error": "Error",
     "success": "Success",
-    "tryAgain": "Try again"
+    "tryAgain": "Try again",
+    "theme": {
+      "toggle": "Toggle theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    }
   },
   "auth": {
     "login": {

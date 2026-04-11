@@ -27,6 +27,7 @@ interface WorkspaceHeaderProps {
   onDownload: () => void;
   onDownloadPdf?: () => void;
   onSaveExport?: (format: "DOCX" | "PDF") => void;
+  onShareLink?: () => void;
   isDownloading?: boolean;
   isSavingExport?: "DOCX" | "PDF" | null;
   onEditCover: () => void;
@@ -49,6 +50,7 @@ export function WorkspaceHeader({
   onDownload,
   onDownloadPdf,
   onSaveExport,
+  onShareLink,
   isDownloading = false,
   isSavingExport = null,
   onEditCover,
@@ -264,6 +266,7 @@ export function WorkspaceHeader({
           onDownloadDocx={onDownload}
           onDownloadPdf={onDownloadPdf || onDownload}
           onSaveExport={onSaveExport || (() => undefined)}
+          onShareLink={onShareLink}
           hasContent={hasContent}
           isDownloading={isDownloading}
           isSavingExport={isSavingExport}

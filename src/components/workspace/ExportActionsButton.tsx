@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileDown, FilePlus2, Loader2 } from "lucide-react";
+import { Download, FileDown, FilePlus2, Link2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ interface ExportActionsButtonProps {
   onDownloadDocx: () => void;
   onDownloadPdf: () => void;
   onSaveExport: (format: "DOCX" | "PDF") => void;
+  onShareLink?: () => void;
 }
 
 export function ExportActionsButton({
@@ -25,6 +26,7 @@ export function ExportActionsButton({
   onDownloadDocx,
   onDownloadPdf,
   onSaveExport,
+  onShareLink,
 }: ExportActionsButtonProps) {
   const isBusy = isDownloading || isSavingExport !== null;
 
@@ -41,6 +43,10 @@ export function ExportActionsButton({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem onClick={onShareLink} disabled={!onShareLink}>
+          <Link2 className="h-4 w-4" />
+          Partilhar por link
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={onDownloadDocx}>
           <FileDown className="h-4 w-4" />
           Descarregar DOCX

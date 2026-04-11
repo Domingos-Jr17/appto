@@ -87,6 +87,7 @@ export function WorkspaceLayout({ initialData }: WorkspaceLayoutProps) {
           onDownload={workspace.downloadDocx}
           onDownloadPdf={workspace.downloadPdf}
           onSaveExport={workspace.saveExport}
+          onShareLink={workspace.shareLink}
           onEditCover={() => setCoverSheetOpen(true)}
           onSaveTitle={workspace.updateTitle}
           coverIncomplete={isCoverIncomplete(workspace.data?.brief)}

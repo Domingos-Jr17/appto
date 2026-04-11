@@ -3,6 +3,7 @@
 import { Menu, X } from "lucide-react";
 import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "@/components/ui-aptto/ThemeToggle";
+import { LocaleSelector } from "./LocaleSelector";
 import { Button } from "@/components/ui/button";
 
 interface AppHeaderProps {
@@ -53,6 +54,7 @@ export function AppHeader({
                 </div>
                 <div className="flex items-center gap-1.5">
                     <ThemeToggle variant="button" />
+                    <LocaleSelector />
                     <UserMenu user={user} />
                 </div>
             </div>

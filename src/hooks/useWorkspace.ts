@@ -301,6 +301,35 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
     }
   }, [data.id]);
 
+  const shareLink = useCallback(async () => {
+    setError(null);
+    try {
+      const res = await fetch(`/api/projects/${data.id}/share`, {
+        method: "POST",
+      });
+
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.error || "Falhou ao criar link de partilha");
+      }
+
+      const shareUrl = body?.data?.shareUrl;
+      if (!shareUrl) {
+        throw new Error("Link de partilha inválido");
+      }
+
+      await navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "Link copiado",
+        description: "O link de partilha foi copiado para a área de transferência.",
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Não foi possível criar o link de partilha";
+      setError(msg);
+      toast({ title: "Erro ao partilhar", description: msg, variant: "destructive" });
+    }
+  }, [data.id]);
+
   const setCoverTemplate = useCallback(
     async (template: string) => {
       setError(null);
@@ -411,6 +440,7 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
     downloadDocx,
     downloadPdf,
     saveExport,
+    shareLink,
     setCoverTemplate,
     saveBrief,
     updateTitle,

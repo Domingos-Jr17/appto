@@ -155,9 +155,10 @@ model Project {
   generationJob  GenerationJob?
   generationRuns GenerationRun[]
   brief          ProjectBrief?
-  exports        ProjectExport[]
-  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  storedFiles    StoredFile[]
+  exports         ProjectExport[]
+  sharedDocuments SharedDocument[]
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storedFiles     StoredFile[]
 
   @@map("projects")
 }
@@ -497,6 +498,22 @@ model ProjectExport {
   @@index([projectId, format, createdAt])
   @@index([createdById, createdAt])
   @@map("project_exports")
+}
+
+model SharedDocument {
+  id           String    @id @default(cuid())
+  projectId    String
+  token        String    @unique
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime?
+  views        Int       @default(0)
+  lastViewedAt DateTime?
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([projectId, isActive])
+  @@map("shared_documents")
 }
 
 model ProductEvent {

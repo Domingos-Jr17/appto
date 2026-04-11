@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
@@ -28,8 +29,8 @@ import { getTemplateLabel } from "@/lib/cover-template-config";
 import { GenerateWorkProgress } from "@/components/work-creation/GenerateWorkProgress";
 import { CoverFields } from "@/components/work-creation/CoverFields";
 import {
+  getGenerationSteps,
   useWorkCreation,
-  GENERATION_STEPS,
 } from "@/hooks/use-work-creation";
 import type { AcademicEducationLevel } from "@/types/editor";
 import type { WorkFormState } from "@/hooks/use-work-creation";
@@ -39,12 +40,11 @@ import { useAppShellData } from "@/components/app-shell/AppShellDataContext";
 
 const EDUCATION_LEVELS: {
   value: AcademicEducationLevel;
-  label: string;
   icon: React.ElementType;
 }[] = [
-  { value: "SECONDARY", label: "Secundário", icon: BookOpen },
-  { value: "TECHNICAL", label: "Técnico", icon: Wrench },
-  { value: "HIGHER_EDUCATION", label: "Superior", icon: GraduationCap },
+  { value: "SECONDARY", icon: BookOpen },
+  { value: "TECHNICAL", icon: Wrench },
+  { value: "HIGHER_EDUCATION", icon: GraduationCap },
 ];
 
 const TRANSITION = { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const };
@@ -52,9 +52,12 @@ const TRANSITION = { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const };
 // ── Component ─────────────────────────────────────────────────────────
 
 export function InlineWorkCreator() {
+  const t = useTranslations("workCreation.inlineCreator");
+  const tWorkCreation = useTranslations("hooks.workCreation");
   const { data: session } = useSession();
   const { projects, refresh } = useAppShellData();
   const searchParams = useSearchParams();
+  const generationSteps = getGenerationSteps(tWorkCreation);
 
   const {
     workForm,
@@ -73,11 +76,9 @@ export function InlineWorkCreator() {
   const [showCoverData, setShowCoverData] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const firstName = session?.user?.name?.split(" ")[0] || "Estudante";
+  const firstName = session?.user?.name?.split(" ")[0] || t("studentFallback");
   const recentProjects = projects.slice(0, 3);
-  const levelInfo = EDUCATION_LEVELS.find(
-    (l) => l.value === workForm.educationLevel,
-  );
+  const levelInfo = EDUCATION_LEVELS.find((l) => l.value === workForm.educationLevel);
 
   const prevSearchRef = useRef<string | null>(null);
 
@@ -108,18 +109,18 @@ export function InlineWorkCreator() {
             &ldquo;{workForm.title}&rdquo;
           </p>
           <GenerateWorkProgress
-            steps={[...GENERATION_STEPS]}
+            steps={generationSteps}
             activeIndex={generationStep}
             currentMessage={generationMessage}
           />
         </div>
         <p className="text-center text-xs text-muted-foreground">
-          Podes fechar esta página. O trabalho continua a gerar em segundo plano.
+          {t("backgroundMessage")}
           <Link
             href={`/app/trabalhos/${generationProjectId}`}
             className="ml-1 font-medium text-primary hover:underline"
           >
-            Abrir trabalho →
+            {t("openWork")}
           </Link>
         </p>
       </div>
@@ -131,28 +132,35 @@ export function InlineWorkCreator() {
       {/* Greeting */}
       <div className="space-y-2 text-center">
         <p className="text-sm text-muted-foreground">
-          Olá, {firstName}
+          {t("greeting", { firstName })}
         </p>
         <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          Que tema queres trabalhar hoje?
+          {t("question")}
         </h2>
         {subscriptionStatus && (
           <p className="text-xs text-muted-foreground">
             {subscriptionStatus.canGenerate ? (
-              <>
-                Tens <span className="font-semibold text-foreground">{subscriptionStatus.remaining}</span> {subscriptionStatus.remaining === 1 ? "trabalho disponível" : "trabalhos disponíveis"} este mês
-              </>
+              t.rich("availableThisMonth", {
+                count: subscriptionStatus.remaining,
+                label:
+                  subscriptionStatus.remaining === 1
+                    ? t("worksAvailable")
+                    : t("worksAvailablePlural"),
+                countValue: (chunks) => (
+                  <span className="font-semibold text-foreground">{chunks}</span>
+                ),
+              })
             ) : (
-              <span className="text-warning font-medium">Limite de trabalhos atingido</span>
+              <span className="text-warning font-medium">{t("limitReached")}</span>
             )}
           </p>
         )}
       </div>
 
       {/* Theme */}
-      <Textarea
-        id="inline-title"
-        placeholder="Qual o tema do teu trabalho?"
+        <Textarea
+          id="inline-title"
+          placeholder={t("placeholder")}
         value={workForm.title}
         onChange={(e) => updateWorkForm("title", e.target.value)}
         onKeyDown={(e) => {
@@ -167,7 +175,7 @@ export function InlineWorkCreator() {
 
       {/* Education level */}
       <div className="space-y-2">
-        <p className="text-sm font-medium text-foreground">Nível de ensino</p>
+        <p className="text-sm font-medium text-foreground">{t("educationLevelLabel")}</p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {EDUCATION_LEVELS.map((level) => (
           <button
@@ -182,11 +190,11 @@ export function InlineWorkCreator() {
                 : "border-border/60 hover:border-border hover-elevate",
             )}
           >
-            <level.icon className="h-5 w-5 sm:h-8 sm:w-8 text-muted-foreground" />
-            <div className="text-sm font-medium leading-tight sm:mt-1 sm:text-xs">
-              {level.label}
-            </div>
-          </button>
+             <level.icon className="h-5 w-5 sm:h-8 sm:w-8 text-muted-foreground" />
+             <div className="text-sm font-medium leading-tight sm:mt-1 sm:text-xs">
+               {t(`educationLevel.${getEducationLevelKey(level.value)}`)}
+             </div>
+           </button>
         ))}
       </div>
       </div>
@@ -201,11 +209,11 @@ export function InlineWorkCreator() {
               className="h-14 w-full gap-2 rounded-2xl text-base opacity-60"
             >
               <AlertCircle className="h-5 w-5" />
-              Sem trabalhos disponíveis
+              {t("noWorks")}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="max-w-xs text-center">
-            O teu limite de trabalhos foi atingido. Faz upgrade do pacote ou compra trabalhos extras.
+            {t("limitMessage")}
           </TooltipContent>
         </Tooltip>
       ) : (
@@ -222,12 +230,12 @@ export function InlineWorkCreator() {
           {isCreating ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" />
-              A criar...
+              {t("creating")}
             </>
           ) : (
             <>
               <Sparkles className="h-5 w-5" />
-              Gerar trabalho
+              {t("generateButton")}
             </>
           )}
         </Button>
@@ -236,17 +244,17 @@ export function InlineWorkCreator() {
       {/* Subscription hint — only when limit reached */}
       {subscriptionStatus && !subscriptionStatus.canGenerate && (
         <div className="rounded-2xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
-          <p className="font-medium">Limite de trabalhos atingido este mês.</p>
+          <p className="font-medium">{t("limitReachedTitle")}</p>
           <p className="mt-1 text-xs opacity-80">
-            Faz{" "}
+            {t("limitActionPrefix")}{" "}
               <Link href="/app/subscription" className="font-semibold text-warning underline underline-offset-2 hover:no-underline">
-               upgrade do pacote
-               </Link>{" "}
-             ou{" "}
-            <Link href="/app/subscription" className="font-semibold text-warning underline underline-offset-2 hover:no-underline">
-               compra trabalhos extras
-             </Link>
-            .
+                {t("upgradeLink")}
+                </Link>{" "}
+              {t("limitActionMiddle")}{" "}
+             <Link href="/app/subscription" className="font-semibold text-warning underline underline-offset-2 hover:no-underline">
+                {t("buyLink")}
+              </Link>
+             {t("limitActionSuffix")}
           </p>
         </div>
       )}
@@ -260,8 +268,8 @@ export function InlineWorkCreator() {
       >
         <span>
           {showCoverData
-            ? "Ocultar dados da capa"
-            : "Preencher dados da capa (opcional)"}
+            ? t("hideCover")
+            : t("showCover")}
         </span>
         <ChevronDown
           className={cn(
@@ -282,14 +290,14 @@ export function InlineWorkCreator() {
           {/* Cover template info */}
           <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-2.5 flex items-center gap-2">
             <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              Capa:{" "}
-              <span className="font-medium text-foreground">
-                {getTemplateLabel(workForm.coverTemplate)}
-              </span>
-              {levelInfo ? ` (${levelInfo.label})` : ""}
-            </p>
-          </div>
+             <p className="text-xs text-muted-foreground">
+               {t("coverLabel")} {" "}
+               <span className="font-medium text-foreground">
+                 {getTemplateLabel(workForm.coverTemplate)}
+               </span>
+              {levelInfo ? ` (${t(`educationLevel.${getEducationLevelKey(levelInfo.value)}`)})` : ""}
+             </p>
+           </div>
 
           {/* Cover fields by level */}
           <CoverFields
@@ -326,8 +334,8 @@ export function InlineWorkCreator() {
       >
         <span>
           {showAdvanced
-            ? "Ocultar detalhes avançados"
-            : "+ Detalhes avançados (opcional)"}
+            ? t("hideAdvanced")
+            : t("showAdvanced")}
         </span>
         <ChevronDown
           className={cn(
@@ -349,34 +357,34 @@ export function InlineWorkCreator() {
           <div className="space-y-3 rounded-2xl border border-border/40 bg-muted/20 p-3">
             <div>
               <p className="text-sm font-semibold text-foreground">
-                Conteúdo do trabalho
+                {t("contentLabel")}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="objective">Objetivo</Label>
+              <Label htmlFor="objective">{t("objectiveLabel")}</Label>
               <Textarea
                 id="objective"
                 value={workForm.objective}
                 onChange={(e) => updateWorkForm("objective", e.target.value)}
                 rows={2}
-                placeholder="Ex.: analisar o impacto da IA no ensino superior"
+                placeholder={t("objectivePlaceholder")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="methodology">Metodologia</Label>
+              <Label htmlFor="methodology">{t("methodologyLabel")}</Label>
               <Textarea
                 id="methodology"
                 value={workForm.methodology}
                 onChange={(e) => updateWorkForm("methodology", e.target.value)}
                 rows={2}
-                placeholder="Ex.: revisão bibliográfica"
+                placeholder={t("methodologyPlaceholder")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="research-question">Pergunta de pesquisa</Label>
+              <Label htmlFor="research-question">{t("researchQuestionLabel")}</Label>
               <Textarea
                 id="research-question"
                 value={workForm.researchQuestion}
@@ -384,17 +392,17 @@ export function InlineWorkCreator() {
                   updateWorkForm("researchQuestion", e.target.value)
                 }
                 rows={2}
-                placeholder="Ex.: como a IA afecta o ensino?"
+                placeholder={t("researchQuestionPlaceholder")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="subtitle">Subtítulo</Label>
+              <Label htmlFor="subtitle">{t("subtitleLabel")}</Label>
               <Input
                 id="subtitle"
                 value={workForm.subtitle}
                 onChange={(e) => updateWorkForm("subtitle", e.target.value)}
-                placeholder="Ex.: Um estudo de caso no sector bancário moçambicano"
+                placeholder={t("subtitlePlaceholder")}
               />
             </div>
           </div>
@@ -403,22 +411,22 @@ export function InlineWorkCreator() {
           <div className="space-y-3 rounded-2xl border border-border/40 bg-muted/20 p-3">
             <div>
               <p className="text-sm font-semibold text-foreground">
-                Referências
+                {t("referencesLabel")}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="keywords">Palavras-chave</Label>
+              <Label htmlFor="keywords">{t("keywordsLabel")}</Label>
               <Input
                 id="keywords"
                 value={workForm.keywords}
                 onChange={(e) => updateWorkForm("keywords", e.target.value)}
-                placeholder="Ex.: digitalização, sector bancário, Moçambique"
+                placeholder={t("keywordsPlaceholder")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="references-seed">Referências iniciais</Label>
+              <Label htmlFor="references-seed">{t("referencesSeedLabel")}</Label>
               <Textarea
                 id="references-seed"
                 value={workForm.referencesSeed}
@@ -426,12 +434,12 @@ export function InlineWorkCreator() {
                   updateWorkForm("referencesSeed", e.target.value)
                 }
                 rows={2}
-                placeholder="Ex.: Silva (2023), WHO (2024)"
+                placeholder={t("referencesSeedPlaceholder")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="citation-style">Norma de citação</Label>
+              <Label htmlFor="citation-style">{t("citationStyleLabel")}</Label>
               <Select
                 value={workForm.citationStyle}
                 onValueChange={(value) =>
@@ -453,7 +461,7 @@ export function InlineWorkCreator() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="additional-instructions">Notas</Label>
+              <Label htmlFor="additional-instructions">{t("notesLabel")}</Label>
               <Textarea
                 id="additional-instructions"
                 value={workForm.additionalInstructions}
@@ -461,7 +469,7 @@ export function InlineWorkCreator() {
                   updateWorkForm("additionalInstructions", e.target.value)
                 }
                 rows={2}
-                placeholder="Ex.: incluir exemplos de Moçambique."
+                placeholder={t("notesPlaceholder")}
               />
             </div>
           </div>
@@ -473,7 +481,7 @@ export function InlineWorkCreator() {
         <Card className="rounded-[28px] bg-card border border-border/40">
           <CardContent className="space-y-3 p-5">
             <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/70">
-              Trabalhos recentes
+              {t("recentWorks")}
             </p>
             {recentProjects.map((project) => (
               <Link
@@ -496,7 +504,7 @@ export function InlineWorkCreator() {
                   </p>
                 </div>
                 <span className="shrink-0 text-sm font-medium text-primary">
-                  Abrir →
+                  {t("open")}
                 </span>
               </Link>
             ))}
@@ -508,7 +516,7 @@ export function InlineWorkCreator() {
                   className="w-full rounded-full text-xs"
                 >
                   <Link href="/app/trabalhos">
-                    Ver todos os trabalhos ({projects.length})
+                    {t("viewAll", { count: projects.length })}
                   </Link>
                 </Button>
               </div>
@@ -522,10 +530,16 @@ export function InlineWorkCreator() {
         <div className="py-8 text-center">
           <FileText className="mx-auto h-8 w-8 text-muted-foreground/30" />
           <p className="mt-2 text-sm text-muted-foreground/70">
-            Ainda não tens trabalhos.
+            {t("noWorksYet")}
           </p>
         </div>
       )}
     </div>
   );
+}
+
+function getEducationLevelKey(level: AcademicEducationLevel) {
+  if (level === "SECONDARY") return "secondary";
+  if (level === "TECHNICAL") return "technical";
+  return "higher";
 }

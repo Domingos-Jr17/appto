@@ -17,13 +17,13 @@ const updateUserSchema = z
           value.startsWith("/") ||
           /^https?:\/\//.test(value) ||
           value.startsWith("data:"),
-        "URL de imagem invÃ¡lida"
+        "Invalid image URL"
       )
       .nullable()
       .optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
-    message: "Nenhum campo válido enviado",
+    message: "No valid fields provided",
   });
 
 export async function GET() {
@@ -31,7 +31,7 @@ export async function GET() {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const user = await db.user.findUnique({
@@ -43,7 +43,7 @@ export async function GET() {
     });
 
     if (!user) {
-      return apiError("Utilizador não encontrado", 404);
+      return apiError("User not found", 404);
     }
 
     return apiSuccess({
@@ -72,7 +72,7 @@ export async function PATCH(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const { name, image } = await parseBody(request, updateUserSchema);

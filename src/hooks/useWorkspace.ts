@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import type { WorkspaceData, WorkBrief, WorkSection } from "@/types/workspace";
 import { toast } from "@/hooks/use-toast";
 import { useGenerationStream } from "@/hooks/useGenerationStream";
@@ -17,6 +18,7 @@ interface UseWorkspaceOptions {
 }
 
 export function useWorkspace({ initialData }: UseWorkspaceOptions) {
+  const t = useTranslations("hooks.workspace");
   const [data, setData] = useState(initialData);
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -80,7 +82,7 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
     } catch (err) {
       console.warn("[useWorkspace] refreshProject failed:", err);
     }
-  }, [data.id]);
+  }, [data.id, t]);
 
   const applyLiveSnapshot = useCallback((snapshot: {
     type: "handshake" | "job-created" | "section-started" | "section-complete" | "progress" | "content-chunk" | "complete" | "error";
@@ -179,10 +181,10 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
     setError(null);
 
     setData((prev) => ({
-      ...prev,
+        ...prev,
         generationStatus: "GENERATING",
         generationProgress: Math.max(prev.generationProgress, 5),
-        generationStep: "A preparar geração",
+        generationStep: t("preparingGeneration"),
       sections: prev.sections.map((s) =>
         s.status !== "done"
           ? { ...s, status: "pending" as const, streamingContent: undefined }
@@ -199,15 +201,15 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
 
       if (!res.ok) {
         const body = await res.json();
-        throw new Error(body.error || "Falhou a regeneração");
+        throw new Error(body.error || t("generationRetryFailed"));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido");
+      setError(err instanceof Error ? err.message : t("unknownError"));
       setData((prev) => ({
         ...prev,
         generationStatus: "FAILED",
         generationProgress: prev.generationProgress,
-        generationStep: "Falha na geração",
+        generationStep: t("generationFailed"),
         sections: prev.sections.map((s) =>
           s.status === "generating" || s.status === "streaming"
             ? { ...s, status: s.content ? "done" : "pending" }
@@ -215,7 +217,7 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
         ),
       }));
     }
-  }, [data.id]);
+  }, [data.id, t]);
 
   const downloadDocx = useCallback(async () => {
     setError(null);
@@ -224,7 +226,7 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
       const res = await fetch(`/api/export?projectId=${data.id}`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Falhou o download");
+        throw new Error(body.error || t("downloadFailed"));
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -237,12 +239,12 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
       URL.revokeObjectURL(url);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Não foi possível descarregar"
+        err instanceof Error ? err.message : t("couldNotDownload")
       );
     } finally {
       setIsDownloading(false);
     }
-  }, [data.id, data.brief.title]);
+  }, [data.id, data.brief.title, t]);
 
   const downloadPdf = useCallback(async () => {
     setError(null);
@@ -251,7 +253,7 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
       const res = await fetch(`/api/export/pdf?projectId=${data.id}`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Falhou o download do PDF");
+        throw new Error(body.error || t("downloadFailedPdf"));
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -264,12 +266,12 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
       URL.revokeObjectURL(url);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Não foi possível descarregar o PDF"
+        err instanceof Error ? err.message : t("couldNotDownloadPdf")
       );
     } finally {
       setIsDownloading(false);
     }
-  }, [data.id, data.brief.title]);
+  }, [data.id, data.brief.title, t]);
 
   const saveExport = useCallback(async (format: "DOCX" | "PDF") => {
     setError(null);
@@ -283,7 +285,7 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
 
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(body.error || `Falhou ao guardar exportação ${format}`);
+        throw new Error(body.error || t("saveFailed", { format }));
       }
 
       const downloadUrl = body?.data?.export?.file?.downloadUrl;
@@ -291,15 +293,15 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
         window.open(downloadUrl, "_blank", "noopener,noreferrer");
       }
 
-      toast({ title: `${format} guardado`, description: "A exportação foi criada com sucesso." });
+      toast({ title: t("saved", { format }), description: t("exportCreated") });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Não foi possível guardar a exportação";
+      const msg = err instanceof Error ? err.message : t("couldNotSaveExport");
       setError(msg);
-      toast({ title: "Erro ao guardar exportação", description: msg, variant: "destructive" });
+      toast({ title: t("saveError"), description: msg, variant: "destructive" });
     } finally {
       setIsSavingExport(null);
     }
-  }, [data.id]);
+  }, [data.id, t]);
 
   const shareLink = useCallback(async () => {
     setError(null);
@@ -310,25 +312,25 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
 
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(body.error || "Falhou ao criar link de partilha");
+        throw new Error(body.error || t("shareFailed"));
       }
 
       const shareUrl = body?.data?.shareUrl;
       if (!shareUrl) {
-        throw new Error("Link de partilha inválido");
+        throw new Error(t("invalidShareLink"));
       }
 
       await navigator.clipboard.writeText(shareUrl);
       toast({
-        title: "Link copiado",
-        description: "O link de partilha foi copiado para a área de transferência.",
+        title: t("linkCopied"),
+        description: t("linkCopiedDesc"),
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Não foi possível criar o link de partilha";
+      const msg = err instanceof Error ? err.message : t("shareError");
       setError(msg);
-      toast({ title: "Erro ao partilhar", description: msg, variant: "destructive" });
+      toast({ title: t("shareErrorTitle"), description: msg, variant: "destructive" });
     }
-  }, [data.id]);
+  }, [data.id, t]);
 
   const setCoverTemplate = useCallback(
     async (template: string) => {
@@ -339,18 +341,18 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ template }),
         });
-        if (!res.ok) throw new Error("Falhou ao alterar template");
+        if (!res.ok) throw new Error(t("templateFailed"));
         setData((prev) => ({
           ...prev,
           brief: { ...prev.brief, coverTemplate: template },
         }));
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Não foi possível alterar o template"
+          err instanceof Error ? err.message : t("couldNotChangeTemplate")
         );
       }
     },
-    [data.id]
+    [data.id, t]
   );
 
   const saveBrief = useCallback(
@@ -377,18 +379,18 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
             },
           }),
         });
-        if (!res.ok) throw new Error("Falhou ao guardar dados da capa");
+        if (!res.ok) throw new Error(t("saveBriefFailed"));
         setData((prev) => ({
           ...prev,
           brief: { ...prev.brief, ...updates },
         }));
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Não foi possível guardar"
+          err instanceof Error ? err.message : t("couldNotSave")
         );
       }
     },
-    [data.id]
+    [data.id, t]
   );
 
   const updateTitle = useCallback(
@@ -412,20 +414,20 @@ export function useWorkspace({ initialData }: UseWorkspaceOptions) {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || "Falhou ao actualizar título");
+          throw new Error(body.error || t("updateTitleFailed"));
         }
-        toast({ title: "Título actualizado" });
+        toast({ title: t("titleUpdated") });
       } catch (err) {
         setData((prev) => ({
           ...prev,
           brief: { ...prev.brief, title: previousTitle },
         }));
-        const msg = err instanceof Error ? err.message : "Erro ao actualizar";
+        const msg = err instanceof Error ? err.message : t("updateError");
         setError(msg);
-        toast({ title: "Erro ao actualizar título", variant: "destructive" });
+        toast({ title: t("updateTitleError"), variant: "destructive" });
       }
     },
-    [data.id, data.brief.title]
+    [data.id, data.brief.title, t]
   );
 
   return {

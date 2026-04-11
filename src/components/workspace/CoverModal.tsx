@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import {
@@ -79,6 +80,7 @@ export function CoverModal({
   onSaveBrief,
   onClose,
 }: CoverModalProps) {
+  const t = useTranslations("workspace.cover.modal");
   const [selected, setSelected] = useState(
     currentTemplate ?? "UEM_STANDARD"
   );
@@ -138,20 +140,20 @@ export function CoverModal({
         key={briefKey}
         side="right"
         className="flex w-full max-w-full flex-col overflow-x-hidden p-0 sm:w-[30rem] sm:top-[72px] sm:bottom-0 sm:h-auto sm:border-l sm:rounded-tl-2xl"
-      >
+        >
         <SheetHeader className="px-4 pt-4 pb-2 sm:pt-6">
-          <SheetTitle>Editar capa</SheetTitle>
+          <SheetTitle>{t("title")}</SheetTitle>
           <SheetDescription>
-            Altera o estilo e os dados que aparecem na capa do trabalho.
+            {t("description")}
           </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-4 py-2">
           {/* Template */}
-          <div className="space-y-1.5">
-            <Label htmlFor="cover-template" className="text-xs">
-              Estilo da capa
-            </Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="cover-template" className="text-xs">
+              {t("templateLabel")}
+              </Label>
             <Select value={selected} onValueChange={setSelected}>
               <SelectTrigger id="cover-template" className="text-xs">
                 <SelectValue />
@@ -170,22 +172,22 @@ export function CoverModal({
           <div className="mt-4 rounded-xl border border-border/40 bg-muted/10 p-4">
             <div className="rounded-lg border border-border/30 bg-background px-6 py-8 text-center">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                {info.institutionName || "Nome da instituição"}
+                {info.institutionName || t("institutionPlaceholder")}
               </p>
               <div className="my-3 h-px w-12 bg-primary/40 mx-auto" />
               <p className="text-xs font-medium text-foreground">
-                {info.courseName || "Curso"}
+                {info.courseName || t("coursePlaceholder")}
               </p>
               <p className="mt-2 text-xs text-foreground/80">
-                {info.studentName || "Nome do estudante"}
+                {info.studentName || t("studentPlaceholder")}
               </p>
               <p className="mt-1 text-[10px] text-muted-foreground">
-                {info.advisorName ? `Orientador: ${info.advisorName}` : "Orientador"}
+                {info.advisorName ? `${t("advisorLabel")}: ${info.advisorName}` : t("advisorPlaceholder")}
               </p>
               <div className="mt-4 flex items-center justify-center gap-3 text-[10px] text-muted-foreground/60">
-                <span>{info.city || "Cidade"}</span>
+                <span>{info.city || t("cityPlaceholder")}</span>
                 <span>·</span>
-                <span>{info.year || "Ano"}</span>
+                <span>{info.year || t("yearPlaceholder")}</span>
               </div>
             </div>
           </div>
@@ -194,7 +196,7 @@ export function CoverModal({
           <div className="mt-4 space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="cover-institution" className="text-xs">
-                {educationLevel === "TECHNICAL" ? "Instituto" : "Instituição"}
+                {educationLevel === "TECHNICAL" ? t("institutionLabelTechnical") : t("institutionLabel")}
               </Label>
               <Input
                 id="cover-institution"
@@ -202,10 +204,10 @@ export function CoverModal({
                 onChange={(e) => updateField("institutionName", e.target.value)}
                 placeholder={
                   educationLevel === "SECONDARY"
-                    ? "Ex.: Escola Secundária Josina Machel"
+                    ? t("institutionPlaceholderSecondary")
                     : educationLevel === "TECHNICAL"
-                    ? "Ex.: ISTEG"
-                    : "Ex.: Universidade Eduardo Mondlane"
+                    ? t("institutionPlaceholderTechnical")
+                    : t("institutionPlaceholderHigher")
                 }
                 className="text-xs"
               />
@@ -214,13 +216,13 @@ export function CoverModal({
             {educationLevel !== "SECONDARY" && (
               <div className="space-y-1.5">
                 <Label htmlFor="cover-course" className="text-xs">
-                  Curso
+                  {t("courseLabel")}
                 </Label>
                 <Input
                   id="cover-course"
                   value={info.courseName}
                   onChange={(e) => updateField("courseName", e.target.value)}
-                  placeholder="Ex.: Gestão Bancária"
+                  placeholder={t("coursePlaceholder")}
                   className="text-xs"
                 />
               </div>
@@ -229,7 +231,7 @@ export function CoverModal({
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="cover-student" className="text-xs">
-                  {educationLevel === "SECONDARY" ? "Aluno" : "Estudante"}
+                  {educationLevel === "SECONDARY" ? t("studentLabelSecondary") : t("studentLabel")}
                 </Label>
                 <Input
                   id="cover-student"
@@ -237,14 +239,18 @@ export function CoverModal({
                   onChange={(e) =>
                     updateField("studentName", e.target.value)
                   }
-                  placeholder="Ex.: Maria João"
+                  placeholder={t("studentPlaceholder")}
                   className="text-xs"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="cover-advisor" className="text-xs">
-                  {educationLevel === "SECONDARY" ? "Professor" : educationLevel === "TECHNICAL" ? "Formador" : "Docente"}
+                  {educationLevel === "SECONDARY"
+                    ? t("advisorLabelSecondary")
+                    : educationLevel === "TECHNICAL"
+                      ? t("advisorLabelTechnical")
+                      : t("advisorLabel")}
                 </Label>
                 <Input
                   id="cover-advisor"
@@ -252,10 +258,10 @@ export function CoverModal({
                   onChange={(e) => updateField("advisorName", e.target.value)}
                   placeholder={
                     educationLevel === "SECONDARY"
-                      ? "Ex.: Prof. Bento"
+                      ? t("advisorPlaceholderSecondary")
                       : educationLevel === "TECHNICAL"
-                      ? "Ex.: Form. João"
-                      : "Ex.: Prof. Doutor João"
+                      ? t("advisorPlaceholderTechnical")
+                      : t("advisorPlaceholder")
                   }
                   className="text-xs"
                 />
@@ -265,20 +271,20 @@ export function CoverModal({
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="cover-city" className="text-xs">
-                  Cidade
+                  {t("cityLabel")}
                 </Label>
                 <Input
                   id="cover-city"
                   value={info.city}
                   onChange={(e) => updateField("city", e.target.value)}
-                  placeholder="Ex.: Maputo"
+                  placeholder={t("cityPlaceholder")}
                   className="text-xs"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="cover-year" className="text-xs">
-                  Ano
+                  {t("yearLabel")}
                 </Label>
                 <Input
                   id="cover-year"
@@ -300,8 +306,8 @@ export function CoverModal({
           >
             <span>
               {showDetails
-                ? "Ocultar detalhes adicionais"
-                : "+ Detalhes adicionais (opcional)"}
+                ? t("hideDetails")
+                : t("showDetails")}
             </span>
             <ChevronDown
               className={cn(
@@ -323,25 +329,25 @@ export function CoverModal({
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label htmlFor="cover-faculty" className="text-xs">
-                      Faculdade
+                      {t("facultyLabel")}
                     </Label>
                     <Input
                       id="cover-faculty"
                       value={info.facultyName}
                       onChange={(e) => updateField("facultyName", e.target.value)}
-                      placeholder="Ex.: Faculdade de Economia"
+                      placeholder={t("facultyPlaceholder")}
                       className="text-xs"
                     />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="cover-department" className="text-xs">
-                      Departamento
+                      {t("departmentLabel")}
                     </Label>
                     <Input
                       id="cover-department"
                       value={info.departmentName}
                       onChange={(e) => updateField("departmentName", e.target.value)}
-                      placeholder="Ex.: Departamento de Gestão"
+                      placeholder={t("departmentPlaceholder")}
                       className="text-xs"
                     />
                   </div>
@@ -352,43 +358,43 @@ export function CoverModal({
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="cover-class" className="text-xs">
-                      Classe
+                      {t("classLabel")}
                     </Label>
                     <Select
                       value={info.className}
                       onValueChange={(v) => updateField("className", v)}
                     >
                       <SelectTrigger id="cover-class" className="text-xs">
-                        <SelectValue placeholder="Selecionar" />
+                        <SelectValue placeholder={t("classSelect")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="10ª">10ª Classe</SelectItem>
-                        <SelectItem value="11ª">11ª Classe</SelectItem>
-                        <SelectItem value="12ª">12ª Classe</SelectItem>
+                        <SelectItem value="10ª">{t("class10")}</SelectItem>
+                        <SelectItem value="11ª">{t("class11")}</SelectItem>
+                        <SelectItem value="12ª">{t("class12")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="cover-turma" className="text-xs">
-                      Turma
+                      {t("turmaLabel")}
                     </Label>
                     <Input
                       id="cover-turma"
                       value={info.turma}
                       onChange={(e) => updateField("turma", e.target.value)}
-                      placeholder="Ex.: A"
+                      placeholder={t("turmaPlaceholder")}
                       className="text-xs"
                     />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="cover-student-number" className="text-xs">
-                      Nº Estudante
+                      {t("studentNumberLabel")}
                     </Label>
                     <Input
                       id="cover-student-number"
                       value={info.studentNumber}
                       onChange={(e) => updateField("studentNumber", e.target.value)}
-                      placeholder="Ex.: 15"
+                      placeholder={t("studentNumberPlaceholder")}
                       className="text-xs"
                     />
                   </div>
@@ -399,43 +405,43 @@ export function CoverModal({
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="cover-class" className="text-xs">
-                      Classe
+                      {t("classLabel")}
                     </Label>
                     <Select
                       value={info.className}
                       onValueChange={(v) => updateField("className", v)}
                     >
                       <SelectTrigger id="cover-class" className="text-xs">
-                        <SelectValue placeholder="Selecionar" />
+                        <SelectValue placeholder={t("classSelect")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="10ª">10ª Classe</SelectItem>
-                        <SelectItem value="11ª">11ª Classe</SelectItem>
-                        <SelectItem value="12ª">12ª Classe</SelectItem>
+                        <SelectItem value="10ª">{t("class10")}</SelectItem>
+                        <SelectItem value="11ª">{t("class11")}</SelectItem>
+                        <SelectItem value="12ª">{t("class12")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="cover-turma" className="text-xs">
-                      Turma
+                      {t("turmaLabel")}
                     </Label>
                     <Input
                       id="cover-turma"
                       value={info.turma}
                       onChange={(e) => updateField("turma", e.target.value)}
-                      placeholder="Ex.: A"
+                      placeholder={t("turmaPlaceholder")}
                       className="text-xs"
                     />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="cover-student-number" className="text-xs">
-                      Nº Estudante
+                      {t("studentNumberLabel")}
                     </Label>
                     <Input
                       id="cover-student-number"
                       value={info.studentNumber}
                       onChange={(e) => updateField("studentNumber", e.target.value)}
-                      placeholder="Ex.: 15"
+                      placeholder={t("studentNumberPlaceholder")}
                       className="text-xs"
                     />
                   </div>
@@ -445,18 +451,18 @@ export function CoverModal({
               {educationLevel === "HIGHER_EDUCATION" && (
                 <div className="space-y-1.5">
                   <Label htmlFor="cover-semester" className="text-xs">
-                    Semestre
+                    {t("semesterLabel")}
                   </Label>
                   <Select
                     value={info.semester}
                     onValueChange={(v) => updateField("semester", v)}
                   >
                     <SelectTrigger id="cover-semester" className="text-xs">
-                      <SelectValue placeholder="Selecionar" />
+                      <SelectValue placeholder={t("classSelect")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="I">I Semestre</SelectItem>
-                      <SelectItem value="II">II Semestre</SelectItem>
+                      <SelectItem value="I">{t("semester1")}</SelectItem>
+                      <SelectItem value="II">{t("semester2")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -470,7 +476,7 @@ export function CoverModal({
             onClick={handleSave}
             className="w-full rounded-2xl"
           >
-            Guardar
+            {t("saveButton")}
           </Button>
         </SheetFooter>
       </SheetContent>

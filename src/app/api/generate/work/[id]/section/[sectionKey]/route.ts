@@ -45,7 +45,7 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const { id: projectId } = await params;
@@ -58,7 +58,7 @@ export async function POST(
     });
 
     if (!project?.brief) {
-      return apiError("Trabalho não encontrado", 404);
+      return apiError("Work not found", 404);
     }
 
     const existingJob = await db.generationJob.findUnique({
@@ -67,14 +67,14 @@ export async function POST(
     });
 
     if (!existingJob?.currentRunId) {
-      return apiError("Geração não iniciada para este trabalho", 400);
+      return apiError("Generation has not started for this work", 400);
     }
 
     const templates = getSectionTemplates(project.type, project.brief.educationLevel);
     const template = templates.find((t) => buildGenerationSectionKey({ title: t.title, order: t.order }) === sectionKey);
 
     if (!template) {
-      return apiError("Secção não encontrada", 404);
+      return apiError("Section not found", 404);
     }
 
     const run = await db.generationRun.findUnique({
@@ -83,7 +83,7 @@ export async function POST(
     });
 
     if (!run?.currentAttemptId) {
-      return apiError("Execução de geração não encontrada", 500);
+      return apiError("Generation run not found", 500);
     }
 
     const attemptId = run.currentAttemptId;
@@ -95,7 +95,7 @@ export async function POST(
     const sectionPlan = profile.sections.find((s) => s.title === template.title);
 
     if (!sectionPlan) {
-      return apiError("Plano de secção não encontrado", 500);
+      return apiError("Section plan not found", 500);
     }
 
     const documentProfile = resolveDocumentProfile({
@@ -116,7 +116,7 @@ export async function POST(
       updateGenerationRunState(run.id, {
         status: "GENERATING",
         progress: 10,
-        step: `A gerar ${template.title}`,
+        step: `Generating ${template.title}`,
         startedAt: new Date(),
       }),
       updateGenerationAttemptState(attemptId, {
@@ -155,7 +155,7 @@ export async function POST(
 
         setWorkGenerationJob(projectId, {
           progress: 50,
-          step: `A gerar ${template.title}`,
+          step: `Generating ${template.title}`,
           streamingContent: chunkText,
           streamingSectionTitle: template.title,
         });
@@ -169,7 +169,7 @@ export async function POST(
         await Promise.all([
           setPersistedWorkGenerationJob(projectId, {
             progress: 50,
-            step: `A gerar ${template.title}`,
+            step: `Generating ${template.title}`,
           }),
           updateSectionRunState(attemptId, {
             stableKey,
@@ -221,17 +221,17 @@ export async function POST(
       order: template.order,
       status: "FAILED",
       progress: 100,
-      error: sectionResult.error?.message || "Falha ao gerar secção",
+      error: sectionResult.error?.message || "Failed to generate section",
       completedAt: new Date(),
     });
 
-    return apiError(sectionResult.error?.message || "Falha ao gerar secção", 500);
+    return apiError(sectionResult.error?.message || "Failed to generate section", 500);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return apiError("Payload inválido", 400, "VALIDATION_ERROR", error.flatten());
+      return apiError("Invalid payload", 400, "VALIDATION_ERROR", error.flatten());
     }
     logger.error("[generate-section] error", { error: String(error) });
-    return handleApiError(error, "Erro ao gerar secção");
+    return handleApiError(error, "Failed to generate section");
   }
 }
 
@@ -242,7 +242,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const { id: projectId } = await params;
@@ -252,7 +252,7 @@ export async function GET(
     });
 
     if (!project) {
-      return apiError("Trabalho não encontrado", 404);
+      return apiError("Work not found", 404);
     }
 
     const templates = getSectionTemplates(project.type);
@@ -274,7 +274,7 @@ export async function GET(
 
     return apiSuccess({ sections: generatedSections });
   } catch (error) {
-    return handleApiError(error, "Erro ao obter estado das secções");
+    return handleApiError(error, "Failed to get section status");
   }
 }
 
@@ -396,7 +396,7 @@ async function generateSingleSection(
           accepted: false,
           degraded: false,
           wordCount: 0,
-          error: new Error("A IA não devolveu conteúdo para a secção."),
+          error: new Error("The AI did not return content for the section."),
         };
       }
 
@@ -446,6 +446,6 @@ async function generateSingleSection(
     accepted: false,
     degraded: false,
     wordCount: 0,
-    error: new Error("A IA não devolveu conteúdo válido para a secção."),
+    error: new Error("The AI did not return valid content for the section."),
   };
 }

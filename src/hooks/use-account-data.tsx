@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import { shouldPauseNonCriticalAppFetch } from "@/lib/app-shell-fetch-policy";
 
@@ -40,6 +41,7 @@ const AccountDataContext = React.createContext<AccountState | null>(null);
 
 export function AccountDataProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const t = useTranslations("hooks.accountData");
   const [user, setUser] = React.useState<AccountData | null>(null);
   const [settings, setSettings] = React.useState<SettingsData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -60,7 +62,7 @@ export function AccountDataProvider({ children }: { children: React.ReactNode })
         const userData = await userRes.json();
         setUser(userData);
       } else {
-        setError("Não foi possível carregar os dados da conta.");
+        setError(t("loadError"));
       }
 
       if (settingsRes.ok) {
@@ -68,11 +70,11 @@ export function AccountDataProvider({ children }: { children: React.ReactNode })
         setSettings(settingsData);
       }
     } catch {
-      setError("Erro ao carregar dados da conta.");
+      setError(t("genericError"));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   React.useEffect(() => {
     if (pauseAutoFetch) {

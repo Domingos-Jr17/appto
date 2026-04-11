@@ -23,7 +23,7 @@ export async function POST(
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
   }
 
   const { id } = await params;
@@ -38,18 +38,18 @@ export async function POST(
     });
 
     if (!project || !project.brief) {
-        return apiError("Trabalho não encontrado", 404);
+        return apiError("Work not found", 404);
     }
 
     const brief = project.brief ? toWorkBriefInput(project.brief) : null;
     if (!brief) {
-        return apiError("Briefing inválido", 400);
+        return apiError("Invalid brief", 400);
     }
 
     if (payload.mode === "work") {
       const { allowed, reason, remaining } = await subscriptionService.canGenerateWork(session.user.id);
       if (!allowed) {
-        return apiError(reason || "Limite de trabalhos atingido.", 403, "LIMIT_REACHED", { remaining });
+        return apiError(reason || "Work limit reached.", 403, "LIMIT_REACHED", { remaining });
       }
 
       const existingJob = await db.generationJob.findUnique({
@@ -58,7 +58,7 @@ export async function POST(
       });
 
       if (existingJob && existingJob.status === "GENERATING") {
-        return apiError("Geração já está em curso para este trabalho.", 409);
+        return apiError("Generation is already in progress for this work.", 409);
       }
 
       await withDistributedLock(
@@ -86,7 +86,7 @@ export async function POST(
             throw error;
           }
         },
-        "Já existe uma regeneração completa em curso para este trabalho.",
+        "A full regeneration is already in progress for this work.",
       );
 
       return apiSuccess(
@@ -102,7 +102,7 @@ export async function POST(
 
     const section = project.sections.find((item) => item.id === payload.sectionId);
     if (!section) {
-        return apiError("Secção não encontrada", 404);
+        return apiError("Section not found", 404);
     }
 
     const sectionAction: AIAction = "generate-section";
@@ -112,7 +112,7 @@ export async function POST(
     );
 
     if (!canRegenerateSection) {
-      return apiError(sectionReason || "Ação não disponível no seu pacote.", 403);
+      return apiError(sectionReason || "This action is not available on your plan.", 403);
     }
 
     const content = await withDistributedLock(
@@ -126,7 +126,7 @@ export async function POST(
           brief,
           sectionTitle: section.title,
         }),
-      "Já existe uma regeneração em curso para esta secção.",
+      "A regeneration is already in progress for this section.",
     );
 
     const updatedSections = await db.documentSection.findMany({
@@ -143,6 +143,6 @@ export async function POST(
 
     return apiSuccess({ success: true, sectionId: section.id, content });
   } catch (error) {
-    return handleApiError(error, "Não foi possível regenerar o trabalho");
+    return handleApiError(error, "Could not regenerate the work");
   }
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Database, FileText, RefreshCcw, Search, Upload, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ interface RagSearchResult {
 
 export function RagAdminClient() {
   const { toast } = useToast();
+  const t = useTranslations("admin.rag");
   const [sources, setSources] = useState<RagSourceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sourceName, setSourceName] = useState("");
@@ -61,13 +63,22 @@ export function RagAdminClient() {
   const [ingestionMode, setIngestionMode] = useState<"text" | "file">("text");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const sourceTypeLabel = useMemo(
+    () => ({
+      PUBLIC: t("types.public"),
+      INSTITUTIONAL: t("types.institutional"),
+      PRIVATE: t("types.private"),
+    }),
+    [t]
+  );
+
   const refreshSources = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch("/api/admin/rag/sources");
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Não foi possível carregar as fontes.");
+          throw new Error(data.error || t("errors.loadSources"));
       }
       setSources(data.sources || []);
       if (data.sources?.[0]?.id) {
@@ -75,8 +86,8 @@ export function RagAdminClient() {
       }
     } catch (error) {
       toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Não foi possível carregar as fontes.",
+        title: t("errors.error"),
+        description: error instanceof Error ? error.message : t("errors.loadSources"),
         variant: "destructive",
       });
     } finally {
@@ -102,17 +113,17 @@ export function RagAdminClient() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Não foi possível criar a fonte.");
+        throw new Error(data.error || t("createSource.errorCreate"));
       }
 
-      toast({ title: "Fonte criada", description: `Fonte ${data.source.name} adicionada ao catálogo.` });
+      toast({ title: t("createSource.toast.success.title"), description: t("createSource.toast.success.description", { name: data.source.name }) });
       setSourceName("");
       await refreshSources();
       setSelectedSourceId(data.source.id);
     } catch (error) {
       toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Não foi possível criar a fonte.",
+        title: t("createSource.toast.error.title"),
+        description: error instanceof Error ? error.message : t("createSource.toast.error.description"),
         variant: "destructive",
       });
     } finally {
@@ -136,17 +147,17 @@ export function RagAdminClient() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Não foi possível ingerir o documento.");
+        throw new Error(data.error || t("ingest.errorIngestDoc"));
       }
 
-      toast({ title: "Documento indexado", description: `Documento ${data.document.title} foi dividido e indexado.` });
+      toast({ title: t("ingest.toast.docSuccess.title"), description: t("ingest.toast.docSuccess.description", { title: data.document.title }) });
       setDocumentTitle("");
       setDocumentContent("");
       await refreshSources();
     } catch (error) {
       toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Não foi possível indexar o documento.",
+        title: t("ingest.toast.error.title"),
+        description: error instanceof Error ? error.message : t("ingest.toast.error.description", { type: t("ingest.textButton").toLowerCase() }),
         variant: "destructive",
       });
     } finally {
@@ -172,18 +183,18 @@ export function RagAdminClient() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Não foi possível ingerir o ficheiro.");
+        throw new Error(data.error || t("ingest.errorIngestFile"));
       }
 
-      toast({ title: "Ficheiro indexado", description: `Documento ${data.document.title} foi extraído e indexado.` });
+      toast({ title: t("ingest.toast.fileSuccess.title"), description: t("ingest.toast.fileSuccess.description", { title: data.document.title }) });
       setDocumentTitle("");
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       await refreshSources();
     } catch (error) {
       toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Não foi possível indexar o ficheiro.",
+        title: t("ingest.toast.error.title"),
+        description: error instanceof Error ? error.message : t("ingest.toast.error.description", { type: t("ingest.fileButton").toLowerCase() }),
         variant: "destructive",
       });
     } finally {
@@ -203,14 +214,14 @@ export function RagAdminClient() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Não foi possível executar a pesquisa.");
+        throw new Error(data.error || t("search.errorSearch"));
       }
 
       setSearchResults(data.results || []);
     } catch (error) {
       toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Não foi possível executar a pesquisa.",
+        title: t("search.toast.error.title"),
+        description: error instanceof Error ? error.message : t("search.toast.error.description"),
         variant: "destructive",
       });
     } finally {
@@ -222,38 +233,38 @@ export function RagAdminClient() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Admin RAG</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
           <p className="text-sm text-muted-foreground">
-            Gere fontes, indexe documentos e valide rapidamente o contexto recuperado pela IA.
+            {t("description")}
           </p>
         </div>
         <Button type="button" variant="outline" onClick={() => void refreshSources()}>
           <RefreshCcw className="mr-2 h-4 w-4" />
-          Actualizar
+          {t("refresh")}
         </Button>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Database className="h-4 w-4" /> Fontes registadas</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Database className="h-4 w-4" /> {t("sourcesCard.title")}</CardTitle>
             <CardDescription>
-              Catálogo de fontes públicas, institucionais ou privadas disponíveis para o RAG.
+              {t("sourcesCard.description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="text-sm text-muted-foreground">A carregar fontes...</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Fonte</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Documentos</TableHead>
-                    <TableHead>Estado</TableHead>
-                  </TableRow>
-                </TableHeader>
+                <p className="text-sm text-muted-foreground">{t("sourcesCard.loading")}</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("sourcesCard.source")}</TableHead>
+                      <TableHead>{t("sourcesCard.type")}</TableHead>
+                      <TableHead>{t("sourcesCard.documents")}</TableHead>
+                      <TableHead>{t("sourcesCard.status")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                   {sources.map((source) => (
                     <TableRow key={source.id}>
@@ -261,13 +272,13 @@ export function RagAdminClient() {
                         <div className="font-medium">{source.name}</div>
                         <div className="text-xs text-muted-foreground">{source.slug}</div>
                       </TableCell>
-                      <TableCell>{source.type}</TableCell>
-                      <TableCell>{source._count?.documents || 0}</TableCell>
-                      <TableCell>
-                        <Badge variant={source.isActive ? "default" : "secondary"}>
-                          {source.isActive ? "Activa" : "Inactiva"}
-                        </Badge>
-                      </TableCell>
+                        <TableCell>{sourceTypeLabel[source.type]}</TableCell>
+                        <TableCell>{source._count?.documents || 0}</TableCell>
+                        <TableCell>
+                          <Badge variant={source.isActive ? "default" : "secondary"}>
+                            {source.isActive ? t("sourcesCard.active") : t("sourcesCard.inactive")}
+                          </Badge>
+                        </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -278,29 +289,29 @@ export function RagAdminClient() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Criar nova fonte</CardTitle>
-            <CardDescription>Registe rapidamente uma nova origem de conhecimento para ingestão.</CardDescription>
+            <CardTitle>{t("createSource.title")}</CardTitle>
+            <CardDescription>{t("createSource.description")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="rag-source-name">Nome da fonte</Label>
+              <Label htmlFor="rag-source-name">{t("createSource.nameLabel")}</Label>
               <Input id="rag-source-name" value={sourceName} onChange={(event) => setSourceName(event.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="rag-source-type">Tipo</Label>
+              <Label htmlFor="rag-source-type">{t("createSource.typeLabel")}</Label>
               <select
                 id="rag-source-type"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={sourceType}
                 onChange={(event) => setSourceType(event.target.value as RagSourceRecord["type"])}
               >
-                <option value="PUBLIC">PUBLIC</option>
-                <option value="INSTITUTIONAL">INSTITUTIONAL</option>
-                <option value="PRIVATE">PRIVATE</option>
+                <option value="PUBLIC">{sourceTypeLabel.PUBLIC}</option>
+                <option value="INSTITUTIONAL">{sourceTypeLabel.INSTITUTIONAL}</option>
+                <option value="PRIVATE">{sourceTypeLabel.PRIVATE}</option>
               </select>
             </div>
             <Button type="button" onClick={() => void createSource()} disabled={isSubmitting || !sourceName.trim()}>
-              Criar fonte
+              {t("createSource.createButton")}
             </Button>
           </CardContent>
         </Card>
@@ -309,28 +320,28 @@ export function RagAdminClient() {
       <div className="grid gap-6 xl:grid-cols-[1.1fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Upload className="h-4 w-4" /> Ingerir documento</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Upload className="h-4 w-4" /> {t("ingest.title")}</CardTitle>
             <CardDescription>
-              Indexe conteúdo textual para o RAG. Use fontes curadas e específicas por projecto ou domínio.
+              {t("ingest.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="rag-source-select">Fonte</Label>
+              <Label htmlFor="rag-source-select">{t("ingest.sourceLabel")}</Label>
               <select
                 id="rag-source-select"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={selectedSourceId}
                 onChange={(event) => setSelectedSourceId(event.target.value)}
               >
-                <option value="">Seleccione uma fonte</option>
+                <option value="">{t("ingest.sourcePlaceholder")}</option>
                 {sourceOptions.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="rag-document-title">Título do documento</Label>
+              <Label htmlFor="rag-document-title">{t("ingest.titleLabel")}</Label>
               <Input id="rag-document-title" value={documentTitle} onChange={(event) => setDocumentTitle(event.target.value)} />
             </div>
 
@@ -341,7 +352,7 @@ export function RagAdminClient() {
                 size="sm"
                 onClick={() => setIngestionMode("text")}
               >
-                <FileText className="mr-1 h-3.5 w-3.5" /> Texto
+                <FileText className="mr-1 h-3.5 w-3.5" /> {t("ingest.textButton")}
               </Button>
               <Button
                 type="button"
@@ -349,24 +360,24 @@ export function RagAdminClient() {
                 size="sm"
                 onClick={() => setIngestionMode("file")}
               >
-                <Upload className="mr-1 h-3.5 w-3.5" /> Ficheiro
+                <Upload className="mr-1 h-3.5 w-3.5" /> {t("ingest.fileButton")}
               </Button>
             </div>
 
             {ingestionMode === "text" ? (
               <div className="space-y-2">
-                <Label htmlFor="rag-document-content">Conteúdo</Label>
+                 <Label htmlFor="rag-document-content">{t("ingest.contentLabel")}</Label>
                 <Textarea
                   id="rag-document-content"
                   rows={12}
                   value={documentContent}
                   onChange={(event) => setDocumentContent(event.target.value)}
-                  placeholder="Cole aqui o texto limpo do documento, lei, relatório ou tese..."
-                />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label>Ficheiro</Label>
+                   placeholder={t("ingest.contentPlaceholder")}
+                 />
+               </div>
+             ) : (
+               <div className="space-y-2">
+                 <Label>{t("ingest.fileLabel")}</Label>
                 {selectedFile ? (
                   <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 p-3">
                     <FileText className="h-4 w-4 text-muted-foreground" />
@@ -379,7 +390,7 @@ export function RagAdminClient() {
                 ) : (
                   <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border/60 p-6 text-center">
                     <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">PDF, DOCX ou TXT até 25 MB</p>
+                     <p className="text-sm text-muted-foreground">{t("ingest.fileDesc")}</p>
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -390,9 +401,9 @@ export function RagAdminClient() {
                         if (file && ALLOWED_MIME_TYPES.includes(file.type)) {
                           setSelectedFile(file);
                         } else if (file) {
-                          toast({ title: "Formato inválido", description: "Apenas PDF, DOCX e TXT são aceites.", variant: "destructive" });
-                        }
-                      }}
+                           toast({ title: t("ingest.invalidFormat.title"), description: t("ingest.invalidFormat.description"), variant: "destructive" });
+                         }
+                       }}
                     />
                   </div>
                 )}
@@ -405,51 +416,51 @@ export function RagAdminClient() {
                 onClick={() => void ingestDocument()}
                 disabled={isSubmitting || !selectedSourceId || !documentTitle.trim() || !documentContent.trim()}
               >
-                Indexar documento
-              </Button>
+                 {t("ingest.ingestButton")}
+               </Button>
             ) : (
               <Button
                 type="button"
                 onClick={() => void ingestFile()}
                 disabled={isSubmitting || !selectedSourceId || !documentTitle.trim() || !selectedFile}
               >
-                Indexar ficheiro
-              </Button>
+                 {t("ingest.ingestFileButton")}
+               </Button>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Search className="h-4 w-4" /> Testar pesquisa</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Search className="h-4 w-4" /> {t("search.title")}</CardTitle>
             <CardDescription>
-              Execute uma pesquisa manual para validar se o RAG está a recuperar trechos relevantes.
+              {t("search.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="rag-search-query">Consulta</Label>
+               <Label htmlFor="rag-search-query">{t("search.queryLabel")}</Label>
               <Textarea
                 id="rag-search-query"
                 rows={4}
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Ex.: políticas públicas de ensino superior em Moçambique"
-              />
-            </div>
-            <Button type="button" variant="outline" onClick={() => void runSearch()} disabled={isSubmitting || !searchQuery.trim()}>
-              Executar pesquisa
-            </Button>
+                 placeholder={t("search.queryPlaceholder")}
+               />
+             </div>
+             <Button type="button" variant="outline" onClick={() => void runSearch()} disabled={isSubmitting || !searchQuery.trim()}>
+               {t("search.searchButton")}
+             </Button>
 
             <div className="space-y-3">
               {searchResults.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhum resultado ainda.</p>
-              ) : (
+                 <p className="text-sm text-muted-foreground">{t("search.noResults")}</p>
+               ) : (
                 searchResults.map((result, index) => (
                   <div key={`${result.documentTitle}-${index}`} className="rounded-xl border border-border/60 p-3">
                     <div className="text-sm font-medium">{result.documentTitle}</div>
                     <div className="text-xs text-muted-foreground">
-                      {result.sourceName} • trecho {result.chunkIndex + 1}
+                      {t("search.resultMeta", { sourceName: result.sourceName, index: result.chunkIndex + 1 })}
                       {typeof result.score === "number" ? ` • score ${result.score.toFixed(3)}` : ""}
                     </div>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">{result.content}</p>

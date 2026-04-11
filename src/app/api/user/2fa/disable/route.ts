@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const { currentPassword, otpCode } = await parseBody(request, disableTotpSchema);
@@ -21,19 +21,19 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return apiError("Utilizador não encontrado", 404);
+      return apiError("User not found", 404);
     }
 
     if (user.password && currentPassword) {
       const isValid = await bcrypt.compare(currentPassword, user.password);
       if (!isValid) {
-        return apiError("Senha actual incorreta.", 400);
+        return apiError("Current password is incorrect.", 400);
       }
     } else if (otpCode) {
       const security = new AuthSecurityService(db);
       await security.verifyTotpCode(session.user.id, otpCode, false);
     } else {
-      return apiError("Confirmação de senha ou código 2FA é obrigatória.", 400);
+      return apiError("Password confirmation or a 2FA code is required.", 400);
     }
 
     const security = new AuthSecurityService(db);

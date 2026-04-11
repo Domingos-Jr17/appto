@@ -294,28 +294,28 @@ function formatFailureReasonSummary(outcomes: SectionGenerationOutcome[]) {
 
   if (providerErrorCount > 0 && emptyResponseCount === 0 && validationFailureCount === 0) {
     return {
-      step: "Falha na geração: a IA não respondeu de forma estável.",
-      error: "A geração falhou porque todas as secções terminaram com erro do provider de IA.",
+      step: "Generation failed: the AI did not respond reliably.",
+      error: "Generation failed because every section ended with an AI provider error.",
     };
   }
 
   if (emptyResponseCount > 0 && providerErrorCount === 0 && validationFailureCount === 0) {
     return {
-      step: "Falha na geração: a IA devolveu respostas vazias.",
-      error: "A IA respondeu sem conteúdo utilizável para todas as secções solicitadas.",
+      step: "Generation failed: the AI returned empty responses.",
+      error: "The AI returned no usable content for any requested section.",
     };
   }
 
   if (validationFailureCount > 0 && providerErrorCount === 0 && emptyResponseCount === 0) {
     return {
-      step: "Falha na geração: o conteúdo não atingiu o mínimo exigido.",
-      error: "A IA gerou texto, mas nenhuma secção cumpriu os requisitos mínimos de qualidade.",
+      step: "Generation failed: the content did not meet the minimum quality threshold.",
+      error: "The AI generated text, but no section met the minimum quality requirements.",
     };
   }
 
   return {
-    step: "Falha na geração: a IA não produziu secções utilizáveis.",
-    error: `Resultado sem conteúdo utilizável: ${providerErrorCount} erro(s) de provider, ${emptyResponseCount} resposta(s) vazias e ${validationFailureCount} rejeição(ões) por validação.`,
+    step: "Generation failed: the AI did not produce usable sections.",
+    error: `Result contained no usable content: ${providerErrorCount} provider error(s), ${emptyResponseCount} empty response(s), and ${validationFailureCount} validation rejection(s).`,
   };
 }
 
@@ -339,8 +339,8 @@ export function resolveGenerationCompletionDecision(
   if (degradedCount > 0 && failedCount > 0) {
     return {
       status: "READY",
-      step: `Trabalho pronto - ${degradedCount} secção(ões) precisam de revisão e ${failedCount} não foram concluídas.`,
-      error: "Algumas secções ficaram abaixo do esperado e outras não foram concluídas automaticamente.",
+      step: `Work ready - ${degradedCount} section(s) need review and ${failedCount} were not completed.`,
+      error: "Some sections are below the expected quality and others were not completed automatically.",
       shouldRefund: false,
     };
   }
@@ -348,8 +348,8 @@ export function resolveGenerationCompletionDecision(
   if (degradedCount > 0) {
     return {
       status: "READY",
-      step: `Trabalho pronto - ${degradedCount} secção(ões) precisam de revisão antes da submissão.`,
-      error: "Algumas secções foram guardadas como rascunho e precisam de revisão ou regeneração.",
+      step: `Work ready - ${degradedCount} section(s) need review before submission.`,
+      error: "Some sections were saved as drafts and need review or regeneration.",
       shouldRefund: false,
     };
   }
@@ -357,15 +357,15 @@ export function resolveGenerationCompletionDecision(
   if (failedCount > 0) {
     return {
       status: "READY",
-      step: `Trabalho pronto - ${failedCount} secção(ões) não foram concluídas automaticamente. Pode re-gerar individualmente.`,
-      error: "Algumas secções não foram concluídas automaticamente e podem ser regeneradas depois.",
+      step: `Work ready - ${failedCount} section(s) were not completed automatically. You can regenerate them individually.`,
+      error: "Some sections were not completed automatically and can be regenerated later.",
       shouldRefund: false,
     };
   }
 
   return {
     status: "READY",
-    step: "Trabalho pronto para revisão",
+    step: "Work ready for review",
     error: null,
     shouldRefund: false,
   };
@@ -713,7 +713,7 @@ async function _generateWorkSectionBySection(
 
   // Step 2: Generate abstract if required
   if (profile.abstract.required && profile.abstract.range) {
-    await onProgress(progressTracker.advance(), "A gerar resumo");
+    await onProgress(progressTracker.advance(), "Generating abstract");
     const abstractPrompt = buildSectionGenerationPrompt({
       title,
       typeLabel,
@@ -749,7 +749,7 @@ async function _generateWorkSectionBySection(
           completion.choices[0]?.message?.content?.trim() || "",
         );
         if (!abstractContent) {
-          abstractError = new Error("A IA não devolveu conteúdo para o resumo.");
+          abstractError = new Error("The AI did not return content for the abstract.");
           continue;
         }
 
@@ -907,7 +907,7 @@ async function _generateWorkSectionBySection(
         progress: sectionProgress,
         retryCount: 2,
         completedAt: new Date(),
-        error: sectionResult.error?.message ?? "Falha ao gerar secção",
+        error: sectionResult.error?.message ?? "Failed to generate section",
       });
     }
   }
@@ -1031,7 +1031,7 @@ async function _generateSingleSectionForWorker(
         accepted: false,
         degraded: false,
         wordCount: result.content?.trim().split(/\s+/).filter(Boolean).length || 0,
-        error: result.error || new Error("Falha ao gerar secção após múltiplas tentativas"),
+        error: result.error || new Error("Failed to generate section after multiple attempts"),
       };
     }
   }
@@ -1041,7 +1041,7 @@ async function _generateSingleSectionForWorker(
     accepted: false,
     degraded: false,
     wordCount: 0,
-    error: new Error("Falha ao gerar secção"),
+    error: new Error("Failed to generate section"),
   };
 }
 
@@ -1218,7 +1218,7 @@ export async function startWorkGenerationJob(input: {
   });
 
   if (existingJob && existingJob.status === "GENERATING") {
-    throw new Error("Geração já está em curso para este trabalho.");
+    throw new Error("Generation is already in progress for this work.");
   }
 
   // Create/update the job record first - this is the single source of truth for generation status
@@ -1401,7 +1401,7 @@ async function processGenerationJob(projectId: string) {
     for (const [pendingIndex, pendingTemplate] of pendingTemplates.entries()) {
       const sectionPlan = profile.sections.find((section) => section.title === pendingTemplate.title);
       if (!sectionPlan) {
-        throw new Error(`Plano de secção não encontrado para: ${pendingTemplate.title}`);
+        throw new Error(`Section plan not found for: ${pendingTemplate.title}`);
       }
 
       const stableKey = buildGenerationSectionKey({ title: pendingTemplate.title, order: pendingTemplate.order });
@@ -1586,7 +1586,7 @@ async function processGenerationJob(projectId: string) {
           status: "FAILED",
           progress: sectionProgress,
           retryCount: 2,
-          error: result.error?.message || "Falha ao gerar secção",
+          error: result.error?.message || "Failed to generate section",
           completedAt: new Date(),
         });
         logger.warn("[work-generation] section failed within single-pass worker", {
@@ -1775,7 +1775,7 @@ Requisitos obrigatórios:
   const content = completion.choices[0]?.message?.content?.trim();
 
   if (!content) {
-    throw new Error("A IA não devolveu conteúdo para a secção.");
+    throw new Error("The AI did not return content for the section.");
   }
 
   await db.documentSection.update({

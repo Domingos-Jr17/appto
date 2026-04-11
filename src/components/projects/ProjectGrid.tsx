@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   MoreVertical,
   Clock,
@@ -36,6 +37,7 @@ export interface ProjectCardData {
   id: string;
   title: string;
   type: ProjectType;
+  typeLabel?: string;
   course?: string | null;
   institution?: string | null;
   progress: number;
@@ -61,29 +63,24 @@ interface ProjectGridProps {
 
 const typeStyles = projectTypeStyles;
 
-const statusStyles: Record<ProjectCardData["status"], { label: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
+const statusIcons: Record<ProjectCardData["status"], { icon: React.ComponentType<{ className?: string }>; color: string }> = {
   draft: {
-    label: "Rascunho",
     icon: Pencil,
     color: "text-warning",
   },
   in_progress: {
-    label: "Em curso",
     icon: PlayCircle,
     color: "text-info",
   },
   review: {
-    label: "Em revisão",
     icon: Eye,
     color: "text-purple-500",
   },
   completed: {
-    label: "Concluído",
     icon: CheckCircle2,
     color: "text-success",
   },
   archived: {
-    label: "Arquivado",
     icon: Archive,
     color: "text-muted-foreground",
   },
@@ -100,8 +97,9 @@ function ProjectCard({
   onArchive?: (id: string) => void;
   onEdit?: (id: string) => void;
 }) {
+  const t = useTranslations("projects.grid");
   const typeStyle = typeStyles[project.type] || typeStyles["trabalho académico"];
-  const statusStyle = statusStyles[project.status];
+  const statusStyle = statusIcons[project.status];
   const StatusIcon = statusStyle.icon;
   const generating = project.generationStatus === "GENERATING";
 
@@ -121,15 +119,15 @@ function ProjectCard({
                   variant="outline"
                   className={cn("text-xs font-medium", typeStyle.className)}
                 >
-                  {typeStyle.label}
+                  {project.typeLabel ?? typeStyle.label}
                 </Badge>
                 <div className={cn("flex items-center gap-1 text-xs", statusStyle.color)}>
                   <StatusIcon className="h-3 w-3" />
-                  <span>{statusStyle.label}</span>
+                  <span>{t(`status.${project.status === "in_progress" ? "inProgress" : project.status}`)}</span>
                 </div>
                 {generating ? (
                   <Badge variant="outline" className="text-[10px]">
-                    A gerar {project.generationProgress ?? project.progress}%
+                    {t("generating", { percent: project.generationProgress ?? project.progress })}
                   </Badge>
                 ) : null}
               </div>
@@ -143,7 +141,7 @@ function ProjectCard({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-                  aria-label="Mais opções"
+                  aria-label={t("moreOptions")}
                   onClick={(e) => e.preventDefault()}
                 >
                   <MoreVertical className="h-4 w-4" />
@@ -153,24 +151,24 @@ function ProjectCard({
                 <DropdownMenuItem asChild>
                   <Link href={`/app/trabalhos/${project.id}`}>
                     <FileText className="mr-2 h-4 w-4" />
-                    Abrir trabalho
+                    {t("openWork")}
                   </Link>
                 </DropdownMenuItem>
                 {onEdit && (
                   <DropdownMenuItem onClick={() => onEdit(project.id)}>
                     <Pencil className="mr-2 h-4 w-4" />
-                    Editar
+                    {t("edit")}
                   </DropdownMenuItem>
                 )}
                 {project.status === "archived" ? (
                   <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
                     <ArchiveRestore className="mr-2 h-4 w-4" />
-                    Restaurar
+                    {t("restore")}
                   </DropdownMenuItem>
                 ) : (
                   <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
                     <Archive className="mr-2 h-4 w-4" />
-                    Arquivar
+                    {t("archive")}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
@@ -179,7 +177,7 @@ function ProjectCard({
                   onClick={() => onDelete?.(project.id)}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Eliminar
+                  {t("delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -206,11 +204,11 @@ function ProjectCard({
           <div className="mt-4 space-y-2">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
-              <span>Actualizado {project.lastUpdated}</span>
+              <span>{t("updated", { time: project.lastUpdated })}</span>
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">{generating ? "Geração" : "Progresso"}</span>
+                <span className="text-muted-foreground">{generating ? t("generation") : t("progress")}</span>
                 <span className="font-medium text-foreground">{generating ? (project.generationProgress ?? project.progress) : project.progress}%</span>
               </div>
               <Progress
@@ -239,8 +237,9 @@ function ProjectListItem({
   onArchive?: (id: string) => void;
   onEdit?: (id: string) => void;
 }) {
+  const t = useTranslations("projects.grid");
   const typeStyle = typeStyles[project.type] || typeStyles["trabalho académico"];
-  const statusStyle = statusStyles[project.status];
+  const statusStyle = statusIcons[project.status];
   const StatusIcon = statusStyle.icon;
   const generating = project.generationStatus === "GENERATING";
 
@@ -259,15 +258,15 @@ function ProjectListItem({
               variant="outline"
               className={cn("text-xs font-medium", typeStyle.className)}
             >
-              {typeStyle.label}
+              {project.typeLabel ?? typeStyle.label}
             </Badge>
             <div className={cn("flex items-center gap-1 text-xs", statusStyle.color)}>
               <StatusIcon className="h-3 w-3" />
-              <span>{statusStyle.label}</span>
+              <span>{t(`status.${project.status === "in_progress" ? "inProgress" : project.status}`)}</span>
             </div>
             {generating ? (
               <Badge variant="outline" className="text-[10px]">
-                A gerar {project.generationProgress ?? project.progress}%
+                {t("generating", { percent: project.generationProgress ?? project.progress })}
               </Badge>
             ) : null}
           </div>
@@ -298,7 +297,7 @@ function ProjectListItem({
         <div className="hidden sm:block w-32">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">{generating ? "Geração" : "Progresso"}</span>
+              <span className="text-muted-foreground">{generating ? t("generation") : t("progress")}</span>
               <span className="font-medium">{generating ? (project.generationProgress ?? project.progress) : project.progress}%</span>
             </div>
             <Progress value={generating ? (project.generationProgress ?? project.progress) : project.progress} className="h-1.5 bg-primary/10" />
@@ -308,7 +307,7 @@ function ProjectListItem({
 
         <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground min-w-[120px]">
           <Clock className="h-3 w-3" />
-          <span>{project.lastUpdated}</span>
+          <span>{t("updated", { time: project.lastUpdated })}</span>
         </div>
 
         <DropdownMenu>
@@ -317,6 +316,7 @@ function ProjectListItem({
               variant="ghost"
               size="icon"
               className="h-8 w-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+              aria-label={t("moreOptions")}
             >
               <MoreVertical className="h-4 w-4" />
             </Button>
@@ -325,24 +325,24 @@ function ProjectListItem({
             <DropdownMenuItem asChild>
                   <Link href={`/app/trabalhos/${project.id}`}>
                     <FileText className="mr-2 h-4 w-4" />
-                    Abrir trabalho
+                    {t("openWork")}
                   </Link>
                 </DropdownMenuItem>
             {onEdit && (
               <DropdownMenuItem onClick={() => onEdit(project.id)}>
                 <Pencil className="mr-2 h-4 w-4" />
-                Editar
+                {t("edit")}
               </DropdownMenuItem>
             )}
             {project.status === "archived" ? (
               <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
                 <ArchiveRestore className="mr-2 h-4 w-4" />
-                Restaurar
+                {t("restore")}
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
                 <Archive className="mr-2 h-4 w-4" />
-                Arquivar
+                {t("archive")}
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
@@ -351,7 +351,7 @@ function ProjectListItem({
               onClick={() => onDelete?.(project.id)}
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Eliminar
+              {t("delete")}
             </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -369,12 +369,13 @@ export function ProjectGrid({
   onArchive,
   onEdit,
 }: ProjectGridProps) {
+  const t = useTranslations("projects.grid");
   if (projects.length === 0) {
     return (
        <EmptyState
          icon={FileText}
-         title="Nenhum trabalho encontrado"
-         description="Nao tem trabalhos nesta categoria. Crie um novo trabalho para comecar."
+         title={t("empty.title")}
+         description={t("empty.description")}
          className={cn("py-16", className)}
        />
     );

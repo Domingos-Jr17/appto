@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const body = createWorkSchema.parse(await request.json());
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     if (generateContent) {
       const { allowed, reason } = await subscriptionService.canGenerateWork(session.user.id);
       if (!allowed) {
-        return apiError(reason || "Limite de geração atingido", 403, "LIMIT_REACHED", { remaining: 0 });
+        return apiError(reason || "Generation limit reached", 403, "LIMIT_REACHED", { remaining: 0 });
       }
     }
 
@@ -70,7 +70,7 @@ const txStart = Date.now();
       });
 
       if (existingBrief?.generationStatus === "GENERATING" || existingBrief?.generationStatus === "READY") {
-        return apiError("Geração já está em curso ou concluída para este trabalho.", 409);
+        return apiError("Generation is already in progress or completed for this work.", 409);
       }
 
 try {
@@ -88,7 +88,7 @@ try {
               baseCost: 0,
             });
           },
-          "Geração já está em curso para este projeto"
+          "Generation is already in progress for this project"
         );
       } catch (err) {
         logger.error("Failed to start generation job", { error: String(err), projectId: project.id });
@@ -110,26 +110,26 @@ try {
         generation: {
           asynchronous: generateContent,
           projectId: project.id,
-          step: generateContent ? "A validar o briefing" : "Briefing criado",
+          step: generateContent ? "Validating the brief" : "Brief created",
         },
         remainingWorks: await subscriptionService.canGenerateWork(session.user.id).then((result) => result.remaining),
         message: generateContent
-          ? `A geração de ${formatProjectType(type)} começou com sucesso.`
-          : "Briefing guardado e estrutura criada com sucesso.",
+          ? `${formatProjectType(type)} generation started successfully.`
+          : "Brief saved and structure created successfully.",
       },
       { status: generateContent ? 202 : 201 },
     );
   } catch (error) {
     if (error instanceof ZodError) {
-      return apiError("Payload inválido", 400, "VALIDATION_ERROR", error.flatten());
+      return apiError("Invalid payload", 400, "VALIDATION_ERROR", error.flatten());
     }
 
     const message =
       process.env.NODE_ENV === "production"
-        ? "Erro ao gerar trabalho"
+        ? "Failed to generate work"
         : error instanceof Error
           ? error.message
-          : "Erro ao gerar trabalho";
+          : "Failed to generate work";
 
     logger.error("Work generation error", { error: String(error) });
     return handleApiError(error, message);

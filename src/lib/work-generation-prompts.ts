@@ -819,21 +819,21 @@ export function validateGeneratedSection(
   if (words < range.hardMin || words > range.hardMax) {
     issues.push({
       sectionTitle,
-      message: `A secção "${sectionTitle}" ficou com ${words} palavras; esperado aproximadamente ${range.min}-${range.max}.`,
+      message: `Section "${sectionTitle}" has ${words} words; expected approximately ${range.min}-${range.max}.`,
     });
   }
 
   if (startsWithDuplicateSectionHeading(content, sectionTitle)) {
     issues.push({
       sectionTitle,
-      message: "A secção repete o próprio título na primeira linha; comece directamente pelo conteúdo.",
+      message: "The section repeats its own title on the first line; start directly with the content.",
     });
   }
 
   if (hasAbruptEnding(content)) {
     issues.push({
       sectionTitle,
-      message: `A secção "${sectionTitle}" termina de forma abrupta; complete a última ideia antes de encerrar o texto.`,
+      message: `Section "${sectionTitle}" ends abruptly; complete the final idea before ending the text.`,
     });
   }
 
@@ -853,7 +853,7 @@ export function validateGeneratedSection(
       if (coverage < thematicCoverageThreshold) {
         issues.push({
           sectionTitle,
-          message: `A secção "${sectionTitle}" menciona apenas ${matches.length} de ${themeWords.length} palavras-chave do tema "${theme}".`,
+          message: `Section "${sectionTitle}" mentions only ${matches.length} of ${themeWords.length} keywords from the topic "${theme}".`,
         });
       }
     }

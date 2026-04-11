@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
 import { useAccountData } from "@/hooks/use-account-data";
 import { useLocaleSwitcher } from "@/hooks/use-locale";
+import { useTranslations } from "next-intl";
 import {
   Loader2,
   Globe,
@@ -32,23 +33,23 @@ import {
 } from "lucide-react";
 
 const languages = [
-  { value: "pt-MZ", label: "Português (Moçambique)", flag: "🇲🇿" },
-  { value: "pt-BR", label: "Português (Brasil)", flag: "🇧🇷" },
-  { value: "en", label: "English", flag: "🇺🇸" },
-  { value: "es", label: "Español", flag: "🇪🇸" },
-];
+  { value: "pt-MZ", key: "ptMZ", flag: "🇲🇿" },
+  { value: "pt-BR", key: "ptBR", flag: "🇧🇷" },
+  { value: "en", key: "en", flag: "🇺🇸" },
+  { value: "es", key: "es", flag: "🇪🇸" },
+] as const;
 
 const themes = [
-  { value: "dark", label: "Escuro", icon: Moon },
-  { value: "light", label: "Claro", icon: Sun },
-  { value: "system", label: "Sistema", icon: Monitor },
-];
+  { value: "dark", key: "dark", icon: Moon },
+  { value: "light", key: "light", icon: Sun },
+  { value: "system", key: "system", icon: Monitor },
+] as const;
 
 const citationStyles = [
-  { value: "ABNT", label: "ABNT" },
-  { value: "APA", label: "APA" },
-  { value: "VANCOUVER", label: "Vancouver" },
-];
+  { value: "ABNT", key: "abnt" },
+  { value: "APA", key: "apa" },
+  { value: "VANCOUVER", key: "vancouver" },
+] as const;
 
 interface SettingsData {
   language: string;
@@ -61,6 +62,7 @@ interface SettingsData {
 }
 
 export function PreferencesSection() {
+  const t = useTranslations("settings.preferencesSection");
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { settings, isLoading: isAccountLoading } = useAccountData();
@@ -114,17 +116,17 @@ export function PreferencesSection() {
       });
 
       if (!response.ok) {
-        throw new Error("Erro ao guardar");
+        throw new Error(t("errorSave"));
       }
 
       toast({
-        title: "Preferências guardadas",
-        description: "As suas preferências foram actualizadas com sucesso",
+        title: t("toast.success.title"),
+        description: t("toast.success.description"),
       });
     } catch {
       toast({
-        title: "Erro",
-        description: "Não foi possível guardar as preferências",
+        title: t("toast.error.title"),
+        description: t("toast.error.description"),
         variant: "destructive",
       });
     } finally {
@@ -143,10 +145,10 @@ export function PreferencesSection() {
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
             <Globe className="h-4 w-4 text-muted-foreground" />
-            Idioma
+            {t("language.label")}
           </Label>
           <p className="text-sm text-muted-foreground">
-            Escolhe o idioma da interface
+            {t("language.description")}
           </p>
         </div>
         <Select
@@ -161,7 +163,7 @@ export function PreferencesSection() {
               <SelectItem key={lang.value} value={lang.value}>
                 <span className="flex items-center gap-2">
                   <span>{lang.flag}</span>
-                  {lang.label}
+                  {t(`languages.${lang.key}`)}
                 </span>
               </SelectItem>
             ))}
@@ -176,25 +178,27 @@ export function PreferencesSection() {
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
             <Palette className="h-4 w-4 text-muted-foreground" />
-            Tema
+            {t("theme.label")}
           </Label>
           <p className="text-sm text-muted-foreground">
-            Escolhe entre o modo claro, escuro ou segue as configurações do sistema
+            {t("theme.description")}
           </p>
         </div>
         <div className="flex gap-3">
-          {themes.map((t) => (
+          {themes.map((themeOption) => (
             <button
-              key={t.value}
-              onClick={() => setTheme(t.value)}
+              key={themeOption.value}
+              onClick={() => setTheme(themeOption.value)}
               className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
-                theme === t.value
+                theme === themeOption.value
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border hover:border-primary/30 hover:bg-accent/50"
               }`}
             >
-              <t.icon className="h-5 w-5" />
-              <span className="text-sm font-medium">{t.label}</span>
+              <themeOption.icon className="h-5 w-5" />
+              <span className="text-sm font-medium">
+                {t(`themes.${themeOption.key}`)}
+              </span>
             </button>
           ))}
         </div>
@@ -207,10 +211,10 @@ export function PreferencesSection() {
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
             <Type className="h-4 w-4 text-muted-foreground" />
-            Tamanho da Fonte
+            {t("fontSize.label")}
           </Label>
           <p className="text-sm text-muted-foreground">
-            Ajusta o tamanho da fonte do editor
+            {t("fontSize.description")}
           </p>
         </div>
         <div className="flex items-center gap-4 max-w-md">
@@ -237,10 +241,10 @@ export function PreferencesSection() {
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
             <Save className="h-4 w-4 text-muted-foreground" />
-            Guarda Automática
+            {t("autoSave.label")}
           </Label>
           <p className="text-sm text-muted-foreground">
-            Guardar automaticamente as suas alterações a cada 30 segundos
+            {t("autoSave.description")}
           </p>
         </div>
         <Switch
@@ -256,10 +260,10 @@ export function PreferencesSection() {
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
             <Palette className="h-4 w-4 text-muted-foreground" />
-            Sugestões de IA
+            {t("aiSuggestions.label")}
           </Label>
           <p className="text-sm text-muted-foreground">
-            Mostrar sugestões de IA enquanto escreve
+            {t("aiSuggestions.description")}
           </p>
         </div>
         <Switch
@@ -275,10 +279,10 @@ export function PreferencesSection() {
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
             <FileText className="h-4 w-4 text-muted-foreground" />
-            Estilo de Citação Padrão
+            {t("citationStyle.label")}
           </Label>
           <p className="text-sm text-muted-foreground">
-            Estilo de citação utilizado por padrão nos teus trabalhos
+            {t("citationStyle.description")}
           </p>
         </div>
         <Select
@@ -291,7 +295,7 @@ export function PreferencesSection() {
           <SelectContent>
             {citationStyles.map((style) => (
               <SelectItem key={style.value} value={style.value}>
-                {style.label}
+                {t(`citationStyles.${style.key}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -306,10 +310,10 @@ export function PreferencesSection() {
           {isSaving ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              A guardar...
+              {t("saving")}
             </>
           ) : (
-            "Guardar preferências"
+            t("saveButton")
           )}
         </Button>
       </div>

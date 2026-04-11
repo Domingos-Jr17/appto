@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
     if (!token) {
       return NextResponse.json(
-        { error: "Token de verificação inválido" },
+        { error: "Invalid verification token" },
         { status: 400 }
       );
     }
@@ -27,14 +27,14 @@ export async function POST(request: NextRequest) {
       });
 
       if (!verificationToken) {
-        throw new Error("Link de verificação inválido ou já utilizado");
+        throw new Error("Invalid or already used verification link");
       }
 
       if (verificationToken.expires < new Date()) {
         await tx.verificationToken.delete({
           where: { token },
         });
-        throw new Error("Link de verificação expirado");
+        throw new Error("Verification link expired");
       }
 
       await tx.user.update({
@@ -47,13 +47,13 @@ export async function POST(request: NextRequest) {
       });
     });
 
-    return NextResponse.json({ message: "Email verificado com sucesso" });
+    return NextResponse.json({ message: "Email verified successfully" });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Erro ao verificar email";
+    const message = error instanceof Error ? error.message : "Failed to verify email";
     logger.error("verify-email failed", { error: message });
     return NextResponse.json(
       { error: message },
-      { status: error instanceof Error && message.includes("inválido") ? 400 : 500 }
+      { status: error instanceof Error && message.includes("Invalid") ? 400 : 500 }
     );
   }
 }

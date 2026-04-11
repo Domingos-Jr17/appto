@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,7 @@ export function GenerateButton({
   allDone,
   onGenerate,
 }: GenerateButtonProps) {
+  const t = useTranslations("workspace.generateButton");
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleClick = () => {
@@ -49,25 +51,24 @@ export function GenerateButton({
       >
         <Sparkles className="mr-1.5 h-3.5 w-3.5" />
         {isGenerating
-          ? "A gerar..."
+          ? t("generating")
           : allDone
-            ? "Regenerar trabalho"
-            : "Gerar trabalho"}
+            ? t("regenerate")
+            : t("generate")}
       </Button>
 
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Regenerar trabalho?</AlertDialogTitle>
+            <AlertDialogTitle>{t("confirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Isto vai substituir todo o conteúdo gerado anteriormente. Tens a
-              certeza que queres continuar?
+              {t("confirmDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirm}>
-              Sim, regenerar
+              {t("confirmAction")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -120,7 +120,7 @@ export async function runAIChatCompletion(request: AIChatRequest): Promise<AICha
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error("A IA está indisponível neste momento.");
+  throw lastError instanceof Error ? lastError : new Error("The AI is currently unavailable.");
 }
 
 export async function runAIChatStream(request: AIChatRequest): Promise<ReadableStream<Uint8Array>> {
@@ -185,7 +185,7 @@ export async function runAIChatStream(request: AIChatRequest): Promise<ReadableS
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error("A IA está indisponível neste momento.");
+  throw lastError instanceof Error ? lastError : new Error("The AI is currently unavailable.");
 }
 
 // ─── Error Helpers ───────────────────────────────────────────────────────────
@@ -215,22 +215,22 @@ export function isAIConfigError(error: unknown) {
 
 export function getFriendlyAIErrorMessage(error: unknown) {
   if (isAIConfigError(error)) {
-    return "A configuração da IA está em falta ou inválida no servidor.";
+    return "The AI configuration is missing or invalid on the server.";
   }
 
   switch (getAIErrorStatus(error)) {
     case 400:
-      return "O pedido enviado para a IA é inválido.";
+      return "The request sent to the AI is invalid.";
     case 401:
-      return "A autenticação da IA falhou. Verifique a API key configurada.";
+      return "AI authentication failed. Check the configured API key.";
     case 404:
-      return "O endpoint configurado para a IA não foi encontrado.";
+      return "The configured AI endpoint was not found.";
     case 429:
-      return "A IA está temporariamente limitada por excesso de pedidos. Tente novamente em instantes.";
+      return "The AI is temporarily rate-limited. Please try again shortly.";
     case 504:
-      return "A IA demorou demasiado a responder. Tente novamente em instantes.";
+      return "The AI took too long to respond. Please try again shortly.";
     default:
-      return "A IA está indisponível neste momento.";
+      return "The AI is currently unavailable.";
   }
 }
 

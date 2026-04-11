@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id || session.user.role !== "ADMIN") {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const body = await parseBody(request, ingestDocumentSchema);

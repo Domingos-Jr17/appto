@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -16,25 +17,30 @@ import { AccountSection } from "@/components/settings/AccountSection";
 import { getActiveSettingsTab, SETTINGS_TABS } from "@/lib/user-settings";
 
 export default function SettingsPage() {
+  const t = useTranslations("settings.page");
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeTab = getActiveSettingsTab(searchParams.get("tab"));
+  const tabs = SETTINGS_TABS.map((tab) => ({
+    ...tab,
+    label: t(`tabs.${tab.value}.label`),
+    description: t(`tabs.${tab.value}.description`),
+  }));
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 rounded-[28px] bg-card border border-border/40 p-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Configurações
+            {t("eyebrow")}
           </p>
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              Preferências e Segurança
+              {t("title")}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Gira preferências, segurança e dados da conta num fluxo
-              consistente com o resto do produto.
+              {t("description")}
             </p>
           </div>
         </div>
@@ -50,7 +56,7 @@ export default function SettingsPage() {
         className="w-full"
       >
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-2 rounded-[28px] bg-muted/40 border border-border/40 p-2">
-          {SETTINGS_TABS.map((tab) => (
+          {tabs.map((tab) => (
             <TabsTrigger
               key={tab.value}
               value={tab.value}
@@ -61,7 +67,7 @@ export default function SettingsPage() {
           ))}
         </TabsList>
 
-        {SETTINGS_TABS.map((tab) => (
+        {tabs.map((tab) => (
           <TabsContent
             key={tab.value}
             value={tab.value}

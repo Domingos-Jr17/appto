@@ -5,6 +5,7 @@ import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 
 export default function RegisterPage() {
+  const t = useTranslations("auth.register");
   const router = useRouter();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
@@ -30,15 +32,15 @@ export default function RegisterPage() {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("As palavras-passe não coincidem");
+      setError(t("passwordsDontMatch"));
       return;
     }
     if (!acceptTerms) {
-      setError("Precisas de aceitar os termos de uso");
+      setError(t("mustAcceptTerms"));
       return;
     }
     if (password.length < 8) {
-      setError("A palavra-passe deve ter pelo menos 8 caracteres");
+      setError(t("passwordMinLength"));
       return;
     }
 
@@ -54,7 +56,7 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Erro ao criar conta");
+        setError(data.error || t("errorCreating"));
         setIsLoading(false);
         return;
       }
@@ -75,8 +77,8 @@ export default function RegisterPage() {
           .then((res) => res.json())
           .then(() => {
             toast({
-              title: "Email de verificação enviado",
-              description: `Enviámos um email de verificação para ${email}.`,
+              title: t("verificationEmailSent"),
+              description: t("verificationEmailDescription", { email }),
             });
           })
           .catch(() => {});
@@ -86,7 +88,7 @@ export default function RegisterPage() {
         router.refresh();
       }
     } catch {
-      setError("Ocorreu um erro. Tente novamente.");
+      setError(t("errorGeneric"));
       setIsLoading(false);
     }
   };
@@ -112,19 +114,19 @@ export default function RegisterPage() {
   const getStrengthText = () => {
     const strength = passwordStrength();
     if (strength === 0) return "";
-    if (strength === 1) return "Fraca";
-    if (strength === 2) return "Regular";
-    if (strength === 3) return "Boa";
-    return "Forte";
+    if (strength === 1) return t("weak");
+    if (strength === 2) return t("regular");
+    if (strength === 3) return t("good");
+    return t("strong");
   };
 
   return (
     <div className="rounded-[28px] bg-card border border-border/40 p-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold mb-2">Criar conta</h1>
+        <h1 className="text-2xl font-bold mb-2">{t("title")}</h1>
         <p className="text-muted-foreground text-sm">
-          Preenche os dados abaixo para começares
+          {t("subtitle")}
         </p>
       </div>
 
@@ -140,7 +142,10 @@ export default function RegisterPage() {
         <div className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/20 text-primary text-sm flex items-start gap-2">
           <Mail className="w-4 h-4 mt-0.5 shrink-0" />
           <span>
-            Enviámos um email de verificação para <strong>{email}</strong>.
+            {t.rich("verificationNote", {
+              email,
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </span>
         </div>
       )}
@@ -149,13 +154,13 @@ export default function RegisterPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Name */}
         <div className="space-y-2">
-          <Label htmlFor="name">Nome completo</Label>
+          <Label htmlFor="name">{t("fullName")}</Label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               id="name"
               type="text"
-              placeholder="O teu nome"
+              placeholder={t("namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 transition-all duration-300"
@@ -166,13 +171,13 @@ export default function RegisterPage() {
 
         {/* Email */}
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("email")}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               id="email"
               type="email"
-              placeholder="seu@email.com"
+              placeholder={t("emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 transition-all duration-300"
@@ -183,13 +188,13 @@ export default function RegisterPage() {
 
         {/* Password */}
         <div className="space-y-2">
-          <Label htmlFor="password">Palavra-passe</Label>
+          <Label htmlFor="password">{t("password")}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
+              placeholder={t("passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 pr-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 transition-all duration-300"
@@ -200,6 +205,7 @@ export default function RegisterPage() {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={showPassword ? t("hidePassword") : t("showPassword")}
             >
               {showPassword ? (
                 <EyeOff className="w-4 h-4" />
@@ -222,7 +228,7 @@ export default function RegisterPage() {
                 ))}
               </div>
               <p className="text-xs text-muted-foreground">
-                Força da palavra-passe: <span className="font-medium">{getStrengthText()}</span>
+                {t("passwordStrength")}: <span className="font-medium">{getStrengthText()}</span>
               </p>
             </div>
           )}
@@ -230,13 +236,13 @@ export default function RegisterPage() {
 
         {/* Confirm Password */}
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirmar palavra-passe</Label>
+          <Label htmlFor="confirmPassword">{t("confirmPassword")}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               id="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
-              placeholder="••••••••"
+              placeholder={t("passwordPlaceholder")}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="pl-10 pr-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 transition-all duration-300"
@@ -246,6 +252,7 @@ export default function RegisterPage() {
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={showConfirmPassword ? t("hidePassword") : t("showPassword")}
             >
               {showConfirmPassword ? (
                 <EyeOff className="w-4 h-4" />
@@ -255,12 +262,12 @@ export default function RegisterPage() {
             </button>
           </div>
           {confirmPassword && password !== confirmPassword && (
-            <p className="text-xs text-destructive">As palavras-passe não coincidem</p>
+            <p className="text-xs text-destructive">{t("passwordsDontMatch")}</p>
           )}
           {confirmPassword && password === confirmPassword && (
             <div className="flex items-center gap-1 text-xs text-success">
               <Check className="w-3 h-3" />
-              <span>Palavras-passe coincidem</span>
+              <span>{t("passwordsMatch")}</span>
             </div>
           )}
         </div>
@@ -274,14 +281,20 @@ export default function RegisterPage() {
             className="mt-0.5"
           />
           <Label htmlFor="terms" className="text-sm font-normal leading-relaxed cursor-pointer">
-            Eu aceito os{" "}
-            <Link href="#" className="text-primary hover:text-primary/80 transition-colors">
-              Termos de Uso
-            </Link>{" "}
-            e a{" "}
-            <Link href="#" className="text-primary hover:text-primary/80 transition-colors">
-              Política de Privacidade
-            </Link>
+            {t.rich("acceptTerms", {
+              termsLink: (chunks) => (
+                <Link href="#" className="text-primary hover:text-primary/80 transition-colors">
+                  {chunks}
+                </Link>
+              ),
+              privacyLink: (chunks) => (
+                <Link href="#" className="text-primary hover:text-primary/80 transition-colors">
+                  {chunks}
+                </Link>
+              ),
+              termsOfUse: t("termsOfUse"),
+              privacyPolicy: t("privacyPolicy"),
+            })}
           </Label>
         </div>
 
@@ -295,7 +308,7 @@ export default function RegisterPage() {
             <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
           ) : (
             <>
-              Criar conta
+              {t("createAccount")}
               <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
             </>
           )}
@@ -304,12 +317,12 @@ export default function RegisterPage() {
 
       {/* Login Link */}
       <p className="text-center text-sm text-muted-foreground mt-6">
-        Já tens conta?{" "}
+        {t("hasAccount")}{" "}
         <Link
           href="/login"
           className="text-primary hover:text-primary/80 font-medium transition-colors"
         >
-          Entrar
+          {t("login")}
         </Link>
       </p>
     </div>

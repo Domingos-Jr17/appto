@@ -31,7 +31,7 @@ export async function GET(
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    return new Response("Não autorizado", { status: 401 });
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const { id } = await params;
@@ -42,7 +42,7 @@ export async function GET(
   });
 
   if (!project) {
-    return new Response("Trabalho não encontrado", { status: 404 });
+    return new Response("Work not found", { status: 404 });
   }
 
   const stream = new ReadableStream({
@@ -66,7 +66,7 @@ export async function GET(
       // Send initial handshake
       send({
         type: "handshake",
-        data: { progress: 0, step: "Conectado ao stream de geração" },
+        data: { progress: 0, step: "Connected to generation stream" },
       });
 
       // Check initial job status
@@ -89,7 +89,7 @@ export async function GET(
           if (!status) {
             send({
               type: "error",
-              data: { progress: 0, step: "Estado de geração não encontrado" },
+              data: { progress: 0, step: "Generation status not found" },
             });
             cleanup();
             return;
@@ -163,7 +163,7 @@ export async function GET(
             }
             send({
               type: "complete",
-              data: { progress: 100, step: "Trabalho pronto para revisão" },
+                data: { progress: 100, step: "Work ready for review" },
             });
             cleanup();
             return;
@@ -184,7 +184,7 @@ export async function GET(
         } catch {
           send({
             type: "error",
-            data: { progress: lastProgress || 0, step: "Erro ao verificar estado" },
+            data: { progress: lastProgress || 0, step: "Failed to check status" },
           });
           cleanup();
         }

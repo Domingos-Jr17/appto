@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { BookCopy, FilePlus2, MoreVertical, Trash2, Archive, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAppShellData } from "./AppShellDataContext";
-import { appNavItems, isNavActive } from "./app-nav";
+import { getAppNavItems, isNavActive } from "./app-nav";
 import React from "react";
 import {
     DropdownMenu,
@@ -31,6 +32,9 @@ export function AppSidebar({
     onEdit,
 }: AppSidebarProps) {
     const { projects } = useAppShellData();
+    const t = useTranslations("appShell");
+    const tNav = useTranslations("appShell.nav");
+    const navItems = getAppNavItems(tNav);
 
     const recentProjects = projects
         .slice()
@@ -54,17 +58,17 @@ export function AppSidebar({
                     <Link
                         href="/app"
                         onClick={onNavigate}
-                        aria-label="Criar novo trabalho"
+                        aria-label={t("sidebar.newWork")}
                     >
                         <FilePlus2 className="h-4 w-4" />
-                        <span>Novo trabalho</span>
+                        <span>{t("sidebar.newWork")}</span>
                     </Link>
                 </Button>
             </div>
 
             <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-3 scrollbar-thin">
                 <div className="space-y-1">
-                    {appNavItems.map((item) => {
+                    {navItems.map((item) => {
                         const active = isNavActive(currentPath, item.href);
                         const Icon = item.icon;
                         return (
@@ -100,7 +104,7 @@ export function AppSidebar({
                     <>
                         <div className="my-3 border-t border-sidebar-border/40" />
                         <p className="mb-1.5 px-2.5 text-[10px] font-medium uppercase tracking-[0.12em] text-sidebar-foreground/50">
-                            Trabalhos recentes
+                            {t("sidebar.recentWorks")}
                         </p>
                         <div className="space-y-0.5">
                             {recentProjects.map((project) => {
@@ -131,7 +135,7 @@ export function AppSidebar({
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-6 w-6 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-                                                    aria-label="Mais opções"
+                                                    aria-label={t("sidebar.moreOptions")}
                                                 >
                                                     <MoreVertical className="h-3.5 w-3.5" />
                                                 </Button>
@@ -139,17 +143,17 @@ export function AppSidebar({
                                             <DropdownMenuContent align="end" className="w-40">
                                                 <DropdownMenuItem onClick={() => onEdit?.(project.id)}>
                                                     <Pencil className="mr-2 h-4 w-4" />
-                                                    Renomear
+                                                    {t("sidebar.rename")}
                                                 </DropdownMenuItem>
                                                 {project.status === "archived" ? (
                                                     <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
                                                         <Archive className="mr-2 h-4 w-4" />
-                                                        Restaurar
+                                                        {t("sidebar.restore")}
                                                     </DropdownMenuItem>
                                                 ) : (
                                                     <DropdownMenuItem onClick={() => onArchive?.(project.id)}>
                                                         <Archive className="mr-2 h-4 w-4" />
-                                                        Arquivar
+                                                        {t("sidebar.archive")}
                                                     </DropdownMenuItem>
                                                 )}
                                                 <DropdownMenuSeparator />
@@ -158,7 +162,7 @@ export function AppSidebar({
                                                     onClick={() => onDelete?.(project.id)}
                                                 >
                                                     <Trash2 className="mr-2 h-4 w-4" />
-                                                    Eliminar
+                                                    {t("sidebar.delete")}
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>

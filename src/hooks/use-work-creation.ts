@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { resolveDocumentProfile } from "@/lib/document-profile";
@@ -130,13 +131,26 @@ function getSmartTemplate(
   return "ABNT_GENERIC";
 }
 
-export const GENERATION_STEPS = [
-  "A validar o briefing",
-  "A estruturar o documento",
-  "A gerar o conteúdo",
-  "A formatar e finalizar",
-  "A guardar as secções",
-];
+export function getGenerationSteps(t: (key: string) => string) {
+  return [
+    t("steps.validating"),
+    t("steps.structuring"),
+    t("steps.generating"),
+    t("steps.formatting"),
+    t("steps.saving"),
+  ];
+}
+
+export const GENERATION_STEPS = getGenerationSteps((key) => {
+  const fallback: Record<string, string> = {
+    "steps.validating": "Validating briefing",
+    "steps.structuring": "Structuring document",
+    "steps.generating": "Generating content",
+    "steps.formatting": "Formatting and finalizing",
+    "steps.saving": "Saving sections",
+  };
+  return fallback[key] ?? key;
+});
 
 type GenerationSectionItem = {
   key: string;
@@ -151,14 +165,16 @@ type GenerationSectionItem = {
 export function useWorkCreation() {
   const router = useRouter();
   const { toast } = useToast();
+  const t = useTranslations("hooks.workCreation");
+  const generationSteps = getGenerationSteps(t);
 
   // Form state
   const [workForm, setWorkForm] = useState<WorkFormState>({ ...INITIAL_WORK_FORM });
   const [isCreating, setIsCreating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
   const [generationProjectId, setGenerationProjectId] = useState<string | null>(null);
-  const [generationMessage, setGenerationMessage] = useState("Na fila do worker");
-  const generationMessageRef = useRef("Na fila do worker");
+  const [generationMessage, setGenerationMessage] = useState(t("inQueue"));
+  const generationMessageRef = useRef(t("inQueue"));
   const pollingFailureCountRef = useRef(0);
   const streamFailureCountRef = useRef(0);
   const streamConnectionStartedAtRef = useRef<number | null>(null);
@@ -265,9 +281,10 @@ export function useWorkCreation() {
     setIsCreating(false);
     setGenerationStep(0);
     setGenerationProjectId(null);
-    generationMessageRef.current = "Na fila do worker";
+    generationMessageRef.current = t("inQueue");
+    setGenerationMessage(t("inQueue"));
     setWorkForm({ ...INITIAL_WORK_FORM });
-  }, []);
+  }, [t]);
 
   const _runSectionGeneration = useCallback(async (projectId: string) => {
     sectionRunnerAbortRef.current = false;
@@ -280,7 +297,7 @@ export function useWorkCreation() {
       });
       const payload = await response.json();
       if (!response.ok) {
-        throw new Error(payload.error || "Não foi possível obter as secções da geração.");
+        throw new Error(payload.error || t("couldNotLoadSections"));
       }
       return payload.data?.sections ?? payload.sections ?? [];
     };
@@ -293,8 +310,8 @@ export function useWorkCreation() {
         break;
       }
 
-      generationMessageRef.current = `A gerar ${nextSection.title}`;
-      setGenerationMessage(`A gerar ${nextSection.title}`);
+      generationMessageRef.current = t("generatingSection", { section: nextSection.title });
+      setGenerationMessage(t("generatingSection", { section: nextSection.title }));
 
       const response = await fetchWithRetry(`/api/generate/work/${projectId}/section/${nextSection.key}`, {
         method: "POST",
@@ -307,16 +324,16 @@ export function useWorkCreation() {
       const payload = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(payload.error || `Falha ao gerar ${nextSection.title}.`);
+        throw new Error(payload.error || t("sectionGenerateFailed", { section: nextSection.title }));
       }
     }
-  }, []);
+  }, [t]);
 
   const createWork = useCallback(async (): Promise<string | null> => {
     if (!workForm.title.trim()) {
       toast({
-        title: "Tema obrigatório",
-        description: "Indique o tema ou título do trabalho para continuar.",
+        title: t("topicRequired"),
+        description: t("topicRequiredDescription"),
         variant: "destructive",
       });
       return null;
@@ -369,17 +386,17 @@ export function useWorkCreation() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error("Sessão expirada. Entra novamente para continuar.");
+          throw new Error(t("sessionExpired"));
         }
         if (response.status === 403) {
-          throw new Error(data.error || "Limite de geração atingido. Faz upgrade do pacote.");
+          throw new Error(data.error || t("generationLimitReached"));
         }
-        throw new Error(data.error || "Erro ao criar o trabalho");
+        throw new Error(data.error || t("createError"));
       }
 
       toast({
-        title: "Trabalho criado",
-        description: data.message || "O trabalho foi criado com sucesso.",
+        title: t("workCreated"),
+        description: data.message || t("workCreatedDescription"),
       });
 
       // Refresh subscription
@@ -403,8 +420,8 @@ if (data.generation?.asynchronous) {
         sectionRunnerAbortRef.current = false;
         setGenerationProjectId(data.project.id);
         setGenerationStep(0);
-        generationMessageRef.current = data.generation?.step || "Na fila do worker";
-        setGenerationMessage(data.generation?.step || "Na fila do worker");
+        generationMessageRef.current = data.generation?.step || t("inQueue");
+        setGenerationMessage(data.generation?.step || t("inQueue"));
         
         // Worker processes sections in background - go directly to workspace
         // Workspace already has banner and progress indicators for generation
@@ -418,19 +435,19 @@ if (data.generation?.asynchronous) {
       return data.project.id;
     } catch (error) {
       toast({
-        title: "Erro",
+        title: t("error"),
         description:
           error instanceof Error
             ? error.message
-            : "Não foi possível criar o trabalho.",
+            : t("createFailed"),
         variant: "destructive",
       });
       setIsCreating(false);
-      generationMessageRef.current = "Na fila do worker";
-      setGenerationMessage("Na fila do worker");
+      generationMessageRef.current = t("inQueue");
+      setGenerationMessage(t("inQueue"));
       return null;
     }
-  }, [workForm, toast, resetWorkForm, router]);
+  }, [workForm, toast, resetWorkForm, router, t]);
 
   // Polling for generation progress
   useEffect(() => {
@@ -438,22 +455,22 @@ if (data.generation?.asynchronous) {
       generationEventSourceRef.current?.close();
       generationEventSourceRef.current = null;
       setGenerationStep(0);
-      generationMessageRef.current = "Na fila do worker";
-      setGenerationMessage("Na fila do worker");
+      generationMessageRef.current = t("inQueue");
+      setGenerationMessage(t("inQueue"));
       return;
     }
 
     const updateStepFromSnapshot = (snapshot: { progress?: number; step?: string }) => {
       const nextStep = Math.min(
         Math.max(
-          Math.round(((snapshot.progress || 0) / 100) * (GENERATION_STEPS.length - 1)),
+          Math.round(((snapshot.progress || 0) / 100) * (generationSteps.length - 1)),
           0,
         ),
-        GENERATION_STEPS.length - 1,
+        generationSteps.length - 1,
       );
       setGenerationStep(nextStep);
-      generationMessageRef.current = snapshot.step || "A gerar o trabalho";
-      setGenerationMessage(snapshot.step || "A gerar o trabalho");
+      generationMessageRef.current = snapshot.step || t("generatingWork");
+      setGenerationMessage(snapshot.step || t("generatingWork"));
     };
 
     const finishWithNavigation = (options: {
@@ -484,7 +501,7 @@ if (data.generation?.asynchronous) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Não foi possível acompanhar a geração do trabalho.");
+        throw new Error(data.error || t("couldNotTrackGeneration"));
       }
 
       updateStepFromSnapshot(data);
@@ -492,18 +509,18 @@ if (data.generation?.asynchronous) {
 
       if (data.status === "READY") {
         finishWithNavigation({
-          title: "O teu trabalho está pronto!",
-          description: "Explora as secções geradas e usa a IA para fazer ajustes. Boa escrita!",
-          finalMessage: "Trabalho pronto para revisão",
+          title: t("workReady"),
+          description: t("workReadyDesc"),
+          finalMessage: t("workReadyForReview"),
         });
       }
 
       if (data.status === "FAILED") {
         finishWithNavigation({
-          title: "Geração interrompida",
-          description: data.error || "A estrutura do trabalho foi criada, mas a geração automática falhou.",
+          title: t("generationInterrupted"),
+          description: data.error || t("generationInterruptedDesc"),
           variant: "destructive",
-          finalMessage: data.error || "Falha na geração",
+          finalMessage: data.error || t("generationFailed"),
         });
       }
 
@@ -539,10 +556,10 @@ if (data.generation?.asynchronous) {
           if (pollingFailureCountRef.current >= 3) {
             clearPolling();
             finishWithNavigation({
-              title: "A acompanhar geração com atraso",
-              description: "Não foi possível acompanhar a geração em tempo real. Vamos abrir o trabalho para continuares a acompanhar lá.",
+              title: t("trackingWithDelay"),
+              description: t("trackingWithDelayDesc"),
               variant: "destructive",
-              finalMessage: "A acompanhar geração com atraso",
+              finalMessage: t("trackingWithDelay"),
             });
             return;
           }
@@ -634,7 +651,7 @@ if (data.generation?.asynchronous) {
       }
       clearPolling();
     };
-  }, [generationProjectId, isCreating, router, toast, resetWorkForm]);
+  }, [generationProjectId, isCreating, router, toast, resetWorkForm, t, generationSteps.length]);
 
   return {
     workForm,

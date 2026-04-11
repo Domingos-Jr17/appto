@@ -14,7 +14,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const { id: projectId } = await params;
@@ -24,7 +24,7 @@ export async function GET(
     });
 
     if (!project) {
-      return apiError("Trabalho não encontrado", 404);
+      return apiError("Work not found", 404);
     }
 
     const templates = getSectionTemplates(project.type);
@@ -46,6 +46,6 @@ export async function GET(
 
     return apiSuccess({ sections: generatedSections });
   } catch (error) {
-    return handleApiError(error, "Erro ao obter estado das secções");
+    return handleApiError(error, "Failed to get section status");
   }
 }

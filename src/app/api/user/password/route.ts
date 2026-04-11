@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const { currentPassword, newPassword } = await parseBody(request, changePasswordSchema);
@@ -25,19 +25,19 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return apiError("Utilizador não encontrado", 404);
+      return apiError("User not found", 404);
     }
 
     if (!user.password) {
       return apiError(
-        "Esta conta usa autenticação social. Não é possível alterar a senha.",
+        "This account uses social authentication. Password changes are not available.",
         400,
       );
     }
 
     const isValidPassword = await bcrypt.compare(currentPassword, user.password);
     if (!isValidPassword) {
-      return apiError("Senha actual incorreta", 400);
+      return apiError("Current password is incorrect", 400);
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     return apiSuccess({
       success: true,
-      message: "Senha alterada com sucesso",
+      message: "Password changed successfully",
     });
   } catch (error) {
     logger.error("Change password error", { error: String(error) });

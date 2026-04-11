@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { BookOpen, ChevronRight, Clock, FileText, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ const initialOutline: DemoOutline = {
 };
 
 export function DemoLeadMagnet() {
+  const t = useTranslations("landing.demo");
   const [topic, setTopic] = useState("");
   const [status, setStatus] = useState<DemoState>("idle");
   const [outline, setOutline] = useState<DemoOutline>(initialOutline);
@@ -35,21 +37,21 @@ export function DemoLeadMagnet() {
 
   const resultBadge = useMemo(() => {
     if (source === "real") {
-      return {
-        label: "Gerado pela IA",
+        return {
+        label: t("aiGenerated"),
         className: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
       };
     }
 
     if (source === "fallback") {
-      return {
-        label: "Demo de fallback",
+        return {
+        label: t("fallbackDemo"),
         className: "bg-amber-500/10 text-amber-700 border-amber-500/20",
       };
     }
 
     return null;
-  }, [source]);
+  }, [source, t]);
 
   const handleGenerate = async () => {
     if (!canSubmit) return;
@@ -67,7 +69,7 @@ export function DemoLeadMagnet() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || "Não foi possível gerar o sumário.");
+          throw new Error(data.error || t("error"));
       }
 
       setOutline(data.outline);
@@ -80,7 +82,7 @@ export function DemoLeadMagnet() {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "Não foi possível gerar o sumário neste momento."
+          : t("error")
       );
     }
   };
@@ -100,13 +102,13 @@ export function DemoLeadMagnet() {
         >
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/10 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary shadow-lg shadow-primary/5 backdrop-blur-xl">
             <Clock className="h-4 w-4" />
-            Testa grátis, sem conta
+            {t("badge")}
           </div>
           <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-            Experimenta o aptto antes de criares conta
+            {t("title")}
           </h2>
           <p className="mx-auto max-w-xl text-lg text-muted-foreground">
-            Escreve o tema do teu trabalho e vê o sumário aparecer na hora
+            {t("subtitle")}
           </p>
         </motion.div>
 
@@ -121,16 +123,16 @@ export function DemoLeadMagnet() {
               <div className="bg-gradient-to-b from-primary/5 to-transparent p-6 md:p-8">
                 <div className="flex flex-col gap-4 md:flex-row">
                   <div className="flex-1">
-                    <label className="mb-2 block text-sm font-medium">Tema do trabalho</label>
-                    <Input
-                      placeholder="Ex: Desafios do abastecimento de água na cidade de Maputo..."
-                      value={topic}
+                     <label className="mb-2 block text-sm font-medium">{t("topicLabel")}</label>
+                     <Input
+                       placeholder={t("topicPlaceholder")}
+                       value={topic}
                       onChange={(event) => setTopic(event.target.value)}
                       className="h-12 border-border/50 bg-background/50 text-base backdrop-blur-xl focus:border-primary/50"
                     />
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Entre 8 e 160 caracteres. Esta demo não cria conta nem projecto.
-                    </p>
+                     <p className="mt-2 text-xs text-muted-foreground">
+                       {t("hint")}
+                     </p>
                   </div>
                   <div className="flex items-end">
                     <Button
@@ -146,14 +148,14 @@ export function DemoLeadMagnet() {
                           >
                             <Sparkles className="mr-2 h-4 w-4" />
                           </motion.div>
-                          A gerar...
-                        </>
-                      ) : (
+                           {t("generating")}
+                         </>
+                       ) : (
                         <>
                           <Sparkles className="mr-2 h-4 w-4" />
-                          Testar agora
-                        </>
-                      )}
+                           {t("testNow")}
+                         </>
+                       )}
                     </Button>
                   </div>
                 </div>
@@ -175,7 +177,7 @@ export function DemoLeadMagnet() {
                           <div className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-500/10 bg-emerald-500/10 backdrop-blur-xl">
                             <FileText className="h-4 w-4 text-emerald-600" />
                           </div>
-                          <span className="font-medium">Sumário gerado</span>
+                           <span className="font-medium">{t("resultTitle")}</span>
                         </div>
 
                         {resultBadge ? (
@@ -217,8 +219,8 @@ export function DemoLeadMagnet() {
                         <div className="flex flex-wrap gap-4 border-t border-border/50 pt-4">
                           <div className="flex items-center gap-2 text-sm">
                             <BookOpen className="h-4 w-4 text-primary" />
-                            <span>{outline.stats.pages} páginas</span>
-                          </div>
+                             <span>{outline.stats.pages} {t("pages")}</span>
+                           </div>
                           {outline.stats.references ? (
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                               <FileText className="h-4 w-4 text-primary" />
@@ -235,12 +237,12 @@ export function DemoLeadMagnet() {
                       </div>
 
                       <div className="mt-6 rounded-xl border border-primary/10 bg-primary/5 p-4 text-center backdrop-blur-xl">
-                        <p className="mb-3 text-sm text-muted-foreground">
-                          Gostaste? Cria a tua conta gratuita para continuares no editor completo.
-                        </p>
-                        <Button asChild className="text-primary-foreground shadow-lg shadow-primary/25">
-                          <Link href="/register">Criar conta grátis</Link>
-                        </Button>
+                         <p className="mb-3 text-sm text-muted-foreground">
+                           {t("ctaDescription")}
+                         </p>
+                         <Button asChild className="text-primary-foreground shadow-lg shadow-primary/25">
+                           <Link href="/register">{t("ctaButton")}</Link>
+                         </Button>
                       </div>
                     </div>
                   </motion.div>
@@ -254,9 +256,9 @@ export function DemoLeadMagnet() {
                   >
                     <div className="text-center text-muted-foreground">
                       <FileText className="mx-auto mb-3 h-12 w-12 opacity-30" />
-                      <p className="text-sm">
-                        {status === "error" ? error : "O sumário aparecerá aqui após a geração"}
-                      </p>
+                       <p className="text-sm">
+                         {status === "error" ? error : t("placeholder")}
+                       </p>
                     </div>
                   </motion.div>
                 )}

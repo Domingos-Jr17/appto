@@ -2,7 +2,8 @@
 
 import { motion } from "framer-motion";
 import { Sparkles, Linkedin, Twitter, Instagram, Facebook, Mail } from "lucide-react";
-import { footerLinks } from "./data";
+import { useTranslations } from "next-intl";
+import { getFooterLinks } from "./data";
 
 const socialIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   Linkedin,
@@ -16,7 +17,9 @@ interface FooterProps {
 }
 
 export function Footer({ className }: FooterProps) {
+  const t = useTranslations("landing.footer");
   const currentYear = new Date().getFullYear();
+  const footerLinks = getFooterLinks(t);
 
   return (
     <footer className={`relative pt-10 pb-6 overflow-hidden border-t border-border/50 ${className || ''}`}>
@@ -37,14 +40,13 @@ export function Footer({ className }: FooterProps) {
               </span>
             </a>
             <p className="text-muted-foreground max-w-xs text-sm">
-              O copiloto académico inteligente feito para estudantes moçambicanos. 
-              Escreva melhor, estruture com rigor, submeta com confiança.
+              {t("description")}
             </p>
           </div>
 
           {/* Product links */}
           <div>
-            <h4 className="font-semibold mb-4">Produto</h4>
+            <h4 className="font-semibold mb-4">{t("product")}</h4>
             <ul className="space-y-3">
               {footerLinks.product.map((link, index) => (
                 <li key={index}>
@@ -61,7 +63,7 @@ export function Footer({ className }: FooterProps) {
 
           {/* Company links */}
           <div>
-            <h4 className="font-semibold mb-4">Empresa</h4>
+            <h4 className="font-semibold mb-4">{t("company")}</h4>
             <ul className="space-y-3">
               {footerLinks.company.map((link, index) => (
                 <li key={index}>
@@ -78,7 +80,7 @@ export function Footer({ className }: FooterProps) {
 
           {/* Legal links */}
           <div>
-            <h4 className="font-semibold mb-4">Legal</h4>
+            <h4 className="font-semibold mb-4">{t("legal")}</h4>
             <ul className="space-y-3">
               {footerLinks.legal.map((link, index) => (
                 <li key={index}>
@@ -97,7 +99,7 @@ export function Footer({ className }: FooterProps) {
         {/* Bottom row */}
         <div className="pt-6 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {currentYear} aptto. Todos os direitos reservados.
+            © {currentYear} aptto. {t("rights")}
           </p>
 
           <div className="flex items-center gap-2">
@@ -106,7 +108,7 @@ export function Footer({ className }: FooterProps) {
               whileHover={{ scale: 1.1, y: -2 }}
               whileTap={{ scale: 0.95 }}
               className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
-              aria-label="Email"
+              aria-label={t("email")}
             >
               <Mail className="w-4 h-4" />
             </motion.a>

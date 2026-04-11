@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Loader2, FileText, ExternalLink, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -147,6 +148,7 @@ function MarkdownRenderer({ content }: { content: string }) {
 }
 
 export default function SharedDocumentPage({ params }: { params: Promise<{ token: string }> }) {
+  const t = useTranslations("share");
   const [token, setToken] = useState<string | null>(null);
   const [data, setData] = useState<SharedDocumentData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -158,30 +160,35 @@ export default function SharedDocumentPage({ params }: { params: Promise<{ token
 
   useEffect(() => {
     async function fetchSharedDocument() {
+      if (!token) return;
+
+      setLoading(true);
+      setError(null);
+
       try {
         const res = await fetch(`/api/share/${token}`);
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || "Documento não encontrado");
+          throw new Error(body.error || t("documentNotFound"));
         }
         const json = await res.json();
         setData(json.data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar documento");
+        setError(err instanceof Error ? err.message : t("documentNotFound"));
       } finally {
         setLoading(false);
       }
     }
 
     fetchSharedDocument();
-  }, [token]);
+  }, [token, t]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-muted/30">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-4" />
-          <p className="text-muted-foreground">A carregar documento...</p>
+          <p className="text-muted-foreground">{t("loading")}</p>
         </div>
       </div>
     );
@@ -192,16 +199,16 @@ export default function SharedDocumentPage({ params }: { params: Promise<{ token
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-muted/30">
         <Card className="max-w-md w-full mx-4">
           <CardHeader>
-            <CardTitle className="text-center text-destructive">Documento não encontrado</CardTitle>
+            <CardTitle className="text-center text-destructive">{t("documentNotFound")}</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-muted-foreground">
-              {error || "Este documento pode ter sido removido ou o link expirou."}
+              {error || t("unavailable")}
             </p>
             <Link href="/">
               <Button>
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Voltar ao início
+                {t("backHome")}
               </Button>
             </Link>
           </CardContent>
@@ -227,9 +234,9 @@ export default function SharedDocumentPage({ params }: { params: Promise<{ token
               <Eye className="h-3 w-3 mr-1" />
               {data.views}
             </Badge>
-            <Link href="/auth/register">
+            <Link href="/register">
               <Button size="sm" className="hidden sm:flex">
-                Criar conta grátis
+                {t("createAccount")}
               </Button>
             </Link>
           </div>
@@ -242,36 +249,36 @@ export default function SharedDocumentPage({ params }: { params: Promise<{ token
         {data.brief && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl">Informações do Trabalho</CardTitle>
+              <CardTitle className="text-xl">{t("infoTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               {data.brief.institutionName && (
                 <div>
-                  <span className="font-medium text-foreground">Instituição:</span>
+                  <span className="font-medium text-foreground">{t("institutionLabel")}</span>
                   <p className="text-muted-foreground">{data.brief.institutionName}</p>
                 </div>
               )}
               {data.brief.studentName && (
                 <div>
-                  <span className="font-medium text-foreground">Autor:</span>
+                  <span className="font-medium text-foreground">{t("authorLabel")}</span>
                   <p className="text-muted-foreground">{data.brief.studentName}</p>
                 </div>
               )}
               {data.brief.advisorName && (
                 <div>
-                  <span className="font-medium text-foreground">Orientador:</span>
+                  <span className="font-medium text-foreground">{t("advisorLabel")}</span>
                   <p className="text-muted-foreground">{data.brief.advisorName}</p>
                 </div>
               )}
               {data.brief.courseName && (
                 <div>
-                  <span className="font-medium text-foreground">Curso:</span>
+                  <span className="font-medium text-foreground">{t("courseLabel")}</span>
                   <p className="text-muted-foreground">{data.brief.courseName}</p>
                 </div>
               )}
               {data.brief.city && (
                 <div>
-                  <span className="font-medium text-foreground">Local:</span>
+                  <span className="font-medium text-foreground">{t("locationLabel")}</span>
                   <p className="text-muted-foreground">
                     {data.brief.city}{data.brief.academicYear ? `, ${data.brief.academicYear}` : ""}
                   </p>
@@ -318,7 +325,7 @@ export default function SharedDocumentPage({ params }: { params: Promise<{ token
         {data.references.content && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Referências</CardTitle>
+              <CardTitle className="text-lg">{t("referencesLabel")}</CardTitle>
             </CardHeader>
             <CardContent>
               <MarkdownRenderer content={data.references.content} />
@@ -329,12 +336,12 @@ export default function SharedDocumentPage({ params }: { params: Promise<{ token
         {/* CTA */}
         <div className="text-center py-8">
           <p className="text-muted-foreground mb-4">
-            Cria o teu próprio trabalho académico com o aptto
+            {t("createAccountCTA")}
           </p>
-          <Link href="/auth/register">
+          <Link href="/register">
             <Button size="lg">
               <ExternalLink className="h-4 w-4 mr-2" />
-              Começar Grátis
+              {t("startFree")}
             </Button>
           </Link>
         </div>

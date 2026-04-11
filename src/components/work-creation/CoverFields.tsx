@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -58,86 +59,87 @@ export function CoverFields({
   subjectName: _subjectName,
   onFieldChange,
 }: CoverFieldsProps) {
+  const t = useTranslations("workCreation.coverFields");
   if (educationLevel === "SECONDARY") {
     return (
       <div className="space-y-2.5">
         <div className="space-y-1.5">
-          <Label htmlFor="cover-school">Escola</Label>
+          <Label htmlFor="cover-school">{t("secondary.school")}</Label>
           <Input
             id="cover-school"
             value={institutionName}
             onChange={(e) => onFieldChange("institutionName", e.target.value)}
-            placeholder="Ex.: Escola Secundária Josina Machel"
+            placeholder={t("secondary.schoolPlaceholder")}
           />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="cover-student">Aluno(a)</Label>
+            <Label htmlFor="cover-student">{t("secondary.student")}</Label>
             <Input
               id="cover-student"
               value={studentName}
               onChange={(e) => onFieldChange("studentName", e.target.value)}
-              placeholder="Nome completo"
+              placeholder={t("secondary.studentPlaceholder")}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="cover-advisor">Professor(a)</Label>
+            <Label htmlFor="cover-advisor">{t("secondary.teacher")}</Label>
             <Input
               id="cover-advisor"
               value={advisorName}
               onChange={(e) => onFieldChange("advisorName", e.target.value)}
-              placeholder="Nome do professor"
+              placeholder={t("secondary.teacherPlaceholder")}
             />
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="cover-class">
-              Classe <span className="text-[10px] text-muted-foreground">(opcional)</span>
+              {t("secondary.class")} <span className="text-[10px] text-muted-foreground">{t("secondary.classOptional")}</span>
             </Label>
             <Select value={className} onValueChange={(v) => onFieldChange("className", v)}>
               <SelectTrigger id="cover-class">
-                <SelectValue placeholder="Selecionar" />
+                <SelectValue placeholder={t("secondary.classSelect")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="10ª">10ª Classe</SelectItem>
-                <SelectItem value="11ª">11ª Classe</SelectItem>
-                <SelectItem value="12ª">12ª Classe</SelectItem>
+                <SelectItem value="10ª">{t("secondary.class10")}</SelectItem>
+                <SelectItem value="11ª">{t("secondary.class11")}</SelectItem>
+                <SelectItem value="12ª">{t("secondary.class12")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="cover-turma">
-              Turma <span className="text-[10px] text-muted-foreground">(opcional)</span>
+              {t("secondary.turma")} <span className="text-[10px] text-muted-foreground">{t("secondary.turmaOptional")}</span>
             </Label>
             <Input
               id="cover-turma"
               value={turma}
               onChange={(e) => onFieldChange("turma", e.target.value)}
-              placeholder="Ex.: A"
+              placeholder={t("secondary.turmaPlaceholder")}
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="cover-number">
-              Nº <span className="text-[10px] text-muted-foreground">(opcional)</span>
+              {t("secondary.number")} <span className="text-[10px] text-muted-foreground">{t("secondary.numberOptional")}</span>
             </Label>
             <Input
               id="cover-number"
               value={studentNumber}
               onChange={(e) => onFieldChange("studentNumber", e.target.value)}
-              placeholder="Ex.: 15"
+              placeholder={t("secondary.numberPlaceholder")}
             />
           </div>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="cover-city">
-            Cidade <span className="text-[10px] text-muted-foreground">(opcional)</span>
+            {t("secondary.city")} <span className="text-[10px] text-muted-foreground">{t("secondary.cityOptional")}</span>
           </Label>
           <Input
             id="cover-city"
             value={city}
             onChange={(e) => onFieldChange("city", e.target.value)}
-            placeholder="Ex.: Maputo"
+            placeholder={t("secondary.cityPlaceholder")}
           />
         </div>
       </div>
@@ -149,54 +151,54 @@ export function CoverFields({
       <div className="space-y-2.5">
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="cover-institute">Instituto</Label>
+            <Label htmlFor="cover-institute">{t("technical.institute")}</Label>
             <Input
               id="cover-institute"
               value={institutionName}
               onChange={(e) => onFieldChange("institutionName", e.target.value)}
-              placeholder="Ex.: ISTEG"
+              placeholder={t("technical.institutePlaceholder")}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="cover-course">Curso</Label>
+            <Label htmlFor="cover-course">{t("technical.course")}</Label>
             <Input
               id="cover-course"
               value={courseName}
               onChange={(e) => onFieldChange("courseName", e.target.value)}
-              placeholder="Ex.: Informática"
+              placeholder={t("technical.coursePlaceholder")}
             />
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="cover-student">Estudante</Label>
+            <Label htmlFor="cover-student">{t("technical.student")}</Label>
             <Input
               id="cover-student"
               value={studentName}
               onChange={(e) => onFieldChange("studentName", e.target.value)}
-              placeholder="Nome completo"
+              placeholder={t("technical.studentPlaceholder")}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="cover-advisor">Formador(a)</Label>
+            <Label htmlFor="cover-advisor">{t("technical.trainer")}</Label>
             <Input
               id="cover-advisor"
               value={advisorName}
               onChange={(e) => onFieldChange("advisorName", e.target.value)}
-              placeholder="Nome do formador"
+              placeholder={t("technical.trainerPlaceholder")}
             />
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="cover-city">
-              Cidade <span className="text-[10px] text-muted-foreground">(opcional)</span>
+              {t("technical.city")} <span className="text-[10px] text-muted-foreground">{t("technical.cityOptional")}</span>
             </Label>
             <Input
               id="cover-city"
               value={city}
               onChange={(e) => onFieldChange("city", e.target.value)}
-              placeholder="Ex.: Maputo"
+              placeholder={t("technical.cityPlaceholder")}
             />
           </div>
         </div>
@@ -209,92 +211,92 @@ export function CoverFields({
     <div className="space-y-2.5">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="cover-institution">Instituição</Label>
+          <Label htmlFor="cover-institution">{t("higher.institution")}</Label>
           <Input
             id="cover-institution"
             value={institutionName}
             onChange={(e) => onFieldChange("institutionName", e.target.value)}
-            placeholder="Nome da instituição"
+            placeholder={t("higher.institutionPlaceholder")}
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="cover-course">Curso</Label>
+          <Label htmlFor="cover-course">{t("higher.course")}</Label>
           <Input
             id="cover-course"
             value={courseName}
             onChange={(e) => onFieldChange("courseName", e.target.value)}
-            placeholder="Nome do curso"
+            placeholder={t("higher.coursePlaceholder")}
           />
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="cover-student">Estudante</Label>
+          <Label htmlFor="cover-student">{t("higher.student")}</Label>
           <Input
             id="cover-student"
             value={studentName}
             onChange={(e) => onFieldChange("studentName", e.target.value)}
-            placeholder="Nome completo"
+            placeholder={t("higher.studentPlaceholder")}
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="cover-advisor">Docente</Label>
+          <Label htmlFor="cover-advisor">{t("higher.advisor")}</Label>
           <Input
             id="cover-advisor"
             value={advisorName}
             onChange={(e) => onFieldChange("advisorName", e.target.value)}
-            placeholder="Nome do orientador"
+            placeholder={t("higher.advisorPlaceholder")}
           />
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="cover-faculty">
-            Faculdade <span className="text-[10px] text-muted-foreground">(opcional)</span>
+            {t("higher.faculty")} <span className="text-[10px] text-muted-foreground">{t("higher.facultyOptional")}</span>
           </Label>
           <Input
             id="cover-faculty"
             value={facultyName}
             onChange={(e) => onFieldChange("facultyName", e.target.value)}
-            placeholder="Ex.: Faculdade de Economia"
+            placeholder={t("higher.facultyPlaceholder")}
           />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="cover-department">
-            Departamento <span className="text-[10px] text-muted-foreground">(opcional)</span>
+            {t("higher.department")} <span className="text-[10px] text-muted-foreground">{t("higher.departmentOptional")}</span>
           </Label>
           <Input
             id="cover-department"
             value={departmentName}
             onChange={(e) => onFieldChange("departmentName", e.target.value)}
-            placeholder="Ex.: Departamento de Gestão"
+            placeholder={t("higher.departmentPlaceholder")}
           />
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="cover-semester">
-            Semestre <span className="text-[10px] text-muted-foreground">(opcional)</span>
+            {t("higher.semester")} <span className="text-[10px] text-muted-foreground">{t("higher.semesterOptional")}</span>
           </Label>
           <Select value={semester} onValueChange={(v) => onFieldChange("semester", v)}>
             <SelectTrigger id="cover-semester">
-              <SelectValue placeholder="Selecionar" />
+              <SelectValue placeholder={t("higher.semesterSelect")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="I">I Semestre</SelectItem>
-              <SelectItem value="II">II Semestre</SelectItem>
+              <SelectItem value="I">{t("higher.semester1")}</SelectItem>
+              <SelectItem value="II">{t("higher.semester2")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="cover-city">
-            Cidade <span className="text-[10px] text-muted-foreground">(opcional)</span>
+            {t("higher.city")} <span className="text-[10px] text-muted-foreground">{t("higher.cityOptional")}</span>
           </Label>
           <Input
             id="cover-city"
             value={city}
             onChange={(e) => onFieldChange("city", e.target.value)}
-            placeholder="Ex.: Maputo"
+            placeholder={t("higher.cityPlaceholder")}
           />
         </div>
       </div>

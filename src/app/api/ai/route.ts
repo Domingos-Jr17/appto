@@ -14,14 +14,14 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const body = await request.json();
     const parsed = aiRequestSchema.safeParse(body);
 
     if (!parsed.success) {
-      return apiError("Dados inválidos", 400, "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
+      return apiError("Invalid data", 400, "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
     }
 
     const result = await processAiRequest({
@@ -53,7 +53,7 @@ export async function GET(_request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || session.user.role !== "ADMIN") {
-    return apiError("Não autorizado", 401);
+    return apiError("Unauthorized", 401);
   }
 
   return apiSuccess(await getCacheStats());

@@ -97,7 +97,7 @@ export class SubscriptionService {
     const subscription = await this.checkAndResetMonthlyUsage(userId);
 
     if (subscription.status !== SubscriptionStatus.ACTIVE) {
-      return { allowed: false, reason: "Subscription inativa", remaining: 0 };
+      return { allowed: false, reason: "Subscription is inactive", remaining: 0 };
     }
 
     const planRemaining = subscription.worksPerMonth - subscription.worksUsed;
@@ -105,7 +105,7 @@ export class SubscriptionService {
     const remaining = planRemaining + extraWorks;
 
     if (remaining <= 0) {
-      return { allowed: false, reason: "Limite de trabalhos atingido", remaining: 0 };
+      return { allowed: false, reason: "Work limit reached", remaining: 0 };
     }
 
     return { allowed: true, remaining };
@@ -116,7 +116,7 @@ export class SubscriptionService {
     const planDetails = PACKAGE_PRICES[subscription.package as PackageType];
 
     if (subscription.status !== SubscriptionStatus.ACTIVE) {
-      return { allowed: false, reason: "Subscription inativa" };
+      return { allowed: false, reason: "Subscription is inactive" };
     }
 
     const isFreeAction = FREE_AI_ACTIONS.includes(action);
@@ -128,7 +128,7 @@ export class SubscriptionService {
         return { allowed: true };
       }
 
-      return { allowed: false, reason: "Funcionalidade disponível apenas em STARTER ou PRO" };
+      return { allowed: false, reason: "This feature is only available on STARTER or PRO" };
     }
 
     if (isBasicAction && planDetails.hasBasicAI) {
@@ -140,10 +140,10 @@ export class SubscriptionService {
     }
 
     if (isBasicAction) {
-      return { allowed: false, reason: "Funcionalidade disponível apenas em STARTER ou PRO" };
+      return { allowed: false, reason: "This feature is only available on STARTER or PRO" };
     }
 
-    return { allowed: false, reason: "Funcionalidade disponível apenas em PRO" };
+    return { allowed: false, reason: "This feature is only available on PRO" };
   }
 
   async canExportPdf(userId: string): Promise<{ allowed: boolean; reason?: string }> {
@@ -158,7 +158,7 @@ export class SubscriptionService {
       return { allowed: true };
     }
 
-    return { allowed: false, reason: "Export PDF disponível apenas em PRO" };
+    return { allowed: false, reason: "PDF export is only available on PRO" };
   }
 
   getPackageFeatures(packageType: PackageType): PackageDetails {
@@ -235,7 +235,7 @@ export class SubscriptionService {
     `;
 
     if (result !== 1) {
-      throw new ApiRouteError("Limite de trabalhos atingido", 403, "WORK_LIMIT_REACHED");
+      throw new ApiRouteError("Work limit reached", 403, "WORK_LIMIT_REACHED");
     }
   }
 
@@ -299,7 +299,7 @@ export class SubscriptionService {
   async activatePackage(userId: string, packageType: PackageType): Promise<void> {
     const packageDetails = PACKAGE_PRICES[packageType];
     if (!packageDetails) {
-      throw new ApiRouteError("Pacote inválido", 400, "INVALID_PACKAGE");
+      throw new ApiRouteError("Invalid package", 400, "INVALID_PACKAGE");
     }
 
     const currentSubscription = await this.getOrCreate(userId);

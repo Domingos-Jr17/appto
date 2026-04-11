@@ -34,11 +34,17 @@
       "forgotPassword": "Esqueceste a palavra-passe?",
       "loginButton": "Entrar",
       "loginWithGoogle": "Entrar com Google",
+      "continueWith": "ou continue com",
       "noAccount": "Não tens conta?",
       "register": "Regista-te",
       "twoFactorCode": "Código de verificação",
       "twoFactorDescription": "Introduz o código de 6 dígitos da tua app de autenticação.",
-      "verify": "Verificar"
+      "verify": "Verificar",
+      "errorCredentialsSignin": "Email ou palavra-passe incorretos",
+      "errorTwoFactorRequired": "Introduz o código do autenticador para concluir o login.",
+      "errorInvalidTwoFactorCode": "O código 2FA introduzido é inválido.",
+      "errorConfiguration": "A autenticação não está configurada corretamente no servidor.",
+      "errorGeneric": "Ocorreu um erro. Tente novamente."
     },
     "register": {
       "title": "Criar conta",
@@ -46,7 +52,11 @@
       "fullName": "Nome completo",
       "namePlaceholder": "O teu nome",
       "email": "Email",
+      "emailPlaceholder": "seu@email.com",
       "password": "Palavra-passe",
+      "passwordPlaceholder": "••••••••",
+      "showPassword": "Mostrar palavra-passe",
+      "hidePassword": "Esconder palavra-passe",
       "confirmPassword": "Confirmar palavra-passe",
       "passwordStrength": "Força da palavra-passe",
       "weak": "Fraca",
@@ -55,7 +65,7 @@
       "strong": "Forte",
       "passwordsMatch": "Palavras-passe coincidem",
       "passwordsDontMatch": "As palavras-passe não coincidem",
-      "acceptTerms": "Eu aceito os {termsLink} e a {privacyLink}",
+      "acceptTerms": "Eu aceito os <termsLink>Termos de Uso</termsLink> e a <privacyLink>Política de Privacidade</privacyLink>",
       "termsOfUse": "Termos de Uso",
       "privacyPolicy": "Política de Privacidade",
       "mustAcceptTerms": "Precisas de aceitar os termos de uso",
@@ -64,43 +74,112 @@
       "hasAccount": "Já tens conta?",
       "login": "Entrar",
       "errorCreating": "Erro ao criar conta",
-      "errorGeneric": "Ocorreu um erro. Tente novamente."
+      "errorGeneric": "Ocorreu um erro. Tente novamente.",
+      "verificationEmailSent": "Email de verificação enviado",
+      "verificationEmailDescription": "Enviámos um email de verificação para {email}.",
+      "verificationNote": "Enviámos um email de verificação para <strong>{email}</strong>."
     },
     "forgotPassword": {
-      "title": "Recuperar palavra-passe",
-      "subtitle": "Indica o teu email e enviamos instruções para redefinir a palavra-passe.",
+      "title": "Esqueceste a palavra-passe?",
+      "subtitle": "Introduz o teu email para receberes um link de redefinição",
       "email": "Email",
       "emailPlaceholder": "seu@email.com",
       "sendInstructions": "Enviar instruções",
-      "successTitle": "Verifica o teu email",
-      "successMessage": "Se uma conta com esse email existir, enviámos instruções para redefinir a palavra-passe.",
-      "backToLogin": "Voltar ao login"
+      "sendResetLink": "Enviar link de redefinição",
+      "successTitle": "Email enviado!",
+      "successMessage": "Se uma conta com o email <emailAddress>{email}</emailAddress> existir, receberás um link para redefinir a tua palavra-passe.",
+      "helpText": "Não recebeste o email? Verifica a tua caixa de spam ou tenta novamente.",
+      "tryAgain": "Tentar novamente",
+      "backToLogin": "Voltar ao login",
+      "errorGeneric": "Não foi possível processar o pedido."
     },
     "resetPassword": {
       "title": "Redefinir palavra-passe",
-      "subtitle": "Introduz a tua nova palavra-passe.",
+      "subtitle": "Escolhe uma nova palavra-passe para a tua conta.",
       "password": "Nova palavra-passe",
+      "passwordPlaceholder": "••••••••",
+      "showPassword": "Mostrar palavra-passe",
+      "hidePassword": "Esconder palavra-passe",
       "confirmPassword": "Confirmar nova palavra-passe",
-      "reset": "Redefinir palavra-passe",
+      "passwordsDontMatch": "As palavras-passe não coincidem.",
+      "reset": "Atualizar palavra-passe",
       "success": "Palavra-passe redefinida com sucesso.",
       "backToLogin": "Voltar ao login",
-      "passwordMinLength": "A palavra-passe deve ter pelo menos 8 caracteres"
+      "passwordMinLength": "A palavra-passe deve ter pelo menos 8 caracteres",
+      "invalidLink": "O link de redefinição é inválido ou está incompleto.",
+      "errorGeneric": "Não foi possível redefinir a palavra-passe.",
+      "successTitle": "Palavra-passe redefinida",
+      "successDescription": "A tua palavra-passe foi atualizada. Faz login novamente para continuares.",
+      "goToLogin": "Ir para o login"
     }
   },
   "landing": {
+    "navigation": {
+      "label": "Navegação",
+      "resources": "Recursos",
+      "pricing": "Preços",
+      "faq": "FAQ",
+      "login": "Entrar",
+      "getStartedFree": "Começar Grátis",
+      "openMenu": "Abrir menu",
+      "closeMenu": "Fechar menu"
+    },
     "hero": {
       "badge": "Feito para estudantes universitários",
-      "title1": "O teu copiloto",
-      "title2": "académico",
-      "subtitle": "Estrutura, escreve e melhora os teus trabalhos académicos com assistência inteligente. Pensado para estudantes moçambicanos.",
+      "titlePrefix": "O teu trabalho académico,",
+      "titleSuffix": "sem passar a noite em claro",
+      "subtitle": "Do tema ao documento pronto para submissão. Estrutura automática, normas ABNT, português de Moçambique e exportação DOCX - tudo numa só plataforma.",
       "cta": "Começar Grátis",
       "demo": "Ver Demo",
+      "word1": "estruturado",
+      "word2": "formatado",
+      "word3": "submetido",
+      "word4": "aprovado",
       "trustPrefix": "Com a confiança de estudantes de",
       "trustSuffix": "universidades moçambicanas"
     },
     "features": {
       "title": "Recursos",
       "subtitle": "Tudo o que precisas para o teu trabalho académico"
+    },
+    "featuresGrid": {
+      "badge": "Porquê o aptto",
+      "titlePrefix": "O que a IA genérica",
+      "titleHighlight": "não faz por ti",
+      "subtitle": "O ChatGPT não conhece as normas da UEM, não escreve em português de Moçambique e não exporta um documento formatado. O aptto sim.",
+      "cards": {
+        "delivery": {
+          "title": "Entrega sem noites em claro",
+          "description": "Estrutura automática para trabalhos de investigação. Começas com um tema e recebes um documento organizado."
+        },
+        "formatting": {
+          "title": "Formatado como o teu orientador espera",
+          "description": "Referências, capas e sumários com normas ABNT. O teu trabalho sai pronto para submissão sem ajustes manuais."
+        },
+        "language": {
+          "title": "Português de Moçambique, não de chatbot",
+          "description": "Texto académico em português moçambicano. Sem brasileirismos e sem linguagem genérica de IA."
+        },
+        "export": {
+          "title": "Descarrega e entrega",
+          "description": "Exporta em DOCX em todos os pacotes e em PDF no PRO. Sem conversões e sem formatações perdidas."
+        }
+      },
+      "comparison": {
+        "title": "aptto vs IA Genérica",
+        "featureColumn": "Funcionalidade",
+        "apttoColumn": "aptto",
+        "genericColumn": "IA Genérica",
+        "rows": {
+          "mozambiquePortuguese": "Português académico moçambicano",
+          "abntReady": "Normas ABNT prontas para submissão",
+          "docxFormatted": "Documento formatado em DOCX",
+          "guidedStructure": "Estrutura guiada passo a passo",
+          "mozambiqueContext": "Contexto do ensino moçambicano",
+          "affordablePricing": "Preços acessíveis em MZN",
+          "fastAnswers": "Respostas rápidas para qualquer tema"
+        }
+      }
     },
     "howItWorks": {
       "title": "Como Funciona",
@@ -116,14 +195,48 @@
     },
     "pricing": {
       "title": "Preços",
-      "subtitle": "Pacotes que cabem no teu bolso",
+      "titlePrefix": "Pacotes que",
+      "titleHighlight": "cabem no teu bolso",
+      "subtitle": "Começa gratuitamente, faz upgrade quando precisares e compra trabalhos extras por {extraWorkPrice} MZN cada.",
       "billingToggle": "Facturação mensal",
       "popular": "Mais Popular",
+      "currency": "MZN",
       "perMonth": "por mês",
+      "perMonthShort": "/mês",
       "forever": "para sempre",
       "startFree": "Começar Grátis",
       "choose": "Escolher {name}",
-      "disclaimer": "Cobrança ainda em validação operacional"
+      "disclaimer": "Cobrança ainda em validação operacional",
+      "plans": {
+        "free": {
+          "name": "Pacote Free",
+          "description": "Para experimentares o aptto sem compromisso",
+          "features": {
+            "works": "{count} trabalho por mês",
+            "feature1": "Estrutura automática",
+            "feature2": "Exportar DOCX"
+          }
+        },
+        "starter": {
+          "name": "Pacote Starter",
+          "description": "Para quem tem trabalhos regulares durante o semestre",
+          "features": {
+            "works": "{count} trabalhos por mês",
+            "feature1": "Melhorar texto com IA",
+            "feature2": "Sugestões de argumentação"
+          }
+        },
+        "pro": {
+          "name": "Pacote Pro",
+          "description": "Para quem precisa de mais capacidade em vários trabalhos no mesmo mês",
+          "features": {
+            "works": "{count} trabalhos por mês",
+            "feature1": "IA completa para escrita e revisão",
+            "feature2": "Exportar PDF formatado",
+            "feature3": "Suporte prioritário"
+          }
+        }
+      }
     },
     "testimonials": {
       "title": "Testemunhos",
@@ -137,8 +250,46 @@
     },
     "faq": {
       "title": "Perguntas Frequentes",
-      "subtitle": "Respostas para as dúvidas mais comuns",
-      "contactUs": "Fale connosco"
+      "badge": "Perguntas Frequentes",
+      "titlePrefix": "Tira as tuas",
+      "titleHighlight": "dúvidas",
+      "subtitle": "Encontra respostas para as perguntas mais comuns sobre o aptto.",
+      "contactPrompt": "Ainda tens dúvidas?",
+      "contactUs": "Fale connosco",
+      "items": {
+        "item1": {
+          "question": "O aptto escreve o trabalho por mim?",
+          "answer": "Não. O aptto estrutura, sugere e formata, mas a revisão e a responsabilidade académica continuam a ser tuas. Essa é a diferença entre um copiloto e um gerador."
+        },
+        "item2": {
+          "question": "O meu orientador vai notar que usei IA?",
+          "answer": "O aptto produz texto em português académico moçambicano, com normas ABNT e estrutura coerente. Não soa a IA genérica, mas recomendamos sempre que revês e personalizas o conteúdo antes de submeter."
+        },
+        "item3": {
+          "question": "Quanto tempo poupo com o aptto?",
+          "answer": "A estruturação automática poupa-te horas de organização. A normalização ABNT poupa-te ainda mais tempo de formatação. No total, um trabalho que poderia levar a noite inteira pode ficar pronto numa fracção desse tempo."
+        },
+        "item4": {
+          "question": "O aptto serve para o meu tipo de trabalho?",
+          "answer": "Sim. O aptto cobre três níveis: ensino secundário, ensino técnico e ensino superior. Cada nível tem a sua estrutura, prompts e modelo de capa."
+        },
+        "item5": {
+          "question": "Como funcionam os preços?",
+          "answer": "Começas grátis com 1 trabalho por mês. Se precisares de mais, os pacotes pagos vão de {starterPrice} a {proPrice} MZN por mês. Trabalhos extras custam {extraWorkPrice} MZN cada e valem {validityMonths} meses."
+        },
+        "item6": {
+          "question": "Posso usar no telemóvel?",
+          "answer": "Sim. O aptto funciona no browser no telemóvel, tablet e computador. Não precisas de instalar nada."
+        },
+        "item7": {
+          "question": "O aptto usa português de Moçambique?",
+          "answer": "Sim. O texto é orientado para o português académico usado nas universidades moçambicanas. Sem brasileirismos e sem linguagem genérica de chatbot."
+        },
+        "item8": {
+          "question": "Posso exportar em DOCX e PDF?",
+          "answer": "DOCX está disponível em todos os planos. PDF é exclusivo do plano PRO."
+        }
+      }
     },
     "differentiators": {
       "title": "Porquê o aptto?",
@@ -146,27 +297,93 @@
     },
     "finalCTA": {
       "title": "Pronto para começar?",
-      "subtitle": "Junta-te a milhares de estudantes moçambicanos que já usam o aptto para criar melhores trabalhos académicos.",
+      "titlePrefix": "O teu próximo trabalho académico",
+      "titleHighlight": "começa aqui",
+      "subtitle": "Estrutura, formatação e exportação - tudo pronto. Cria a tua conta grátis e começa em segundos.",
       "cta": "Começar Grátis"
     },
     "footer": {
       "product": "Produto",
       "company": "Empresa",
       "legal": "Legal",
-      "features": "Funcionalidades",
-      "pricing": "Preços",
-      "demo": "Demo",
-      "faq": "FAQ",
-      "about": "Sobre nós",
-      "blog": "Blog",
-      "careers": "Carreiras",
-      "contact": "Contacto",
-      "terms": "Termos de uso",
-      "privacy": "Privacidade",
-      "cookies": "Cookies",
-      "description": "Estrutura, escreve e melhora os teus trabalhos académicos com assistência inteligente.",
+      "description": "O copiloto académico inteligente feito para estudantes moçambicanos. Escreve melhor, estrutura com rigor e submete com confiança.",
       "rights": "Todos os direitos reservados.",
-      "location": "Maputo, Moçambique"
+      "email": "Email",
+      "links": {
+        "features": "Funcionalidades",
+        "pricing": "Preços",
+        "demo": "Demo",
+        "faq": "FAQ",
+        "about": "Sobre nós",
+        "blog": "Blog",
+        "careers": "Carreiras",
+        "contact": "Contacto",
+        "terms": "Termos de uso",
+        "privacy": "Privacidade",
+        "cookies": "Cookies"
+      },
+      "social": {
+        "linkedin": "LinkedIn",
+        "twitter": "Twitter",
+        "instagram": "Instagram",
+        "facebook": "Facebook"
+      }
+    },
+    "demo": {
+      "badge": "Testa grátis, sem conta",
+      "title": "Experimenta o aptto antes de criares conta",
+      "subtitle": "Escreve o tema do teu trabalho e vê o sumário aparecer na hora",
+      "topicLabel": "Tema do trabalho",
+      "topicPlaceholder": "Ex: Desafios do abastecimento de água na cidade de Maputo...",
+      "hint": "Entre 8 e 160 caracteres. Esta demo não cria conta nem projecto.",
+      "generating": "A gerar...",
+      "testNow": "Testar agora",
+      "resultTitle": "Sumário gerado",
+      "aiGenerated": "Gerado pela IA",
+      "fallbackDemo": "Demo de fallback",
+      "pages": "páginas",
+      "ctaDescription": "Gostaste? Cria a tua conta gratuita para continuares no editor completo.",
+      "ctaButton": "Criar conta grátis",
+      "placeholder": "O sumário aparecerá aqui após a geração",
+      "error": "Não foi possível gerar o sumário neste momento."
+    },
+    "productMockup": {
+      "sidebar": {
+        "projects": "Meus Projectos",
+        "editor": "Editor",
+        "structure": "Estrutura",
+        "references": "Referências",
+        "settings": "Configurações"
+      },
+      "window": {
+        "title": "Monografia - Direito Económico",
+        "remainingWorks": "3 trabalhos restantes"
+      },
+      "document": {
+        "sectionTitle": "1. Introdução",
+        "sectionMeta": "Capítulo 1 • 3 páginas • 12 referências",
+        "paragraph": {
+          "beforeHighlight": "O regime jurídico do investimento estrangeiro em Moçambique tem sido objecto de diversas reformas legislativas nas últimas décadas. O presente trabalho analisa a evolução do",
+          "highlight": "Decreto-Lei n.º 43/2009",
+          "afterHighlight": "..."
+        },
+        "aiSuggestionLabel": "Sugestão da IA",
+        "aiSuggestion": "\"...estabelecendo um paralelo com os regimes de investimento em Angola e Brasil, considerando as especificidades do contexto moçambicano.\""
+      },
+      "actions": {
+        "accept": "Aceitar",
+        "regenerate": "Regenerar",
+        "improveText": "Melhorar texto",
+        "addReference": "Adicionar referência",
+        "exportDocx": "Exportar DOCX"
+      },
+      "progress": "60% completo",
+      "badges": {
+        "locale": "PT-MZ Académico",
+        "abnt": "ABNT Ready",
+        "docx": "DOCX Export",
+        "streaming": "Streaming AI"
+      }
     }
   },
   "dashboard": {
@@ -323,17 +540,104 @@
     }
   },
   "subscription": {
-    "title": "Subscrição",
-    "currentPlan": "Plano actual",
-    "upgrade": "Mudar de plano",
-    "addCredits": "Adicionar créditos",
-    "extraWorks": "Trabalhos extras",
-    "buyExtraWorks": "Comprar trabalhos extras",
-    "transactionHistory": "Histórico de transacções",
-    "paymentMethod": "Método de pagamento",
-    "mPesa": "M-Pesa",
-    "eMola": "e-Mola",
-    "noTransactions": "Sem transacções ainda"
+    "title": "Pacotes",
+    "pageDescription": "Escolhe o pacote ideal para ti",
+    "currency": "MZN",
+    "perMonthShort": "/mês",
+    "popular": "Mais Popular",
+    "worksPerMonth": "{count} trabalho(s)/mês",
+    "planNames": {
+      "free": "Free",
+      "starter": "Starter",
+      "pro": "Pro"
+    },
+    "currentStatus": {
+      "title": "O teu pacote actual",
+      "currentPlan": "Pacote actual",
+      "worksUsed": "Trabalhos usados",
+      "worksRemaining": "Trabalhos restantes",
+      "limitReached": "Atingiste o limite de trabalhos deste mês. Faz upgrade do pacote ou compra trabalhos extras.",
+      "nextReset": "Próximo reset: {date}"
+    },
+    "paymentMethod": {
+      "title": "Método de pagamento",
+      "description": "Escolhe entre M-Pesa e e-Mola."
+    },
+    "plans": {
+      "free": {
+        "description": "Para experimentares o aptto sem compromisso",
+        "features": {
+          "works": "{count} trabalho por mês",
+          "structure": "Estrutura automática",
+          "docx": "Exportar DOCX"
+        }
+      },
+      "starter": {
+        "description": "Para quem tem trabalhos regulares durante o semestre",
+        "features": {
+          "works": "{count} trabalhos por mês",
+          "ai": "Melhorar texto com IA",
+          "arguments": "Sugestões de argumentação",
+          "docx": "Exportar DOCX"
+        }
+      },
+      "pro": {
+        "description": "Para quem precisa de mais capacidade - vários trabalhos no mesmo mês",
+        "features": {
+          "works": "{count} trabalhos por mês",
+          "fullAi": "IA completa (escrita + revisão)",
+          "pdf": "Exportar PDF formatado",
+          "support": "Suporte prioritário"
+        }
+      }
+    },
+    "buttons": {
+      "currentPackage": "Pacote Actual",
+      "free": "Grátis",
+      "activate": "Ativar {packageName}",
+      "buy": "Comprar"
+    },
+    "extraWorks": {
+      "title": "Comprar Trabalhos Extras",
+      "description": "Precisas de mais trabalhos? Compra extras a {price} MZN cada",
+      "quantity": "Quantidade",
+      "quantityOption": "{count} trabalho(s)",
+      "total": "Total",
+      "purchasedTitle": "Trabalhos Extras Comprados",
+      "usageAndExpiry": "Usados: {used} / {quantity} | Expira: {date}",
+      "remaining": "{count} restantes"
+    },
+    "transactions": {
+      "title": "Histórico de Transações",
+      "status": {
+        "confirmed": "Confirmado",
+        "pending": "Pendente"
+      },
+      "labels": {
+        "package": "Pacote {packageName}",
+        "extraWorks": "{count} trabalho(s) extra(s)",
+        "amount": "{amount} MZN",
+        "default": "Transação"
+      }
+    },
+    "toasts": {
+      "checkoutStarted": {
+        "title": "Checkout iniciado",
+        "packageDescription": "Continue o pagamento do pacote {packageName}.",
+        "extraDescription": "Continue o pagamento de {count} trabalho(s) extra(s)."
+      },
+      "success": {
+        "title": "Sucesso",
+        "packageDescription": "Pacote {packageName} ativado com sucesso!",
+        "extraDescription": "{count} trabalho(s) extra(s) adicionado(s)!"
+      },
+      "error": {
+        "title": "Erro",
+        "activatePackage": "Erro ao ativar pacote",
+        "buyExtraWorks": "Erro ao comprar trabalhos extra",
+        "processPayment": "Erro ao processar pagamento"
+      }
+    }
   },
   "workspace": {
     "chat": {
@@ -376,23 +680,34 @@
   "share": {
     "title": "Partilhar por link",
     "description": "Qualquer pessoa com o link pode visualizar o documento.",
+    "loading": "A carregar documento...",
     "copyLink": "Copiar link",
     "linkCopied": "Link copiado!",
     "revokeLink": "Revogar link",
     "noActiveLinks": "Sem links activos",
     "createLink": "Criar link de partilha",
     "documentNotFound": "Documento não encontrado ou link expirado",
+    "unavailable": "Este documento pode ter sido removido ou o link expirou.",
+    "backHome": "Voltar ao início",
     "views": "visualizações",
     "sharedAt": "Partilhado em",
+    "infoTitle": "Informações do Trabalho",
+    "institutionLabel": "Instituição:",
+    "authorLabel": "Autor:",
+    "advisorLabel": "Orientador:",
+    "courseLabel": "Curso:",
+    "locationLabel": "Local:",
+    "referencesLabel": "Referências",
     "createAccount": "Criar conta no aptto",
-    "createAccountCTA": "Cria o teu próprio trabalho académico com o aptto"
+    "createAccountCTA": "Cria o teu próprio trabalho académico com o aptto",
+    "startFree": "Começar Grátis"
   },
   "layout": {
     "title": "aptto - Copiloto Académico com IA",
-    "description": "Plataforma inteligente de apoio à escrita académica para estudantes moçambicanos.",
-    "keywords": ["aptto", "escrita académica", "IA", "Moçambique", "ABNT"],
+    "description": "Plataforma inteligente de apoio à escrita académica para estudantes moçambicanos. Estrutura trabalhos, escreve em português académico e normaliza referências ABNT.",
+    "keywords": ["aptto", "escrita académica", "IA", "Moçambique", "ABNT", "monografia", "trabalho académico"],
     "ogTitle": "aptto - Copiloto Académico com IA",
-    "ogDescription": "O seu assistente inteligente para trabalhos académicos"
+    "ogDescription": "O seu assistente inteligente para trabalhos académicos em Moçambique"
   },
   "appShell": {
     "header": {
@@ -403,6 +718,7 @@
     "sidebar": {
       "newWork": "Novo trabalho",
       "recentWorks": "Trabalhos recentes",
+      "moreOptions": "Mais opções",
       "rename": "Renomear",
       "archive": "Arquivar",
       "restore": "Restaurar",
@@ -415,7 +731,8 @@
     },
     "mobileNav": {
       "home": "Início",
-      "works": "Trabalhos"
+      "works": "Trabalhos",
+      "newWork": "Novo trabalho"
     },
     "userMenu": {
       "openMenu": "Abrir menu da conta",
@@ -450,17 +767,34 @@
     "errorSendingEmail": "Não foi possível enviar o email de verificação.",
     "errorDeleting": "Erro ao eliminar",
     "workDeleted": "Trabalho eliminado",
+    "deleteErrorDescription": "Não foi possível eliminar o trabalho.",
     "errorUpdating": "Erro ao actualizar",
     "workArchived": "Trabalho arquivado",
     "workRestored": "Trabalho restaurado",
     "errorRenaming": "Erro ao renomear",
-    "titleUpdated": "Título actualizado"
+    "updateErrorDescription": "Não foi possível actualizar o trabalho.",
+    "renameErrorDescription": "Não foi possível renomear o trabalho.",
+    "titleUpdated": "Título actualizado",
+    "thisWork": "este trabalho",
+    "pwaInstallBanner": {
+      "title": "Instalar o aptto",
+      "description": "Instala no teu dispositivo para acesso rápido, mesmo sem abrir o browser.",
+      "close": "Fechar",
+      "install": "Instalar",
+      "later": "Agora não"
+    }
   },
   "errors": {
     "title": "Algo correu mal",
     "description": "Ocorreu um erro inesperado ao carregar a aplicação. Tenta novamente ou recarrega a página.",
     "retry": "Tentar novamente",
-    "backHome": "Voltar ao início"
+    "backHome": "Voltar ao início",
+    "app": {
+      "title": "Erro no workspace",
+      "description": "Não foi possível carregar esta área da aplicação. Podes tentar novamente sem perder a sessão actual.",
+      "retry": "Tentar novamente",
+      "backToApp": "Ir para a app"
+    }
   },
   "verifyEmail": {
     "title": "A verificar email...",
@@ -468,11 +802,16 @@
     "success": "Email verificado!",
     "error": "Erro na verificação",
     "invalidLink": "Link de verificação inválido",
-    "backToLogin": "Voltar ao login"
+    "backToLogin": "Voltar ao login",
+    "successDescription": "Email verificado com sucesso! A redirecionar...",
+    "errorDescription": "Ocorreu um erro ao verificar o email"
   },
   "offline": {
     "title": "Estás offline",
-    "description": "O shell da app continua disponível, mas gerar conteúdo, pagar ou sincronizar dados exige ligação activa."
+    "description": "O shell da app continua disponível, mas gerar conteúdo, pagar ou sincronizar dados exige ligação activa.",
+    "banner": {
+      "message": "Sem ligação à internet. Algumas acções podem falhar até a ligação voltar."
+    }
   },
   "settings": {
     "notifications": {
@@ -487,7 +826,7 @@
       },
       "securityNotice": {
         "title": "Notificações de segurança",
-        "description": "Notificações importantes sobre segurança da conta serão sempre enviadas por email"
+        "description": "Notificações importantes sobre segurança da conta serão sempre enviadas por email, independentemente destas configurações."
       },
       "saveButton": "Guardar preferências",
       "saving": "A guardar...",
@@ -502,6 +841,29 @@
         }
       },
       "errorSave": "Erro ao guardar"
+    },
+    "page": {
+      "eyebrow": "Configurações",
+      "title": "Preferências e Segurança",
+      "description": "Gira preferências, segurança e dados da conta num fluxo consistente com o resto do produto.",
+      "tabs": {
+        "perfil": {
+          "label": "Perfil",
+          "description": "Gira as suas informações pessoais"
+        },
+        "preferencias": {
+          "label": "Preferências",
+          "description": "Personalize a sua experiência"
+        },
+        "seguranca": {
+          "label": "Segurança",
+          "description": "Definições de segurança da conta"
+        },
+        "conta": {
+          "label": "Conta",
+          "description": "Gestão da conta, pacotes e facturação"
+        }
+      }
     },
     "preferencesSection": {
       "language": {
@@ -527,6 +889,11 @@
       "citationStyle": {
         "label": "Estilo de Citação Padrão",
         "description": "Estilo de citação utilizado por padrão nos teus trabalhos"
+      },
+      "citationStyles": {
+        "abnt": "ABNT",
+        "apa": "APA",
+        "vancouver": "Vancouver"
       },
       "saveButton": "Guardar preferências",
       "saving": "A guardar...",
@@ -556,6 +923,7 @@
     "profileSection": {
       "avatar": {
         "title": "Foto de Perfil",
+        "altFallback": "Utilizador",
         "description": "JPG, GIF ou PNG. Máximo de 2MB.",
         "uploadButton": "Carregar foto",
         "uploading": "Enviando...",
@@ -648,7 +1016,7 @@
         "notActive": "2FA ainda não está activo",
         "setupDesc": "Gere um QR code, associe no autenticador e valide um código de 6 dígitos.",
         "active": "2FA activo",
-        "activeDesc": "O login exige um código do autenticador.",
+        "activeDesc": "O login exige um código do autenticador. Podes desactivar com palavra-passe atual ou código 2FA.",
         "setupButton": "Iniciar configuração",
         "preparing": "Preparando...",
         "verifyButton": "Verificar e activar 2FA",
@@ -656,10 +1024,12 @@
         "disabling": "A processar...",
         "qrCodeAlt": "QR code para configurar 2FA",
         "codeLabel": "Código do autenticador",
+        "codePlaceholder": "123456",
         "currentPasswordLabel": "Palavra-passe atual",
         "currentPasswordOptional": "Opcional se usar código 2FA",
         "code2FA": "Código 2FA",
         "code2FAOptional": "Opcional se usares palavra-passe",
+        "manualUriHelp": "Se o QR code não abrir, copie manualmente a URI:",
         "recoveryCodes": "Códigos de recuperação",
         "toast": {
           "enabled": {
@@ -681,6 +1051,8 @@
         "loading": "A carregar sessões...",
         "current": "Atual",
         "ipNA": "IP não disponível",
+        "noUserAgent": "Sessão sem user agent disponível",
+        "createdAt": "Criada em {date}",
         "revoke": "Revogar",
         "revokeConfirm": "Revogar sessão?",
         "revokeDesc": "Esta ação termina o acesso do dispositivo selecionado.",
@@ -701,10 +1073,10 @@
       "securityTips": {
         "title": "Dicas de Segurança",
         "tips": [
-          "Use uma palavra-passe forte e única",
-          "Active a autenticação de dois fatores",
-          "Não partilhe os seus códigos de recuperação",
-          "Termine sessões em dispositivos públicos"
+          "Usa uma palavra-passe forte e única para a tua conta.",
+          "Active o 2FA antes de gerir pacotes, pagamentos ou exportar documentos.",
+          "Revogue sessões antigas depois de usar computadores partilhados.",
+          "Guarde os códigos de recuperação fora do browser."
         ]
       },
       "errorLoadAccount": "Não foi possível carregar a conta.",
@@ -722,7 +1094,12 @@
       },
       "packageCard": {
         "label": "Pacote",
-        "valueFree": "Gratuito"
+        "valueFree": "Gratuito",
+        "values": {
+          "free": "Free",
+          "starter": "Starter",
+          "pro": "Pro"
+        }
       },
       "memberSince": "Membro desde",
       "billingCard": {
@@ -757,11 +1134,14 @@
           "dialogTitle": "Eliminar conta permanentemente?",
           "dialogDesc": "Esta acção é irreversível. Todos os teus dados, incluindo sessões, secções e créditos, serão permanentemente removidos.",
           "confirmText": "EXCLUIR",
+          "confirmPromptBefore": "Escreve",
+          "confirmPromptAfter": "para confirmar:",
           "currentPassword": "Palavra-passe atual",
           "passwordRequired": "(obrigatória)",
           "passwordOptional": "(ou usa o código 2FA)",
           "passwordPlaceholder": "Introduz a tua palavra-passe",
           "code2FA": "Código 2FA",
+          "codePlaceholder": "123456",
           "cancel": "Cancelar",
           "deleteButton": "Eliminar permanentemente",
           "deleting": "Eliminando...",
@@ -780,13 +1160,18 @@
       },
       "help": {
         "title": "Precisa de ajuda?",
+        "descriptionBeforeLink": "Se estiveres a ter problemas com a tua conta, contacta o",
+        "descriptionAfterLink": "antes de eliminar a conta.",
         "support": "suporte"
       }
     }
   },
   "worksLibrary": {
     "type": {
-      "monograph": "monografia"
+      "monograph": "monografia",
+      "schoolWork": "trabalho escolar",
+      "technicalWork": "trabalho técnico",
+      "academicWork": "trabalho académico"
     },
     "toast": {
       "updateFailed": "Erro ao actualizar o trabalho",
@@ -815,6 +1200,7 @@
     "delete": {
       "title": "Eliminar trabalho?",
       "description": "Vais eliminar \"{title}\". Esta acção não pode ser desfeita.",
+      "fallbackTitle": "este trabalho",
       "cancel": "Cancelar",
       "delete": "Eliminar"
     }
@@ -880,6 +1266,8 @@
         "advisorLabel": "Orientador",
         "advisorLabelSecondary": "Professor",
         "advisorLabelTechnical": "Formador",
+        "advisorPlaceholderSecondary": "Ex.: Prof. Bento",
+        "advisorPlaceholderTechnical": "Ex.: Form. João",
         "advisorPlaceholder": "Ex.: Prof. Dr. João Santos",
         "cityLabel": "Cidade",
         "cityPlaceholder": "Ex.: Maputo",
@@ -909,10 +1297,71 @@
         "workTypeTechnical": "Trabalho Técnico",
         "workTypeHigher": "Trabalho Académico"
       }
+    },
+    "header": {
+      "generatingWork": "A gerar o teu trabalho...",
+      "titlePlaceholder": "Título do trabalho...",
+      "saveTitle": "Guardar título",
+      "cancelEdit": "Cancelar edição",
+      "clickToEditTitle": "Clique para editar o título",
+      "progress": "Progresso",
+      "limitReached": "Limite atingido",
+      "cover": "Capa",
+      "workTypeSecondary": "Trabalho Escolar",
+      "workTypeTechnical": "Trabalho Técnico",
+      "workTypeHigher": "Trabalho Académico"
+    },
+    "generateButton": {
+      "generating": "A gerar...",
+      "regenerate": "Regenerar trabalho",
+      "generate": "Gerar trabalho",
+      "confirmTitle": "Regenerar trabalho?",
+      "confirmDescription": "Isto vai substituir todo o conteúdo gerado anteriormente. Tens a certeza que queres continuar?",
+      "cancel": "Cancelar",
+      "confirmAction": "Sim, regenerar"
+    },
+    "exportActions": {
+      "downloading": "A descarregar...",
+      "saving": "A guardar {format}...",
+      "export": "Exportar",
+      "shareLink": "Partilhar por link",
+      "downloadDocx": "Descarregar DOCX",
+      "downloadPdf": "Descarregar PDF",
+      "saveDocx": "Guardar DOCX",
+      "savePdf": "Guardar PDF"
+    },
+    "downloadButton": {
+      "downloading": "A descarregar...",
+      "downloadDocument": "Descarregar documento",
+      "tooltip": "Gera o trabalho primeiro para descarregar o documento."
+    },
+    "bottomBar": {
+      "cover": "Capa",
+      "regenerate": "Regenerar",
+      "generate": "Gerar",
+      "downloading": "A descarregar",
+      "download": "Download",
+      "new": "Novo"
+    },
+    "preview": {
+      "emptyTitle": "O teu trabalho vai aparecer aqui",
+      "emptyDescription": "Clica em \"Gerar trabalho\" para criar o conteúdo automaticamente.",
+      "generating": "A gerar...",
+      "coverSectionTitle": "Capa",
+      "titlePageSectionTitle": "Folha de Rosto",
+      "titleFallback": "Título do trabalho",
+      "advisorFallback": "Nome do orientador",
+      "cityFallback": "Maputo",
+      "referenceLabel": "Referência",
+      "locationLabel": "Local",
+      "workTypeSecondary": "Trabalho Escolar",
+      "workTypeTechnical": "Trabalho Técnico",
+      "workTypeHigher": "Trabalho Académico"
     }
   },
   "editor": {
     "documentTree": {
+      "map": "Mapa editorial",
       "status": {
         "empty": "Vazia",
         "started": "Iniciada",
@@ -929,35 +1378,23 @@
       "newChapter": "Novo capítulo",
       "rename": "Renomear",
       "title": "Título",
+      "noActivity": "Sem actividade",
+      "words": "palavras",
+      "summary": "{topLevel} capítulos de topo - {total} secções no total",
       "chapters": "capítulos",
       "chapter": "capítulo"
     },
     "preview": {
       "cover": "Capa",
       "tableOfContents": "Índice",
+      "workType": {
+        "secondary": "Trabalho escolar",
+        "technical": "Trabalho técnico",
+        "higher": "Trabalho académico"
+      },
       "sections": "secções",
       "noContent": "Secção ainda sem conteúdo.",
       "noDocument": "O documento ainda não tem conteúdo escrito."
-    }
-  },
-  "landing": {
-    "demo": {
-      "badge": "Testa grátis, sem conta",
-      "title": "Experimenta o aptto antes de criares conta",
-      "subtitle": "Escreve o tema do teu trabalho e vê o sumário aparecer na hora",
-      "topicLabel": "Tema do trabalho",
-      "topicPlaceholder": "Ex: Desafios do abastecimento de água na cidade de Maputo...",
-      "hint": "Entre 8 e 160 caracteres. Esta demo não cria conta nem projecto.",
-      "generating": "A gerar...",
-      "testNow": "Testar agora",
-      "resultTitle": "Sumário gerado",
-      "aiGenerated": "Gerado pela IA",
-      "fallbackDemo": "Demo de fallback",
-      "pages": "páginas",
-      "ctaDescription": "Gostaste? Cria a tua conta gratuita para continuares no editor completo.",
-      "ctaButton": "Criar conta grátis",
-      "placeholder": "O sumário aparecerá aqui após a geração",
-      "error": "Não foi possível gerar o sumário neste momento."
     }
   },
   "workCreation": {
@@ -972,18 +1409,22 @@
       "openWork": "Abrir trabalho →",
       "greeting": "Olá, {firstName}",
       "question": "Que tema queres trabalhar hoje?",
-      "worksAvailable": "trabalho disponível",
-      "worksAvailablePlural": "trabalhos disponíveis",
-      "limitReached": "Limite de trabalhos atingido",
+        "worksAvailable": "trabalho disponível",
+        "worksAvailablePlural": "trabalhos disponíveis",
+        "availableThisMonth": "Tens <countValue>{count}</countValue> {label} este mês",
+        "limitReached": "Limite de trabalhos atingido",
       "placeholder": "Qual o tema do teu trabalho?",
       "educationLevelLabel": "Nível de ensino",
       "noWorks": "Sem trabalhos disponíveis",
       "limitMessage": "O teu limite de trabalhos foi atingido. Faz upgrade do pacote ou compra trabalhos extras.",
       "creating": "A criar...",
       "generateButton": "Gerar trabalho",
-      "limitReachedTitle": "Limite de trabalhos atingido este mês.",
-      "upgradeLink": "upgrade do pacote",
-      "buyLink": "compra trabalhos extras",
+        "limitReachedTitle": "Limite de trabalhos atingido este mês.",
+        "limitActionPrefix": "Faz",
+        "limitActionMiddle": "ou",
+        "limitActionSuffix": ".",
+        "upgradeLink": "upgrade do pacote",
+        "buyLink": "compra trabalhos extras",
       "hideCover": "Ocultar dados da capa",
       "showCover": "Preencher dados da capa (opcional)",
       "coverLabel": "Capa:",
@@ -1001,8 +1442,9 @@
       "referencesLabel": "Referências",
       "keywordsLabel": "Palavras-chave",
       "keywordsPlaceholder": "Ex.: digitalização, sector bancário, Moçambique",
-      "referencesSeedLabel": "Referências iniciais",
-      "citationStyleLabel": "Norma de citação",
+        "referencesSeedLabel": "Referências iniciais",
+        "referencesSeedPlaceholder": "Ex.: Silva (2023), WHO (2024)",
+        "citationStyleLabel": "Norma de citação",
       "notesLabel": "Notas",
       "notesPlaceholder": "Ex.: incluir exemplos de Moçambique.",
       "recentWorks": "Trabalhos recentes",
@@ -1088,6 +1530,8 @@
       "preparingGeneration": "A preparar geração",
       "workReadyForReview": "Trabalho pronto para revisão",
       "generationFailed": "Falha na geração",
+      "generationRetryFailed": "Falhou ao reiniciar a geração",
+      "unknownError": "Erro desconhecido",
       "briefUpdated": "Briefing actualizado - requer revisão",
       "briefCreated": "Briefing criado",
       "downloadFailed": "Falhou o download",
@@ -1097,11 +1541,12 @@
       "saveFailed": "Falhou ao guardar exportação {format}",
       "saved": "{format} guardado",
       "exportCreated": "A exportação foi criada com sucesso.",
-      "couldNotSave": "Não foi possível guardar a exportação",
+      "couldNotSaveExport": "Não foi possível guardar a exportação",
       "saveError": "Erro ao guardar exportação",
       "shareFailed": "Falhou ao criar link de partilha",
       "linkCopied": "Link copiado!",
       "linkCopiedDesc": "O link de partilha foi copiado para a área de transferência.",
+      "invalidShareLink": "Link de partilha inválido",
       "shareError": "Não foi possível criar o link de partilha",
       "shareErrorTitle": "Erro ao partilhar",
       "templateFailed": "Falhou ao alterar template",
@@ -1141,6 +1586,8 @@
       "workCreatedDescription": "O trabalho foi criado com sucesso.",
       "error": "Erro",
       "createFailed": "Não foi possível criar o trabalho.",
+      "couldNotLoadSections": "Não foi possível obter as secções da geração.",
+      "generatingSection": "A gerar {section}",
       "sectionGenerateFailed": "Falha ao gerar {section}."
     },
     "accountData": {
@@ -1248,6 +1695,10 @@
     }
   },
   "admin": {
+    "common": {
+      "accessRestrictedTitle": "Acesso restrito",
+      "accessRestrictedDescription": "Esta área administrativa está disponível apenas para contas com perfil ADMIN."
+    },
     "rag": {
       "title": "Admin RAG",
       "description": "Gere fontes, indexe documentos e valide rapidamente o contexto recuperado pela IA.",
@@ -1335,6 +1786,11 @@
       "errors": {
         "loadSources": "Não foi possível carregar as fontes.",
         "error": "Erro"
+      },
+      "types": {
+        "public": "Pública",
+        "institutional": "Institucional",
+        "private": "Privada"
       }
     },
     "metrics": {

@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingUser) {
-      return apiError("Não foi possível concluir o registo com os dados informados.", 400, "REGISTRATION_FAILED");
+      return apiError("Could not complete registration with the provided details.", 400, "REGISTRATION_FAILED");
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     return apiSuccess(
       {
-        message: "Conta criada com sucesso",
+        message: "Account created successfully",
         user: {
           id: user.id,
           name: user.name,

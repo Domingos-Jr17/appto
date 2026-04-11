@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle, Eye, EyeOff, Lock } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function ResetPasswordPage() {
+  const t = useTranslations("auth.resetPassword");
   const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -25,19 +27,19 @@ export default function ResetPasswordPage() {
 
   const passwordError = useMemo(() => {
     if (!password) return "";
-    if (password.length < 8) return "A palavra-passe deve ter pelo menos 8 caracteres.";
+    if (password.length < 8) return t("passwordMinLength");
     if (confirmPassword && confirmPassword !== password) {
-      return "As palavras-passe não coincidem.";
+      return t("passwordsDontMatch");
     }
     return "";
-  }, [password, confirmPassword]);
+  }, [confirmPassword, password, t]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
 
     if (!token) {
-      setError("O link de redefinição é inválido ou está incompleto.");
+      setError(t("invalidLink"));
       return;
     }
 
@@ -57,7 +59,7 @@ export default function ResetPasswordPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Não foi possível redefinir a palavra-passe.");
+        throw new Error(data.error || t("errorGeneric"));
       }
 
       setIsSubmitted(true);
@@ -65,7 +67,7 @@ export default function ResetPasswordPage() {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "Não foi possível redefinir a palavra-passe."
+          : t("errorGeneric")
       );
     } finally {
       setIsLoading(false);
@@ -79,12 +81,12 @@ export default function ResetPasswordPage() {
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
             <CheckCircle className="h-8 w-8 text-success" />
           </div>
-          <h1 className="mb-2 text-2xl font-bold">Palavra-passe redefinida</h1>
+          <h1 className="mb-2 text-2xl font-bold">{t("successTitle")}</h1>
           <p className="mb-6 text-sm text-muted-foreground">
-            A tua palavra-passe foi atualizada. Faz login novamente para continuares.
+            {t("successDescription")}
           </p>
           <Button asChild className="w-full">
-            <Link href="/login">Ir para o login</Link>
+            <Link href="/login">{t("goToLogin")}</Link>
           </Button>
         </div>
       </div>
@@ -97,9 +99,9 @@ export default function ResetPasswordPage() {
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
           <Lock className="h-6 w-6 text-primary" />
         </div>
-        <h1 className="mb-2 text-2xl font-bold">Redefinir palavra-passe</h1>
+        <h1 className="mb-2 text-2xl font-bold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">
-          Escolhe uma nova palavra-passe para a tua conta.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -111,12 +113,13 @@ export default function ResetPasswordPage() {
         ) : null}
 
         <div className="space-y-2">
-          <Label htmlFor="password">Nova palavra-passe</Label>
+          <Label htmlFor="password">{t("password")}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
+              placeholder={t("passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="h-11 bg-background/50 pl-10 pr-10"
@@ -126,6 +129,7 @@ export default function ResetPasswordPage() {
               type="button"
               onClick={() => setShowPassword((value) => !value)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              aria-label={showPassword ? t("hidePassword") : t("showPassword")}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -133,12 +137,13 @@ export default function ResetPasswordPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirm-password">Confirmar nova palavra-passe</Label>
+          <Label htmlFor="confirm-password">{t("confirmPassword")}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="confirm-password"
               type={showConfirmPassword ? "text" : "password"}
+              placeholder={t("passwordPlaceholder")}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="h-11 bg-background/50 pl-10 pr-10"
@@ -148,6 +153,7 @@ export default function ResetPasswordPage() {
               type="button"
               onClick={() => setShowConfirmPassword((value) => !value)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              aria-label={showConfirmPassword ? t("hidePassword") : t("showPassword")}
             >
               {showConfirmPassword ? (
                 <EyeOff className="h-4 w-4" />
@@ -163,7 +169,7 @@ export default function ResetPasswordPage() {
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
           ) : (
             <>
-              Atualizar palavra-passe
+              {t("reset")}
               <ArrowRight className="ml-1 h-4 w-4" />
             </>
           )}
@@ -175,7 +181,7 @@ export default function ResetPasswordPage() {
         className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Voltar para o login
+        {t("backToLogin")}
       </Link>
     </div>
   );

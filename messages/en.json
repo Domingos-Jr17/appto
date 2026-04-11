@@ -34,11 +34,17 @@
       "forgotPassword": "Forgot your password?",
       "loginButton": "Log in",
       "loginWithGoogle": "Log in with Google",
+      "continueWith": "or continue with",
       "noAccount": "Don't have an account?",
       "register": "Sign up",
       "twoFactorCode": "Verification code",
       "twoFactorDescription": "Enter the 6-digit code from your authenticator app.",
-      "verify": "Verify"
+      "verify": "Verify",
+      "errorCredentialsSignin": "Incorrect email or password",
+      "errorTwoFactorRequired": "Enter your authenticator code to complete login.",
+      "errorInvalidTwoFactorCode": "The 2FA code you entered is invalid.",
+      "errorConfiguration": "Authentication is not configured correctly on the server.",
+      "errorGeneric": "An error occurred. Please try again."
     },
     "register": {
       "title": "Create account",
@@ -46,7 +52,11 @@
       "fullName": "Full name",
       "namePlaceholder": "Your name",
       "email": "Email",
+      "emailPlaceholder": "your@email.com",
       "password": "Password",
+      "passwordPlaceholder": "••••••••",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
       "confirmPassword": "Confirm password",
       "passwordStrength": "Password strength",
       "weak": "Weak",
@@ -55,7 +65,7 @@
       "strong": "Strong",
       "passwordsMatch": "Passwords match",
       "passwordsDontMatch": "Passwords don't match",
-      "acceptTerms": "I accept the {termsLink} and {privacyLink}",
+      "acceptTerms": "I accept the <termsLink>Terms of Use</termsLink> and <privacyLink>Privacy Policy</privacyLink>",
       "termsOfUse": "Terms of Use",
       "privacyPolicy": "Privacy Policy",
       "mustAcceptTerms": "You must accept the terms of use",
@@ -64,43 +74,112 @@
       "hasAccount": "Already have an account?",
       "login": "Log in",
       "errorCreating": "Error creating account",
-      "errorGeneric": "An error occurred. Please try again."
+      "errorGeneric": "An error occurred. Please try again.",
+      "verificationEmailSent": "Verification email sent",
+      "verificationEmailDescription": "We sent a verification email to {email}.",
+      "verificationNote": "We sent a verification email to <strong>{email}</strong>."
     },
     "forgotPassword": {
-      "title": "Recover password",
-      "subtitle": "Enter your email and we'll send instructions to reset your password.",
+      "title": "Forgot your password?",
+      "subtitle": "Enter your email to receive a reset link",
       "email": "Email",
       "emailPlaceholder": "your@email.com",
       "sendInstructions": "Send instructions",
-      "successTitle": "Check your email",
-      "successMessage": "If an account with that email exists, we've sent password reset instructions.",
-      "backToLogin": "Back to login"
+      "sendResetLink": "Send reset link",
+      "successTitle": "Email sent!",
+      "successMessage": "If an account with the email <emailAddress>{email}</emailAddress> exists, you will receive a link to reset your password.",
+      "helpText": "Didn't receive the email? Check your spam folder or try again.",
+      "tryAgain": "Try again",
+      "backToLogin": "Back to login",
+      "errorGeneric": "Could not process the request."
     },
     "resetPassword": {
       "title": "Reset password",
-      "subtitle": "Enter your new password.",
+      "subtitle": "Choose a new password for your account.",
       "password": "New password",
+      "passwordPlaceholder": "••••••••",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
       "confirmPassword": "Confirm new password",
-      "reset": "Reset password",
+      "passwordsDontMatch": "Passwords don't match.",
+      "reset": "Update password",
       "success": "Password reset successfully.",
       "backToLogin": "Back to login",
-      "passwordMinLength": "Password must be at least 8 characters"
+      "passwordMinLength": "Password must be at least 8 characters",
+      "invalidLink": "The reset link is invalid or incomplete.",
+      "errorGeneric": "Could not reset your password.",
+      "successTitle": "Password reset",
+      "successDescription": "Your password has been updated. Log in again to continue.",
+      "goToLogin": "Go to login"
     }
   },
   "landing": {
+    "navigation": {
+      "label": "Navigation",
+      "resources": "Features",
+      "pricing": "Pricing",
+      "faq": "FAQ",
+      "login": "Log in",
+      "getStartedFree": "Get Started Free",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu"
+    },
     "hero": {
       "badge": "Made for university students",
-      "title1": "Your academic",
-      "title2": "copilot",
-      "subtitle": "Structure, write and improve your academic work with intelligent assistance. Designed for Mozambican students.",
+      "titlePrefix": "Your academic work,",
+      "titleSuffix": "without staying up all night",
+      "subtitle": "From topic to submission-ready document. Automatic structure, ABNT standards, Mozambican Portuguese and DOCX export in one platform.",
       "cta": "Get Started Free",
       "demo": "Watch Demo",
+      "word1": "structured",
+      "word2": "formatted",
+      "word3": "submitted",
+      "word4": "approved",
       "trustPrefix": "Trusted by students from",
       "trustSuffix": "Mozambican universities"
     },
     "features": {
       "title": "Features",
       "subtitle": "Everything you need for your academic work"
+    },
+    "featuresGrid": {
+      "badge": "Why aptto",
+      "titlePrefix": "What generic AI",
+      "titleHighlight": "doesn't do for you",
+      "subtitle": "ChatGPT doesn't know UEM standards, doesn't write in Mozambican Portuguese and doesn't export a formatted document. aptto does.",
+      "cards": {
+        "delivery": {
+          "title": "Finish without sleepless nights",
+          "description": "Automatic structure for research papers. You start with a topic and get an organized document back."
+        },
+        "formatting": {
+          "title": "Formatted the way your advisor expects",
+          "description": "References, covers and tables of contents aligned with ABNT rules. Your work is ready to submit without manual cleanup."
+        },
+        "language": {
+          "title": "Mozambican Portuguese, not chatbot Portuguese",
+          "description": "Academic writing tuned for Mozambican Portuguese. No Brazilianisms, no generic AI phrasing."
+        },
+        "export": {
+          "title": "Download and submit",
+          "description": "Export to DOCX on every package and PDF on PRO. No conversions, no broken formatting."
+        }
+      },
+      "comparison": {
+        "title": "aptto vs Generic AI",
+        "featureColumn": "Feature",
+        "apttoColumn": "aptto",
+        "genericColumn": "Generic AI",
+        "rows": {
+          "mozambiquePortuguese": "Mozambican academic Portuguese",
+          "abntReady": "ABNT standards ready for submission",
+          "docxFormatted": "Formatted DOCX document",
+          "guidedStructure": "Step-by-step guided structure",
+          "mozambiqueContext": "Mozambican education context",
+          "affordablePricing": "Affordable prices in MZN",
+          "fastAnswers": "Fast answers for any topic"
+        }
+      }
     },
     "howItWorks": {
       "title": "How It Works",
@@ -116,14 +195,48 @@
     },
     "pricing": {
       "title": "Pricing",
-      "subtitle": "Packages that fit your budget",
+      "titlePrefix": "Packages that",
+      "titleHighlight": "fit your budget",
+      "subtitle": "Start for free, upgrade when you need more, and buy extra works for {extraWorkPrice} MZN each.",
       "billingToggle": "Monthly billing",
       "popular": "Most Popular",
+      "currency": "MZN",
       "perMonth": "per month",
+      "perMonthShort": "/month",
       "forever": "forever",
       "startFree": "Get Started Free",
       "choose": "Choose {name}",
-      "disclaimer": "Billing still under operational validation"
+      "disclaimer": "Billing still under operational validation",
+      "plans": {
+        "free": {
+          "name": "Package Free",
+          "description": "For trying aptto without commitment",
+          "features": {
+            "works": "{count} work per month",
+            "feature1": "Automatic structure",
+            "feature2": "Export DOCX"
+          }
+        },
+        "starter": {
+          "name": "Package Starter",
+          "description": "For students with regular assignments during the semester",
+          "features": {
+            "works": "{count} works per month",
+            "feature1": "Improve text with AI",
+            "feature2": "Argumentation suggestions"
+          }
+        },
+        "pro": {
+          "name": "Package Pro",
+          "description": "For students who need more capacity across multiple projects in the same month",
+          "features": {
+            "works": "{count} works per month",
+            "feature1": "Full AI writing and revision",
+            "feature2": "Formatted PDF export",
+            "feature3": "Priority support"
+          }
+        }
+      }
     },
     "testimonials": {
       "title": "Testimonials",
@@ -137,8 +250,46 @@
     },
     "faq": {
       "title": "Frequently Asked Questions",
-      "subtitle": "Answers to the most common questions",
-      "contactUs": "Contact us"
+      "badge": "Frequently Asked Questions",
+      "titlePrefix": "Clear up your",
+      "titleHighlight": "questions",
+      "subtitle": "Find answers to the most common questions about aptto.",
+      "contactPrompt": "Still have questions?",
+      "contactUs": "Contact us",
+      "items": {
+        "item1": {
+          "question": "Does aptto write the whole paper for me?",
+          "answer": "No. aptto structures, suggests and formats, but the review and academic responsibility stay with you. That is the difference between a copilot and a generator."
+        },
+        "item2": {
+          "question": "Will my advisor notice that I used AI?",
+          "answer": "aptto produces text in Mozambican academic Portuguese with ABNT standards and coherent structure. It does not read like generic AI output, but you should always review and personalize the content before submitting."
+        },
+        "item3": {
+          "question": "How much time can I save with aptto?",
+          "answer": "Automatic structuring saves hours of organization. ABNT normalization saves even more formatting time. Overall, a paper that could take a whole night can be prepared in a fraction of that time."
+        },
+        "item4": {
+          "question": "Does aptto work for my type of assignment?",
+          "answer": "Yes. aptto supports three levels: secondary education, technical education and higher education. Each level has its own structure, prompts and cover model."
+        },
+        "item5": {
+          "question": "How does pricing work?",
+          "answer": "You start free with 1 work per month. If you need more, paid packages range from {starterPrice} to {proPrice} MZN per month. Extra works cost {extraWorkPrice} MZN each and stay valid for {validityMonths} months."
+        },
+        "item6": {
+          "question": "Can I use it on mobile?",
+          "answer": "Yes. aptto runs in the browser on mobile, tablet and desktop. You do not need to install anything."
+        },
+        "item7": {
+          "question": "Does aptto use Mozambican Portuguese?",
+          "answer": "Yes. The text is tuned for the academic Portuguese used in Mozambican universities. No Brazilianisms and no generic chatbot tone."
+        },
+        "item8": {
+          "question": "Can I export in DOCX and PDF?",
+          "answer": "DOCX is available on every plan. PDF is exclusive to the PRO plan."
+        }
+      }
     },
     "differentiators": {
       "title": "Why aptto?",
@@ -146,27 +297,93 @@
     },
     "finalCTA": {
       "title": "Ready to get started?",
-      "subtitle": "Join thousands of Mozambican students already using aptto to create better academic work.",
+      "titlePrefix": "Your next academic work",
+      "titleHighlight": "starts here",
+      "subtitle": "Structure, formatting and export all in one place. Create your free account and start in seconds.",
       "cta": "Get Started Free"
     },
     "footer": {
       "product": "Product",
       "company": "Company",
       "legal": "Legal",
-      "features": "Features",
-      "pricing": "Pricing",
-      "demo": "Demo",
-      "faq": "FAQ",
-      "about": "About us",
-      "blog": "Blog",
-      "careers": "Careers",
-      "contact": "Contact",
-      "terms": "Terms of use",
-      "privacy": "Privacy",
-      "cookies": "Cookies",
-      "description": "Structure, write and improve your academic work with intelligent assistance.",
+      "description": "The intelligent academic copilot built for Mozambican students. Write better, structure with rigor and submit with confidence.",
       "rights": "All rights reserved.",
-      "location": "Maputo, Mozambique"
+      "email": "Email",
+      "links": {
+        "features": "Features",
+        "pricing": "Pricing",
+        "demo": "Demo",
+        "faq": "FAQ",
+        "about": "About us",
+        "blog": "Blog",
+        "careers": "Careers",
+        "contact": "Contact",
+        "terms": "Terms of use",
+        "privacy": "Privacy",
+        "cookies": "Cookies"
+      },
+      "social": {
+        "linkedin": "LinkedIn",
+        "twitter": "Twitter",
+        "instagram": "Instagram",
+        "facebook": "Facebook"
+      }
+    },
+    "demo": {
+      "badge": "Try free, no account needed",
+      "title": "Try aptto before you create an account",
+      "subtitle": "Write your work topic and see the summary appear instantly",
+      "topicLabel": "Work topic",
+      "topicPlaceholder": "Ex: Water supply challenges in the city of Maputo...",
+      "hint": "Between 8 and 160 characters. This demo doesn't create an account or project.",
+      "generating": "Generating...",
+      "testNow": "Try now",
+      "resultTitle": "Generated summary",
+      "aiGenerated": "AI Generated",
+      "fallbackDemo": "Fallback demo",
+      "pages": "pages",
+      "ctaDescription": "Liked it? Create your free account to continue in the full editor.",
+      "ctaButton": "Create free account",
+      "placeholder": "Summary will appear here after generation",
+      "error": "Could not generate summary at this time."
+    },
+    "productMockup": {
+      "sidebar": {
+        "projects": "My Projects",
+        "editor": "Editor",
+        "structure": "Structure",
+        "references": "References",
+        "settings": "Settings"
+      },
+      "window": {
+        "title": "Monograph - Economic Law",
+        "remainingWorks": "3 works remaining"
+      },
+      "document": {
+        "sectionTitle": "1. Introduction",
+        "sectionMeta": "Chapter 1 • 3 pages • 12 references",
+        "paragraph": {
+          "beforeHighlight": "The legal framework for foreign investment in Mozambique has undergone several legislative reforms in recent decades. This paper analyzes the evolution of",
+          "highlight": "Decree-Law No. 43/2009",
+          "afterHighlight": "..."
+        },
+        "aiSuggestionLabel": "AI suggestion",
+        "aiSuggestion": "\"...drawing a parallel with investment regimes in Angola and Brazil while considering the specific features of the Mozambican context.\""
+      },
+      "actions": {
+        "accept": "Accept",
+        "regenerate": "Regenerate",
+        "improveText": "Improve text",
+        "addReference": "Add reference",
+        "exportDocx": "Export DOCX"
+      },
+      "progress": "60% complete",
+      "badges": {
+        "locale": "Academic PT-MZ",
+        "abnt": "ABNT Ready",
+        "docx": "DOCX Export",
+        "streaming": "Streaming AI"
+      }
     }
   },
   "dashboard": {
@@ -323,17 +540,104 @@
     }
   },
   "subscription": {
-    "title": "Subscription",
-    "currentPlan": "Current plan",
-    "upgrade": "Change plan",
-    "addCredits": "Add credits",
-    "extraWorks": "Extra works",
-    "buyExtraWorks": "Buy extra works",
-    "transactionHistory": "Transaction history",
-    "paymentMethod": "Payment method",
-    "mPesa": "M-Pesa",
-    "eMola": "e-Mola",
-    "noTransactions": "No transactions yet"
+    "title": "Packages",
+    "pageDescription": "Choose the package that fits you best",
+    "currency": "MZN",
+    "perMonthShort": "/month",
+    "popular": "Most Popular",
+    "worksPerMonth": "{count} work(s)/month",
+    "planNames": {
+      "free": "Free",
+      "starter": "Starter",
+      "pro": "Pro"
+    },
+    "currentStatus": {
+      "title": "Your current package",
+      "currentPlan": "Current package",
+      "worksUsed": "Works used",
+      "worksRemaining": "Works remaining",
+      "limitReached": "You have reached this month's work limit. Upgrade your package or buy extra works.",
+      "nextReset": "Next reset: {date}"
+    },
+    "paymentMethod": {
+      "title": "Payment method",
+      "description": "Choose between M-Pesa and e-Mola."
+    },
+    "plans": {
+      "free": {
+        "description": "To try aptto without commitment",
+        "features": {
+          "works": "{count} work per month",
+          "structure": "Automatic structure",
+          "docx": "Export DOCX"
+        }
+      },
+      "starter": {
+        "description": "For students with regular assignments during the semester",
+        "features": {
+          "works": "{count} works per month",
+          "ai": "Improve text with AI",
+          "arguments": "Argumentation suggestions",
+          "docx": "Export DOCX"
+        }
+      },
+      "pro": {
+        "description": "For students who need more capacity across multiple works in the same month",
+        "features": {
+          "works": "{count} works per month",
+          "fullAi": "Full AI (writing + revision)",
+          "pdf": "Export formatted PDF",
+          "support": "Priority support"
+        }
+      }
+    },
+    "buttons": {
+      "currentPackage": "Current Package",
+      "free": "Free",
+      "activate": "Activate {packageName}",
+      "buy": "Buy"
+    },
+    "extraWorks": {
+      "title": "Buy Extra Works",
+      "description": "Need more works? Buy extras at {price} MZN each",
+      "quantity": "Quantity",
+      "quantityOption": "{count} work(s)",
+      "total": "Total",
+      "purchasedTitle": "Purchased Extra Works",
+      "usageAndExpiry": "Used: {used} / {quantity} | Expires: {date}",
+      "remaining": "{count} remaining"
+    },
+    "transactions": {
+      "title": "Transaction History",
+      "status": {
+        "confirmed": "Confirmed",
+        "pending": "Pending"
+      },
+      "labels": {
+        "package": "Package {packageName}",
+        "extraWorks": "{count} extra work(s)",
+        "amount": "{amount} MZN",
+        "default": "Transaction"
+      }
+    },
+    "toasts": {
+      "checkoutStarted": {
+        "title": "Checkout started",
+        "packageDescription": "Continue payment for the {packageName} package.",
+        "extraDescription": "Continue payment for {count} extra work(s)."
+      },
+      "success": {
+        "title": "Success",
+        "packageDescription": "Package {packageName} activated successfully!",
+        "extraDescription": "{count} extra work(s) added!"
+      },
+      "error": {
+        "title": "Error",
+        "activatePackage": "Could not activate package",
+        "buyExtraWorks": "Could not buy extra works",
+        "processPayment": "Could not process payment"
+      }
+    }
   },
   "workspace": {
     "chat": {
@@ -376,23 +680,34 @@
   "share": {
     "title": "Share via link",
     "description": "Anyone with the link can view the document.",
+    "loading": "Loading document...",
     "copyLink": "Copy link",
     "linkCopied": "Link copied!",
     "revokeLink": "Revoke link",
     "noActiveLinks": "No active links",
     "createLink": "Create share link",
     "documentNotFound": "Document not found or link expired",
+    "unavailable": "This document may have been removed or the link has expired.",
+    "backHome": "Back to home",
     "views": "views",
     "sharedAt": "Shared on",
+    "infoTitle": "Work details",
+    "institutionLabel": "Institution:",
+    "authorLabel": "Author:",
+    "advisorLabel": "Advisor:",
+    "courseLabel": "Course:",
+    "locationLabel": "Location:",
+    "referencesLabel": "References",
     "createAccount": "Create account on aptto",
-    "createAccountCTA": "Create your own academic work with aptto"
+    "createAccountCTA": "Create your own academic work with aptto",
+    "startFree": "Start Free"
   },
   "layout": {
     "title": "aptto - AI Academic Copilot",
-    "description": "Intelligent platform supporting academic writing for Mozambican students.",
-    "keywords": ["aptto", "academic writing", "AI", "Mozambique", "ABNT"],
+    "description": "Intelligent platform supporting academic writing for Mozambican students. Structure papers, write in academic Portuguese and normalize ABNT references.",
+    "keywords": ["aptto", "academic writing", "AI", "Mozambique", "ABNT", "monograph", "academic work"],
     "ogTitle": "aptto - AI Academic Copilot",
-    "ogDescription": "Your intelligent assistant for academic work"
+    "ogDescription": "Your intelligent assistant for academic work in Mozambique"
   },
   "appShell": {
     "header": {
@@ -403,6 +718,7 @@
     "sidebar": {
       "newWork": "New work",
       "recentWorks": "Recent works",
+      "moreOptions": "More options",
       "rename": "Rename",
       "archive": "Archive",
       "restore": "Restore",
@@ -415,7 +731,8 @@
     },
     "mobileNav": {
       "home": "Home",
-      "works": "Works"
+      "works": "Works",
+      "newWork": "New work"
     },
     "userMenu": {
       "openMenu": "Open account menu",
@@ -450,17 +767,34 @@
     "errorSendingEmail": "Could not send verification email.",
     "errorDeleting": "Error deleting",
     "workDeleted": "Work deleted",
+    "deleteErrorDescription": "Could not delete the work.",
     "errorUpdating": "Error updating",
     "workArchived": "Work archived",
     "workRestored": "Work restored",
     "errorRenaming": "Error renaming",
-    "titleUpdated": "Title updated"
+    "updateErrorDescription": "Could not update the work.",
+    "renameErrorDescription": "Could not rename the work.",
+    "titleUpdated": "Title updated",
+    "thisWork": "this work",
+    "pwaInstallBanner": {
+      "title": "Install aptto",
+      "description": "Install it on your device for quick access, even without opening the browser.",
+      "close": "Close",
+      "install": "Install",
+      "later": "Not now"
+    }
   },
   "errors": {
     "title": "Something went wrong",
     "description": "An unexpected error occurred while loading the application. Try again or reload the page.",
     "retry": "Try again",
-    "backHome": "Back to home"
+    "backHome": "Back to home",
+    "app": {
+      "title": "Workspace error",
+      "description": "This area of the application could not be loaded. You can try again without losing your current session.",
+      "retry": "Try again",
+      "backToApp": "Go to app"
+    }
   },
   "verifyEmail": {
     "title": "Verifying email...",
@@ -468,11 +802,16 @@
     "success": "Email verified!",
     "error": "Verification error",
     "invalidLink": "Invalid verification link",
-    "backToLogin": "Back to login"
+    "backToLogin": "Back to login",
+    "successDescription": "Email verified successfully! Redirecting...",
+    "errorDescription": "An error occurred while verifying your email"
   },
   "offline": {
     "title": "You are offline",
-    "description": "The app shell remains available, but generating content, paying or syncing data requires an active connection."
+    "description": "The app shell remains available, but generating content, paying or syncing data requires an active connection.",
+    "banner": {
+      "message": "No internet connection. Some actions may fail until the connection returns."
+    }
   },
   "settings": {
     "notifications": {
@@ -487,7 +826,7 @@
       },
       "securityNotice": {
         "title": "Security notifications",
-        "description": "Important account security notifications will always be sent by email"
+        "description": "Important account security notifications will always be sent by email, regardless of these settings."
       },
       "saveButton": "Save preferences",
       "saving": "Saving...",
@@ -502,6 +841,29 @@
         }
       },
       "errorSave": "Error saving"
+    },
+    "page": {
+      "eyebrow": "Settings",
+      "title": "Preferences and Security",
+      "description": "Manage preferences, security and account data in a flow consistent with the rest of the product.",
+      "tabs": {
+        "perfil": {
+          "label": "Profile",
+          "description": "Manage your personal information"
+        },
+        "preferencias": {
+          "label": "Preferences",
+          "description": "Customize your experience"
+        },
+        "seguranca": {
+          "label": "Security",
+          "description": "Account security settings"
+        },
+        "conta": {
+          "label": "Account",
+          "description": "Account, package and billing management"
+        }
+      }
     },
     "preferencesSection": {
       "language": {
@@ -527,6 +889,11 @@
       "citationStyle": {
         "label": "Default Citation Style",
         "description": "Citation style used by default in your work"
+      },
+      "citationStyles": {
+        "abnt": "ABNT",
+        "apa": "APA",
+        "vancouver": "Vancouver"
       },
       "saveButton": "Save preferences",
       "saving": "Saving...",
@@ -556,6 +923,7 @@
     "profileSection": {
       "avatar": {
         "title": "Profile Photo",
+        "altFallback": "User",
         "description": "JPG, GIF or PNG. Maximum 2MB.",
         "uploadButton": "Upload photo",
         "uploading": "Uploading...",
@@ -648,7 +1016,7 @@
         "notActive": "2FA is not active yet",
         "setupDesc": "Generate a QR code, link in authenticator and validate a 6-digit code.",
         "active": "2FA active",
-        "activeDesc": "Login requires a code from the authenticator.",
+        "activeDesc": "Login requires a code from the authenticator. You can disable it with your current password or a 2FA code.",
         "setupButton": "Start setup",
         "preparing": "Preparing...",
         "verifyButton": "Verify and enable 2FA",
@@ -656,10 +1024,12 @@
         "disabling": "Processing...",
         "qrCodeAlt": "QR code to set up 2FA",
         "codeLabel": "Authenticator code",
+        "codePlaceholder": "123456",
         "currentPasswordLabel": "Current password",
         "currentPasswordOptional": "Optional if using 2FA code",
         "code2FA": "2FA code",
         "code2FAOptional": "Optional if using password",
+        "manualUriHelp": "If the QR code does not open, manually copy the URI:",
         "recoveryCodes": "Recovery codes",
         "toast": {
           "enabled": {
@@ -681,6 +1051,8 @@
         "loading": "Loading sessions...",
         "current": "Current",
         "ipNA": "IP not available",
+        "noUserAgent": "Session without available user agent",
+        "createdAt": "Created at {date}",
         "revoke": "Revoke",
         "revokeConfirm": "Revoke session?",
         "revokeDesc": "This action ends access from the selected device.",
@@ -701,10 +1073,10 @@
       "securityTips": {
         "title": "Security Tips",
         "tips": [
-          "Use a strong and unique password",
-          "Enable two-factor authentication",
-          "Don't share your recovery codes",
-          "End sessions on public devices"
+          "Use a strong and unique password for your account.",
+          "Enable 2FA before managing packages, payments or exporting documents.",
+          "Revoke old sessions after using shared computers.",
+          "Store recovery codes outside the browser."
         ]
       },
       "errorLoadAccount": "Could not load account.",
@@ -722,7 +1094,12 @@
       },
       "packageCard": {
         "label": "Package",
-        "valueFree": "Free"
+        "valueFree": "Free",
+        "values": {
+          "free": "Free",
+          "starter": "Starter",
+          "pro": "Pro"
+        }
       },
       "memberSince": "Member since",
       "billingCard": {
@@ -757,11 +1134,14 @@
           "dialogTitle": "Delete account permanently?",
           "dialogDesc": "This action is irreversible. All your data, including sessions, sections and credits, will be permanently removed.",
           "confirmText": "DELETE",
+          "confirmPromptBefore": "Type",
+          "confirmPromptAfter": "to confirm:",
           "currentPassword": "Current password",
           "passwordRequired": "(required)",
           "passwordOptional": "(or use 2FA code)",
           "passwordPlaceholder": "Enter your password",
           "code2FA": "2FA code",
+          "codePlaceholder": "123456",
           "cancel": "Cancel",
           "deleteButton": "Delete permanently",
           "deleting": "Deleting...",
@@ -780,13 +1160,18 @@
       },
       "help": {
         "title": "Need help?",
+        "descriptionBeforeLink": "If you are having problems with your account, contact",
+        "descriptionAfterLink": "before deleting the account.",
         "support": "support"
       }
     }
   },
   "worksLibrary": {
     "type": {
-      "monograph": "monograph"
+      "monograph": "monograph",
+      "schoolWork": "school work",
+      "technicalWork": "technical work",
+      "academicWork": "academic work"
     },
     "toast": {
       "updateFailed": "Error updating work",
@@ -815,6 +1200,7 @@
     "delete": {
       "title": "Delete work?",
       "description": "You are about to delete \"{title}\". This action cannot be undone.",
+      "fallbackTitle": "this work",
       "cancel": "Cancel",
       "delete": "Delete"
     }
@@ -880,6 +1266,8 @@
         "advisorLabel": "Advisor",
         "advisorLabelSecondary": "Professor",
         "advisorLabelTechnical": "Trainer",
+        "advisorPlaceholderSecondary": "Ex.: Prof. Bento",
+        "advisorPlaceholderTechnical": "Ex.: Trainer João",
         "advisorPlaceholder": "Ex.: Prof. Dr. João Santos",
         "cityLabel": "City",
         "cityPlaceholder": "Ex.: Maputo",
@@ -909,10 +1297,71 @@
         "workTypeTechnical": "Technical Work",
         "workTypeHigher": "Academic Work"
       }
+    },
+    "header": {
+      "generatingWork": "Generating your work...",
+      "titlePlaceholder": "Work title...",
+      "saveTitle": "Save title",
+      "cancelEdit": "Cancel editing",
+      "clickToEditTitle": "Click to edit the title",
+      "progress": "Progress",
+      "limitReached": "Limit reached",
+      "cover": "Cover",
+      "workTypeSecondary": "School Work",
+      "workTypeTechnical": "Technical Work",
+      "workTypeHigher": "Academic Work"
+    },
+    "generateButton": {
+      "generating": "Generating...",
+      "regenerate": "Regenerate work",
+      "generate": "Generate work",
+      "confirmTitle": "Regenerate work?",
+      "confirmDescription": "This will replace all previously generated content. Are you sure you want to continue?",
+      "cancel": "Cancel",
+      "confirmAction": "Yes, regenerate"
+    },
+    "exportActions": {
+      "downloading": "Downloading...",
+      "saving": "Saving {format}...",
+      "export": "Export",
+      "shareLink": "Share via link",
+      "downloadDocx": "Download DOCX",
+      "downloadPdf": "Download PDF",
+      "saveDocx": "Save DOCX",
+      "savePdf": "Save PDF"
+    },
+    "downloadButton": {
+      "downloading": "Downloading...",
+      "downloadDocument": "Download document",
+      "tooltip": "Generate the work first to download the document."
+    },
+    "bottomBar": {
+      "cover": "Cover",
+      "regenerate": "Regenerate",
+      "generate": "Generate",
+      "downloading": "Downloading",
+      "download": "Download",
+      "new": "New"
+    },
+    "preview": {
+      "emptyTitle": "Your work will appear here",
+      "emptyDescription": "Click \"Generate work\" to create the content automatically.",
+      "generating": "Generating...",
+      "coverSectionTitle": "Cover",
+      "titlePageSectionTitle": "Title Page",
+      "titleFallback": "Work title",
+      "advisorFallback": "Advisor name",
+      "cityFallback": "Maputo",
+      "referenceLabel": "Reference",
+      "locationLabel": "Location",
+      "workTypeSecondary": "School Work",
+      "workTypeTechnical": "Technical Work",
+      "workTypeHigher": "Academic Work"
     }
   },
   "editor": {
     "documentTree": {
+      "map": "Editorial map",
       "status": {
         "empty": "Empty",
         "started": "Started",
@@ -929,35 +1378,23 @@
       "newChapter": "New chapter",
       "rename": "Rename",
       "title": "Title",
+      "noActivity": "No activity",
+      "words": "words",
+      "summary": "{topLevel} top-level chapters - {total} total sections",
       "chapters": "chapters",
       "chapter": "chapter"
     },
     "preview": {
       "cover": "Cover",
       "tableOfContents": "Table of Contents",
+      "workType": {
+        "secondary": "School work",
+        "technical": "Technical work",
+        "higher": "Academic work"
+      },
       "sections": "sections",
       "noContent": "Section has no content yet.",
       "noDocument": "The document has no written content yet."
-    }
-  },
-  "landing": {
-    "demo": {
-      "badge": "Try free, no account needed",
-      "title": "Try aptto before you create an account",
-      "subtitle": "Write your work topic and see the summary appear instantly",
-      "topicLabel": "Work topic",
-      "topicPlaceholder": "Ex: Water supply challenges in the city of Maputo...",
-      "hint": "Between 8 and 160 characters. This demo doesn't create an account or project.",
-      "generating": "Generating...",
-      "testNow": "Try now",
-      "resultTitle": "Generated summary",
-      "aiGenerated": "AI Generated",
-      "fallbackDemo": "Fallback demo",
-      "pages": "pages",
-      "ctaDescription": "Liked it? Create your free account to continue in the full editor.",
-      "ctaButton": "Create free account",
-      "placeholder": "Summary will appear here after generation",
-      "error": "Could not generate summary at this time."
     }
   },
   "workCreation": {
@@ -972,18 +1409,22 @@
       "openWork": "Open work →",
       "greeting": "Hello, {firstName}",
       "question": "What topic do you want to work on today?",
-      "worksAvailable": "work available",
-      "worksAvailablePlural": "works available",
-      "limitReached": "Work limit reached",
+        "worksAvailable": "work available",
+        "worksAvailablePlural": "works available",
+        "availableThisMonth": "You have <countValue>{count}</countValue> {label} this month",
+        "limitReached": "Work limit reached",
       "placeholder": "What is your work topic?",
       "educationLevelLabel": "Education level",
       "noWorks": "No works available",
       "limitMessage": "Your work limit has been reached. Upgrade your package or buy extra works.",
       "creating": "Creating...",
       "generateButton": "Generate work",
-      "limitReachedTitle": "Work limit reached this month.",
-      "upgradeLink": "upgrade package",
-      "buyLink": "buy extra works",
+        "limitReachedTitle": "Work limit reached this month.",
+        "limitActionPrefix": "",
+        "limitActionMiddle": "or",
+        "limitActionSuffix": ".",
+        "upgradeLink": "upgrade package",
+        "buyLink": "buy extra works",
       "hideCover": "Hide cover details",
       "showCover": "Fill in cover details (optional)",
       "coverLabel": "Cover:",
@@ -1001,8 +1442,9 @@
       "referencesLabel": "References",
       "keywordsLabel": "Keywords",
       "keywordsPlaceholder": "Ex.: digitization, banking sector, Mozambique",
-      "referencesSeedLabel": "Initial references",
-      "citationStyleLabel": "Citation standard",
+        "referencesSeedLabel": "Initial references",
+        "referencesSeedPlaceholder": "Ex.: Silva (2023), WHO (2024)",
+        "citationStyleLabel": "Citation standard",
       "notesLabel": "Notes",
       "notesPlaceholder": "Ex.: include examples from Mozambique.",
       "recentWorks": "Recent works",
@@ -1088,6 +1530,8 @@
       "preparingGeneration": "Preparing generation",
       "workReadyForReview": "Work ready for review",
       "generationFailed": "Generation failed",
+      "generationRetryFailed": "Failed to restart generation",
+      "unknownError": "Unknown error",
       "briefUpdated": "Briefing updated - requires review",
       "briefCreated": "Briefing created",
       "downloadFailed": "Download failed",
@@ -1097,11 +1541,12 @@
       "saveFailed": "Failed to save {format} export",
       "saved": "{format} saved",
       "exportCreated": "Export created successfully.",
-      "couldNotSave": "Could not save export",
+      "couldNotSaveExport": "Could not save export",
       "saveError": "Error saving export",
       "shareFailed": "Failed to create share link",
       "linkCopied": "Link copied!",
       "linkCopiedDesc": "Share link copied to clipboard.",
+      "invalidShareLink": "Invalid share link",
       "shareError": "Could not create share link",
       "shareErrorTitle": "Error sharing",
       "templateFailed": "Failed to change template",
@@ -1141,6 +1586,8 @@
       "workCreatedDescription": "Work created successfully.",
       "error": "Error",
       "createFailed": "Could not create work.",
+      "couldNotLoadSections": "Could not load generation sections.",
+      "generatingSection": "Generating {section}",
       "sectionGenerateFailed": "Failed to generate {section}."
     },
     "accountData": {
@@ -1248,6 +1695,10 @@
     }
   },
   "admin": {
+    "common": {
+      "accessRestrictedTitle": "Restricted access",
+      "accessRestrictedDescription": "This administrative area is available only to accounts with the ADMIN role."
+    },
     "rag": {
       "title": "Admin RAG",
       "description": "Manage sources, index documents and quickly validate context retrieved by AI.",
@@ -1335,6 +1786,11 @@
       "errors": {
         "loadSources": "Could not load sources.",
         "error": "Error"
+      },
+      "types": {
+        "public": "Public",
+        "institutional": "Institutional",
+        "private": "Private"
       }
     },
     "metrics": {

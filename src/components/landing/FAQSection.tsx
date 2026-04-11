@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, HelpCircle } from "lucide-react";
-import { faqs } from "./data";
+import { useTranslations } from "next-intl";
+import { getFaqs } from "./data";
 import { Reveal } from "./animations";
 import { cn } from "@/lib/utils";
 
@@ -67,7 +68,10 @@ function FAQItem({
 }
 
 export function FAQSection() {
+  const t = useTranslations("landing.faq");
+  const faqItemsT = useTranslations("landing.faq.items");
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const faqs = getFaqs(faqItemsT);
 
   return (
     <section id="faq" className="py-20 md:py-28 relative overflow-hidden">
@@ -80,13 +84,13 @@ export function FAQSection() {
             <div className="text-center mb-12">
               <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary/10 backdrop-blur-xl border border-primary/10 text-primary text-sm font-medium mb-4 shadow-lg shadow-primary/5">
                 <HelpCircle className="w-3.5 h-3.5" />
-                Perguntas Frequentes
+                {t("badge")}
               </span>
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Tira as tuas <span className="text-primary">dúvidas</span>
+                {t("titlePrefix")} <span className="text-primary">{t("titleHighlight")}</span>
               </h2>
               <p className="text-lg text-muted-foreground">
-                Encontra respostas para as perguntas mais comuns sobre o aptto.
+                {t("subtitle")}
               </p>
             </div>
           </Reveal>
@@ -108,9 +112,9 @@ export function FAQSection() {
 
           <Reveal delay={0.2}>
               <p className="text-center text-muted-foreground mt-8">
-                Ainda tens dúvidas?{" "}
+                {t("contactPrompt")}{" "}
                 <a href="mailto:ola@aptto.co.mz" className="text-primary hover:underline font-medium">
-                  Fale connosco
+                  {t("contactUs")}
                 </a>
               </p>
           </Reveal>

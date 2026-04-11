@@ -2,10 +2,13 @@
 
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "./animations";
 
 export function FinalCTA() {
+    const t = useTranslations("landing.finalCTA");
+
     return (
         <section className="py-20 md:py-28">
             <div className="container mx-auto px-4">
@@ -13,16 +16,12 @@ export function FinalCTA() {
                     <Reveal>
                         <div className="relative p-8 md:p-12 rounded-3xl bg-card/90 backdrop-blur-xl border border-border/50 shadow-xl">
                             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                                O teu próximo trabalho académico{" "}
-                                <span className="text-primary">
-                                    começa aqui
-                                </span>
+                                {t("titlePrefix")}{" "}
+                                <span className="text-primary">{t("titleHighlight")}</span>
                             </h2>
 
                             <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                                Estrutura, formatação e exportação — tudo
-                                pronto. Cria a tua conta grátis e começa em
-                                segundos.
+                                {t("subtitle")}
                             </p>
 
                             <div className="flex justify-center">
@@ -32,7 +31,7 @@ export function FinalCTA() {
                                     asChild
                                 >
                                     <Link href="/register">
-                                        Começar Grátis
+                                        {t("cta")}
                                         <ArrowRight className="w-5 h-5 ml-2" />
                                     </Link>
                                 </Button>

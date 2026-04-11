@@ -37,7 +37,7 @@ export async function GET() {
   try {
     const session = await requireAdmin();
     if (!session) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const sources = await db.knowledgeSource.findMany({
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   try {
     const session = await requireAdmin();
     if (!session) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const body = await parseBody(request, createSourceSchema);

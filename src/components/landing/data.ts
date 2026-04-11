@@ -1,260 +1,292 @@
 import {
-    isFeaturePublic,
-    isFeatureVisible,
-    type FeatureKey,
+  isFeaturePublic,
+  isFeatureVisible,
+  type FeatureKey,
 } from "@/lib/features";
 import { BILLING_PLAN_DISPLAY, EXTRA_WORKS } from "@/lib/billing";
 
+type TranslationValues = Record<string, string | number>;
+type Translator = (key: string, values?: TranslationValues) => string;
+
 type LandingItem<T> = T & {
-    featureKey?: FeatureKey;
+  featureKey?: FeatureKey;
 };
 
-export const navigationLinks = [
-    { label: "Recursos", href: "#recursos" },
-    { label: "Preços", href: "#precos" },
-    { label: "FAQ", href: "#faq" },
-];
-
-const landingFeatures: LandingItem<{
-    id: number;
-    icon: string;
-    title: string;
-    description: string;
-    highlight: boolean;
+const featureDefinitions: LandingItem<{
+  id: number;
+  icon: string;
+  titleKey: string;
+  descriptionKey: string;
+  highlight: boolean;
 }>[] = [
-    {
-        id: 1,
-        icon: "PenTool",
-        title: "Escrita Assistida por IA",
-        description:
-            "Gere secções, parágrafos e argumentos com inteligência artificial treinada para contexto académico moçambicano.",
-        highlight: false,
-    },
-    {
-        id: 2,
-        icon: "LayoutTemplate",
-        title: "Estruturação Automática",
-        description:
-            "Trabalhos de investigação estruturados segundo normas académicas padrão.",
-        highlight: true,
-    },
-    {
-        id: 3,
-        icon: "Languages",
-        title: "Português Académico MZ",
-        description:
-            "Texto orientado para um tom académico em português usado por estudantes moçambicanos.",
-        highlight: false,
-    },
-    {
-        id: 4,
-        icon: "BookMarked",
-        title: "Normalização ABNT",
-        description:
-            "Referências, capas e sumários com foco em normas ABNT e modelos institucionais.",
-        highlight: true,
-    },
-    {
-        id: 5,
-        icon: "Database",
-        title: "Base de conhecimento local",
-        description:
-            "Base RAG preparada para fontes locais, institucionais e documentos carregados por administradores.",
-        highlight: false,
-        featureKey: "localRag",
-    },
-    {
-        id: 6,
-        icon: "SpellCheck",
-        title: "Revisão de Coerência",
-        description:
-            "Análise inteligente de argumentação, coerência textual e fluidez dos parágrafos.",
-        highlight: false,
-    },
-    {
-        id: 7,
-        icon: "FileDown",
-        title: "Exportação DOCX",
-        description:
-            "Exporte em DOCX em todos os pacotes e use PDF no plano PRO.",
-        highlight: false,
-    },
-    {
-        id: 10,
-        icon: "Zap",
-        title: "Entrega completa da resposta",
-        description:
-            "O workspace já suporta respostas progressivas no backend.",
-        highlight: false,
-        featureKey: "realTimeStreaming",
-    },
-    {
-        id: 12,
-        icon: "CreditCard",
-        title: "Pacotes Flexíveis",
-        description:
-            "Pacotes pensados para estudantes moçambicanos. Desde o gratuito até ao académico intensivo.",
-        highlight: false,
-    },
+  {
+    id: 1,
+    icon: "PenTool",
+    titleKey: "items.aiWriting.title",
+    descriptionKey: "items.aiWriting.description",
+    highlight: false,
+  },
+  {
+    id: 2,
+    icon: "LayoutTemplate",
+    titleKey: "items.autoStructure.title",
+    descriptionKey: "items.autoStructure.description",
+    highlight: true,
+  },
+  {
+    id: 3,
+    icon: "Languages",
+    titleKey: "items.mzPortuguese.title",
+    descriptionKey: "items.mzPortuguese.description",
+    highlight: false,
+  },
+  {
+    id: 4,
+    icon: "BookMarked",
+    titleKey: "items.abnt.title",
+    descriptionKey: "items.abnt.description",
+    highlight: true,
+  },
+  {
+    id: 5,
+    icon: "Database",
+    titleKey: "items.localKnowledge.title",
+    descriptionKey: "items.localKnowledge.description",
+    highlight: false,
+    featureKey: "localRag",
+  },
+  {
+    id: 6,
+    icon: "SpellCheck",
+    titleKey: "items.consistencyReview.title",
+    descriptionKey: "items.consistencyReview.description",
+    highlight: false,
+  },
+  {
+    id: 7,
+    icon: "FileDown",
+    titleKey: "items.docxExport.title",
+    descriptionKey: "items.docxExport.description",
+    highlight: false,
+  },
+  {
+    id: 10,
+    icon: "Zap",
+    titleKey: "items.streaming.title",
+    descriptionKey: "items.streaming.description",
+    highlight: false,
+    featureKey: "realTimeStreaming",
+  },
+  {
+    id: 12,
+    icon: "CreditCard",
+    titleKey: "items.flexiblePlans.title",
+    descriptionKey: "items.flexiblePlans.description",
+    highlight: false,
+  },
 ];
 
-export const features = landingFeatures.filter((item) =>
-    item.featureKey ? isFeatureVisible(item.featureKey) : true,
-);
-
-const landingDifferentiators: LandingItem<{
-    title: string;
-    description: string;
-    icon: string;
+const differentiatorDefinitions: LandingItem<{
+  icon: string;
+  titleKey: string;
+  descriptionKey: string;
 }>[] = [
-    {
-        title: "Português Académico Moçambicano",
-        description:
-            "A experiência foi escrita para estudantes moçambicanos.",
-        icon: "Globe",
-    },
-    {
-        title: "Normas ABNT Nativas",
-        description:
-            "Citações e referências formatadas automaticamente segundo as normas ABNT exigidas pelas universidades moçambicanas.",
-        icon: "BookOpen",
-    },
-    {
-        title: "RAG com Fontes Locais",
-        description:
-            "Capacidade em activação controlada, pensada para documentos curados e fontes institucionais.",
-        icon: "Library",
-        featureKey: "localRag",
-    },
-    {
-        title: "Foco Académico Real",
-        description:
-            "Não é um gerador genérico. É um copiloto pensado para estruturar e apoiar trabalhos académicos de verdade.",
-        icon: "GraduationCap",
-    },
-    {
-        title: "Produto Feito para Moçambique",
-        description:
-            "Desenvolvido com compreensão real das necessidades dos estudantes e instituições moçambicanas.",
-        icon: "MapPin",
-    },
+  {
+    icon: "Globe",
+    titleKey: "items.mzAcademicPortuguese.title",
+    descriptionKey: "items.mzAcademicPortuguese.description",
+  },
+  {
+    icon: "BookOpen",
+    titleKey: "items.nativeAbnt.title",
+    descriptionKey: "items.nativeAbnt.description",
+  },
+  {
+    icon: "Library",
+    titleKey: "items.localRag.title",
+    descriptionKey: "items.localRag.description",
+    featureKey: "localRag",
+  },
+  {
+    icon: "GraduationCap",
+    titleKey: "items.realAcademicFocus.title",
+    descriptionKey: "items.realAcademicFocus.description",
+  },
+  {
+    icon: "MapPin",
+    titleKey: "items.madeForMozambique.title",
+    descriptionKey: "items.madeForMozambique.description",
+  },
 ];
 
-export const differentiators = landingDifferentiators.filter((item) =>
-    item.featureKey ? isFeatureVisible(item.featureKey) : true,
-);
+const genericComparisonDefinitions = [
+  { key: "mozambiquePortuguese", aptto: true, generic: false },
+  { key: "abntReady", aptto: true, generic: false },
+  { key: "docxFormatted", aptto: true, generic: false },
+  { key: "guidedStructure", aptto: true, generic: false },
+  { key: "mozambiqueContext", aptto: true, generic: false },
+  { key: "affordablePricing", aptto: true, generic: false },
+  { key: "fastAnswers", aptto: false, generic: true },
+] as const;
 
-export const genericComparison = [
-    { feature: "Português académico moçambicano", aptto: true, generic: false },
-    { feature: "Normas ABNT prontas para submissão", aptto: true, generic: false },
-    {
-        feature: "Documento formatado em DOCX",
-        aptto: true,
-        generic: false,
-    },
-    { feature: "Estrutura guiada passo a passo", aptto: true, generic: false },
-    { feature: "Contexto do ensino moçambicano", aptto: true, generic: false },
-    { feature: "Preços em MZN acessíveis", aptto: true, generic: false },
-    { feature: "Respostas rápidas para qualquer tema", aptto: false, generic: true },
+const faqKeys = [
+  "item1",
+  "item2",
+  "item3",
+  "item4",
+  "item5",
+  "item6",
+  "item7",
+  "item8",
+] as const;
+
+const heroBadgeDefinitions = [
+  { key: "mzAcademic", icon: "Languages" },
+  { key: "abntReady", icon: "BookMarked" },
+  { key: "docxExport", icon: "FileDown" },
+] as const;
+
+const trustIndicatorDefinitions: LandingItem<{ key: string; icon: string }>[] = [
+  { key: "mzAcademic", icon: "Check" },
+  { key: "abnt", icon: "Check" },
+  { key: "docx", icon: "Check" },
+  {
+    key: "transparentCredits",
+    icon: "Check",
+    featureKey: "transparentCredits",
+  },
+  {
+    key: "localRag",
+    icon: "Check",
+    featureKey: "localRag",
+  },
 ];
 
-export const pricingPlans = BILLING_PLAN_DISPLAY.map((plan) => ({
-    id: plan.key.toLowerCase(),
-    name: plan.name,
-    price: plan.price,
-    currency: "MZN",
-    period: plan.price > 0 ? "por mês" : "para sempre",
-    description: plan.description,
-    features: [...plan.features],
-    cta: plan.key === "FREE" ? "Começar Grátis" : `Escolher ${plan.name}`,
-    highlighted: plan.popular,
-    badge: plan.popular ? "Mais Popular" : null,
-}));
+const footerSocialLinks = [
+  { key: "linkedin", href: "#", icon: "Linkedin" },
+  { key: "twitter", href: "#", icon: "Twitter" },
+  { key: "instagram", href: "#", icon: "Instagram" },
+  { key: "facebook", href: "#", icon: "Facebook" },
+] as const;
 
-export const faqs = [
-    {
-        question: "O aptto escreve o trabalho por mim?",
-        answer: "Não. O aptto estrutura, sugere e formata — mas a revisão e a responsabilidade académica são tuas. É a diferença entre um copiloto e um gerador.",
-    },
-    {
-        question: "O meu orientador vai notar que usei IA?",
-        answer: "O aptto produz texto em português académico moçambicano, com normas ABNT e estrutura coerente. Não é detectável como IA genérica. Mas recomendamos sempre que revês e personalizas o conteúdo antes de submeter.",
-    },
-    {
-        question: "Quanto tempo poupo com o aptto?",
-        answer: "A estruturação automática poupa-te horas de organização. A normalização ABNT poupa-te mais horas de formatação manual. No total, um trabalho que levaria uma noite inteira fica pronto em fracções de tempo.",
-    },
-    {
-        question: "O aptto serve para o meu tipo de trabalho?",
-        answer: "Sim. O aptto cobre três níveis: ensino secundário (trabalhos escolares), ensino técnico (trabalhos práticos e relatórios) e ensino superior (trabalhos de investigação). Cada nível tem a sua estrutura, prompts e capas específicas.",
-    },
-    {
-        question: "Como funcionam os preços?",
-        answer: `Começas grátis com 1 trabalho por mês. Se precisares de mais, os pacotes pagos vão de ${BILLING_PLAN_DISPLAY[1].price} a ${BILLING_PLAN_DISPLAY[2].price} MZN/mês. Trabalhos extras custam ${EXTRA_WORKS.price} MZN cada e valem ${EXTRA_WORKS.validityMonths} meses.`,
-    },
-    {
-        question: "Posso usar no telemóvel?",
-        answer: "Sim. O aptto funciona no browser — telemóvel, tablet ou computador. Não precisas de instalar nada.",
-    },
-    {
-        question: "O aptto usa português de Moçambique?",
-        answer: "Sim. O texto é orientado para o português académico usado nas universidades moçambicanas. Sem brasileirismos, sem linguagem genérica de chatbot.",
-    },
-    {
-        question: "Posso exportar em DOCX e PDF?",
-        answer: "DOCX está disponível em todos os planos. PDF é exclusivo do plano PRO.",
-    },
-];
+export function getNavigationLinks(t: Translator) {
+  return [
+    { label: t("resources"), href: "#recursos" },
+    { label: t("pricing"), href: "#precos" },
+    { label: t("faq"), href: "#faq" },
+  ];
+}
 
-export const heroBadges = [
-    { label: "PT-MZ Académico", icon: "Languages" },
-    { label: "ABNT Ready", icon: "BookMarked" },
-    { label: "DOCX Export", icon: "FileDown" },
-];
+export function getFeatures(t: Translator) {
+  return featureDefinitions
+    .filter((item) => (item.featureKey ? isFeatureVisible(item.featureKey) : true))
+    .map(({ titleKey, descriptionKey, ...item }) => ({
+      ...item,
+      title: t(titleKey),
+      description: t(descriptionKey),
+    }));
+}
 
-const trustIndicatorCandidates: LandingItem<{ label: string; icon: string }>[] =
-    [
-        { label: "Português académico MZ", icon: "Check" },
-        { label: "Normalização ABNT", icon: "Check" },
-        { label: "Exportação DOCX", icon: "Check" },
-        {
-            label: "Créditos transparentes",
-            icon: "Check",
-            featureKey: "transparentCredits",
-        },
-        {
-            label: "RAG local em preparação",
-            icon: "Check",
-            featureKey: "localRag",
-        },
-    ];
+export function getDifferentiators(t: Translator) {
+  return differentiatorDefinitions
+    .filter((item) => (item.featureKey ? isFeatureVisible(item.featureKey) : true))
+    .map(({ titleKey, descriptionKey, ...item }) => ({
+      ...item,
+      title: t(titleKey),
+      description: t(descriptionKey),
+    }));
+}
 
-export const trustIndicators = trustIndicatorCandidates.filter((item) =>
-    item.featureKey ? isFeaturePublic(item.featureKey) : true,
-);
+export function getGenericComparison(t: Translator) {
+  return genericComparisonDefinitions.map((item) => ({
+    feature: t(item.key),
+    aptto: item.aptto,
+    generic: item.generic,
+  }));
+}
 
-export const footerLinks = {
+const pricingPlanKeyMap = {
+  FREE: "free",
+  STARTER: "starter",
+  PRO: "pro",
+} as const;
+
+export function getPricingPlans(t: Translator) {
+  return BILLING_PLAN_DISPLAY.map((plan) => {
+    const planKey = pricingPlanKeyMap[plan.key];
+    const name = t(`plans.${planKey}.name`);
+
+    return {
+      id: plan.key.toLowerCase(),
+      name,
+      price: plan.price,
+      currency: t("currency"),
+      period: plan.price > 0 ? t("perMonthShort") : t("forever"),
+      description: t(`plans.${planKey}.description`),
+      features: [
+        t(`plans.${planKey}.features.works`, { count: plan.worksPerMonth }),
+        t(`plans.${planKey}.features.feature1`),
+        t(`plans.${planKey}.features.feature2`),
+        ...(planKey === "pro" ? [t(`plans.${planKey}.features.feature3`)] : []),
+      ].map((text) => ({ text, included: true })),
+      cta: plan.key === "FREE" ? t("startFree") : t("choose", { name }),
+      highlighted: plan.popular,
+      badge: plan.popular ? t("popular") : null,
+    };
+  });
+}
+
+export function getFaqs(t: Translator) {
+  return faqKeys.map((key) => ({
+    question: t(`${key}.question`),
+    answer: t(`${key}.answer`, {
+      starterPrice: BILLING_PLAN_DISPLAY[1]?.price ?? 0,
+      proPrice: BILLING_PLAN_DISPLAY[2]?.price ?? 0,
+      extraWorkPrice: EXTRA_WORKS.price,
+      validityMonths: EXTRA_WORKS.validityMonths,
+    }),
+  }));
+}
+
+export function getHeroBadges(t: Translator) {
+  return heroBadgeDefinitions.map((item) => ({
+    label: t(item.key),
+    icon: item.icon,
+  }));
+}
+
+export function getTrustIndicators(t: Translator) {
+  return trustIndicatorDefinitions
+    .filter((item) => (item.featureKey ? isFeaturePublic(item.featureKey) : true))
+    .map(({ key, ...item }) => ({
+      ...item,
+      label: t(key),
+    }));
+}
+
+export function getFooterLinks(t: Translator) {
+  return {
     product: [
-        { label: "Funcionalidades", href: "#recursos" },
-        { label: "Preços", href: "#precos" },
-        { label: "Demo", href: "#demo" },
-        { label: "FAQ", href: "#faq" },
+      { label: t("links.features"), href: "#recursos" },
+      { label: t("links.pricing"), href: "#precos" },
+      { label: t("links.demo"), href: "#demo" },
+      { label: t("links.faq"), href: "#faq" },
     ],
     company: [
-        { label: "Sobre nós", href: "#" },
-        { label: "Blog", href: "#" },
-        { label: "Carreiras", href: "#" },
-        { label: "Contacto", href: "#" },
+      { label: t("links.about"), href: "#" },
+      { label: t("links.blog"), href: "#" },
+      { label: t("links.careers"), href: "#" },
+      { label: t("links.contact"), href: "#" },
     ],
     legal: [
-        { label: "Termos de uso", href: "#" },
-        { label: "Privacidade", href: "#" },
-        { label: "Cookies", href: "#" },
+      { label: t("links.terms"), href: "#" },
+      { label: t("links.privacy"), href: "#" },
+      { label: t("links.cookies"), href: "#" },
     ],
-    social: [
-        { label: "LinkedIn", href: "#", icon: "Linkedin" },
-        { label: "Twitter", href: "#", icon: "Twitter" },
-        { label: "Instagram", href: "#", icon: "Instagram" },
-        { label: "Facebook", href: "#", icon: "Facebook" },
-    ],
-};
+    social: footerSocialLinks.map((item) => ({
+      label: t(`social.${item.key}`),
+      href: item.href,
+      icon: item.icon,
+    })),
+  };
+}

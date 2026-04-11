@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import { FilePlus2, X, Trash2 } from "lucide-react";
 import { OfflineBanner } from "@/components/ui/offline-banner";
 import { PWAInstallBanner } from "./PWAInstallBanner";
 import { cn } from "@/lib/utils";
-import { appNavItems } from "./app-nav";
+import { getAppNavItems } from "./app-nav";
 import { AppSidebar } from "./AppSidebar";
 import { AppShellDataProvider, useAppShellData } from "./AppShellDataContext";
 import { AccountDataProvider } from "@/hooks/use-account-data";
@@ -45,6 +46,9 @@ function AppShellChrome({ children, user }: AppShellProps) {
     const pathname = usePathname();
     const { projects, refresh } = useAppShellData();
     const { toast } = useToast();
+    const t = useTranslations("appShell");
+    const tNav = useTranslations("appShell.nav");
+    const tCommon = useTranslations("common");
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
     const [editTarget, setEditTarget] = useState<string | null>(null);
@@ -57,6 +61,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
     const appChromeRef = useRef<HTMLDivElement>(null);
     const mobileMenuRef = useRef<HTMLDivElement>(null);
     const previousFocusRef = useRef<HTMLElement | null>(null);
+    const navItems = getAppNavItems(tNav);
 
     const showVerificationBanner =
         !user.emailVerified && !bannerDismissed;
@@ -73,11 +78,11 @@ function AppShellChrome({ children, user }: AppShellProps) {
                 method: "POST",
                 retries: 1,
             });
-            if (!response.ok) throw new Error("Erro ao enviar");
-            toast({ title: "Email de verificação enviado", description: "Verifica a tua caixa de entrada." });
+            if (!response.ok) throw new Error(t("errorSending"));
+            toast({ title: t("verificationEmailSent"), description: t("verificationEmailDesc") });
             handleDismissBanner();
         } catch {
-            toast({ title: "Erro", description: "Não foi possível enviar o email de verificação.", variant: "destructive" });
+            toast({ title: t("errorSending"), description: t("errorSendingEmail"), variant: "destructive" });
         } finally {
             setSendingVerification(false);
         }
@@ -186,11 +191,11 @@ function AppShellChrome({ children, user }: AppShellProps) {
                 method: "DELETE",
                 retries: 1,
             });
-            if (!response.ok) throw new Error("Erro ao eliminar");
-            toast({ title: "Trabalho eliminado" });
+            if (!response.ok) throw new Error(t("errorDeleting"));
+            toast({ title: t("workDeleted") });
             await refresh();
         } catch {
-            toast({ title: "Erro", description: "Não foi possível eliminar o trabalho.", variant: "destructive" });
+            toast({ title: t("errorDeleting"), description: t("deleteErrorDescription"), variant: "destructive" });
         } finally {
             setDeleteTarget(null);
         }
@@ -206,13 +211,13 @@ function AppShellChrome({ children, user }: AppShellProps) {
                 retries: 1,
                 body: JSON.stringify({ status: newStatus }),
             });
-            if (!response.ok) throw new Error("Erro ao actualizar");
+            if (!response.ok) throw new Error(t("errorUpdating"));
             toast({
-                title: newStatus === "ARCHIVED" ? "Trabalho arquivado" : "Trabalho restaurado",
+                title: newStatus === "ARCHIVED" ? t("workArchived") : t("workRestored"),
             });
             await refresh();
         } catch {
-            toast({ title: "Erro", description: "Não foi possível actualizar o trabalho.", variant: "destructive" });
+            toast({ title: t("errorUpdating"), description: t("updateErrorDescription"), variant: "destructive" });
         }
     };
 
@@ -231,11 +236,11 @@ function AppShellChrome({ children, user }: AppShellProps) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ title: editTitle.trim() }),
             });
-            if (!response.ok) throw new Error("Erro ao renomear");
-            toast({ title: "Título actualizado" });
+            if (!response.ok) throw new Error(t("errorRenaming"));
+            toast({ title: t("titleUpdated") });
             await refresh();
         } catch {
-            toast({ title: "Erro", description: "Não foi possível renomear o trabalho.", variant: "destructive" });
+            toast({ title: t("errorRenaming"), description: t("renameErrorDescription"), variant: "destructive" });
         } finally {
             setEditTarget(null);
             setEditTitle("");
@@ -248,7 +253,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
                 href="#main-content"
                 className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[var(--z-overlay)] focus:rounded-xl focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:text-primary-foreground"
             >
-                Saltar para o conteúdo
+                {t("skipContent")}
             </a>
             <OfflineBanner />
             <PWAInstallBanner />
@@ -264,7 +269,7 @@ function AppShellChrome({ children, user }: AppShellProps) {
                     >
                         <div className="flex items-center gap-3 bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5">
                             <p className="flex-1 text-sm text-amber-700 dark:text-amber-300">
-                                O teu email ainda não foi verificado.
+                                {t("emailNotVerified")}
                             </p>
                             <Button
                                 variant="ghost"
@@ -273,14 +278,14 @@ function AppShellChrome({ children, user }: AppShellProps) {
                                 onClick={handleSendVerification}
                                 disabled={sendingVerification}
                             >
-                                {sendingVerification ? "A enviar..." : "Verificar agora"}
+                                {sendingVerification ? t("sending") : t("verifyNow")}
                             </Button>
                             <Button
                                 variant="ghost"
                                 size="icon"
                                 className="h-7 w-7 text-amber-600/60 hover:text-amber-700 hover:bg-amber-500/20 dark:text-amber-400/60 dark:hover:text-amber-300"
                                 onClick={handleDismissBanner}
-                                aria-label="Fechar"
+                                aria-label={t("close")}
                             >
                                 <X className="h-3.5 w-3.5" />
                             </Button>
@@ -340,12 +345,12 @@ function AppShellChrome({ children, user }: AppShellProps) {
                             size="icon"
                             className="h-10 w-10 rounded-2xl border border-white/10 bg-background/20 text-foreground hover:bg-background/35"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            aria-label="Fechar menu"
+                            aria-label={t("header.menuClose")}
                         >
                             <X className="h-5 w-5" />
                         </Button>
                         <p className="flex-1 truncate text-base font-semibold text-foreground">
-                            APPTO: Gerador de Trabalhos Académicos
+                            {t("header.title")}
                         </p>
                         <ThemeToggle variant="button" />
                     </motion.div>
@@ -386,25 +391,22 @@ function AppShellChrome({ children, user }: AppShellProps) {
                         >
                             <div className="mb-6 flex items-center justify-between">
                                 <div>
-                                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/80">
-                                        Menu
-                                    </p>
+                                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/80">{t("menu")}</p>
                                     <p id="app-mobile-menu-title" className="mt-2 text-2xl font-semibold tracking-tight text-white">
-                                        Definições e conta
+                                        {t("settingsAndAccount")}
                                     </p>
                                 </div>
                                 <Link
                                     href="/app"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className="flex h-12 w-12 items-center justify-center rounded-full bg-white/16 text-white transition hover:bg-white/24"
-                                    aria-label="Novo trabalho"
+                                    aria-label={t("newWorkLabel")}
                                 >
                                     <FilePlus2 className="h-5 w-5" />
                                 </Link>
                             </div>
 
                             <nav className="flex flex-col gap-2">
-                                {/* Novo trabalho — destaque no topo */}
                                 <motion.div
                                     key="new-work"
                                     initial={prefersReducedMotion ? false : { opacity: 0, x: 28 }}
@@ -425,12 +427,11 @@ function AppShellChrome({ children, user }: AppShellProps) {
                                         )}
                                     >
                                         <FilePlus2 className="h-6 w-6 shrink-0" />
-                                        <span className="flex-1">Novo trabalho</span>
+                                        <span className="flex-1">{t("newWorkLabel")}</span>
                                     </Link>
                                 </motion.div>
 
-                                {/* Nav items — todos visíveis */}
-                                {appNavItems.map((item, index) => {
+                                {navItems.map((item, index) => {
                                     const active = pathname === item.href;
                                     const Icon = item.icon;
 
@@ -486,7 +487,6 @@ function AppShellChrome({ children, user }: AppShellProps) {
                 ) : null}
             </AnimatePresence>
 
-            {/* Delete confirmation dialog */}
             <AlertDialog
                 open={deleteTarget !== null}
                 onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
@@ -495,38 +495,37 @@ function AppShellChrome({ children, user }: AppShellProps) {
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
                             <Trash2 className="h-5 w-5 text-destructive" />
-                            Eliminar trabalho?
+                            {t("deleteWorkTitle")}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            Vais eliminar &ldquo;
-                            {projects.find((p) => p.id === deleteTarget)?.title || "este trabalho"}
-                            &rdquo;. Esta acção não pode ser desfeita.
+                            {t("deleteWorkDesc", {
+                                title: projects.find((p) => p.id === deleteTarget)?.title || t("thisWork"),
+                            })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setDeleteTarget(null)}>
-                            Cancelar
+                            {tCommon("cancel")}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmDelete}
                             className="bg-destructive text-white hover:bg-destructive/90"
                         >
-                            Eliminar
+                            {tCommon("delete")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Rename dialog */}
             <AlertDialog
                 open={editTarget !== null}
                 onOpenChange={(open) => { if (!open) { setEditTarget(null); setEditTitle(""); } }}
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Renomear trabalho</AlertDialogTitle>
+                        <AlertDialogTitle>{t("renameWorkTitle")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Introduz o novo título para o trabalho.
+                            {t("renameWorkDesc")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-2">
@@ -536,16 +535,16 @@ function AppShellChrome({ children, user }: AppShellProps) {
                             onChange={(e) => setEditTitle(e.target.value)}
                             onKeyDown={(e) => { if (e.key === "Enter") confirmEdit(); }}
                             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                            placeholder="Novo título..."
+                            placeholder={t("renamePlaceholder")}
                             autoFocus
                         />
                     </div>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => { setEditTarget(null); setEditTitle(""); }}>
-                            Cancelar
+                            {tCommon("cancel")}
                         </AlertDialogCancel>
                         <AlertDialogAction onClick={confirmEdit}>
-                            Guardar
+                            {tCommon("save")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

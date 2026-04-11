@@ -2,6 +2,7 @@
 
 import { Check, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
     Card,
     CardContent,
@@ -12,36 +13,25 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { BILLING_PLAN_DISPLAY, EXTRA_WORKS } from "@/lib/billing";
+import { EXTRA_WORKS } from "@/lib/billing";
 import { Reveal } from "./animations";
-
-const packages = BILLING_PLAN_DISPLAY.map((plan) => ({
-    name: `Pacote ${plan.name}`,
-    price: String(plan.price),
-    currency: "MZN",
-    period: plan.price > 0 ? "/mês" : "para sempre",
-    description: plan.description,
-    features: plan.features.map((text) => ({ text, included: true })),
-    cta: plan.key === "FREE" ? "Começar Grátis" : `Escolher ${plan.name}`,
-    highlighted: plan.popular,
-}));
+import { getPricingPlans } from "./data";
 
 export function PricingCards() {
+    const t = useTranslations("landing.pricing");
+    const packages = getPricingPlans(t);
+
     return (
         <section id="precos" className="py-5 px-4">
             <div className="max-w-6xl mx-auto">
                 <Reveal>
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                            Pacotes que{" "}
-                            <span className="text-primary">
-                                cabem no teu bolso
-                            </span>
+                            {t("titlePrefix")}{" "}
+                            <span className="text-primary">{t("titleHighlight")}</span>
                         </h2>
                         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                            Começa gratuitamente, faz upgrade quando precisares
-                            e compra trabalhos extras por {EXTRA_WORKS.price}{" "}
-                            MZN cada
+                            {t("subtitle", { extraWorkPrice: EXTRA_WORKS.price })}
                         </p>
                     </div>
                 </Reveal>
@@ -60,7 +50,7 @@ export function PricingCards() {
                             {plan.highlighted && (
                                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                                     <span className="px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium shadow-lg">
-                                        Mais Popular
+                                        {plan.badge}
                                     </span>
                                 </div>
                             )}

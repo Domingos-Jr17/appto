@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "@/components/ui-aptto/ThemeToggle";
 import { LocaleSelector } from "./LocaleSelector";
@@ -22,6 +23,8 @@ export function AppHeader({
     onMenuToggle,
     isMobileMenuOpen = false,
 }: AppHeaderProps) {
+    const t = useTranslations("appShell.header");
+
     return (
         <header className="shrink-0 rounded-[24px] px-4 py-2 lg:px-6 lg:py-3 bg-card/70 backdrop-blur-xl border border-border/40 shadow-float-xl">
             <div className="flex items-center justify-between gap-2">
@@ -33,7 +36,7 @@ export function AppHeader({
                         className="h-10 w-10 rounded-2xl border border-white/10 bg-background/20 text-foreground hover:bg-background/35"
                         onClick={onMenuToggle}
                         aria-label={
-                            isMobileMenuOpen ? "Fechar menu" : "Abrir menu"
+                            isMobileMenuOpen ? t("menuClose") : t("menuOpen")
                         }
                         aria-expanded={isMobileMenuOpen}
                         aria-controls={
@@ -49,7 +52,7 @@ export function AppHeader({
                 </div>
                 <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold tracking-tight lg:text-base text-foreground">
-                        APPTO: Gerador de Trabalhos Académicos
+                        {t("title")}
                     </p>
                 </div>
                 <div className="flex items-center gap-1.5">

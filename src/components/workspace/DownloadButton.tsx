@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -14,6 +15,7 @@ interface DownloadButtonProps {
 }
 
 export function DownloadButton({ onDownload, hasContent, isDownloading = false }: DownloadButtonProps) {
+  const t = useTranslations("workspace.downloadButton");
   const button = (
     <Button
       variant="outline"
@@ -21,7 +23,7 @@ export function DownloadButton({ onDownload, hasContent, isDownloading = false }
       onClick={onDownload}
       disabled={!hasContent || isDownloading}
     >
-      {isDownloading ? "A descarregar..." : "Descarregar documento"}
+      {isDownloading ? t("downloading") : t("downloadDocument")}
     </Button>
   );
 
@@ -30,7 +32,7 @@ export function DownloadButton({ onDownload, hasContent, isDownloading = false }
       <Tooltip>
         <TooltipTrigger asChild>{button}</TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs text-center">
-          Gera o trabalho primeiro para descarregar o documento.
+          {t("tooltip")}
         </TooltipContent>
       </Tooltip>
     );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   ChevronDown,
   ChevronRight,
@@ -57,14 +58,6 @@ interface DocumentTreeProps {
   onSectionDelete: (sectionId: string) => void;
   onSectionReorder: (sections: Section[]) => void;
 }
-
-const STATUS_COPY: Record<NonNullable<Section["editorialStatus"]>, string> = {
-  empty: "Vazia",
-  started: "Iniciada",
-  drafting: "Em desenvolvimento",
-  review: "Pronta para revisão",
-  stale: "Parada",
-};
 
 function findNodeMeta(
   sections: Section[],
@@ -128,8 +121,8 @@ function countAllSections(sections: Section[]): number {
   return sections.reduce((count, section) => count + 1 + countAllSections(section.children || []), 0);
 }
 
-function formatRelativeUpdate(value?: string) {
-  if (!value) return "Sem actividade";
+function formatRelativeUpdate(value: string | undefined, fallback: string) {
+  if (!value) return fallback;
   return formatRelativeTime(value);
 }
 
@@ -143,6 +136,7 @@ export function DocumentTree({
   onSectionDelete,
   onSectionReorder,
 }: DocumentTreeProps) {
+  const t = useTranslations("editor.documentTree");
   const [expanded, setExpanded] = useState<Set<string>>(
     () => new Set(sections.filter((section) => section.type === "chapter").map((section) => section.id))
   );
@@ -154,6 +148,13 @@ export function DocumentTree({
   const [pendingDeleteTitle, setPendingDeleteTitle] = useState<string | null>(null);
 
   const totalSections = useMemo(() => countAllSections(sections), [sections]);
+  const statusCopy: Record<NonNullable<Section["editorialStatus"]>, string> = {
+    empty: t("status.empty"),
+    started: t("status.started"),
+    drafting: t("status.drafting"),
+    review: t("status.review"),
+    stale: t("status.stale"),
+  };
 
   const handleConfirmDelete = () => {
     if (pendingDeleteId) {
@@ -285,12 +286,12 @@ export function DocumentTree({
 
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <Badge variant="outline" className="rounded-full bg-background/70">
-                      {STATUS_COPY[section.editorialStatus || "empty"]}
+                      {statusCopy[section.editorialStatus || "empty"]}
                     </Badge>
-                    <span>{(section.wordCount || 0).toLocaleString("pt-MZ")} palavras</span>
+                    <span>{(section.wordCount || 0).toLocaleString("pt-MZ")} {t("words")}</span>
                     <span className="inline-flex items-center gap-1">
                       <Clock3 className="h-3 w-3" />
-                      {formatRelativeUpdate(section.updatedAt)}
+                      {formatRelativeUpdate(section.updatedAt, t("noActivity"))}
                     </span>
                   </div>
                 </div>
@@ -309,18 +310,18 @@ export function DocumentTree({
                         setEditingTitle(section.title);
                       }}
                     >
-                      Renomear
+                      {t("rename")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onSectionAdd(section.id)}>
                       <Plus className="mr-2 h-4 w-4" />
-                      Adicionar subtítulo
+                      {t("addSubtitle")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
                       onClick={() => handleRequestDelete(section)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Eliminar
+                      {t("delete")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -341,10 +342,10 @@ export function DocumentTree({
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-border/50 p-4">
-        <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Mapa editorial</p>
+        <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{t("map")}</p>
         <h2 className="mt-2 truncate text-lg font-semibold text-foreground">{projectTitle}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {sections.length} capítulos de topo · {totalSections} secções no total
+          {t("summary", { topLevel: sections.length, total: totalSections })}
         </p>
       </div>
 
@@ -357,7 +358,7 @@ export function DocumentTree({
       <div className="border-t border-border/50 p-3">
         <Button onClick={() => onSectionAdd()} variant="outline" className="w-full rounded-2xl border-dashed">
           <Plus className="mr-2 h-4 w-4" />
-          Novo capítulo
+          {t("newChapter")}
         </Button>
       </div>
 
@@ -369,15 +370,15 @@ export function DocumentTree({
       }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar secção?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteConfirm")}</AlertDialogTitle>
             <AlertDialogDescription>
-              A secção &quot;{pendingDeleteTitle}&quot; contém conteúdo. Esta acção é irreversível.
+              {t("deleteDesc", { title: pendingDeleteTitle ?? t("title") })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-white hover:bg-destructive/90">
-              Eliminar
+              {t("deleteButton")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

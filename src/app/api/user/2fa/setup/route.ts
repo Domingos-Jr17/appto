@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id || !session.user.email) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const { currentPassword } = await parseBody(request, totpSetupSchema);
@@ -24,12 +24,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user?.password) {
-      return apiError("Confirmação por palavra-passe é obrigatória para activar o 2FA nesta conta.", 400);
+      return apiError("Password confirmation is required to enable 2FA on this account.", 400);
     }
 
     const validPassword = await bcrypt.compare(currentPassword, user.password);
     if (!validPassword) {
-      return apiError("Senha actual incorreta.", 400);
+      return apiError("Current password is incorrect.", 400);
     }
 
     const security = new AuthSecurityService(db);

@@ -60,7 +60,7 @@ export async function GET(_request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const subscriptionStatus = await subscriptionService.getSubscriptionStatus(session.user.id);
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     await enforceRateLimit(`subscription:${session.user.id}`, 10, 60 * 1000);
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         if ("package" in body) {
           const validPackage = PackageType[body.package as keyof typeof PackageType];
           if (!validPackage || validPackage === PackageType.FREE) {
-            throw new ApiRouteError("Pacote inválido", 400, "INVALID_PACKAGE");
+            throw new ApiRouteError("Invalid package", 400, "INVALID_PACKAGE");
           }
 
           return paymentService.createPackageCheckout(session.user.id, providerValue, validPackage);
@@ -131,9 +131,9 @@ export async function POST(request: NextRequest) {
           return paymentService.createExtraWorkCheckout(session.user.id, providerValue, body.quantity);
         }
 
-        throw new ApiRouteError("Parâmetros inválidos. Forneça 'package' ou 'quantity'", 400, "INVALID_SUBSCRIPTION_ACTION");
+        throw new ApiRouteError("Invalid parameters. Provide 'package' or 'quantity'", 400, "INVALID_SUBSCRIPTION_ACTION");
       },
-      "Já existe uma operação de pacote/pagamento em curso. Aguarde alguns instantes.",
+      "A package/payment operation is already in progress. Please wait a moment.",
     );
 
     if ("package" in body) {
@@ -150,8 +150,8 @@ export async function POST(request: NextRequest) {
         payment,
         message:
           payment.status === "CONFIRMED"
-            ? `Pacote ${body.package} ativado com sucesso`
-            : `Checkout iniciado para o pacote ${body.package}`,
+            ? `${body.package} package activated successfully`
+            : `Checkout started for the ${body.package} package`,
       });
     }
 
@@ -168,12 +168,12 @@ export async function POST(request: NextRequest) {
       payment,
       message:
         payment.status === "CONFIRMED"
-          ? `${body.quantity} trabalho(s) extra(s) adicionado(s) com sucesso`
-          : `Checkout iniciado para ${body.quantity} trabalho(s) extra(s)`,
+          ? `${body.quantity} extra work item(s) added successfully`
+          : `Checkout started for ${body.quantity} extra work item(s)`,
     });
   } catch (error) {
     logger.error("Subscription POST error", { error: String(error) });
-    return handleApiError(error, "Erro ao processar subscrição");
+    return handleApiError(error, "Failed to process subscription");
   }
 }
 
@@ -182,14 +182,14 @@ export async function DELETE(_request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     await subscriptionService.cancelSubscription(session.user.id);
 
     return apiSuccess({
       success: true,
-      message: "Subscription cancelada com sucesso",
+      message: "Subscription canceled successfully",
     });
   } catch (error) {
     logger.error("Cancel subscription error", { error: String(error) });

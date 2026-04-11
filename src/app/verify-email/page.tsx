@@ -1,15 +1,16 @@
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { VerifyEmailContent } from "./VerifyEmailContent";
 
-function VerifyEmailFallback() {
+async function VerifyEmailFallback() {
+  const t = await getTranslations("verifyEmail");
+
   return (
     <>
       <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-      <h1 className="mt-4 text-2xl font-bold">A verificar email...</h1>
-      <p className="mt-2 text-muted-foreground text-sm">
-        Estamos a verificar o teu email. Aguarda um momento.
-      </p>
+      <h1 className="mt-4 text-2xl font-bold">{t("title")}</h1>
+      <p className="mt-2 text-muted-foreground text-sm">{t("description")}</p>
     </>
   );
 }

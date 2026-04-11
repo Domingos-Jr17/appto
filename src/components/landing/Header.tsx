@@ -4,19 +4,17 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui-aptto/ThemeToggle";
 import { cn } from "@/lib/utils";
-
-const navLinks = [
-  { label: "Recursos", href: "#recursos" },
-  { label: "Preços", href: "#precos" },
-  { label: "FAQ", href: "#faq" },
-];
+import { getNavigationLinks } from "./data";
 
 export function Header() {
+  const t = useTranslations("landing.navigation");
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navLinks = getNavigationLinks(t);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -83,10 +81,10 @@ export function Header() {
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
             <Button variant="ghost" asChild>
-              <Link href="/login">Entrar</Link>
+              <Link href="/login">{t("login")}</Link>
             </Button>
             <Button asChild>
-              <Link href="/register">Começar Grátis</Link>
+              <Link href="/register">{t("getStartedFree")}</Link>
             </Button>
           </div>
 
@@ -97,7 +95,7 @@ export function Header() {
               size="icon"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="h-10 w-10"
-              aria-label={isMobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+              aria-label={isMobileMenuOpen ? t("closeMenu") : t("openMenu")}
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
@@ -127,7 +125,7 @@ export function Header() {
               <div className="flex flex-col h-full pt-20 pb-6 px-6">
                 <nav className="flex flex-col gap-2">
                   <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                    Navegação
+                    {t("label")}
                   </p>
                   {navLinks.map((link) => (
                     <button
@@ -143,12 +141,12 @@ export function Header() {
                 <div className="mt-auto flex flex-col gap-3">
                   <Button variant="outline" className="w-full" asChild>
                     <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                      Entrar
+                      {t("login")}
                     </Link>
                   </Button>
                   <Button className="w-full" asChild>
                     <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
-                      Começar Grátis
+                      {t("getStartedFree")}
                     </Link>
                   </Button>
                 </div>

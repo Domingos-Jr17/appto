@@ -70,7 +70,7 @@ export async function POST(
     try {
       parsedBody = rawBody ? JSON.parse(rawBody) : {};
     } catch {
-      return apiError("Payload inválido", 400);
+      return apiError("Invalid payload", 400);
     }
 
      const normalized = normalizePaymentCallback(parsedBody, {
@@ -96,7 +96,7 @@ export async function POST(
           "Invalid webhook signature",
         ),
       );
-      return apiError("Assinatura inválida", 401);
+      return apiError("Invalid signature", 401);
     }
 
     return withDistributedLock(
@@ -119,7 +119,7 @@ export async function POST(
               "Payment not found in database",
             ),
           );
-          return apiError("Pagamento não encontrado", 404);
+          return apiError("Payment not found", 404);
         }
 
         if (
@@ -137,7 +137,7 @@ export async function POST(
               `Provider mismatch: expected ${existingPayment.provider}, received ${provider}`,
             ),
           );
-          return apiError("Provider inválido para este pagamento", 400);
+          return apiError("Invalid provider for this payment", 400);
         }
 
         if (existingPayment.status === PaymentStatus.CONFIRMED) {
@@ -251,7 +251,7 @@ export async function POST(
             const packageTypeRaw = String(payload.package || "STARTER");
             const packageType = PackageType[packageTypeRaw as keyof typeof PackageType];
             if (!packageType || packageType === PackageType.FREE) {
-              return apiError("Pacote inválido", 400);
+              return apiError("Invalid package", 400);
             }
 
             const payment = await paymentService.confirmPackagePayment(
@@ -362,7 +362,7 @@ export async function POST(
 
         return apiSuccess({ payment });
       },
-      "Já existe um callback deste pagamento em processamento.",
+      "A callback for this payment is already being processed.",
     );
   } catch (error) {
     return handleApiError(error);

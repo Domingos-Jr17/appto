@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Download, FileDown, FilePlus2, Link2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +29,7 @@ export function ExportActionsButton({
   onSaveExport,
   onShareLink,
 }: ExportActionsButtonProps) {
+  const t = useTranslations("workspace.exportActions");
   const isBusy = isDownloading || isSavingExport !== null;
 
   return (
@@ -39,29 +41,33 @@ export function ExportActionsButton({
           disabled={!hasContent || isBusy}
         >
           {isBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          {isDownloading ? "A descarregar..." : isSavingExport ? `A guardar ${isSavingExport}...` : "Exportar"}
+          {isDownloading
+            ? t("downloading")
+            : isSavingExport
+              ? t("saving", { format: isSavingExport })
+              : t("export")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem onClick={onShareLink} disabled={!onShareLink}>
           <Link2 className="h-4 w-4" />
-          Partilhar por link
+          {t("shareLink")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onDownloadDocx}>
           <FileDown className="h-4 w-4" />
-          Descarregar DOCX
+          {t("downloadDocx")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onDownloadPdf}>
           <FileDown className="h-4 w-4" />
-          Descarregar PDF
+          {t("downloadPdf")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onSaveExport("DOCX")}>
           <FilePlus2 className="h-4 w-4" />
-          Guardar DOCX
+          {t("saveDocx")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onSaveExport("PDF")}>
           <FilePlus2 className="h-4 w-4" />
-          Guardar PDF
+          {t("savePdf")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

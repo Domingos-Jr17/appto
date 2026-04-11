@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 export function VerifyEmailContent() {
+  const t = useTranslations("verifyEmail");
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -36,12 +38,12 @@ export function VerifyEmailContent() {
 
         if (!response.ok) {
           setStatus("error");
-          setMessage(data.error || "Erro ao verificar email");
+          setMessage(data.error || t("errorDescription"));
           return;
         }
 
         setStatus("success");
-        setMessage("Email verificado com sucesso! A redirecionar...");
+        setMessage(t("successDescription"));
 
         redirectTimer = setTimeout(() => {
           router.push("/app");
@@ -50,7 +52,7 @@ export function VerifyEmailContent() {
       } catch {
         if (cancelled) return;
         setStatus("error");
-        setMessage("Ocorreu um erro ao verificar o email");
+        setMessage(t("errorDescription"));
       }
     };
 
@@ -62,19 +64,19 @@ export function VerifyEmailContent() {
         clearTimeout(redirectTimer);
       }
     };
-  }, [token, router]);
+  }, [token, router, t]);
 
   // Derive error state from missing token without setState in effect
   if (!token) {
     return (
       <>
         <XCircle className="mx-auto h-12 w-12 text-destructive" />
-        <h1 className="mt-4 text-2xl font-bold">Erro na verificação</h1>
-        <p className="mt-2 text-muted-foreground text-sm">Link de verificação inválido</p>
+        <h1 className="mt-4 text-2xl font-bold">{t("error")}</h1>
+        <p className="mt-2 text-muted-foreground text-sm">{t("invalidLink")}</p>
         <Button asChild className="mt-6" variant="outline">
           <Link href="/login">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar ao login
+            {t("backToLogin")}
           </Link>
         </Button>
       </>
@@ -85,10 +87,8 @@ export function VerifyEmailContent() {
     return (
       <>
         <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-        <h1 className="mt-4 text-2xl font-bold">A verificar email...</h1>
-        <p className="mt-2 text-muted-foreground text-sm">
-          Estamos a verificar o teu email. Aguarda um momento.
-        </p>
+        <h1 className="mt-4 text-2xl font-bold">{t("title")}</h1>
+        <p className="mt-2 text-muted-foreground text-sm">{t("description")}</p>
       </>
     );
   }
@@ -97,7 +97,7 @@ export function VerifyEmailContent() {
     return (
       <>
         <CheckCircle2 className="mx-auto h-12 w-12 text-success" />
-        <h1 className="mt-4 text-2xl font-bold">Email verificado!</h1>
+        <h1 className="mt-4 text-2xl font-bold">{t("success")}</h1>
         <p className="mt-2 text-muted-foreground text-sm">{message}</p>
       </>
     );
@@ -106,12 +106,12 @@ export function VerifyEmailContent() {
   return (
     <>
       <XCircle className="mx-auto h-12 w-12 text-destructive" />
-      <h1 className="mt-4 text-2xl font-bold">Erro na verificação</h1>
+      <h1 className="mt-4 text-2xl font-bold">{t("error")}</h1>
       <p className="mt-2 text-muted-foreground text-sm">{message}</p>
       <Button asChild className="mt-6" variant="outline">
         <Link href="/login">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar ao login
+          {t("backToLogin")}
         </Link>
       </Button>
     </>

@@ -13,14 +13,14 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });
     }
 
     if (!isFeatureVisible("realTimeStreaming")) {
-      return new Response(JSON.stringify({ error: "Streaming em tempo real ainda não está disponível." }), {
+      return new Response(JSON.stringify({ error: "Real-time streaming is not available yet." }), {
         status: 501,
         headers: { "Content-Type": "application/json" },
       });
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: "Dados inválidos", details: parsed.error.flatten().fieldErrors }),
+        JSON.stringify({ error: "Invalid data", details: parsed.error.flatten().fieldErrors }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },

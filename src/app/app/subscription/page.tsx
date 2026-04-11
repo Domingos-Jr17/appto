@@ -3,12 +3,13 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { Check, Loader2, Sparkles, CreditCard, Zap, History, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { pt } from "date-fns/locale";
+import { enUS, pt, ptBR } from "date-fns/locale";
 
 interface PackageOption {
   key: "FREE" | "STARTER" | "PRO";
@@ -53,6 +54,8 @@ interface SubscriptionData {
 }
 
 export default function SubscriptionPage() {
+  const t = useTranslations("subscription");
+  const locale = useLocale();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
@@ -82,13 +85,47 @@ export default function SubscriptionPage() {
 
   const getPackageLabel = React.useCallback((packageKey: string) => {
     const labels: Record<string, string> = {
-      FREE: "Free",
-      STARTER: "Starter",
-      PRO: "Pro",
+      FREE: t("planNames.free"),
+      STARTER: t("planNames.starter"),
+      PRO: t("planNames.pro"),
     };
 
     return labels[packageKey] || packageKey;
-  }, []);
+  }, [t]);
+
+  const getPackageDescription = React.useCallback((packageKey: PackageOption["key"], fallback: string) => {
+    const descriptions: Record<PackageOption["key"], string> = {
+      FREE: t("plans.free.description"),
+      STARTER: t("plans.starter.description"),
+      PRO: t("plans.pro.description"),
+    };
+
+    return descriptions[packageKey] || fallback;
+  }, [t]);
+
+  const getPackageFeatures = React.useCallback((pkg: PackageOption) => {
+    const features: Record<PackageOption["key"], string[]> = {
+      FREE: [
+        t("plans.free.features.works", { count: pkg.worksPerMonth }),
+        t("plans.free.features.structure"),
+        t("plans.free.features.docx"),
+      ],
+      STARTER: [
+        t("plans.starter.features.works", { count: pkg.worksPerMonth }),
+        t("plans.starter.features.ai"),
+        t("plans.starter.features.arguments"),
+        t("plans.starter.features.docx"),
+      ],
+      PRO: [
+        t("plans.pro.features.works", { count: pkg.worksPerMonth }),
+        t("plans.pro.features.fullAi"),
+        t("plans.pro.features.pdf"),
+        t("plans.pro.features.support"),
+      ],
+    };
+
+    return features[pkg.key] || pkg.features;
+  }, [t]);
 
   const handlePurchasePackage = async (pkgKey: string) => {
     setIsPurchasing(pkgKey);
@@ -106,30 +143,29 @@ export default function SubscriptionPage() {
 
         if (data.payment?.status === "PENDING" && typeof checkoutUrl === "string") {
           toast({
-            title: "Checkout iniciado",
-            description: checkoutInstructions || `Continue o pagamento do pacote ${getPackageLabel(pkgKey)}.`,
+            title: t("toasts.checkoutStarted.title"),
+            description: checkoutInstructions || t("toasts.checkoutStarted.packageDescription", { packageName: getPackageLabel(pkgKey) }),
           });
           window.location.href = checkoutUrl;
           return;
         }
 
         toast({
-          title: "Sucesso",
-          description:
-            checkoutInstructions || `Pacote ${getPackageLabel(pkgKey)} ativado com sucesso!`,
+          title: t("toasts.success.title"),
+          description: checkoutInstructions || t("toasts.success.packageDescription", { packageName: getPackageLabel(pkgKey) }),
         });
         fetchSubscription();
       } else {
         toast({
-          title: "Erro",
-          description: data.error || "Erro ao ativar pacote",
+          title: t("toasts.error.title"),
+          description: data.error || t("toasts.error.activatePackage"),
           variant: "destructive",
         });
       }
     } catch {
       toast({
-        title: "Erro",
-        description: "Erro ao processar pagamento",
+        title: t("toasts.error.title"),
+        description: t("toasts.error.processPayment"),
         variant: "destructive",
       });
     } finally {
@@ -153,32 +189,30 @@ export default function SubscriptionPage() {
 
         if (data.payment?.status === "PENDING" && typeof checkoutUrl === "string") {
           toast({
-            title: "Checkout iniciado",
-            description:
-              checkoutInstructions || `Continue o pagamento de ${extraQuantity} trabalho(s) extra(s).`,
+            title: t("toasts.checkoutStarted.title"),
+            description: checkoutInstructions || t("toasts.checkoutStarted.extraDescription", { count: extraQuantity }),
           });
           window.location.href = checkoutUrl;
           return;
         }
 
         toast({
-          title: "Sucesso",
-          description:
-            checkoutInstructions || `${extraQuantity} trabalho(s) extra(s) adicionado(s)!`,
+          title: t("toasts.success.title"),
+          description: checkoutInstructions || t("toasts.success.extraDescription", { count: extraQuantity }),
         });
         fetchSubscription();
         setExtraQuantity(1);
       } else {
         toast({
-          title: "Erro",
-          description: data.error || "Erro ao comprar trabalhos extra",
+          title: t("toasts.error.title"),
+          description: data.error || t("toasts.error.buyExtraWorks"),
           variant: "destructive",
         });
       }
     } catch {
       toast({
-        title: "Erro",
-        description: "Erro ao processar pagamento",
+        title: t("toasts.error.title"),
+        description: t("toasts.error.processPayment"),
         variant: "destructive",
       });
     } finally {
@@ -204,26 +238,27 @@ export default function SubscriptionPage() {
   const transactions = subscriptionData?.transactions || [];
   const nextResetDate = subscriptionData?.nextResetDate;
   const _paymentGateway = subscriptionData?.paymentGateway || "SIMULATED";
+  const dateLocale = locale === "en" ? enUS : locale === "pt-BR" ? ptBR : pt;
 
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return "-";
-    return format(new Date(dateStr), "dd MMM yyyy", { locale: pt });
+    return format(new Date(dateStr), "dd MMM yyyy", { locale: dateLocale });
   };
 
-  const getTransactionLabel = (tx: any) => {
-    const payload = tx.payloadJson || {};
-    if (payload.package) return `Pacote ${getPackageLabel(payload.package)}`;
-    if (payload.quantity) return `${payload.quantity} trabalho(s) extra(s)`;
-    if (tx.moneyAmount) return `${tx.moneyAmount} MZN`;
-    return "Transação";
+  const getTransactionLabel = (tx: SubscriptionData["transactions"][number]) => {
+    const payload = (tx.payloadJson || {}) as { package?: string; quantity?: number };
+    if (payload.package) return t("transactions.labels.package", { packageName: getPackageLabel(payload.package) });
+    if (payload.quantity) return t("transactions.labels.extraWorks", { count: payload.quantity });
+    if (tx.moneyAmount) return t("transactions.labels.amount", { amount: tx.moneyAmount });
+    return t("transactions.labels.default");
   };
 
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Pacotes</h1>
+        <h1 className="text-3xl font-bold">{t("title")}</h1>
         <p className="text-muted-foreground mt-2">
-          Escolhe o pacote ideal para ti
+          {t("pageDescription")}
         </p>
       </div>
 
@@ -232,36 +267,36 @@ export default function SubscriptionPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            O teu pacote atual
+            {t("currentStatus.title")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex-1">
-              <div className="text-sm text-muted-foreground">Pacote atual</div>
+              <div className="text-sm text-muted-foreground">{t("currentStatus.currentPlan")}</div>
               <div className="text-2xl font-bold">{getPackageLabel(currentPlan)}</div>
             </div>
             <div className="flex-1">
-              <div className="text-sm text-muted-foreground">Trabalhos usados</div>
+              <div className="text-sm text-muted-foreground">{t("currentStatus.worksUsed")}</div>
               <div className="text-2xl font-bold">
                 {currentUsed} <span className="text-muted-foreground">/ {currentLimit}</span>
               </div>
             </div>
             <div className="flex-1">
-              <div className="text-sm text-muted-foreground">Trabalhos restantes</div>
+              <div className="text-sm text-muted-foreground">{t("currentStatus.worksRemaining")}</div>
               <div className="text-2xl font-bold text-primary">{currentRemaining}</div>
             </div>
           </div>
           {currentRemaining === 0 && (
             <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-3">
               <p className="text-sm text-warning">
-                Atingiste o limite de trabalhos deste mês. Faz upgrade do pacote ou compra trabalhos extras.
+                {t("currentStatus.limitReached")}
               </p>
             </div>
           )}
           {nextResetDate && (
             <div className="mt-3 text-sm text-muted-foreground">
-              Próximo reset: {formatDate(nextResetDate)}
+              {t("currentStatus.nextReset", { date: formatDate(nextResetDate) })}
             </div>
           )}
         </CardContent>
@@ -269,9 +304,9 @@ export default function SubscriptionPage() {
 
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Método de pagamento</CardTitle>
+          <CardTitle>{t("paymentMethod.title")}</CardTitle>
           <CardDescription>
-            Escolhe entre M-Pesa e e-Mola.
+            {t("paymentMethod.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -312,26 +347,26 @@ export default function SubscriptionPage() {
               {isPopular && (
                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <Sparkles className="h-3 w-3 mr-1" />
-                  Mais Popular
+                  {t("popular")}
                 </Badge>
               )}
               <CardHeader>
-                <CardTitle>{pkg.name}</CardTitle>
-                <CardDescription>{pkg.description}</CardDescription>
+                <CardTitle>{getPackageLabel(pkg.key)}</CardTitle>
+                <CardDescription>{getPackageDescription(pkg.key, pkg.description)}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="mb-4">
                   <span className="text-4xl font-bold">{pkg.price}</span>
-                  <span className="text-muted-foreground"> MZN</span>
-                  {pkg.price > 0 && (
-                    <span className="text-sm text-muted-foreground">/mês</span>
-                  )}
-                </div>
-                <div className="text-lg font-semibold mb-4">
-                  {pkg.worksPerMonth} trabalho{pkg.worksPerMonth !== 1 ? "s" : ""}/mês
+                    <span className="text-muted-foreground"> {t("currency")}</span>
+                    {pkg.price > 0 && (
+                      <span className="text-sm text-muted-foreground">{t("perMonthShort")}</span>
+                    )}
+                  </div>
+                  <div className="text-lg font-semibold mb-4">
+                  {t("worksPerMonth", { count: pkg.worksPerMonth })}
                 </div>
                 <ul className="space-y-2">
-                  {pkg.features.map((feature, i) => (
+                  {getPackageFeatures(pkg).map((feature, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                       {feature}
@@ -342,11 +377,11 @@ export default function SubscriptionPage() {
               <CardFooter>
                 {isCurrentPlan ? (
                   <Button disabled className="w-full" variant="secondary">
-                    Pacote Atual
+                    {t("buttons.currentPackage")}
                   </Button>
                 ) : pkg.key === "FREE" ? (
                   <Button disabled className="w-full" variant="outline">
-                    Grátis
+                    {t("buttons.free")}
                   </Button>
                 ) : (
                   <Button
@@ -357,7 +392,7 @@ export default function SubscriptionPage() {
                     {isPurchasing === pkg.key ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     ) : null}
-                    Ativar {pkg.name}
+                    {t("buttons.activate", { packageName: getPackageLabel(pkg.key) })}
                   </Button>
                 )}
               </CardFooter>
@@ -371,17 +406,17 @@ export default function SubscriptionPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
-            Comprar Trabalhos Extras
+            {t("extraWorks.title")}
           </CardTitle>
           <CardDescription>
-            Precisas de mais trabalhos? Compra extras a {extraWorkPrice} MZN cada
+            {t("extraWorks.description", { price: extraWorkPrice })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 items-end">
             <div className="flex-1">
               <label className="text-sm font-medium mb-2 block">
-                Quantidade
+                {t("extraWorks.quantity")}
               </label>
               <select
                 value={extraQuantity}
@@ -390,15 +425,15 @@ export default function SubscriptionPage() {
               >
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                   <option key={n} value={n}>
-                    {n} trabalho{n !== 1 ? "s" : ""}
+                    {t("extraWorks.quantityOption", { count: n })}
                   </option>
                 ))}
               </select>
             </div>
             <div className="flex-1">
-              <div className="text-sm text-muted-foreground mb-2">Total</div>
+              <div className="text-sm text-muted-foreground mb-2">{t("extraWorks.total")}</div>
               <div className="text-2xl font-bold">
-                {extraQuantity * extraWorkPrice} MZN
+                {extraQuantity * extraWorkPrice} {t("currency")}
               </div>
             </div>
             <Button
@@ -408,7 +443,7 @@ export default function SubscriptionPage() {
               {isPurchasing === "extra" ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              Comprar
+              {t("buttons.buy")}
             </Button>
           </div>
         </CardContent>
@@ -418,7 +453,7 @@ export default function SubscriptionPage() {
       {extraWorks.length > 0 && (
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>Trabalhos Extras Comprados</CardTitle>
+            <CardTitle>{t("extraWorks.purchasedTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -429,15 +464,18 @@ export default function SubscriptionPage() {
                 >
                   <div className="min-w-0">
                     <div className="font-medium">
-                      {work.quantity} trabalho{work.quantity !== 1 ? "s" : ""}
+                      {t("extraWorks.quantityOption", { count: work.quantity })}
                     </div>
                     <div className="text-sm text-muted-foreground break-words">
-                      Usados: {work.used} / {work.quantity} | Expira:{" "}
-                      {new Date(work.expiresAt).toLocaleDateString("pt-MZ")}
+                      {t("extraWorks.usageAndExpiry", {
+                        used: work.used,
+                        quantity: work.quantity,
+                        date: new Date(work.expiresAt).toLocaleDateString(locale),
+                      })}
                     </div>
                   </div>
                   <Badge variant="outline" className="w-fit">
-                    {work.quantity - work.used} restantes
+                    {t("extraWorks.remaining", { count: work.quantity - work.used })}
                   </Badge>
                 </div>
               ))}
@@ -452,7 +490,7 @@ export default function SubscriptionPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <History className="h-5 w-5" />
-              Histórico de Transações
+              {t("transactions.title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -475,18 +513,18 @@ export default function SubscriptionPage() {
                     <div className="min-w-0">
                       <div className="font-medium break-words">{getTransactionLabel(tx)}</div>
                       <div className="text-sm text-muted-foreground">
-                        {format(new Date(tx.createdAt), "dd MMM yyyy, HH:mm", { locale: pt })}
-                      </div>
+                         {format(new Date(tx.createdAt), "dd MMM yyyy, HH:mm", { locale: dateLocale })}
+                       </div>
                     </div>
                   </div>
                   <div className="text-left sm:text-right">
                     <div className="font-medium">
-                      {tx.moneyAmount > 0 ? `+${tx.moneyAmount}` : tx.moneyAmount} MZN
-                    </div>
-                    <Badge variant={tx.status === "CONFIRMED" ? "default" : "secondary"}>
-                      {tx.status === "CONFIRMED" ? "Confirmado" : "Pendente"}
-                    </Badge>
-                  </div>
+                       {tx.moneyAmount > 0 ? `+${tx.moneyAmount}` : tx.moneyAmount} {t("currency")}
+                     </div>
+                     <Badge variant={tx.status === "CONFIRMED" ? "default" : "secondary"}>
+                       {tx.status === "CONFIRMED" ? t("transactions.status.confirmed") : t("transactions.status.pending")}
+                     </Badge>
+                   </div>
                 </div>
               ))}
             </div>

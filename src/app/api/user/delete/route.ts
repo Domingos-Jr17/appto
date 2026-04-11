@@ -14,7 +14,7 @@ export async function DELETE(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const { currentPassword, otpCode } = await parseBody(request, deleteAccountSchema);
@@ -26,23 +26,23 @@ export async function DELETE(request: NextRequest) {
     });
 
     if (!user) {
-      return apiError("Utilizador não encontrado", 404);
+      return apiError("User not found", 404);
     }
 
     if (user.password) {
       if (!currentPassword) {
-        return apiError("A senha actual é obrigatória para eliminar a conta.", 400);
+        return apiError("Current password is required to delete this account.", 400);
       }
 
       const isValid = await bcrypt.compare(currentPassword, user.password);
       if (!isValid) {
-        return apiError("Senha actual incorreta.", 400);
+        return apiError("Current password is incorrect.", 400);
       }
     }
 
     if (user.twoFactorEnabled) {
       if (!otpCode) {
-        return apiError("É necessário um código 2FA para eliminar esta conta.", 400);
+        return apiError("A 2FA code is required to delete this account.", 400);
       }
 
       const security = new AuthSecurityService(db);
@@ -55,10 +55,10 @@ export async function DELETE(request: NextRequest) {
 
     return apiSuccess({
       success: true,
-      message: "Conta eliminada com sucesso",
+      message: "Account deleted successfully",
     });
   } catch (error) {
     logger.error("Delete account error", { error: String(error) });
-    return handleApiError(error, "Erro ao eliminar conta");
+    return handleApiError(error, "Failed to delete account");
   }
 }

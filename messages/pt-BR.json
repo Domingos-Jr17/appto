@@ -34,11 +34,17 @@
       "forgotPassword": "Esqueceu a senha?",
       "loginButton": "Entrar",
       "loginWithGoogle": "Entrar com Google",
+      "continueWith": "ou continue com",
       "noAccount": "Não tem conta?",
       "register": "Cadastre-se",
       "twoFactorCode": "Código de verificação",
       "twoFactorDescription": "Insira o código de 6 dígitos do seu app de autenticação.",
-      "verify": "Verificar"
+      "verify": "Verificar",
+      "errorCredentialsSignin": "E-mail ou senha incorretos",
+      "errorTwoFactorRequired": "Insira o código do autenticador para concluir o login.",
+      "errorInvalidTwoFactorCode": "O código 2FA informado é inválido.",
+      "errorConfiguration": "A autenticação não está configurada corretamente no servidor.",
+      "errorGeneric": "Ocorreu um erro. Tente novamente."
     },
     "register": {
       "title": "Criar conta",
@@ -46,7 +52,11 @@
       "fullName": "Nome completo",
       "namePlaceholder": "Seu nome",
       "email": "E-mail",
+      "emailPlaceholder": "seu@email.com",
       "password": "Senha",
+      "passwordPlaceholder": "••••••••",
+      "showPassword": "Mostrar senha",
+      "hidePassword": "Esconder senha",
       "confirmPassword": "Confirmar senha",
       "passwordStrength": "Força da senha",
       "weak": "Fraca",
@@ -55,7 +65,7 @@
       "strong": "Forte",
       "passwordsMatch": "Senhas coincidem",
       "passwordsDontMatch": "As senhas não coincidem",
-      "acceptTerms": "Eu aceito os {termsLink} e a {privacyLink}",
+      "acceptTerms": "Eu aceito os <termsLink>Termos de Uso</termsLink> e a <privacyLink>Política de Privacidade</privacyLink>",
       "termsOfUse": "Termos de Uso",
       "privacyPolicy": "Política de Privacidade",
       "mustAcceptTerms": "Você precisa aceitar os termos de uso",
@@ -64,43 +74,112 @@
       "hasAccount": "Já tem conta?",
       "login": "Entrar",
       "errorCreating": "Erro ao criar conta",
-      "errorGeneric": "Ocorreu um erro. Tente novamente."
+      "errorGeneric": "Ocorreu um erro. Tente novamente.",
+      "verificationEmailSent": "E-mail de verificação enviado",
+      "verificationEmailDescription": "Enviamos um e-mail de verificação para {email}.",
+      "verificationNote": "Enviamos um e-mail de verificação para <strong>{email}</strong>."
     },
     "forgotPassword": {
-      "title": "Recuperar senha",
-      "subtitle": "Informe seu e-mail e enviaremos instruções para redefinir a senha.",
+      "title": "Esqueceu a senha?",
+      "subtitle": "Informe seu e-mail para receber um link de redefinição",
       "email": "E-mail",
       "emailPlaceholder": "seu@email.com",
       "sendInstructions": "Enviar instruções",
-      "successTitle": "Verifique seu e-mail",
-      "successMessage": "Se uma conta com esse e-mail existir, enviamos instruções para redefinir a senha.",
-      "backToLogin": "Voltar ao login"
+      "sendResetLink": "Enviar link de redefinição",
+      "successTitle": "E-mail enviado!",
+      "successMessage": "Se uma conta com o e-mail <emailAddress>{email}</emailAddress> existir, você receberá um link para redefinir sua senha.",
+      "helpText": "Não recebeu o e-mail? Verifique sua caixa de spam ou tente novamente.",
+      "tryAgain": "Tentar novamente",
+      "backToLogin": "Voltar ao login",
+      "errorGeneric": "Não foi possível processar a solicitação."
     },
     "resetPassword": {
       "title": "Redefinir senha",
-      "subtitle": "Insira sua nova senha.",
+      "subtitle": "Escolha uma nova senha para sua conta.",
       "password": "Nova senha",
+      "passwordPlaceholder": "••••••••",
+      "showPassword": "Mostrar senha",
+      "hidePassword": "Esconder senha",
       "confirmPassword": "Confirmar nova senha",
-      "reset": "Redefinir senha",
+      "passwordsDontMatch": "As senhas não coincidem.",
+      "reset": "Atualizar senha",
       "success": "Senha redefinida com sucesso.",
       "backToLogin": "Voltar ao login",
-      "passwordMinLength": "A senha deve ter pelo menos 8 caracteres"
+      "passwordMinLength": "A senha deve ter pelo menos 8 caracteres",
+      "invalidLink": "O link de redefinição é inválido ou está incompleto.",
+      "errorGeneric": "Não foi possível redefinir a senha.",
+      "successTitle": "Senha redefinida",
+      "successDescription": "Sua senha foi atualizada. Faça login novamente para continuar.",
+      "goToLogin": "Ir para o login"
     }
   },
   "landing": {
+    "navigation": {
+      "label": "Navegação",
+      "resources": "Recursos",
+      "pricing": "Preços",
+      "faq": "FAQ",
+      "login": "Entrar",
+      "getStartedFree": "Começar Grátis",
+      "openMenu": "Abrir menu",
+      "closeMenu": "Fechar menu"
+    },
     "hero": {
       "badge": "Feito para estudantes universitários",
-      "title1": "Seu copiloto",
-      "title2": "acadêmico",
-      "subtitle": "Estruture, escreva e melhore seus trabalhos acadêmicos com assistência inteligente. Pensado para estudantes brasileiros.",
+      "titlePrefix": "Seu trabalho acadêmico,",
+      "titleSuffix": "sem virar a noite",
+      "subtitle": "Do tema ao documento pronto para submissão. Estrutura automática, normas ABNT, português acadêmico e exportação DOCX em uma só plataforma.",
       "cta": "Começar Grátis",
       "demo": "Ver Demo",
+      "word1": "estruturado",
+      "word2": "formatado",
+      "word3": "submetido",
+      "word4": "aprovado",
       "trustPrefix": "Com a confiança de estudantes de",
       "trustSuffix": "universidades brasileiras"
     },
     "features": {
       "title": "Recursos",
       "subtitle": "Tudo o que você precisa para seu trabalho acadêmico"
+    },
+    "featuresGrid": {
+      "badge": "Por que o aptto",
+      "titlePrefix": "O que a IA genérica",
+      "titleHighlight": "não faz por você",
+      "subtitle": "O ChatGPT não conhece as normas da sua instituição, não entrega um documento final formatado e não foi pensado para seu fluxo acadêmico. O aptto sim.",
+      "cards": {
+        "delivery": {
+          "title": "Entregue sem noites em claro",
+          "description": "Estrutura automática para trabalhos de pesquisa. Você começa com um tema e recebe um documento organizado."
+        },
+        "formatting": {
+          "title": "Formatado como seu orientador espera",
+          "description": "Referências, capas e sumários com normas ABNT. Seu trabalho sai pronto para submissão sem ajustes manuais."
+        },
+        "language": {
+          "title": "Português acadêmico, não texto de chatbot",
+          "description": "Texto acadêmico natural e claro. Sem tom genérico de IA e sem improviso na escrita."
+        },
+        "export": {
+          "title": "Baixe e entregue",
+          "description": "Exporte em DOCX em todos os planos e em PDF no PRO. Sem conversões e sem formatação quebrada."
+        }
+      },
+      "comparison": {
+        "title": "aptto vs IA Genérica",
+        "featureColumn": "Funcionalidade",
+        "apttoColumn": "aptto",
+        "genericColumn": "IA Genérica",
+        "rows": {
+          "mozambiquePortuguese": "Português acadêmico adaptado ao contexto",
+          "abntReady": "Normas ABNT prontas para submissão",
+          "docxFormatted": "Documento formatado em DOCX",
+          "guidedStructure": "Estrutura guiada passo a passo",
+          "mozambiqueContext": "Contexto real do ensino",
+          "affordablePricing": "Preços acessíveis",
+          "fastAnswers": "Respostas rápidas para qualquer tema"
+        }
+      }
     },
     "howItWorks": {
       "title": "Como Funciona",
@@ -116,14 +195,48 @@
     },
     "pricing": {
       "title": "Preços",
-      "subtitle": "Planos que cabem no seu bolso",
+      "titlePrefix": "Planos que",
+      "titleHighlight": "cabem no seu bolso",
+      "subtitle": "Comece grátis, faça upgrade quando precisar e compre trabalhos extras por {extraWorkPrice} MZN cada.",
       "billingToggle": "Cobrança mensal",
       "popular": "Mais Popular",
+      "currency": "MZN",
       "perMonth": "por mês",
+      "perMonthShort": "/mês",
       "forever": "para sempre",
       "startFree": "Começar Grátis",
       "choose": "Escolher {name}",
-      "disclaimer": "Cobrança ainda em validação operacional"
+      "disclaimer": "Cobrança ainda em validação operacional",
+      "plans": {
+        "free": {
+          "name": "Plano Free",
+          "description": "Para experimentar o aptto sem compromisso",
+          "features": {
+            "works": "{count} trabalho por mês",
+            "feature1": "Estrutura automática",
+            "feature2": "Exportar DOCX"
+          }
+        },
+        "starter": {
+          "name": "Plano Starter",
+          "description": "Para quem tem trabalhos regulares ao longo do semestre",
+          "features": {
+            "works": "{count} trabalhos por mês",
+            "feature1": "Melhorar texto com IA",
+            "feature2": "Sugestões de argumentação"
+          }
+        },
+        "pro": {
+          "name": "Plano Pro",
+          "description": "Para quem precisa de mais capacidade em vários trabalhos no mesmo mês",
+          "features": {
+            "works": "{count} trabalhos por mês",
+            "feature1": "IA completa para escrita e revisão",
+            "feature2": "Exportar PDF formatado",
+            "feature3": "Suporte prioritário"
+          }
+        }
+      }
     },
     "testimonials": {
       "title": "Depoimentos",
@@ -137,8 +250,46 @@
     },
     "faq": {
       "title": "Perguntas Frequentes",
-      "subtitle": "Respostas para as dúvidas mais comuns",
-      "contactUs": "Fale conosco"
+      "badge": "Perguntas Frequentes",
+      "titlePrefix": "Tire suas",
+      "titleHighlight": "dúvidas",
+      "subtitle": "Encontre respostas para as perguntas mais comuns sobre o aptto.",
+      "contactPrompt": "Ainda tem dúvidas?",
+      "contactUs": "Fale conosco",
+      "items": {
+        "item1": {
+          "question": "O aptto escreve o trabalho por mim?",
+          "answer": "Não. O aptto estrutura, sugere e formata, mas a revisão e a responsabilidade acadêmica continuam sendo suas. Essa é a diferença entre um copiloto e um gerador."
+        },
+        "item2": {
+          "question": "Meu orientador vai perceber que usei IA?",
+          "answer": "O aptto produz texto acadêmico com normas ABNT e estrutura coerente. Não soa como uma IA genérica, mas recomendamos sempre revisar e personalizar o conteúdo antes de enviar."
+        },
+        "item3": {
+          "question": "Quanto tempo eu economizo com o aptto?",
+          "answer": "A estruturação automática economiza horas de organização. A normalização ABNT economiza ainda mais tempo de formatação. No total, um trabalho que poderia tomar a noite toda pode ficar pronto em uma fração desse tempo."
+        },
+        "item4": {
+          "question": "O aptto serve para o meu tipo de trabalho?",
+          "answer": "Sim. O aptto cobre ensino médio, técnico e superior. Cada nível tem sua própria estrutura, prompts e modelo de capa."
+        },
+        "item5": {
+          "question": "Como funcionam os preços?",
+          "answer": "Você começa grátis com 1 trabalho por mês. Se precisar de mais, os planos pagos vão de {starterPrice} a {proPrice} MZN por mês. Trabalhos extras custam {extraWorkPrice} MZN cada e valem por {validityMonths} meses."
+        },
+        "item6": {
+          "question": "Posso usar no celular?",
+          "answer": "Sim. O aptto funciona no navegador no celular, tablet e computador. Você não precisa instalar nada."
+        },
+        "item7": {
+          "question": "Posso exportar em DOCX e PDF?",
+          "answer": "DOCX está disponível em todos os planos. PDF é exclusivo do plano PRO."
+        },
+        "item8": {
+          "question": "Preciso criar conta para testar?",
+          "answer": "Não. A demo da landing deixa você testar um tema antes do cadastro e ver um resultado imediato."
+        }
+      }
     },
     "differentiators": {
       "title": "Por que o aptto?",
@@ -146,27 +297,55 @@
     },
     "finalCTA": {
       "title": "Pronto para começar?",
-      "subtitle": "Junte-se a milhares de estudantes brasileiros que já usam o aptto para criar melhores trabalhos acadêmicos.",
+      "titlePrefix": "Seu próximo trabalho acadêmico",
+      "titleHighlight": "começa aqui",
+      "subtitle": "Estrutura, formatação e exportação - tudo pronto. Crie sua conta grátis e comece em segundos.",
       "cta": "Começar Grátis"
     },
     "footer": {
       "product": "Produto",
       "company": "Empresa",
       "legal": "Legal",
-      "features": "Funcionalidades",
-      "pricing": "Preços",
-      "demo": "Demo",
-      "faq": "FAQ",
-      "about": "Sobre nós",
-      "blog": "Blog",
-      "careers": "Carreiras",
-      "contact": "Contato",
-      "terms": "Termos de uso",
-      "privacy": "Privacidade",
-      "cookies": "Cookies",
-      "description": "Estruture, escreva e melhore seus trabalhos acadêmicos com assistência inteligente.",
+      "description": "O copiloto acadêmico inteligente criado para estudantes. Escreva melhor, estruture com rigor e entregue com confiança.",
       "rights": "Todos os direitos reservados.",
-      "location": "Maputo, Moçambique"
+      "email": "Email",
+      "links": {
+        "features": "Funcionalidades",
+        "pricing": "Preços",
+        "demo": "Demo",
+        "faq": "FAQ",
+        "about": "Sobre nós",
+        "blog": "Blog",
+        "careers": "Carreiras",
+        "contact": "Contato",
+        "terms": "Termos de uso",
+        "privacy": "Privacidade",
+        "cookies": "Cookies"
+      },
+      "social": {
+        "linkedin": "LinkedIn",
+        "twitter": "Twitter",
+        "instagram": "Instagram",
+        "facebook": "Facebook"
+      }
+    },
+    "demo": {
+      "badge": "Teste grátis, sem conta",
+      "title": "Experimente o aptto antes de criar sua conta",
+      "subtitle": "Escreva o tema do seu trabalho e veja o resumo aparecer na hora",
+      "topicLabel": "Tema do trabalho",
+      "topicPlaceholder": "Ex: Desafios do abastecimento de água na cidade de Maputo...",
+      "hint": "Entre 8 e 160 caracteres. Esta demo não cria conta nem projeto.",
+      "generating": "Gerando...",
+      "testNow": "Testar agora",
+      "resultTitle": "Resumo gerado",
+      "aiGenerated": "Gerado por IA",
+      "fallbackDemo": "Demo de fallback",
+      "pages": "páginas",
+      "ctaDescription": "Gostou? Crie sua conta gratuita para continuar no editor completo.",
+      "ctaButton": "Criar conta grátis",
+      "placeholder": "O resumo aparecerá aqui após a geração",
+      "error": "Não foi possível gerar o resumo neste momento."
     }
   },
   "dashboard": {
@@ -221,6 +400,40 @@
       "internshipReport": "Relatório de estágio",
       "practicalWork": "Trabalho prático",
       "tcc": "TCC"
+    },
+    "grid": {
+      "status": {
+        "draft": "Rascunho",
+        "inProgress": "Em curso",
+        "review": "Em revisão",
+        "completed": "Concluído",
+        "archived": "Arquivado"
+      },
+      "generating": "A gerar {percent}%",
+      "moreOptions": "Mais opções",
+      "openWork": "Abrir trabalho",
+      "edit": "Editar",
+      "restore": "Restaurar",
+      "archive": "Arquivar",
+      "delete": "Eliminar",
+      "updated": "Actualizado {time}",
+      "progress": "Progresso",
+      "generation": "Geração",
+      "empty": {
+        "title": "Nenhum trabalho encontrado",
+        "description": "Não tem trabalhos nesta categoria. Crie um novo trabalho para começar."
+      }
+    },
+    "filters": {
+      "all": "Todos",
+      "inProgress": "Em curso",
+      "completed": "Concluídos",
+      "review": "Revisão",
+      "draft": "Rascunho",
+      "archived": "Arquivados",
+      "status": "Estado",
+      "filterByStatus": "Filtrar por estado",
+      "search": "Procurar trabalho..."
     }
   },
   "editor": {
@@ -248,7 +461,31 @@
     "generateContent": "Gerar conteúdo",
     "improveWriting": "Melhorar escrita",
     "summarize": "Resumir",
-    "translate": "Traduzir"
+    "translate": "Traduzir",
+    "documentTree": {
+      "map": "Mapa editorial",
+      "status": {
+        "empty": "Vazia",
+        "started": "Iniciada",
+        "drafting": "Em desenvolvimento",
+        "review": "Pronta para revisão",
+        "stale": "Parada"
+      },
+      "addSubtitle": "Adicionar subtítulo",
+      "delete": "Eliminar",
+      "deleteConfirm": "Eliminar secção?",
+      "deleteDesc": "Esta ação eliminará permanentemente esta secção e todo o seu conteúdo.",
+      "cancel": "Cancelar",
+      "deleteButton": "Eliminar",
+      "newChapter": "Novo capítulo",
+      "rename": "Renomear",
+      "title": "Título",
+      "noActivity": "Sem actividade",
+      "words": "palavras",
+      "summary": "{topLevel} capítulos de topo - {total} secções no total",
+      "chapters": "capítulos",
+      "chapter": "capítulo"
+    }
   },
   "settings": {
     "title": "Configurações",
@@ -320,20 +557,573 @@
       "deleteAccountButton": "Excluir conta",
       "deleteConfirmLabel": "Digite EXCLUIR para confirmar",
       "deleteConfirmPlaceholder": "EXCLUIR"
+    },
+    "notifications": {
+      "title": "Notificações",
+      "emailNotifications": {
+        "label": "Notificações por Email",
+        "description": "Receber notificações importantes por email"
+      },
+      "marketingEmails": {
+        "label": "Novidades e Dicas",
+        "description": "Receba tutoriais e novidades sobre a plataforma"
+      },
+      "securityNotice": {
+        "title": "Notificações de segurança",
+        "description": "Notificações importantes sobre segurança da conta serão sempre enviadas por email, independentemente destas configurações."
+      },
+      "saveButton": "Guardar preferências",
+      "saving": "A guardar...",
+      "toast": {
+        "success": {
+          "title": "Preferências guardadas",
+          "description": "As suas preferências de notificação foram actualizadas"
+        },
+        "error": {
+          "title": "Erro",
+          "description": "Não foi possível guardar as preferências"
+        }
+      },
+      "errorSave": "Erro ao guardar"
+    },
+    "preferencesSection": {
+      "language": {
+        "label": "Idioma",
+        "description": "Escolhe o idioma da interface"
+      },
+      "theme": {
+        "label": "Tema",
+        "description": "Escolhe entre o modo claro, escuro ou segue as configurações do sistema"
+      },
+      "fontSize": {
+        "label": "Tamanho da Fonte",
+        "description": "Ajusta o tamanho da fonte do editor"
+      },
+      "autoSave": {
+        "label": "Guarda Automática",
+        "description": "Guardar automaticamente as suas alterações a cada 30 segundos"
+      },
+      "aiSuggestions": {
+        "label": "Sugestões de IA",
+        "description": "Mostrar sugestões de IA enquanto escreve"
+      },
+      "citationStyle": {
+        "label": "Estilo de Citação Padrão",
+        "description": "Estilo de citação utilizado por padrão nos teus trabalhos"
+      },
+      "citationStyles": {
+        "abnt": "ABNT",
+        "apa": "APA",
+        "vancouver": "Vancouver"
+      },
+      "saveButton": "Guardar preferências",
+      "saving": "A guardar...",
+      "toast": {
+        "success": {
+          "title": "Preferências guardadas",
+          "description": "As suas preferências foram actualizadas com sucesso"
+        },
+        "error": {
+          "title": "Erro",
+          "description": "Não foi possível guardar as preferências"
+        }
+      },
+      "errorSave": "Erro ao guardar",
+      "languages": {
+        "ptMZ": "Português (Moçambique)",
+        "ptBR": "Português (Brasil)",
+        "en": "Inglês",
+        "es": "Espanhol"
+      },
+      "themes": {
+        "dark": "Escuro",
+        "light": "Claro",
+        "system": "Sistema"
+      }
+    },
+    "profileSection": {
+      "avatar": {
+        "title": "Foto de Perfil",
+        "altFallback": "Utilizador",
+        "description": "JPG, GIF ou PNG. Máximo de 2MB.",
+        "uploadButton": "Carregar foto",
+        "uploading": "Enviando...",
+        "fileTooLarge": {
+          "title": "Ficheiro muito grande",
+          "description": "O tamanho máximo é 2MB"
+        },
+        "toast": {
+          "success": {
+            "title": "Foto actualizada",
+            "description": "A tua foto de perfil foi actualizada com sucesso"
+          },
+          "error": {
+            "title": "Erro",
+            "description": "Não foi possível actualizar a foto"
+          }
+        },
+        "errorStartUpload": "Erro ao iniciar upload",
+        "errorUploadFile": "Erro ao enviar ficheiro",
+        "errorCompleteUpload": "Erro ao concluir upload",
+        "errorUpdatePhoto": "Erro ao actualizar a foto"
+      },
+      "name": {
+        "label": "Nome completo",
+        "placeholder": "O teu nome completo"
+      },
+      "email": {
+        "label": "Email",
+        "verified": "Verificado",
+        "cannotChange": "O email não pode ser alterado. Contacte o suporte se precisar de ajuda."
+      },
+      "accountInfo": {
+        "title": "Informações da Conta",
+        "accountType": "Tipo de Conta",
+        "billingModel": "Modelo Comercial",
+        "billingModelValue": "Pacotes mensais e trabalhos extras",
+        "student": "Estudante"
+      },
+      "saveButton": "Guardar alterações",
+      "saving": "A guardar...",
+      "toast": {
+        "success": {
+          "title": "Perfil actualizado",
+          "description": "As tuas informações foram guardadas com sucesso"
+        },
+        "error": {
+          "title": "Erro",
+          "description": "Não foi possível guardar as alterações"
+        }
+      },
+      "errorSave": "Erro ao guardar"
+    },
+    "securitySection": {
+      "changePassword": {
+        "title": "Alterar palavra-passe",
+        "description": "Atualiza a tua palavra-passe para manter a tua conta segura.",
+        "currentPassword": {
+          "label": "Palavra-passe atual",
+          "placeholder": "Introduz a tua palavra-passe atual",
+          "errorRequired": "Palavra-passe atual é obrigatória"
+        },
+        "newPassword": {
+          "label": "Nova palavra-passe",
+          "placeholder": "Introduz a nova palavra-passe",
+          "errorRequired": "Nova palavra-passe é obrigatória",
+          "errorMinLength": "A palavra-passe deve ter pelo menos 8 caracteres"
+        },
+        "confirmPassword": {
+          "label": "Confirmar nova palavra-passe",
+          "placeholder": "Confirma a nova palavra-passe",
+          "errorMismatch": "As palavras-passe não coincidem"
+        },
+        "submitButton": "Alterar palavra-passe",
+        "changing": "A alterar...",
+        "toast": {
+          "success": {
+            "title": "Palavra-passe alterada",
+            "description": "A tua palavra-passe foi alterada com sucesso"
+          },
+          "error": {
+            "title": "Erro",
+            "description": "Não foi possível alterar a palavra-passe"
+          }
+        },
+        "errorChange": "Erro ao alterar palavra-passe"
+      },
+      "twoFactor": {
+        "title": "Autenticação de Dois Fatores",
+        "description": "Protege o login com um autenticador TOTP e códigos de recuperação.",
+        "notActive": "2FA ainda não está activo",
+        "setupDesc": "Gere um QR code, associe no autenticador e valide um código de 6 dígitos.",
+        "active": "2FA activo",
+        "activeDesc": "O login exige um código do autenticador. Podes desactivar com palavra-passe atual ou código 2FA.",
+        "setupButton": "Iniciar configuração",
+        "preparing": "Preparando...",
+        "verifyButton": "Verificar e activar 2FA",
+        "disableButton": "Desactivar 2FA",
+        "disabling": "A processar...",
+        "qrCodeAlt": "QR code para configurar 2FA",
+        "codeLabel": "Código do autenticador",
+        "codePlaceholder": "123456",
+        "currentPasswordLabel": "Palavra-passe atual",
+        "currentPasswordOptional": "Opcional se usar código 2FA",
+        "code2FA": "Código 2FA",
+        "code2FAOptional": "Opcional se usares palavra-passe",
+        "manualUriHelp": "Se o QR code não abrir, copie manualmente a URI:",
+        "recoveryCodes": "Códigos de recuperação",
+        "toast": {
+          "enabled": {
+            "title": "2FA activado",
+            "description": "Guarde os códigos de recuperação em local seguro."
+          },
+          "disabled": {
+            "title": "2FA desactivado",
+            "description": "A autenticação de dois fatores foi removida."
+          }
+        },
+        "errorSetup": "Não foi possível iniciar a configuração.",
+        "errorVerify": "Não foi possível validar o código.",
+        "errorDisable": "Não foi possível desactivar o 2FA."
+      },
+      "sessions": {
+        "title": "Sessões Ativas",
+        "description": "Revogue sessões antigas ou suspeitas. A sessão atual é marcada.",
+        "loading": "A carregar sessões...",
+        "current": "Atual",
+        "ipNA": "IP não disponível",
+        "noUserAgent": "Sessão sem user agent disponível",
+        "createdAt": "Criada em {date}",
+        "revoke": "Revogar",
+        "revokeConfirm": "Revogar sessão?",
+        "revokeDesc": "Esta ação termina o acesso do dispositivo selecionado.",
+        "cancel": "Cancelar",
+        "revokeButton": "Revogar sessão",
+        "toast": {
+          "success": {
+            "title": "Sessão revogada",
+            "description": "A sessão foi terminada com sucesso."
+          },
+          "error": {
+            "title": "Erro",
+            "description": "Não foi possível revogar a sessão."
+          }
+        },
+        "errorRevoke": "Não foi possível revogar a sessão."
+      },
+      "securityTips": {
+        "title": "Dicas de Segurança",
+        "tips": [
+          "Usa uma palavra-passe forte e única para a tua conta.",
+          "Active o 2FA antes de gerir pacotes, pagamentos ou exportar documentos.",
+          "Revogue sessões antigas depois de usar computadores partilhados.",
+          "Guarde os códigos de recuperação fora do browser."
+        ]
+      },
+      "errorLoadAccount": "Não foi possível carregar a conta.",
+      "errorLoadSessions": "Não foi possível carregar as sessões.",
+      "errorLoadSecurity": "Não foi possível carregar os dados de segurança."
+    },
+    "accountSection": {
+      "status": {
+        "title": "Status da Conta",
+        "description": "Informações sobre a tua conta, pacote atual e gestão comercial."
+      },
+      "statusCard": {
+        "label": "Status",
+        "value": "Activa"
+      },
+      "packageCard": {
+        "label": "Pacote",
+        "valueFree": "Gratuito",
+        "values": {
+          "free": "Free",
+          "starter": "Starter",
+          "pro": "Pro"
+        }
+      },
+      "memberSince": "Membro desde",
+      "billingCard": {
+        "label": "Facturação",
+        "value": "Pacotes + trabalhos extras"
+      },
+      "export": {
+        "title": "Exportar Dados",
+        "description": "Descarrega uma cópia de todos os teus dados.",
+        "details": "Será descarregado um ficheiro JSON com sessões, secções, transacções, pacotes, trabalhos extras e configurações associadas à conta.",
+        "button": "Exportar dados",
+        "exporting": "Exportando...",
+        "toast": {
+          "success": {
+            "title": "Dados exportados",
+            "description": "O ficheiro foi descarregado com sucesso"
+          },
+          "error": {
+            "title": "Erro",
+            "description": "Não foi possível exportar os dados"
+          }
+        },
+        "errorExport": "Erro ao exportar dados"
+      },
+      "dangerZone": {
+        "title": "Zona de Perigo",
+        "description": "Ações irreversíveis relacionadas à tua conta.",
+        "deleteAccount": {
+          "heading": "Eliminar conta",
+          "description": "Todos os teus dados serão permanentemente removidos. Esta acção não pode ser desfeita.",
+          "button": "Eliminar conta",
+          "dialogTitle": "Eliminar conta permanentemente?",
+          "dialogDesc": "Esta acção é irreversível. Todos os teus dados, incluindo sessões, secções e créditos, serão permanentemente removidos.",
+          "confirmText": "EXCLUIR",
+          "confirmPromptBefore": "Escreve",
+          "confirmPromptAfter": "para confirmar:",
+          "currentPassword": "Palavra-passe atual",
+          "passwordRequired": "(obrigatória)",
+          "passwordOptional": "(ou usa o código 2FA)",
+          "passwordPlaceholder": "Introduz a tua palavra-passe",
+          "code2FA": "Código 2FA",
+          "codePlaceholder": "123456",
+          "cancel": "Cancelar",
+          "deleteButton": "Eliminar permanentemente",
+          "deleting": "Eliminando...",
+          "toast": {
+            "success": {
+              "title": "Conta eliminada",
+              "description": "A tua conta foi eliminada com sucesso"
+            },
+            "error": {
+              "title": "Erro",
+              "description": "Não foi possível eliminar a conta"
+            }
+          },
+          "errorDelete": "Erro ao eliminar conta"
+        }
+      },
+      "help": {
+        "title": "Precisa de ajuda?",
+        "descriptionBeforeLink": "Se estiveres a ter problemas com a tua conta, contacta o",
+        "descriptionAfterLink": "antes de eliminar a conta.",
+        "support": "suporte"
+      }
     }
   },
   "subscription": {
-    "title": "Assinatura",
-    "currentPlan": "Plano atual",
-    "upgrade": "Mudar de plano",
-    "addCredits": "Adicionar créditos",
-    "extraWorks": "Trabalhos extras",
-    "buyExtraWorks": "Comprar trabalhos extras",
-    "transactionHistory": "Histórico de transações",
-    "paymentMethod": "Método de pagamento",
-    "mPesa": "M-Pesa",
-    "eMola": "e-Mola",
-    "noTransactions": "Sem transações ainda"
+    "title": "Pacotes",
+    "pageDescription": "Escolha o pacote ideal para você",
+    "currency": "MZN",
+    "perMonthShort": "/mês",
+    "popular": "Mais Popular",
+    "worksPerMonth": "{count} trabalho(s)/mês",
+    "planNames": {
+      "free": "Free",
+      "starter": "Starter",
+      "pro": "Pro"
+    },
+    "currentStatus": {
+      "title": "Seu pacote atual",
+      "currentPlan": "Pacote atual",
+      "worksUsed": "Trabalhos usados",
+      "worksRemaining": "Trabalhos restantes",
+      "limitReached": "Você atingiu o limite de trabalhos deste mês. Faça upgrade do pacote ou compre trabalhos extras.",
+      "nextReset": "Próximo reset: {date}"
+    },
+    "paymentMethod": {
+      "title": "Método de pagamento",
+      "description": "Escolha entre M-Pesa e e-Mola."
+    },
+    "plans": {
+      "free": {
+        "description": "Para experimentar o aptto sem compromisso",
+        "features": {
+          "works": "{count} trabalho por mês",
+          "structure": "Estrutura automática",
+          "docx": "Exportar DOCX"
+        }
+      },
+      "starter": {
+        "description": "Para quem tem trabalhos regulares durante o semestre",
+        "features": {
+          "works": "{count} trabalhos por mês",
+          "ai": "Melhorar texto com IA",
+          "arguments": "Sugestões de argumentação",
+          "docx": "Exportar DOCX"
+        }
+      },
+      "pro": {
+        "description": "Para quem precisa de mais capacidade - vários trabalhos no mesmo mês",
+        "features": {
+          "works": "{count} trabalhos por mês",
+          "fullAi": "IA completa (escrita + revisão)",
+          "pdf": "Exportar PDF formatado",
+          "support": "Suporte prioritário"
+        }
+      }
+    },
+    "buttons": {
+      "currentPackage": "Pacote Atual",
+      "free": "Grátis",
+      "activate": "Ativar {packageName}",
+      "buy": "Comprar"
+    },
+    "extraWorks": {
+      "title": "Comprar Trabalhos Extras",
+      "description": "Precisa de mais trabalhos? Compre extras por {price} MZN cada",
+      "quantity": "Quantidade",
+      "quantityOption": "{count} trabalho(s)",
+      "total": "Total",
+      "purchasedTitle": "Trabalhos Extras Comprados",
+      "usageAndExpiry": "Usados: {used} / {quantity} | Expira: {date}",
+      "remaining": "{count} restantes"
+    },
+    "transactions": {
+      "title": "Histórico de Transações",
+      "status": {
+        "confirmed": "Confirmado",
+        "pending": "Pendente"
+      },
+      "labels": {
+        "package": "Pacote {packageName}",
+        "extraWorks": "{count} trabalho(s) extra(s)",
+        "amount": "{amount} MZN",
+        "default": "Transação"
+      }
+    },
+    "toasts": {
+      "checkoutStarted": {
+        "title": "Checkout iniciado",
+        "packageDescription": "Continue o pagamento do pacote {packageName}.",
+        "extraDescription": "Continue o pagamento de {count} trabalho(s) extra(s)."
+      },
+      "success": {
+        "title": "Sucesso",
+        "packageDescription": "Pacote {packageName} ativado com sucesso!",
+        "extraDescription": "{count} trabalho(s) extra(s) adicionado(s)!"
+      },
+      "error": {
+        "title": "Erro",
+        "activatePackage": "Erro ao ativar pacote",
+        "buyExtraWorks": "Erro ao comprar trabalhos extras",
+        "processPayment": "Erro ao processar pagamento"
+      }
+    }
+  },
+  "appShell": {
+    "header": {
+      "title": "APPTO: Gerador de Trabalhos Acadêmicos",
+      "menuOpen": "Abrir menu",
+      "menuClose": "Fechar menu"
+    },
+    "sidebar": {
+      "newWork": "Novo trabalho",
+      "recentWorks": "Trabalhos recentes",
+      "moreOptions": "Mais opções",
+      "rename": "Renomear",
+      "archive": "Arquivar",
+      "restore": "Restaurar",
+      "delete": "Excluir"
+    },
+    "nav": {
+      "home": "Início",
+      "works": "Trabalhos",
+      "packages": "Pacotes"
+    },
+    "mobileNav": {
+      "home": "Início",
+      "works": "Trabalhos",
+      "newWork": "Novo trabalho"
+    },
+    "userMenu": {
+      "openMenu": "Abrir menu da conta",
+      "user": "Usuário",
+      "noEmail": "Sem e-mail",
+      "profile": "Perfil",
+      "settings": "Configurações",
+      "packages": "Pacotes",
+      "adminRag": "Admin RAG",
+      "adminMetrics": "Admin Métricas",
+      "signOut": "Sair"
+    },
+    "localeSelector": {
+      "selectLanguage": "Selecionar idioma"
+    },
+    "skipContent": "Pular para o conteúdo",
+    "emailNotVerified": "Seu e-mail ainda não foi verificado.",
+    "sending": "Enviando...",
+    "verifyNow": "Verificar agora",
+    "close": "Fechar",
+    "menu": "Menu",
+    "settingsAndAccount": "Configurações e conta",
+    "newWorkLabel": "Novo trabalho",
+    "deleteWorkTitle": "Excluir trabalho?",
+    "deleteWorkDesc": "Você está prestes a excluir \"{title}\". Esta ação não pode ser desfeita.",
+    "renameWorkTitle": "Renomear trabalho",
+    "renameWorkDesc": "Digite o novo título do trabalho.",
+    "renamePlaceholder": "Novo título...",
+    "errorSending": "Erro ao enviar",
+    "verificationEmailSent": "E-mail de verificação enviado",
+    "verificationEmailDesc": "Verifique sua caixa de entrada.",
+    "errorSendingEmail": "Não foi possível enviar o e-mail de verificação.",
+    "errorDeleting": "Erro ao excluir",
+    "workDeleted": "Trabalho excluído",
+    "deleteErrorDescription": "Não foi possível excluir o trabalho.",
+    "errorUpdating": "Erro ao atualizar",
+    "workArchived": "Trabalho arquivado",
+    "workRestored": "Trabalho restaurado",
+    "errorRenaming": "Erro ao renomear",
+    "updateErrorDescription": "Não foi possível atualizar o trabalho.",
+    "renameErrorDescription": "Não foi possível renomear o trabalho.",
+    "titleUpdated": "Título atualizado",
+    "thisWork": "este trabalho"
+  },
+  "hooks": {
+    "workspace": {
+      "preparingGeneration": "Preparando geração",
+      "workReadyForReview": "Trabalho pronto para revisão",
+      "generationFailed": "Falha na geração",
+      "generationRetryFailed": "Falha ao reiniciar a geração",
+      "unknownError": "Erro desconhecido",
+      "briefUpdated": "Briefing atualizado - requer revisão",
+      "briefCreated": "Briefing criado",
+      "downloadFailed": "Falha no download",
+      "couldNotDownload": "Não foi possível baixar",
+      "downloadFailedPdf": "Falha no download do PDF",
+      "couldNotDownloadPdf": "Não foi possível baixar o PDF",
+      "saveFailed": "Falha ao salvar exportação {format}",
+      "saved": "{format} salvo",
+      "exportCreated": "A exportação foi criada com sucesso.",
+      "couldNotSaveExport": "Não foi possível salvar a exportação",
+      "saveError": "Erro ao salvar exportação",
+      "shareFailed": "Falha ao criar link de compartilhamento",
+      "linkCopied": "Link copiado!",
+      "linkCopiedDesc": "O link de compartilhamento foi copiado para a área de transferência.",
+      "invalidShareLink": "Link de compartilhamento inválido",
+      "shareError": "Não foi possível criar o link de compartilhamento",
+      "shareErrorTitle": "Erro ao compartilhar",
+      "templateFailed": "Falha ao alterar template",
+      "couldNotChangeTemplate": "Não foi possível alterar o template",
+      "saveBriefFailed": "Falha ao salvar os dados da capa",
+      "couldNotSave": "Não foi possível salvar",
+      "updateTitleFailed": "Falha ao atualizar título",
+      "titleUpdated": "Título atualizado",
+      "updateError": "Erro ao atualizar",
+      "updateTitleError": "Erro ao atualizar título"
+    },
+    "workCreation": {
+      "steps": {
+        "validating": "Validando briefing",
+        "structuring": "Estruturando documento",
+        "generating": "Gerando conteúdo",
+        "formatting": "Formatando e finalizando",
+        "saving": "Salvando seções"
+      },
+      "inQueue": "Na fila do worker",
+      "generatingWork": "Gerando trabalho",
+      "couldNotTrackGeneration": "Não foi possível acompanhar a geração do trabalho.",
+      "workReady": "Seu trabalho está pronto!",
+      "workReadyDesc": "Explore as seções geradas e use a IA para fazer ajustes. Boa escrita!",
+      "workReadyForReview": "Trabalho pronto para revisão",
+      "generationInterrupted": "Geração interrompida",
+      "generationInterruptedDesc": "A estrutura do trabalho foi criada, mas a geração automática falhou.",
+      "generationFailed": "Falha na geração",
+      "trackingWithDelay": "Acompanhando geração com atraso",
+      "trackingWithDelayDesc": "Não foi possível acompanhar a geração em tempo real. Vamos abrir o trabalho para você continuar acompanhando por lá.",
+      "topicRequired": "Tema obrigatório",
+      "topicRequiredDescription": "Informe o tema ou título do trabalho para continuar.",
+      "sessionExpired": "Sessão expirada. Entre novamente para continuar.",
+      "generationLimitReached": "Limite de geração atingido. Faça upgrade do pacote.",
+      "createError": "Erro ao criar trabalho",
+      "workCreated": "Trabalho criado",
+      "workCreatedDescription": "O trabalho foi criado com sucesso.",
+      "error": "Erro",
+      "createFailed": "Não foi possível criar o trabalho.",
+      "couldNotLoadSections": "Não foi possível carregar as seções da geração.",
+      "generatingSection": "Gerando {section}",
+      "sectionGenerateFailed": "Falha ao gerar {section}."
+    },
+    "accountData": {
+      "loadError": "Não foi possível carregar os dados da conta.",
+      "genericError": "Erro ao carregar os dados da conta."
+    }
   },
   "workspace": {
     "chat": {
@@ -355,12 +1145,124 @@
       "generateSection": "Gerar seção",
       "generateComplete": "Gerar documento completo"
     },
+    "header": {
+      "generatingWork": "Gerando seu trabalho...",
+      "titlePlaceholder": "Título do trabalho...",
+      "saveTitle": "Salvar título",
+      "cancelEdit": "Cancelar edição",
+      "clickToEditTitle": "Clique para editar o título",
+      "progress": "Progresso",
+      "limitReached": "Limite atingido",
+      "cover": "Capa",
+      "workTypeSecondary": "Trabalho Escolar",
+      "workTypeTechnical": "Trabalho Técnico",
+      "workTypeHigher": "Trabalho Acadêmico"
+    },
+    "preview": {
+      "emptyTitle": "Seu trabalho vai aparecer aqui",
+      "emptyDescription": "Clique em \"Gerar trabalho\" para criar o conteúdo automaticamente.",
+      "generating": "Gerando...",
+      "coverSectionTitle": "Capa",
+      "titlePageSectionTitle": "Folha de Rosto",
+      "titleFallback": "Título do trabalho",
+      "advisorFallback": "Nome do orientador",
+      "cityFallback": "Maputo",
+      "referenceLabel": "Referência",
+      "locationLabel": "Local",
+      "workTypeSecondary": "Trabalho Escolar",
+      "workTypeTechnical": "Trabalho Técnico",
+      "workTypeHigher": "Trabalho Acadêmico"
+    },
     "status": {
       "empty": "Vazio",
       "started": "Iniciado",
       "drafting": "Escrevendo",
       "review": "Em revisão",
       "stale": "Parado"
+    },
+    "cover": {
+      "modal": {
+        "title": "Editar capa",
+        "description": "Altera o estilo e os dados que aparecem na capa do trabalho.",
+        "templateLabel": "Estilo da capa",
+        "institutionPlaceholder": "Nome da instituição",
+        "coursePlaceholder": "Ex.: Gestão Bancária",
+        "studentPlaceholder": "Ex.: Maria João",
+        "advisorPlaceholder": "Ex.: Prof. Dr. João Santos",
+        "cityPlaceholder": "Ex.: Maputo",
+        "yearPlaceholder": "Ano",
+        "institutionLabel": "Instituição",
+        "institutionLabelTechnical": "Instituto",
+        "institutionPlaceholderSecondary": "Ex.: Escola Secundária Josina Machel",
+        "institutionPlaceholderTechnical": "Ex.: ISTEG",
+        "institutionPlaceholderHigher": "Ex.: Universidade Eduardo Mondlane",
+        "courseLabel": "Curso",
+        "studentLabel": "Estudante",
+        "studentLabelSecondary": "Aluno",
+        "advisorLabel": "Orientador",
+        "advisorLabelSecondary": "Professor",
+        "advisorLabelTechnical": "Formador",
+        "advisorPlaceholderSecondary": "Ex.: Prof. Bento",
+        "advisorPlaceholderTechnical": "Ex.: Form. João",
+        "cityLabel": "Cidade",
+        "yearLabel": "Ano",
+        "hideDetails": "Ocultar detalhes adicionais",
+        "showDetails": "+ Detalhes adicionais (opcional)",
+        "facultyLabel": "Faculdade",
+        "facultyPlaceholder": "Ex.: Faculdade de Economia",
+        "departmentLabel": "Departamento",
+        "departmentPlaceholder": "Ex.: Departamento de Gestão",
+        "classLabel": "Classe",
+        "classSelect": "Selecionar",
+        "class10": "10ª Classe",
+        "class11": "11ª Classe",
+        "class12": "12ª Classe",
+        "turmaLabel": "Turma",
+        "turmaPlaceholder": "Ex.: A",
+        "studentNumberLabel": "Nº Estudante",
+        "studentNumberPlaceholder": "Ex.: 15",
+        "semesterLabel": "Semestre",
+        "semester1": "I Semestre",
+        "semester2": "II Semestre",
+        "saveButton": "Guardar"
+      },
+      "preview": {
+        "workTypeSecondary": "Trabalho Escolar",
+        "workTypeTechnical": "Trabalho Técnico",
+        "workTypeHigher": "Trabalho Académico"
+      }
+    },
+    "generateButton": {
+      "generating": "A gerar...",
+      "regenerate": "Regenerar trabalho",
+      "generate": "Gerar trabalho",
+      "confirmTitle": "Regenerar trabalho?",
+      "confirmDescription": "Isto vai substituir todo o conteúdo gerado anteriormente. Tens a certeza que queres continuar?",
+      "cancel": "Cancelar",
+      "confirmAction": "Sim, regenerar"
+    },
+    "exportActions": {
+      "downloading": "A descarregar...",
+      "saving": "A guardar {format}...",
+      "export": "Exportar",
+      "shareLink": "Partilhar por link",
+      "downloadDocx": "Descarregar DOCX",
+      "downloadPdf": "Descarregar PDF",
+      "saveDocx": "Guardar DOCX",
+      "savePdf": "Guardar PDF"
+    },
+    "downloadButton": {
+      "downloading": "A descarregar...",
+      "downloadDocument": "Descarregar documento",
+      "tooltip": "Gera o trabalho primeiro para descarregar o documento."
+    },
+    "bottomBar": {
+      "cover": "Capa",
+      "regenerate": "Regenerar",
+      "generate": "Gerar",
+      "downloading": "A descarregar",
+      "download": "Download",
+      "new": "Novo"
     }
   },
   "emailVerification": {
@@ -372,5 +1274,461 @@
     "verified": "E-mail verificado com sucesso!",
     "invalidToken": "Link de verificação inválido ou expirado.",
     "alreadyVerified": "Seu e-mail já está verificado."
+  },
+  "share": {
+    "title": "Partilhar por link",
+    "description": "Qualquer pessoa com o link pode visualizar o documento.",
+    "loading": "A carregar documento...",
+    "copyLink": "Copiar link",
+    "linkCopied": "Link copiado!",
+    "revokeLink": "Revogar link",
+    "noActiveLinks": "Sem links activos",
+    "createLink": "Criar link de partilha",
+    "documentNotFound": "Documento não encontrado ou link expirado",
+    "unavailable": "Este documento pode ter sido removido ou o link expirou.",
+    "backHome": "Voltar ao início",
+    "views": "visualizações",
+    "sharedAt": "Partilhado em",
+    "infoTitle": "Informações do Trabalho",
+    "institutionLabel": "Instituição:",
+    "authorLabel": "Autor:",
+    "advisorLabel": "Orientador:",
+    "courseLabel": "Curso:",
+    "locationLabel": "Local:",
+    "referencesLabel": "Referências",
+    "createAccount": "Criar conta no aptto",
+    "createAccountCTA": "Cria o teu próprio trabalho académico com o aptto",
+    "startFree": "Começar Grátis"
+  },
+  "layout": {
+    "title": "aptto - Copiloto Académico com IA",
+    "description": "Plataforma inteligente de apoio à escrita académica para estudantes moçambicanos.",
+    "keywords": [
+      "aptto",
+      "escrita académica",
+      "IA",
+      "Moçambique",
+      "ABNT"
+    ],
+    "ogTitle": "aptto - Copiloto Académico com IA",
+    "ogDescription": "O seu assistente inteligente para trabalhos académicos"
+  },
+  "errors": {
+    "title": "Algo correu mal",
+    "description": "Ocorreu um erro inesperado ao carregar a aplicação. Tenta novamente ou recarrega a página.",
+    "retry": "Tentar novamente",
+    "backHome": "Voltar ao início",
+    "app": {
+      "title": "Erro no workspace",
+      "description": "Não foi possível carregar esta área da aplicação. Você pode tentar novamente sem perder a sessão atual.",
+      "retry": "Tentar novamente",
+      "backToApp": "Ir para o app"
+    }
+  },
+  "verifyEmail": {
+    "title": "A verificar email...",
+    "description": "Estamos a verificar o teu email. Aguarda um momento.",
+    "success": "Email verificado!",
+    "error": "Erro na verificação",
+    "invalidLink": "Link de verificação inválido",
+    "backToLogin": "Voltar ao login",
+    "successDescription": "Email verificado com sucesso! Redirecionando...",
+    "errorDescription": "Ocorreu um erro ao verificar o email"
+  },
+  "offline": {
+    "title": "Estás offline",
+    "description": "O shell do app continua disponível, mas gerar conteúdo, pagar ou sincronizar dados exige conexão ativa.",
+    "banner": {
+      "message": "Sem conexão com a internet. Algumas ações podem falhar até a conexão voltar."
+    }
+  },
+  "worksLibrary": {
+    "type": {
+      "monograph": "monografia",
+      "schoolWork": "trabalho escolar",
+      "technicalWork": "trabalho técnico",
+      "academicWork": "trabalho académico"
+    },
+    "toast": {
+      "updateFailed": "Erro ao actualizar o trabalho",
+      "archived": "Trabalho arquivado",
+      "restored": "Trabalho restaurado",
+      "updateFailedDesc": "Não foi possível actualizar o trabalho.",
+      "deleted": "Trabalho eliminado",
+      "deletedDesc": "O trabalho foi eliminado com sucesso.",
+      "deleteFailed": "Erro ao eliminar o trabalho",
+      "deleteFailedDesc": "Não foi possível eliminar o trabalho."
+    },
+    "header": {
+      "library": "Biblioteca",
+      "myWorks": "Os meus trabalhos",
+      "workCount": "trabalho",
+      "workCountPlural": "trabalhos",
+      "newWork": "Novo trabalho"
+    },
+    "empty": {
+      "title": "Nenhum trabalho encontrado",
+      "description": "Não encontrámos nenhum trabalho com estes filtros. Ajusta a pesquisa ou volta a ver todos.",
+      "descriptionFirst": "Ainda não criaste nenhum trabalho. Começa agora!",
+      "clearFilters": "Limpar filtros",
+      "createWork": "Criar trabalho"
+    },
+    "delete": {
+      "title": "Eliminar trabalho?",
+      "description": "Vais eliminar \"{title}\". Esta acção não pode ser desfeita.",
+      "fallbackTitle": "este trabalho",
+      "cancel": "Cancelar",
+      "delete": "Eliminar"
+    }
+  },
+  "workCreation": {
+    "inlineCreator": {
+      "educationLevel": {
+        "secondary": "Secundário",
+        "technical": "Técnico",
+        "higher": "Superior"
+      },
+      "studentFallback": "Estudante",
+      "backgroundMessage": "Podes fechar esta página. O trabalho continua a gerar em segundo plano.",
+      "openWork": "Abrir trabalho →",
+      "greeting": "Olá, {firstName}",
+      "question": "Que tema queres trabalhar hoje?",
+      "worksAvailable": "trabalho disponível",
+      "worksAvailablePlural": "trabalhos disponíveis",
+      "availableThisMonth": "Tens <countValue>{count}</countValue> {label} este mês",
+      "limitReached": "Limite de trabalhos atingido",
+      "placeholder": "Qual o tema do teu trabalho?",
+      "educationLevelLabel": "Nível de ensino",
+      "noWorks": "Sem trabalhos disponíveis",
+      "limitMessage": "O teu limite de trabalhos foi atingido. Faz upgrade do pacote ou compra trabalhos extras.",
+      "creating": "A criar...",
+      "generateButton": "Gerar trabalho",
+      "limitReachedTitle": "Limite de trabalhos atingido este mês.",
+      "limitActionPrefix": "Faz",
+      "limitActionMiddle": "ou",
+      "limitActionSuffix": ".",
+      "upgradeLink": "upgrade do pacote",
+      "buyLink": "compra trabalhos extras",
+      "hideCover": "Ocultar dados da capa",
+      "showCover": "Preencher dados da capa (opcional)",
+      "coverLabel": "Capa:",
+      "hideAdvanced": "Ocultar detalhes avançados",
+      "showAdvanced": "+ Detalhes avançados (opcional)",
+      "contentLabel": "Conteúdo do trabalho",
+      "objectiveLabel": "Objetivo",
+      "objectivePlaceholder": "Ex.: analisar o impacto da IA no ensino superior",
+      "methodologyLabel": "Metodologia",
+      "methodologyPlaceholder": "Ex.: revisão bibliográfica",
+      "researchQuestionLabel": "Pergunta de pesquisa",
+      "researchQuestionPlaceholder": "Ex.: como a IA afecta o ensino?",
+      "subtitleLabel": "Subtítulo",
+      "subtitlePlaceholder": "Ex.: Um estudo de caso no sector bancário moçambicano",
+      "referencesLabel": "Referências",
+      "keywordsLabel": "Palavras-chave",
+      "keywordsPlaceholder": "Ex.: digitalização, sector bancário, Moçambique",
+      "referencesSeedLabel": "Referências iniciais",
+      "referencesSeedPlaceholder": "Ex.: Silva (2023), WHO (2024)",
+      "citationStyleLabel": "Norma de citação",
+      "notesLabel": "Notas",
+      "notesPlaceholder": "Ex.: incluir exemplos de Moçambique.",
+      "recentWorks": "Trabalhos recentes",
+      "open": "Abrir →",
+      "viewAll": "Ver todos os trabalhos ({projects.length})",
+      "noWorksYet": "Ainda não tens trabalhos."
+    },
+    "progress": {
+      "title": "A aptto está a preparar o teu trabalho",
+      "description": "A gerar capa, estrutura e conteúdo inicial com base no teu briefing académico."
+    },
+    "coverFields": {
+      "secondary": {
+        "school": "Escola",
+        "schoolPlaceholder": "Ex.: Escola Secundária Josina Machel",
+        "student": "Aluno(a)",
+        "studentPlaceholder": "Nome completo",
+        "teacher": "Professor(a)",
+        "teacherPlaceholder": "Nome do professor",
+        "class": "Classe",
+        "classOptional": "(opcional)",
+        "classSelect": "Selecionar",
+        "class10": "10ª Classe",
+        "class11": "11ª Classe",
+        "class12": "12ª Classe",
+        "turma": "Turma",
+        "turmaOptional": "(opcional)",
+        "turmaPlaceholder": "Ex.: A",
+        "number": "Nº",
+        "numberOptional": "(opcional)",
+        "numberPlaceholder": "Ex.: 15",
+        "city": "Cidade",
+        "cityOptional": "(opcional)",
+        "cityPlaceholder": "Ex.: Maputo"
+      },
+      "technical": {
+        "institute": "Instituto",
+        "institutePlaceholder": "Ex.: ISTEG",
+        "course": "Curso",
+        "coursePlaceholder": "Ex.: Informática",
+        "student": "Estudante",
+        "studentPlaceholder": "Nome completo",
+        "trainer": "Formador(a)",
+        "trainerPlaceholder": "Nome do formador",
+        "city": "Cidade",
+        "cityOptional": "(opcional)",
+        "cityPlaceholder": "Ex.: Maputo"
+      },
+      "higher": {
+        "institution": "Instituição",
+        "institutionPlaceholder": "Nome da instituição",
+        "course": "Curso",
+        "coursePlaceholder": "Nome do curso",
+        "student": "Estudante",
+        "studentPlaceholder": "Nome completo",
+        "advisor": "Docente",
+        "advisorPlaceholder": "Nome do orientador",
+        "faculty": "Faculdade",
+        "facultyOptional": "(opcional)",
+        "facultyPlaceholder": "Ex.: Faculdade de Economia",
+        "department": "Departamento",
+        "departmentOptional": "(opcional)",
+        "departmentPlaceholder": "Ex.: Departamento de Gestão",
+        "semester": "Semestre",
+        "semesterOptional": "(opcional)",
+        "semesterSelect": "Selecionar",
+        "semester1": "I Semestre",
+        "semester2": "II Semestre",
+        "city": "Cidade",
+        "cityOptional": "(opcional)",
+        "cityPlaceholder": "Ex.: Maputo"
+      },
+      "common": {
+        "institution": "Instituição",
+        "course": "Curso",
+        "student": "Estudante",
+        "advisor": "Orientador"
+      }
+    }
+  },
+  "api": {
+    "share": {
+      "unauthorized": "Não autorizado",
+      "projectNotFound": "Projecto não encontrado",
+      "shareIdRequired": "ID da partilha é obrigatório",
+      "linkRevoked": "Link de partilha revogado",
+      "errorRevoke": "Erro ao revogar link de partilha",
+      "errorList": "Erro ao listar links de partilha",
+      "documentNotFound": "Documento não encontrado ou link expirado",
+      "linkExpired": "Este link de partilha expirou",
+      "serverError": "Erro interno do servidor"
+    },
+    "generate": {
+      "unauthorized": "Não autorizado",
+      "workNotFound": "Trabalho não encontrado",
+      "generationNotStarted": "Geração não iniciada para este trabalho",
+      "sectionNotFound": "Secção não encontrada",
+      "executionNotFound": "Execução de geração não encontrada",
+      "planNotFound": "Plano de secção não encontrado",
+      "sectionFailed": "Falha ao gerar secção",
+      "error": "Erro ao gerar secção",
+      "noContent": "A IA não devolveu conteúdo para a secção.",
+      "noValidContent": "A IA não devolveu conteúdo válido para a secção."
+    },
+    "export": {
+      "unauthorized": "Não autorizado",
+      "projectIdRequired": "ID do projecto é obrigatório",
+      "projectNotFound": "Projecto não encontrado",
+      "exportFailed": "Erro ao exportar documento",
+      "pdfProOnly": "Export PDF disponível apenas em PRO"
+    }
+  },
+  "lib": {
+    "billing": {
+      "free": {
+        "description": "Para experimentares o aptto sem compromisso",
+        "work": "1 trabalho por mês",
+        "structure": "Estrutura automática",
+        "export": "Exportar DOCX"
+      },
+      "basic": {
+        "description": "Para quem tem trabalhos regulares durante o semestre",
+        "works": "4 trabalhos por mês",
+        "improve": "Melhorar texto com IA",
+        "suggestions": "Sugestões de argumentação",
+        "export": "Exportar DOCX"
+      },
+      "pro": {
+        "description": "Para quem precisa de mais capacidade — vários trabalhos no mesmo mês",
+        "works": "10 trabalhos por mês",
+        "fullAI": "IA completa (escrita + revisão)",
+        "pdf": "Exportar PDF formatado",
+        "support": "Suporte prioritário"
+      }
+    },
+    "documentExport": {
+      "checklistMargin": "Margens: 3 cm superior/esquerda e 2 cm inferior/direita.",
+      "checklistFont": "Fonte principal Arial 12 com alinhamento justificado.",
+      "checklistSpacing": "Espaçamento 1.5 e recuo de 1,25 cm na primeira linha.",
+      "checklistQuotes": "Citações longas com recuo ampliado e fonte menor.",
+      "checklistTOC": "Sumário visível com títulos hierárquicos coerentes.",
+      "checklistReferences": "Referências ordenadas alfabeticamente por autor.",
+      "checklistUEM1": "Capa com Universidade Eduardo Mondlane no topo e autor centralizado.",
+      "checklistUEM2": "Linha de orientador e curso explícitos na capa.",
+      "checklistUP1": "Capa com Universidade Pedagógica e curso em destaque institucional.",
+      "checklistUP2": "Estrutura visual centrada para monografias e relatórios pedagógicos.",
+      "checklistUDM1": "Capa com Universidade de Moçambique e metadados de faculdade/departamento.",
+      "checklistUDM2": "Bloco de autoria e orientação alinhado ao padrão institucional.",
+      "checklistSchool1": "Cabeçalho da República de Moçambique e escola secundária.",
+      "checklistSchool2": "Classe e turma visíveis quando informadas.",
+      "checklistTechnical1": "Curso técnico e disciplina evidenciados na capa.",
+      "checklistTechnical2": "Metadados práticos do ensino técnico destacados no topo.",
+      "checklistGeneric": "Capa académica genérica compatível com exigências ABNT base.",
+      "fallbackInstitution": "Instituição",
+      "fallbackAuthor": "Autor",
+      "fallbackAuthorNotProvided": "Autor não informado",
+      "fallbackTitleNotProvided": "Título não informado",
+      "fallbackTechnicalSubject": "Disciplina técnica",
+      "fallbackAuthorName": "Nome do Autor",
+      "refAvailableAt": "Disponível em:",
+      "refAccessedAt": "Acesso em:",
+      "refThesisDissertation": "Tese/Dissertação.",
+      "labelSupervisor": "Supervisor:",
+      "labelAdvisor": "Orientador:"
+    },
+    "documentProfile": {
+      "typeSecondary": "Trabalho Escolar",
+      "typeTechnical": "Trabalho Técnico",
+      "typeAcademic": "Trabalho Académico",
+      "fallbackSecondarySchool": "Escola Secundária",
+      "fallbackSubject": "Disciplina",
+      "fallbackTeacherAdvisor": "Professor/Orientador",
+      "fallbackTechnicalInstitute": "Instituto Técnico",
+      "fallbackTechnicalCourse": "Curso técnico",
+      "fallbackAdvisor": "Orientador",
+      "fallbackAcademicInstitution": "Instituição Académica",
+      "fallbackCourse": "Curso"
+    }
+  },
+  "admin": {
+    "common": {
+      "accessRestrictedTitle": "Acesso restrito",
+      "accessRestrictedDescription": "Esta área administrativa está disponível apenas para contas com o perfil ADMIN."
+    },
+    "rag": {
+      "title": "Admin RAG",
+      "description": "Gere fontes, indexe documentos e valide rapidamente o contexto recuperado pela IA.",
+      "refresh": "Actualizar",
+      "sourcesCard": {
+        "title": "Fontes registadas",
+        "description": "Catálogo de fontes públicas, institucionais ou privadas disponíveis para o RAG.",
+        "loading": "A carregar fontes...",
+        "source": "Fonte",
+        "type": "Tipo",
+        "documents": "Documentos",
+        "status": "Estado",
+        "active": "Activa",
+        "inactive": "Inactiva"
+      },
+      "createSource": {
+        "title": "Criar nova fonte",
+        "description": "Registe rapidamente uma nova origem de conhecimento para ingestão.",
+        "nameLabel": "Nome da fonte",
+        "typeLabel": "Tipo",
+        "createButton": "Criar fonte",
+        "toast": {
+          "success": {
+            "title": "Fonte criada",
+            "description": "Fonte {name} adicionada ao catálogo."
+          },
+          "error": {
+            "title": "Erro",
+            "description": "Não foi possível criar a fonte."
+          }
+        },
+        "errorCreate": "Não foi possível criar a fonte."
+      },
+      "ingest": {
+        "title": "Ingerir documento",
+        "description": "Indexe conteúdo textual para o RAG. Use fontes curadas e específicas por projecto ou domínio.",
+        "sourceLabel": "Fonte",
+        "sourcePlaceholder": "Seleccione uma fonte",
+        "titleLabel": "Título do documento",
+        "textButton": "Texto",
+        "fileButton": "Ficheiro",
+        "contentLabel": "Conteúdo",
+        "contentPlaceholder": "Cole aqui o texto limpo do documento, lei, relatório ou tese...",
+        "fileLabel": "Ficheiro",
+        "fileDesc": "PDF, DOCX ou TXT até 25 MB",
+        "ingestButton": "Indexar documento",
+        "ingestFileButton": "Indexar ficheiro",
+        "invalidFormat": {
+          "title": "Formato inválido",
+          "description": "Apenas PDF, DOCX e TXT são aceites."
+        },
+        "toast": {
+          "docSuccess": {
+            "title": "Documento indexado",
+            "description": "Documento {title} foi dividido e indexado."
+          },
+          "fileSuccess": {
+            "title": "Ficheiro indexado",
+            "description": "Documento {title} foi extraído e indexado."
+          },
+          "error": {
+            "title": "Erro",
+            "description": "Não foi possível indexar o {type}."
+          }
+        },
+        "errorIngestDoc": "Não foi possível ingerir o documento.",
+        "errorIngestFile": "Não foi possível ingerir o ficheiro."
+      },
+      "search": {
+        "title": "Testar pesquisa",
+        "description": "Execute uma pesquisa manual para validar se o RAG está a recuperar trechos relevantes.",
+        "queryLabel": "Consulta",
+        "queryPlaceholder": "Ex.: políticas públicas de ensino superior em Moçambique",
+        "searchButton": "Executar pesquisa",
+        "noResults": "Nenhum resultado ainda.",
+        "resultMeta": "{sourceName} • trecho {index}",
+        "toast": {
+          "error": {
+            "title": "Erro",
+            "description": "Não foi possível executar a pesquisa."
+          }
+        },
+        "errorSearch": "Não foi possível executar a pesquisa."
+      },
+      "errors": {
+        "loadSources": "Não foi possível carregar as fontes.",
+        "error": "Erro"
+      },
+      "types": {
+        "public": "Pública",
+        "institutional": "Institucional",
+        "private": "Privada"
+      }
+    },
+    "metrics": {
+      "title": "Admin Métricas",
+      "description": "Resumo operacional do funil principal e eventos recentes do produto.",
+      "refresh": "Actualizar",
+      "funnel": {
+        "leadMagnet": "Lead magnet",
+        "registrations": "Registos",
+        "checkouts": "Checkouts",
+        "payments": "Pagamentos",
+        "exports": "Exports"
+      },
+      "eventsCard": {
+        "title": "Eventos rastreados",
+        "description": "Contagens agregadas por evento registado no backend.",
+        "loading": "A carregar métricas...",
+        "event": "Evento",
+        "total": "Total"
+      },
+      "errors": {
+        "loadMetrics": "Não foi possível carregar as métricas.",
+        "error": "Erro"
+      }
+    }
   }
 }

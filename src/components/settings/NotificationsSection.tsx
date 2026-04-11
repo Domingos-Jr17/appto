@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { SettingsSectionSkeleton } from "@/components/skeletons/SettingsSectionSkeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAccountData } from "@/hooks/use-account-data";
+import { useTranslations } from "next-intl";
 import {
   Loader2,
   Mail,
@@ -22,6 +23,7 @@ interface SettingsData {
 }
 
 export function NotificationsSection() {
+  const t = useTranslations("settings.notifications");
   const { toast } = useToast();
   const { settings, isLoading: isAccountLoading } = useAccountData();
   const [isSaving, setIsSaving] = useState(false);
@@ -55,17 +57,17 @@ export function NotificationsSection() {
       });
 
       if (!response.ok) {
-        throw new Error("Erro ao guardar");
+        throw new Error(t("errorSave"));
       }
 
       toast({
-        title: "Preferências guardadas",
-        description: "As suas preferências de notificação foram actualizadas",
+        title: t("toast.success.title"),
+        description: t("toast.success.description"),
       });
     } catch {
       toast({
-        title: "Erro",
-        description: "Não foi possível guardar as preferências",
+        title: t("toast.error.title"),
+        description: t("toast.error.description"),
         variant: "destructive",
       });
     } finally {
@@ -84,10 +86,10 @@ export function NotificationsSection() {
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
             <Mail className="h-4 w-4 text-muted-foreground" />
-            Notificações por Email
+            {t("emailNotifications.label")}
           </Label>
           <p className="text-sm text-muted-foreground">
-            Receber notificações importantes por email
+            {t("emailNotifications.description")}
           </p>
         </div>
         <Switch
@@ -103,10 +105,10 @@ export function NotificationsSection() {
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
             <Gift className="h-4 w-4 text-muted-foreground" />
-            Novidades e Dicas
+            {t("marketingEmails.label")}
           </Label>
           <p className="text-sm text-muted-foreground">
-            Receba tutoriais e novidades sobre a plataforma
+            {t("marketingEmails.description")}
           </p>
         </div>
         <Switch
@@ -123,10 +125,10 @@ export function NotificationsSection() {
           <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
           <div className="text-sm">
             <p className="font-medium text-foreground mb-1">
-              Notificações de segurança
+              {t("securityNotice.title")}
             </p>
             <p className="text-muted-foreground">
-              Notificações importantes sobre segurança da conta serão sempre enviadas por email, independentemente destas configurações.
+              {t("securityNotice.description")}
             </p>
           </div>
         </div>
@@ -139,10 +141,10 @@ export function NotificationsSection() {
           {isSaving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              A guardar...
+              {t("saving")}
             </>
           ) : (
-            "Guardar preferências"
+            t("saveButton")
           )}
         </Button>
       </div>

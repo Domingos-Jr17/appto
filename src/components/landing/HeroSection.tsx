@@ -1,13 +1,18 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useTypewriter, Reveal } from "./animations";
 
-const words = ["estruturado", "formatado", "submetido", "aprovado"];
-
 export function HeroSection() {
+    const t = useTranslations("landing.hero");
+    const words = useMemo(
+        () => [t("word1"), t("word2"), t("word3"), t("word4")],
+        [t],
+    );
     const { displayWord, cursorVisible } = useTypewriter(words);
 
     return (
@@ -23,13 +28,13 @@ export function HeroSection() {
                 <Reveal>
                     <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-4 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur-sm">
                         <Sparkles className="h-3.5 w-3.5 text-primary" />
-                        Feito para estudantes universitários
+                        {t("badge")}
                     </div>
                 </Reveal>
 
                 <Reveal delay={0.1}>
                     <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-                        O teu trabalho académico,{" "}
+                        {t("titlePrefix")}{" "}
                         <span className="relative inline-block min-w-[10rem] text-primary">
                             {displayWord}
                             <span
@@ -39,15 +44,13 @@ export function HeroSection() {
                             />
                         </span>
                         <br />
-                        sem passar a noite em claro
+                        {t("titleSuffix")}
                     </h1>
                 </Reveal>
 
                 <Reveal delay={0.2}>
                     <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-                        Do tema ao documento pronto para submissão. Estrutura
-                        automática, normas ABNT, português de Moçambique e
-                        exportação DOCX — tudo numa só plataforma.
+                        {t("subtitle")}
                     </p>
                 </Reveal>
 
@@ -59,7 +62,7 @@ export function HeroSection() {
                             className="h-12 px-8 text-base font-semibold shadow-lg shadow-primary/25 transition-shadow hover:shadow-xl hover:shadow-primary/30"
                         >
                             <Link href="/register">
-                                Começar Grátis
+                                {t("cta")}
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
@@ -69,7 +72,7 @@ export function HeroSection() {
                             size="lg"
                             className="h-12 px-8 text-base"
                         >
-                            <a href="#demo">Ver Demo</a>
+                            <a href="#demo">{t("demo")}</a>
                         </Button>
                     </div>
                 </Reveal>

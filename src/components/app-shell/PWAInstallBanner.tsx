@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Download, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 export function PWAInstallBanner() {
+  const t = useTranslations("appShell.pwaInstallBanner");
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [isInstalled, setIsInstalled] = useState(() => {
@@ -100,10 +102,10 @@ export function PWAInstallBanner() {
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-foreground">
-                Instalar o aptto
+                {t("title")}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Instala no teu dispositivo para acesso rápido, mesmo sem abrir o browser.
+                {t("description")}
               </p>
             </div>
             <Button
@@ -111,7 +113,7 @@ export function PWAInstallBanner() {
               size="icon"
               className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
               onClick={handleDismiss}
-              aria-label="Fechar"
+              aria-label={t("close")}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -122,7 +124,7 @@ export function PWAInstallBanner() {
               className="flex-1 text-xs"
               onClick={handleInstall}
             >
-              Instalar
+              {t("install")}
             </Button>
             <Button
               variant="outline"
@@ -130,7 +132,7 @@ export function PWAInstallBanner() {
               className="flex-1 text-xs"
               onClick={handleDismiss}
             >
-              Agora não
+              {t("later")}
             </Button>
           </div>
         </div>

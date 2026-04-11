@@ -32,6 +32,7 @@ import {
   KeyRound,
   ShieldCheck,
 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 interface UserSession {
   id: string;
@@ -43,6 +44,9 @@ interface UserSession {
 }
 
 export function SecuritySection() {
+  const t = useTranslations("settings.securitySection");
+  const commonT = useTranslations("common");
+  const locale = useLocale();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSessionsLoading, setIsSessionsLoading] = useState(true);
@@ -80,30 +84,28 @@ export function SecuritySection() {
       const sessionsData = await sessionsResponse.json();
 
       if (!userResponse.ok) {
-        throw new Error(userData.error || "Não foi possível carregar a conta.");
+        throw new Error(userData.error || t("errorLoadAccount"));
       }
 
       if (!sessionsResponse.ok) {
-        throw new Error(
-          sessionsData.error || "Não foi possível carregar as sessões."
-        );
+        throw new Error(sessionsData.error || t("errorLoadSessions"));
       }
 
       setTwoFactorEnabled(Boolean(userData.twoFactorEnabled));
       setSessions(sessionsData.sessions || []);
     } catch (error) {
       toast({
-        title: "Erro",
+        title: commonT("error"),
         description:
           error instanceof Error
             ? error.message
-            : "Não foi possível carregar os dados de segurança.",
+            : t("errorLoadSecurity"),
         variant: "destructive",
       });
     } finally {
       setIsSessionsLoading(false);
     }
-  }, [toast]);
+  }, [commonT, t, toast]);
 
   useEffect(() => {
     void fetchSecurityState();
@@ -113,15 +115,15 @@ export function SecuritySection() {
     const newErrors: Record<string, string> = {};
 
     if (!passwordForm.currentPassword) {
-      newErrors.currentPassword = "Palavra-passe atual é obrigatória";
+      newErrors.currentPassword = t("changePassword.currentPassword.errorRequired");
     }
     if (!passwordForm.newPassword) {
-      newErrors.newPassword = "Nova palavra-passe é obrigatória";
+      newErrors.newPassword = t("changePassword.newPassword.errorRequired");
     } else if (passwordForm.newPassword.length < 8) {
-      newErrors.newPassword = "A palavra-passe deve ter pelo menos 8 caracteres";
+      newErrors.newPassword = t("changePassword.newPassword.errorMinLength");
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      newErrors.confirmPassword = "As palavras-passe não coincidem";
+      newErrors.confirmPassword = t("changePassword.confirmPassword.errorMismatch");
     }
 
     setErrors(newErrors);
@@ -145,23 +147,23 @@ export function SecuritySection() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao alterar palavra-passe");
+        throw new Error(data.error || t("changePassword.errorChange"));
       }
 
       toast({
-        title: "Palavra-passe alterada",
-        description: "A tua palavra-passe foi alterada com sucesso",
+        title: t("changePassword.toast.success.title"),
+        description: t("changePassword.toast.success.description"),
       });
 
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setErrors({});
     } catch (error) {
       toast({
-        title: "Erro",
+        title: t("changePassword.toast.error.title"),
         description:
           error instanceof Error
             ? error.message
-            : "Não foi possível alterar a palavra-passe",
+            : t("changePassword.toast.error.description"),
         variant: "destructive",
       });
     } finally {
@@ -177,21 +179,21 @@ export function SecuritySection() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Não foi possível revogar a sessão.");
+        throw new Error(data.error || t("sessions.errorRevoke"));
       }
 
       setSessions((current) => current.filter((session) => session.id !== sessionId));
       toast({
-        title: "Sessão revogada",
-        description: "A sessão foi terminada com sucesso.",
+        title: t("sessions.toast.success.title"),
+        description: t("sessions.toast.success.description"),
       });
     } catch (error) {
       toast({
-        title: "Erro",
+        title: t("sessions.toast.error.title"),
         description:
           error instanceof Error
             ? error.message
-            : "Não foi possível revogar a sessão.",
+            : t("sessions.toast.error.description"),
         variant: "destructive",
       });
     }
@@ -204,18 +206,18 @@ export function SecuritySection() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Não foi possível iniciar a configuração.");
+        throw new Error(data.error || t("twoFactor.errorSetup"));
       }
 
       setSetupPayload(data);
       setRecoveryCodes([]);
     } catch (error) {
       toast({
-        title: "Erro",
+        title: t("changePassword.toast.error.title"),
         description:
           error instanceof Error
             ? error.message
-            : "Não foi possível iniciar a configuração do 2FA.",
+            : t("twoFactor.errorSetup"),
         variant: "destructive",
       });
     } finally {
@@ -234,23 +236,23 @@ export function SecuritySection() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Não foi possível validar o código.");
+        throw new Error(data.error || t("twoFactor.errorVerify"));
       }
 
       setTwoFactorEnabled(true);
       setRecoveryCodes(data.recoveryCodes || []);
       setVerificationCode("");
       toast({
-        title: "2FA activado",
-        description: "Guarde os códigos de recuperação em local seguro.",
+        title: t("twoFactor.toast.enabled.title"),
+        description: t("twoFactor.toast.enabled.description"),
       });
     } catch (error) {
       toast({
-        title: "Erro",
+        title: t("changePassword.toast.error.title"),
         description:
           error instanceof Error
             ? error.message
-            : "Não foi possível activar o 2FA.",
+            : t("twoFactor.errorVerify"),
         variant: "destructive",
       });
     } finally {
@@ -272,7 +274,7 @@ export function SecuritySection() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Não foi possível desactivar o 2FA.");
+        throw new Error(data.error || t("twoFactor.errorDisable"));
       }
 
       setTwoFactorEnabled(false);
@@ -281,16 +283,16 @@ export function SecuritySection() {
       setDisablePassword("");
       setDisableCode("");
       toast({
-        title: "2FA desactivado",
-        description: "A autenticação de dois fatores foi removida.",
+        title: t("twoFactor.toast.disabled.title"),
+        description: t("twoFactor.toast.disabled.description"),
       });
     } catch (error) {
       toast({
-        title: "Erro",
+        title: t("changePassword.toast.error.title"),
         description:
           error instanceof Error
             ? error.message
-            : "Não foi possível desactivar o 2FA.",
+            : t("twoFactor.errorDisable"),
         variant: "destructive",
       });
     } finally {
@@ -303,11 +305,11 @@ export function SecuritySection() {
       return session.userAgent;
     }
 
-    return "Sessão sem user agent disponível";
+    return t("sessions.noUserAgent");
   };
 
   const formatDateTime = (value: string) =>
-    new Date(value).toLocaleString("pt-MZ", {
+    new Date(value).toLocaleString(locale, {
       dateStyle: "medium",
       timeStyle: "short",
     });
@@ -318,16 +320,16 @@ export function SecuritySection() {
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
             <Lock className="h-4 w-4 text-muted-foreground" />
-            Alterar palavra-passe
+            {t("changePassword.title")}
           </Label>
           <p className="text-sm text-muted-foreground">
-            Atualiza a tua palavra-passe para manter a tua conta segura.
+            {t("changePassword.description")}
           </p>
         </div>
 
         <div className="max-w-md space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="current-password">Palavra-passe atual</Label>
+            <Label htmlFor="current-password">{t("changePassword.currentPassword.label")}</Label>
             <div className="relative">
               <Input
                 id="current-password"
@@ -339,7 +341,7 @@ export function SecuritySection() {
                     currentPassword: e.target.value,
                   }))
                 }
-                placeholder="Introduz a tua palavra-passe atual"
+                placeholder={t("changePassword.currentPassword.placeholder")}
                 className={errors.currentPassword ? "border-destructive" : ""}
               />
               <button
@@ -360,7 +362,7 @@ export function SecuritySection() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="new-password">Nova palavra-passe</Label>
+            <Label htmlFor="new-password">{t("changePassword.newPassword.label")}</Label>
             <div className="relative">
               <Input
                 id="new-password"
@@ -372,7 +374,7 @@ export function SecuritySection() {
                     newPassword: e.target.value,
                   }))
                 }
-                placeholder="Introduz a nova palavra-passe"
+                placeholder={t("changePassword.newPassword.placeholder")}
                 className={errors.newPassword ? "border-destructive" : ""}
               />
               <button
@@ -393,7 +395,7 @@ export function SecuritySection() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirmar nova palavra-passe</Label>
+            <Label htmlFor="confirm-password">{t("changePassword.confirmPassword.label")}</Label>
             <div className="relative">
               <Input
                 id="confirm-password"
@@ -405,7 +407,7 @@ export function SecuritySection() {
                     confirmPassword: e.target.value,
                   }))
                 }
-                placeholder="Confirma a nova palavra-passe"
+                placeholder={t("changePassword.confirmPassword.placeholder")}
                 className={errors.confirmPassword ? "border-destructive" : ""}
               />
               <button
@@ -429,10 +431,10 @@ export function SecuritySection() {
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                A alterar...
+                {t("changePassword.changing")}
               </>
             ) : (
-              "Alterar palavra-passe"
+              t("changePassword.submitButton")
             )}
           </Button>
         </div>
@@ -444,10 +446,10 @@ export function SecuritySection() {
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
             <Shield className="h-4 w-4 text-muted-foreground" />
-            Autenticação de Dois Fatores
+            {t("twoFactor.title")}
           </Label>
           <p className="text-sm text-muted-foreground">
-            Protege o login com um autenticador TOTP e códigos de recuperação.
+            {t("twoFactor.description")}
           </p>
         </div>
 
@@ -456,11 +458,10 @@ export function SecuritySection() {
             <div className="flex items-start gap-3">
               <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />
               <div className="space-y-1">
-                <p className="font-medium">2FA ainda não está activo</p>
-                <p className="text-sm text-muted-foreground">
-                  Gere um QR code, associe no autenticador e valide um código de
-                  6 dígitos.
-                </p>
+                 <p className="font-medium">{t("twoFactor.notActive")}</p>
+                 <p className="text-sm text-muted-foreground">
+                   {t("twoFactor.setupDesc")}
+                 </p>
               </div>
             </div>
 
@@ -468,10 +469,10 @@ export function SecuritySection() {
               {is2faLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Preparando...
+                  {t("twoFactor.preparing")}
                 </>
               ) : (
-                "Iniciar configuração"
+                t("twoFactor.setupButton")
               )}
             </Button>
 
@@ -481,13 +482,13 @@ export function SecuritySection() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={setupPayload.qrCodeDataUrl}
-                    alt="QR code para configurar 2FA"
+                    alt={t("twoFactor.qrCodeAlt")}
                     className="h-full w-full rounded-md"
                   />
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <Label htmlFor="verification-code">Código do autenticador</Label>
+                      <Label htmlFor="verification-code">{t("twoFactor.codeLabel")}</Label>
                     <Input
                       id="verification-code"
                       inputMode="numeric"
@@ -497,20 +498,20 @@ export function SecuritySection() {
                           e.target.value.replace(/\D/g, "").slice(0, 6)
                         )
                       }
-                      placeholder="123456"
-                      className="mt-2"
+                       placeholder={t("twoFactor.codePlaceholder")}
+                       className="mt-2"
                     />
                   </div>
-                  <Button
+                     <Button
                     onClick={handleVerifyTwoFactor}
                     disabled={is2faLoading || verificationCode.length < 6}
                   >
-                    Verificar e activar 2FA
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    Se o QR code não abrir, copie manualmente a URI:{" "}
-                    <span className="break-all">{setupPayload.otpauthUrl}</span>
-                  </p>
+                      {t("twoFactor.verifyButton")}
+                    </Button>
+                   <p className="text-xs text-muted-foreground">
+                     {t("twoFactor.manualUriHelp")}{" "}
+                     <span className="break-all">{setupPayload.otpauthUrl}</span>
+                   </p>
                 </div>
               </div>
             ) : null}
@@ -520,27 +521,26 @@ export function SecuritySection() {
             <div className="flex items-start gap-3">
               <KeyRound className="mt-0.5 h-5 w-5 text-primary" />
               <div className="space-y-1">
-                <p className="font-medium">2FA activo</p>
-                <p className="text-sm text-muted-foreground">
-                  O login exige um código do autenticador. Podes desactivar com
-                  palavra-passe atual ou código 2FA.
-                </p>
+                 <p className="font-medium">{t("twoFactor.active")}</p>
+                 <p className="text-sm text-muted-foreground">
+                   {t("twoFactor.activeDesc")}
+                 </p>
               </div>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="disable-password">Palavra-passe atual</Label>
+                <Label htmlFor="disable-password">{t("twoFactor.currentPasswordLabel")}</Label>
                 <Input
                   id="disable-password"
                   type="password"
                   value={disablePassword}
                   onChange={(e) => setDisablePassword(e.target.value)}
-                  placeholder="Opcional se usar código 2FA"
+                  placeholder={t("twoFactor.currentPasswordOptional")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="disable-code">Código 2FA</Label>
+                <Label htmlFor="disable-code">{t("twoFactor.code2FA")}</Label>
                 <Input
                   id="disable-code"
                   inputMode="numeric"
@@ -548,7 +548,7 @@ export function SecuritySection() {
                   onChange={(e) =>
                     setDisableCode(e.target.value.replace(/\D/g, "").slice(0, 6))
                   }
-                  placeholder="Opcional se usares palavra-passe"
+                  placeholder={t("twoFactor.code2FAOptional")}
                 />
               </div>
             </div>
@@ -561,10 +561,10 @@ export function SecuritySection() {
               {is2faLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  A processar...
+                  {t("twoFactor.disabling")}
                 </>
               ) : (
-                "Desactivar 2FA"
+                t("twoFactor.disableButton")
               )}
             </Button>
           </div>
@@ -572,7 +572,7 @@ export function SecuritySection() {
 
         {recoveryCodes.length > 0 ? (
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-            <p className="mb-3 text-sm font-medium">Códigos de recuperação</p>
+            <p className="mb-3 text-sm font-medium">{t("twoFactor.recoveryCodes")}</p>
             <div className="grid gap-2 sm:grid-cols-2">
               {recoveryCodes.map((code) => (
                 <div
@@ -593,17 +593,17 @@ export function SecuritySection() {
         <div className="space-y-0.5">
           <Label className="flex items-center gap-2 text-base">
             <Monitor className="h-4 w-4 text-muted-foreground" />
-            Sessões Ativas
+            {t("sessions.title")}
           </Label>
           <p className="text-sm text-muted-foreground">
-            Revogue sessões antigas ou suspeitas. A sessão atual é marcada.
+            {t("sessions.description")}
           </p>
         </div>
 
         {isSessionsLoading ? (
           <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/50 p-4 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            A carregar sessões...
+            {t("sessions.loading")}
           </div>
         ) : (
           <div className="max-w-xl space-y-3">
@@ -621,14 +621,14 @@ export function SecuritySection() {
                       <span className="font-medium">{formatSessionLabel(session)}</span>
                       {session.current ? (
                         <span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs text-primary">
-                          Atual
+                          {t("sessions.current")}
                         </span>
                       ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        {session.ipAddress || "IP não disponível"}
+                        {session.ipAddress || t("sessions.ipNA")}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
@@ -636,7 +636,7 @@ export function SecuritySection() {
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Criada em {formatDateTime(session.createdAt)}
+                      {t("sessions.createdAt", { date: formatDateTime(session.createdAt) })}
                     </p>
                   </div>
                 </div>
@@ -650,24 +650,24 @@ export function SecuritySection() {
                         className="text-destructive hover:text-destructive"
                       >
                         <LogOut className="mr-1 h-4 w-4" />
-                        Revogar
+                        {t("sessions.revoke")}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Revogar sessão?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta ação termina o acesso do dispositivo selecionado.
-                        </AlertDialogDescription>
+                         <AlertDialogTitle>{t("sessions.revokeConfirm")}</AlertDialogTitle>
+                         <AlertDialogDescription>
+                           {t("sessions.revokeDesc")}
+                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                         <AlertDialogCancel>{t("sessions.cancel")}</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => handleRevokeSession(session.id)}
                           className="bg-destructive text-white hover:bg-destructive/90"
                         >
-                          Revogar sessão
-                        </AlertDialogAction>
+                           {t("sessions.revokeButton")}
+                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -684,12 +684,11 @@ export function SecuritySection() {
         <div className="flex gap-3">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
           <div className="text-sm">
-            <p className="mb-1 font-medium text-foreground">Dicas de Segurança</p>
+            <p className="mb-1 font-medium text-foreground">{t("securityTips.title")}</p>
             <ul className="space-y-1 text-muted-foreground">
-              <li>Usa uma palavra-passe forte e única para a tua conta.</li>
-              <li>Active o 2FA antes de gerir pacotes, pagamentos ou exportar documentos.</li>
-              <li>Revogue sessões antigas depois de usar computadores partilhados.</li>
-              <li>Guarde os códigos de recuperação fora do browser.</li>
+              {(t.raw("securityTips.tips") as string[]).map((tip) => (
+                <li key={tip}>{tip}</li>
+              ))}
             </ul>
           </div>
         </div>

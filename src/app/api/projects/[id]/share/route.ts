@@ -18,7 +18,7 @@ export async function POST(
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const project = await db.project.findFirst({
@@ -29,7 +29,7 @@ export async function POST(
     });
 
     if (!project) {
-      return apiError("Projecto não encontrado", 404);
+      return apiError("Project not found", 404);
     }
 
     const existingShare = await db.sharedDocument.findFirst({
@@ -43,8 +43,10 @@ export async function POST(
       },
     });
 
+    const origin = new URL(request.url).origin;
+
     if (existingShare) {
-      const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://aptto.co"}/share/${existingShare.token}`;
+      const shareUrl = `${origin}/share/${existingShare.token}`;
       return NextResponse.json({
         success: true,
         data: {
@@ -66,7 +68,7 @@ export async function POST(
       },
     });
 
-    const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://aptto.co"}/share/${sharedDoc.token}`;
+    const shareUrl = `${origin}/share/${sharedDoc.token}`;
 
     return NextResponse.json({
       success: true,
@@ -78,7 +80,7 @@ export async function POST(
       },
     });
   } catch (error) {
-    return handleApiError(error, "Erro ao criar link de partilha");
+    return handleApiError(error, "Error creating share link");
   }
 }
 
@@ -91,14 +93,14 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const { searchParams } = new URL(request.url);
     const shareId = searchParams.get("shareId");
 
     if (!shareId) {
-      return apiError("ID da partilha é obrigatório", 400);
+      return apiError("Share ID is required", 400);
     }
 
     const project = await db.project.findFirst({
@@ -109,7 +111,7 @@ export async function DELETE(
     });
 
     if (!project) {
-      return apiError("Projecto não encontrado", 404);
+      return apiError("Project not found", 404);
     }
 
     await db.sharedDocument.updateMany({
@@ -124,10 +126,10 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: "Link de partilha revogado",
+      message: "Share link revoked",
     });
   } catch (error) {
-    return handleApiError(error, "Erro ao revogar link de partilha");
+    return handleApiError(error, "Error revoking share link");
   }
 }
 
@@ -140,7 +142,7 @@ export async function GET(
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const project = await db.project.findFirst({
@@ -151,7 +153,7 @@ export async function GET(
     });
 
     if (!project) {
-      return apiError("Projecto não encontrado", 404);
+      return apiError("Project not found", 404);
     }
 
     const shares = await db.sharedDocument.findMany({
@@ -177,6 +179,6 @@ export async function GET(
       data: shares,
     });
   } catch (error) {
-    return handleApiError(error, "Erro ao listar links de partilha");
+    return handleApiError(error, "Error listing share links");
   }
 }

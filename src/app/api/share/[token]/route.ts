@@ -41,14 +41,14 @@ export async function GET(
 
     if (!sharedDoc || !sharedDoc.isActive) {
       return NextResponse.json(
-        { error: "Documento não encontrado ou link expirado" },
+        { error: "Document not found or link expired" },
         { status: 404 }
       );
     }
 
     if (sharedDoc.expiresAt && sharedDoc.expiresAt < new Date()) {
       return NextResponse.json(
-        { error: "Este link de partilha expirou" },
+        { error: "This share link has expired" },
         { status: 410 }
       );
     }
@@ -79,9 +79,9 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error("Erro ao obter documento partilhado:", error);
+    console.error("Error fetching shared document:", error);
     return NextResponse.json(
-      { error: "Erro interno do servidor" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

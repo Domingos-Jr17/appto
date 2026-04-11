@@ -48,14 +48,14 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return apiError("Não autorizado", 401);
+        return apiError("Unauthorized", 401);
     }
 
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get("projectId");
 
     if (!projectId) {
-      return apiError("ID do projecto é obrigatório", 400);
+      return apiError("Project ID is required", 400);
     }
 
     await enforceRateLimit(`export:docx:${session.user.id}`, 20, 60 * 1000);
@@ -71,11 +71,11 @@ export async function GET(request: NextRequest) {
         const exportBuffer = await DocumentExportService.generateDocx(exportModel);
         return { model: exportModel, buffer: exportBuffer };
       },
-      "Já existe uma exportação DOCX em curso para este projecto.",
+      "A DOCX export is already in progress for this project.",
     );
 
     if (!exportResult) {
-      return apiError("Projecto não encontrado", 404);
+      return apiError("Project not found", 404);
     }
 
     const { model, buffer } = exportResult;
@@ -90,6 +90,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    return handleApiError(error, "Erro ao exportar documento");
+    return handleApiError(error, "Failed to export document");
   }
 }

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user || session.user.role !== "ADMIN") {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const { searchParams } = new URL(request.url);
@@ -38,6 +38,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    return handleApiError(error, "Não foi possível carregar o relatório de prompts.");
+    return handleApiError(error, "Could not load the prompt report.");
   }
 }

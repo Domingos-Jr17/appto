@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Edit3, Check, X, Loader2, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,8 @@ export function WorkspaceHeader({
   onEditCover,
   onSaveTitle,
 }: WorkspaceHeaderProps) {
+  const t = useTranslations("workspace.header");
+  const hooksT = useTranslations("hooks.workspace");
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
   const [isSaving, setIsSaving] = useState(false);
@@ -124,7 +127,7 @@ export function WorkspaceHeader({
   const showPostGenerationNotice = !isGenerating && generationStep && (
     generationStatus === "FAILED" ||
     generationStatus === "NEEDS_REVIEW" ||
-    (generationStatus === "READY" && generationStep !== "Trabalho pronto para revisão")
+    (generationStatus === "READY" && generationStep !== hooksT("workReadyForReview"))
   );
 
   if (isGenerating) {
@@ -134,7 +137,7 @@ export function WorkspaceHeader({
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-warning/40 border-t-warning" />
           <div className="flex-1">
             <p className="text-xs font-medium text-foreground">
-              A gerar o teu trabalho...
+              {t("generatingWork")}
             </p>
             {generationStep && (
               <p className="text-[10px] text-muted-foreground">
@@ -160,10 +163,7 @@ export function WorkspaceHeader({
     <div className="shrink-0 border-b border-border/40 px-3 py-3">
       <div className="flex items-center gap-2">
         <Badge variant="outline" className="shrink-0 rounded-full text-[9px] px-1.5 py-0">
-          {workType
-            .toLowerCase()
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (c) => c.toUpperCase())}
+          {getWorkTypeLabel(workType, t)}
         </Badge>
 
         {isEditing ? (
@@ -175,7 +175,7 @@ export function WorkspaceHeader({
               onKeyDown={handleKeyDown}
               onBlur={handleBlur}
               className="h-10 text-sm font-semibold leading-tight"
-              placeholder="Título do trabalho..."
+              placeholder={t("titlePlaceholder")}
               disabled={isSaving}
               maxLength={180}
             />
@@ -185,7 +185,7 @@ export function WorkspaceHeader({
               className="h-11 w-11 shrink-0 rounded-2xl text-success"
               onClick={handleSave}
               disabled={isSaving}
-              aria-label="Guardar título"
+              aria-label={t("saveTitle")}
             >
               {isSaving ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -199,7 +199,7 @@ export function WorkspaceHeader({
               className="h-11 w-11 shrink-0 rounded-2xl text-muted-foreground"
               onClick={handleCancel}
               disabled={isSaving}
-              aria-label="Cancelar edição"
+              aria-label={t("cancelEdit")}
             >
               <X className="h-3.5 w-3.5" />
             </Button>
@@ -209,7 +209,7 @@ export function WorkspaceHeader({
             type="button"
             className="group flex-1 text-left line-clamp-1 text-[13px] font-semibold leading-tight text-foreground"
             onClick={handleStartEdit}
-            title="Clique para editar o título"
+            title={t("clickToEditTitle")}
           >
             {title}
             <Edit3 className="ml-1.5 inline h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
@@ -220,10 +220,10 @@ export function WorkspaceHeader({
       <div className="mt-3">
         <div className="flex items-center justify-between text-[10px] text-muted-foreground">
           <div className="flex items-center gap-2">
-            <span>Progresso</span>
+            <span>{t("progress")}</span>
             {subscriptionStatus && subscriptionStatus.remaining === 0 && (
               <span className="flex items-center gap-1 text-destructive">
-                Limite atingido
+                {t("limitReached")}
               </span>
             )}
           </div>
@@ -252,7 +252,7 @@ export function WorkspaceHeader({
           onClick={onEditCover}
         >
           <ImageIcon className="mr-1 h-3.5 w-3.5" />
-          Capa
+          {t("cover")}
           {coverIncomplete && (
             <span className="ml-1 h-1.5 w-1.5 rounded-full bg-warning" />
           )}
@@ -287,4 +287,17 @@ export function WorkspaceHeader({
       )}
     </div>
   );
+}
+
+function getWorkTypeLabel(
+  workType: string,
+  t: ReturnType<typeof useTranslations<"workspace.header">>,
+) {
+  if (workType === "SECONDARY_WORK") return t("workTypeSecondary");
+  if (workType === "TECHNICAL_WORK") return t("workTypeTechnical");
+  if (workType === "HIGHER_EDUCATION_WORK") return t("workTypeHigher");
+  return workType
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }

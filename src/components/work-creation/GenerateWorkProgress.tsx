@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Loader2, Sparkles } from "lucide-react";
 
 interface GenerateWorkProgressProps {
@@ -9,6 +10,7 @@ interface GenerateWorkProgressProps {
 }
 
 export function GenerateWorkProgress({ steps, activeIndex, currentMessage }: GenerateWorkProgressProps) {
+  const t = useTranslations("workCreation.progress");
   return (
     <div className="space-y-5 py-4">
       <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/8 px-4 py-3">
@@ -16,9 +18,9 @@ export function GenerateWorkProgress({ steps, activeIndex, currentMessage }: Gen
           <Sparkles className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-foreground">A aptto está a preparar o teu trabalho</p>
+          <p className="text-sm font-semibold text-foreground">{t("title")}</p>
           <p className="text-xs text-muted-foreground">
-            {currentMessage || "A gerar capa, estrutura e conteúdo inicial com base no teu briefing académico."}
+            {currentMessage || t("description")}
           </p>
         </div>
       </div>

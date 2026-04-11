@@ -11,7 +11,7 @@ export async function POST() {
 
   if (!session?.user?.id) {
     return NextResponse.json(
-      { error: "Não autorizado" },
+      { error: "Unauthorized" },
       { status: 401 }
     );
   }
@@ -23,14 +23,14 @@ export async function POST() {
 
   if (!user) {
     return NextResponse.json(
-      { error: "Utilizador não encontrado" },
+      { error: "User not found" },
       { status: 404 }
     );
   }
 
   if (user.emailVerified) {
     return NextResponse.json(
-      { error: "Email já verificado" },
+      { error: "Email already verified" },
       { status: 400 }
     );
   }
@@ -51,10 +51,10 @@ export async function POST() {
 
   try {
     await sendVerificationEmail(user.email, user.name, verifyUrl);
-    return NextResponse.json({ message: "Email de verificação enviado" });
+    return NextResponse.json({ message: "Verification email sent" });
   } catch {
     return NextResponse.json(
-      { error: "Erro ao enviar email de verificação" },
+      { error: "Failed to send verification email" },
       { status: 500 }
     );
   }

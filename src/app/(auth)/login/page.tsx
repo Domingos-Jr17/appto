@@ -5,27 +5,32 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getProviders, signIn, useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
-function getLoginErrorMessage(error?: string) {
+function getLoginErrorMessage(
+  t: ReturnType<typeof useTranslations<"auth.login">>,
+  error?: string,
+) {
   switch (error) {
     case "CredentialsSignin":
-      return "Email ou palavra-passe incorretos";
+      return t("errorCredentialsSignin");
     case "TwoFactorRequired":
-      return "Introduza o código do autenticador para concluir o login.";
+      return t("errorTwoFactorRequired");
     case "InvalidTwoFactorCode":
-      return "O código 2FA introduzido é inválido.";
+      return t("errorInvalidTwoFactorCode");
     case "Configuration":
-      return "A autenticação não está configurada corretamente no servidor.";
+      return t("errorConfiguration");
     default:
-      return "Ocorreu um erro. Tente novamente.";
+      return t("errorGeneric");
   }
 }
 
 export default function LoginPage() {
+  const t = useTranslations("auth.login");
   const router = useRouter();
   const { data: _session, status } = useSession();
   const [showPassword, setShowPassword] = useState(false);
@@ -84,7 +89,7 @@ export default function LoginPage() {
         if (result.error === "TwoFactorRequired") {
           setOtpRequired(true);
         }
-        setError(getLoginErrorMessage(result.error));
+        setError(getLoginErrorMessage(t, result.error));
         setIsLoading(false);
         return;
       }
@@ -94,9 +99,9 @@ export default function LoginPage() {
       router.refresh();
     } catch (err) {
       if (err instanceof Error) {
-        setError(getLoginErrorMessage(err.message));
+        setError(getLoginErrorMessage(t, err.message));
       } else {
-        setError("Ocorreu um erro. Tente novamente.");
+        setError(t("errorGeneric"));
       }
       setIsLoading(false);
     }
@@ -123,9 +128,9 @@ export default function LoginPage() {
     <div className="rounded-[28px] bg-card border border-border/40 p-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold mb-2">Bem-vindo de volta</h1>
+        <h1 className="text-2xl font-bold mb-2">{t("title")}</h1>
         <p className="text-muted-foreground text-sm">
-          Acede à tua conta para continuares
+          {t("subtitle")}
         </p>
       </div>
 
@@ -140,13 +145,13 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Email */}
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("email")}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               id="email"
               type="email"
-              placeholder="seu@email.com"
+              placeholder={t("emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 transition-all duration-300"
@@ -158,12 +163,12 @@ export default function LoginPage() {
         {/* Password */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Palavra-passe</Label>
+            <Label htmlFor="password">{t("password")}</Label>
             <Link
               href="/forgot-password"
               className="text-xs text-primary hover:text-primary/80 transition-colors"
             >
-              Esqueceste a palavra-passe?
+              {t("forgotPassword")}
             </Link>
           </div>
           <div className="relative">
@@ -171,7 +176,7 @@ export default function LoginPage() {
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
+              placeholder={t("passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 pr-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 transition-all duration-300"
@@ -181,6 +186,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={showPassword ? t("hidePassword") : t("showPassword")}
             >
               {showPassword ? (
                 <EyeOff className="w-4 h-4" />
@@ -193,7 +199,7 @@ export default function LoginPage() {
 
         {otpRequired && (
           <div className="space-y-2">
-            <Label htmlFor="otp-code">Código 2FA</Label>
+            <Label htmlFor="otp-code">{t("twoFactorCode")}</Label>
             <div className="relative">
               <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -210,7 +216,7 @@ export default function LoginPage() {
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Usa o código de 6 dígitos do autenticador associado à tua conta.
+              {t("twoFactorDescription")}
             </p>
           </div>
         )}
@@ -225,7 +231,7 @@ export default function LoginPage() {
             <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
           ) : (
             <>
-              Entrar
+              {t("loginButton")}
               <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
             </>
           )}
@@ -238,7 +244,7 @@ export default function LoginPage() {
           <div className="relative my-6">
             <Separator className="bg-border/50" />
             <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground">
-              ou continue com
+              {t("continueWith")}
             </span>
           </div>
 
@@ -267,19 +273,19 @@ export default function LoginPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            Continuar com Google
+            {t("loginWithGoogle")}
           </Button>
         </>
       )}
 
       {/* Register Link */}
       <p className="text-center text-sm text-muted-foreground mt-6">
-        Não tens conta?{" "}
+        {t("noAccount")}{" "}
         <Link
           href="/register"
           className="text-primary hover:text-primary/80 font-medium transition-colors"
         >
-          Criar conta
+          {t("register")}
         </Link>
       </p>
     </div>

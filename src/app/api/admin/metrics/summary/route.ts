@@ -9,7 +9,7 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id || session.user.role !== "ADMIN") {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const grouped = await db.productEvent.groupBy({
@@ -22,6 +22,6 @@ export async function GET() {
       grouped,
     });
   } catch (error) {
-    return handleApiError(error, "Não foi possível carregar o resumo de métricas.");
+    return handleApiError(error, "Could not load the metrics summary.");
   }
 }

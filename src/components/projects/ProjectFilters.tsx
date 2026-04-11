@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -23,15 +24,6 @@ interface ProjectFiltersProps {
   className?: string;
 }
 
-const FILTERS: { value: ProjectStatus; label: string }[] = [
-  { value: "all", label: "Todos" },
-  { value: "in_progress", label: "Em curso" },
-  { value: "completed", label: "Concluídos" },
-  { value: "review", label: "Revisão" },
-  { value: "draft", label: "Rascunho" },
-  { value: "archived", label: "Arquivados" },
-];
-
 export function ProjectFilters({
   status,
   onStatusChange,
@@ -39,12 +31,22 @@ export function ProjectFilters({
   onSearchChange,
   className,
 }: ProjectFiltersProps) {
+  const t = useTranslations("projects.filters");
+  const filters: { value: ProjectStatus; label: string }[] = [
+    { value: "all", label: t("all") },
+    { value: "in_progress", label: t("inProgress") },
+    { value: "completed", label: t("completed") },
+    { value: "review", label: t("review") },
+    { value: "draft", label: t("draft") },
+    { value: "archived", label: t("archived") },
+  ];
+
   return (
     <div className={cn("space-y-3", className)}>
       <div className="grid gap-3 sm:hidden">
         <div className="space-y-1.5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Estado
+            {t("status")}
           </p>
           <Select
             value={status}
@@ -52,12 +54,12 @@ export function ProjectFilters({
           >
             <SelectTrigger
               className="h-11 rounded-2xl border-border/60 bg-muted/30 text-sm"
-              aria-label="Filtrar trabalhos por estado"
+              aria-label={t("filterByStatus")}
             >
-              <SelectValue placeholder="Filtrar por estado" />
+              <SelectValue placeholder={t("filterByStatus")} />
             </SelectTrigger>
             <SelectContent>
-              {FILTERS.map((filter) => (
+              {filters.map((filter) => (
                 <SelectItem key={filter.value} value={filter.value}>
                   {filter.label}
                 </SelectItem>
@@ -68,7 +70,7 @@ export function ProjectFilters({
       </div>
 
       <div className="hidden gap-2 overflow-x-auto pb-1 scrollbar-hide sm:flex">
-        {FILTERS.map((filter) => (
+        {filters.map((filter) => (
           <button
             key={filter.value}
             type="button"
@@ -88,11 +90,11 @@ export function ProjectFilters({
       <div className="relative max-w-xl">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Procurar trabalho..."
+          placeholder={t("search")}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="h-11 rounded-2xl border-border/60 bg-muted/30 pl-10"
-          aria-label="Procurar trabalho"
+          aria-label={t("search")}
         />
       </div>
     </div>

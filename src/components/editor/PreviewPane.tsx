@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import ReactMarkdown from "react-markdown";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { flattenSections } from "@/lib/editor-helpers";
@@ -44,8 +45,8 @@ function buildNumberedSections(sections: Section[], prefix = ""): Array<{
   return result;
 }
 
-function getTodayFormatted(): string {
-  return new Date().toLocaleDateString("pt-MZ", {
+function getTodayFormatted(locale: string): string {
+  return new Date().toLocaleDateString(locale, {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -53,6 +54,17 @@ function getTodayFormatted(): string {
 }
 
 export function PreviewPane({ project, sections }: PreviewPaneProps) {
+  const t = useTranslations("editor.preview");
+  const editorT = useTranslations("editor");
+  const locale = useLocale();
+  const typeLabel =
+    project.type === "SECONDARY_WORK"
+      ? t("workType.secondary")
+      : project.type === "TECHNICAL_WORK"
+        ? t("workType.technical")
+        : project.type === "HIGHER_EDUCATION_WORK"
+          ? t("workType.higher")
+          : project.type.replace(/_/g, " ");
   const numberedSections = useMemo(() => buildNumberedSections(sections), [sections]);
   const totalWords = useMemo(
     () => flattenSections(sections).reduce((sum, s) => sum + s.wordCount, 0),
@@ -70,7 +82,7 @@ export function PreviewPane({ project, sections }: PreviewPaneProps) {
             <div className="space-y-6">
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  {project.type.replace(/_/g, " ")}
+                  {typeLabel}
                 </p>
                 <h1 className="text-3xl font-bold leading-tight tracking-tight text-foreground">
                   {project.title}
@@ -85,18 +97,18 @@ export function PreviewPane({ project, sections }: PreviewPaneProps) {
               <div className="mx-auto h-px w-16 bg-border" />
 
               <div className="space-y-1 text-sm text-muted-foreground">
-                <p>{getTodayFormatted()}</p>
-                <p className="text-xs">
-                  {numberedSections.length} secções · {totalWords.toLocaleString("pt-MZ")} palavras
-                </p>
-              </div>
+                  <p>{getTodayFormatted(locale)}</p>
+                  <p className="text-xs">
+                    {numberedSections.length} {t("sections")} - {totalWords.toLocaleString(locale)} {editorT("words")}
+                  </p>
+                </div>
             </div>
           </div>
 
           {/* Índice */}
           {numberedSections.length > 0 ? (
             <div className="mb-12">
-              <h2 className="mb-4 text-lg font-semibold text-foreground">Índice</h2>
+                  <h2 className="mb-4 text-lg font-semibold text-foreground">{t("tableOfContents")}</h2>
               <div className="space-y-1.5">
                 {numberedSections.map((section) => (
                   <a
@@ -138,9 +150,9 @@ export function PreviewPane({ project, sections }: PreviewPaneProps) {
                       <ReactMarkdown>{section.content}</ReactMarkdown>
                     </div>
                   ) : (
-                    <p className="text-sm italic text-muted-foreground">
-                      Secção ainda sem conteúdo.
-                    </p>
+                      <p className="text-sm italic text-muted-foreground">
+                        {t("noContent")}
+                      </p>
                   )}
                 </div>
               ))}
@@ -148,10 +160,10 @@ export function PreviewPane({ project, sections }: PreviewPaneProps) {
           ) : (
             <div className="py-16 text-center">
               <p className="text-muted-foreground">
-                O documento ainda não tem conteúdo escrito.
+                {t("noDocument")}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Escreva nas secções do editor para ver o preview aqui.
+                {editorT("writeInSections")}
               </p>
             </div>
           )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { parseMarkdownBlocks } from "@/lib/content";
 import { resolveDocumentProfile } from "@/lib/document-profile";
@@ -21,8 +22,9 @@ export function DocumentPreview({
   isGenerating,
   brief,
 }: DocumentPreviewProps) {
-  const coverSection = sections.find((section) => section.title === "Capa");
-  const titlePageSection = sections.find((section) => section.title === "Folha de Rosto");
+  const t = useTranslations("workspace.preview");
+  const coverSection = sections.find((section) => isCoverSectionTitle(section.title, t));
+  const titlePageSection = sections.find((section) => isTitlePageSectionTitle(section.title, t));
   const hasBodyContent = sections.some((section) =>
     isMeaningfulWorkspaceSection({
       title: section.title,
@@ -37,10 +39,10 @@ export function DocumentPreview({
       <div className="mx-auto flex max-w-2xl flex-col items-center justify-center gap-6 px-6 py-24 text-center">
         <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-8 py-12">
           <p className="text-sm font-medium text-foreground">
-            O teu trabalho vai aparecer aqui
+            {t("emptyTitle")}
           </p>
           <p className="mt-1.5 text-xs text-muted-foreground">
-            Clica em &quot;Gerar trabalho&quot; para criar o conteúdo automaticamente.
+            {t("emptyDescription")}
           </p>
         </div>
       </div>
@@ -101,6 +103,7 @@ export function DocumentPreview({
 // ── Section Renderer ───────────────────────────────────────────────────
 
 function DocumentSection({ section }: { section: WorkSection }) {
+  const t = useTranslations("workspace.preview");
   const normalizedContent = normalizeDisplayedSectionContent(section.content, section.title);
   const normalizedStreamingContent = normalizeDisplayedSectionContent(
     section.streamingContent,
@@ -129,7 +132,7 @@ function DocumentSection({ section }: { section: WorkSection }) {
         </div>
         <div className="flex items-center gap-2 py-2">
           <div className="h-2 w-2 animate-ping rounded-full bg-blue-400" />
-          <span className="text-xs text-[var(--doc-muted)]">A gerar...</span>
+          <span className="text-xs text-[var(--doc-muted)]">{t("generating")}</span>
         </div>
       </section>
     );
@@ -143,7 +146,7 @@ function DocumentSection({ section }: { section: WorkSection }) {
         </h2>
         <div className="flex items-center gap-2 py-3">
           <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--doc-muted)] border-t-[var(--doc-heading)]" />
-          <span className="text-xs text-[var(--doc-muted)]">A gerar...</span>
+          <span className="text-xs text-[var(--doc-muted)]">{t("generating")}</span>
         </div>
       </section>
     );
@@ -323,26 +326,31 @@ function InlineMarkdown({ text }: { text: string }) {
 // ── Cover Page (first page of document) ──────────────────────────────────
 
 function CoverPage({ brief }: { brief?: WorkBrief | null }) {
+  const previewT = useTranslations("workspace.preview");
+  const profileT = useTranslations("lib.documentProfile");
+  const modalT = useTranslations("workspace.cover.modal");
   const profile = resolveDocumentProfile({
     type: brief?.workType,
     educationLevel: brief?.educationLevel,
     institutionName: brief?.institutionName,
     coverTemplate: brief?.coverTemplate,
   });
-  const workType = formatWorkType(brief?.workType);
+  const workType = formatWorkType(brief?.workType, previewT);
   const institution = fallbackInstitution(
+    profileT,
     brief?.educationLevel,
     brief?.institutionName,
     brief?.workType,
     brief?.coverTemplate,
   );
-  const course = getCoverCourseLabel(brief);
-  const title = brief?.title || "Título do trabalho";
-  const student = brief?.studentName || "Nome do estudante";
-  const advisor = brief?.advisorName || "Nome do orientador";
-  const city = brief?.city || "Maputo";
+  const course = getCoverCourseLabel(brief, profileT);
+  const title = brief?.title || previewT("titleFallback");
+  const student = brief?.studentName || modalT("studentPlaceholder");
+  const advisor = brief?.advisorName || previewT("advisorFallback");
+  const city = brief?.city || previewT("cityFallback");
   const year = brief?.year || String(new Date().getFullYear());
   const secondaryMeta = getSecondaryMeta(brief);
+  const advisorLabel = getAdvisorLabel(brief?.educationLevel, modalT);
 
   return (
     <div className="mx-auto w-full max-w-[36rem] text-center">
@@ -377,26 +385,26 @@ function CoverPage({ brief }: { brief?: WorkBrief | null }) {
       {/* Footer: Author & Details */}
       <div className="space-y-3 text-left text-xs text-[var(--doc-muted)] sm:text-sm">
         <div className="flex items-start justify-between gap-4">
-          <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
-            Estudante
-          </span>
+            <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
+              {modalT(brief?.educationLevel === "SECONDARY" ? "studentLabelSecondary" : "studentLabel")}
+            </span>
           <span className="max-w-[60%] text-right font-medium text-[var(--doc-heading)]">
             {student}
           </span>
         </div>
         <div className="flex items-start justify-between gap-4">
-          <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
-            {profile.coverFieldPolicy.advisorLabel}
-          </span>
+            <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
+              {advisorLabel}
+            </span>
           <span className="max-w-[60%] text-right text-[var(--doc-text)]">
             {advisor}
           </span>
         </div>
         {secondaryMeta && (
           <div className="flex items-start justify-between gap-4">
-            <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
-              Referência
-            </span>
+              <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
+                {previewT("referenceLabel")}
+              </span>
             <span className="max-w-[60%] text-right text-[var(--doc-text)]">
               {secondaryMeta}
             </span>
@@ -404,7 +412,7 @@ function CoverPage({ brief }: { brief?: WorkBrief | null }) {
         )}
         <div className="flex items-start justify-between gap-4">
           <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
-            Local
+            {previewT("locationLabel")}
           </span>
           <span className="text-right text-[var(--doc-text)]">
             {city} — {year}
@@ -451,29 +459,34 @@ function normalizeDisplayedSectionContent(content?: string, sectionTitle?: strin
 }
 
 function TitlePage({ brief }: { brief?: WorkBrief | null }) {
+  const previewT = useTranslations("workspace.preview");
+  const profileT = useTranslations("lib.documentProfile");
+  const modalT = useTranslations("workspace.cover.modal");
   const profile = resolveDocumentProfile({
     type: brief?.workType,
     educationLevel: brief?.educationLevel,
     institutionName: brief?.institutionName,
     coverTemplate: brief?.coverTemplate,
   });
-  const workType = formatWorkType(brief?.workType);
+  const workType = formatWorkType(brief?.workType, previewT);
   const institution = fallbackInstitution(
+    profileT,
     brief?.educationLevel,
     brief?.institutionName,
     brief?.workType,
     brief?.coverTemplate,
   );
-  const title = brief?.title || "Título do trabalho";
-  const subtitle = getCoverCourseLabel(brief);
-  const student = brief?.studentName || "Nome do estudante";
-  const advisor = brief?.advisorName || "Nome do orientador";
-  const city = brief?.city || "Maputo";
+  const title = brief?.title || previewT("titleFallback");
+  const subtitle = getCoverCourseLabel(brief, profileT);
+  const student = brief?.studentName || modalT("studentPlaceholder");
+  const advisor = brief?.advisorName || previewT("advisorFallback");
+  const city = brief?.city || previewT("cityFallback");
   const year = brief?.year || String(new Date().getFullYear());
   const faculty =
     profile.educationLevel === "HIGHER_EDUCATION"
       ? brief?.facultyName || brief?.departmentName || brief?.courseName || ""
       : "";
+  const advisorLabel = getAdvisorLabel(brief?.educationLevel, modalT);
 
   return (
     <div className="mx-auto flex w-full max-w-[36rem] flex-1 flex-col justify-between text-center">
@@ -504,24 +517,24 @@ function TitlePage({ brief }: { brief?: WorkBrief | null }) {
 
       <div className="space-y-3 text-left text-xs text-[var(--doc-muted)] sm:text-sm">
         <div className="flex items-start justify-between gap-4">
-          <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
-            Estudante
-          </span>
+            <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
+              {modalT(brief?.educationLevel === "SECONDARY" ? "studentLabelSecondary" : "studentLabel")}
+            </span>
           <span className="max-w-[60%] text-right font-medium text-[var(--doc-heading)]">
             {student}
           </span>
         </div>
         <div className="flex items-start justify-between gap-4">
-          <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
-            {profile.coverFieldPolicy.advisorLabel}
-          </span>
+            <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
+              {advisorLabel}
+            </span>
           <span className="max-w-[60%] text-right text-[var(--doc-text)]">
             {advisor}
           </span>
         </div>
         <div className="flex items-start justify-between gap-4">
           <span className="font-medium uppercase tracking-[0.12em] text-[var(--doc-muted)]/70">
-            Local
+            {previewT("locationLabel")}
           </span>
           <span className="text-right text-[var(--doc-text)]">
             {city} — {year}
@@ -534,35 +547,81 @@ function TitlePage({ brief }: { brief?: WorkBrief | null }) {
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-function formatWorkType(workType?: string) {
-  if (workType === "SECONDARY_WORK") return "Trabalho Escolar";
-  if (workType === "TECHNICAL_WORK") return "Trabalho Técnico";
-  if (workType === "HIGHER_EDUCATION_WORK") return "Trabalho Académico";
-  if (!workType) return "Trabalho Académico";
+function formatWorkType(
+  workType: string | undefined,
+  t: ReturnType<typeof useTranslations<"workspace.preview">>,
+) {
+  if (workType === "SECONDARY_WORK") return t("workTypeSecondary");
+  if (workType === "TECHNICAL_WORK") return t("workTypeTechnical");
+  if (workType === "HIGHER_EDUCATION_WORK") return t("workTypeHigher");
+  if (!workType) return t("workTypeHigher");
   return workType.replace(/_/g, " ");
 }
 
+function isCoverSectionTitle(
+  title: string | undefined,
+  t: ReturnType<typeof useTranslations<"workspace.preview">>,
+) {
+  return matchesSectionTitle(title, ["Capa", t("coverSectionTitle")]);
+}
+
+function isTitlePageSectionTitle(
+  title: string | undefined,
+  t: ReturnType<typeof useTranslations<"workspace.preview">>,
+) {
+  return matchesSectionTitle(title, ["Folha de Rosto", t("titlePageSectionTitle")]);
+}
+
+function matchesSectionTitle(title: string | undefined, candidates: string[]) {
+  if (!title) return false;
+
+  const normalizedTitle = normalizeSectionTitle(title);
+  return candidates.some((candidate) => normalizeSectionTitle(candidate) === normalizedTitle);
+}
+
+function normalizeSectionTitle(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
 function fallbackInstitution(
+  t: ReturnType<typeof useTranslations<"lib.documentProfile">>,
   educationLevel?: string,
   institutionName?: string,
   _workType?: string,
   _coverTemplate?: string,
 ) {
   if (institutionName) return institutionName;
-  if (educationLevel === "SECONDARY") return "Escola Secundária";
-  if (educationLevel === "TECHNICAL") return "Instituto Técnico";
-  return "Instituição académica";
+  if (educationLevel === "SECONDARY") return t("fallbackSecondarySchool");
+  if (educationLevel === "TECHNICAL") return t("fallbackTechnicalInstitute");
+  return t("fallbackAcademicInstitution");
 }
 
-function getCoverCourseLabel(brief?: WorkBrief | null) {
-  if (!brief) return "Curso / disciplina";
+function getCoverCourseLabel(
+  brief: WorkBrief | null | undefined,
+  t: ReturnType<typeof useTranslations<"lib.documentProfile">>,
+) {
+  if (!brief) return t("fallbackCourse");
   if (brief.educationLevel === "SECONDARY") {
-    return brief.subjectName || brief.className || "Disciplina";
+    return brief.subjectName || brief.className || t("fallbackSubject");
   }
   if (brief.educationLevel === "TECHNICAL") {
-    return brief.courseName || brief.subjectName || "Curso técnico";
+    return brief.courseName || brief.subjectName || t("fallbackTechnicalCourse");
   }
-  return brief.courseName || brief.facultyName || brief.subjectName || "Curso / disciplina";
+  return brief.courseName || brief.facultyName || brief.subjectName || t("fallbackCourse");
+}
+
+function getAdvisorLabel(
+  educationLevel: WorkBrief["educationLevel"] | undefined,
+  t: ReturnType<typeof useTranslations<"workspace.cover.modal">>,
+) {
+  if (educationLevel === "SECONDARY") return t("advisorLabelSecondary");
+  if (educationLevel === "TECHNICAL") return t("advisorLabelTechnical");
+  return t("advisorLabel");
 }
 
 function getSecondaryMeta(brief?: WorkBrief | null) {

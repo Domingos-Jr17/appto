@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { FileText, Plus, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +42,7 @@ const PROJECT_TYPE_LABELS: Record<string, ProjectCardData["type"]> = {
 export function WorksLibraryPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const t = useTranslations("worksLibrary");
     const {
         projects: rawProjects,
         isLoading,
@@ -59,7 +61,15 @@ export function WorksLibraryPage() {
             rawProjects.map((project) => ({
                 id: project.id,
                 title: project.title,
-                type: PROJECT_TYPE_LABELS[project.type] || "monografia",
+                type: PROJECT_TYPE_LABELS[project.type] || t("type.monograph"),
+                typeLabel:
+                    project.type === "SECONDARY_WORK"
+                        ? t("type.schoolWork")
+                        : project.type === "TECHNICAL_WORK"
+                          ? t("type.technicalWork")
+                          : project.type === "HIGHER_EDUCATION_WORK"
+                            ? t("type.academicWork")
+                            : t("type.monograph"),
                 course: project.brief?.courseName || null,
                 institution: project.brief?.institutionName || null,
                 progress: calculateProjectProgress(project),
@@ -71,7 +81,7 @@ export function WorksLibraryPage() {
                 createdAt: project.createdAt,
                 updatedAt: project.updatedAt,
             })),
-        [rawProjects],
+        [rawProjects, t],
     );
 
     const filteredWorks = useMemo(() => {
@@ -143,20 +153,20 @@ export function WorksLibraryPage() {
             });
 
             if (!response.ok) {
-                throw new Error("Erro ao actualizar o trabalho");
+                throw new Error(t("toast.updateFailed"));
             }
 
             toast({
                 title:
                     newStatus === "ARCHIVED"
-                        ? "Trabalho arquivado"
-                        : "Trabalho restaurado",
+                        ? t("toast.archived")
+                        : t("toast.restored"),
             });
             await refresh();
         } catch {
             toast({
-                title: "Erro",
-                description: "Não foi possível actualizar o trabalho.",
+                title: t("toast.updateFailed"),
+                description: t("toast.updateFailedDesc"),
                 variant: "destructive",
             });
         }
@@ -174,18 +184,18 @@ export function WorksLibraryPage() {
                 },
             );
             if (!response.ok) {
-                throw new Error("Erro ao eliminar o trabalho");
+                throw new Error(t("toast.deleteFailed"));
             }
 
             toast({
-                title: "Trabalho eliminado",
-                description: "O trabalho foi eliminado com sucesso.",
+                title: t("toast.deleted"),
+                description: t("toast.deletedDesc"),
             });
             await refresh();
         } catch {
             toast({
-                title: "Erro",
-                description: "Não foi possível eliminar o trabalho.",
+                title: t("toast.deleteFailed"),
+                description: t("toast.deleteFailedDesc"),
                 variant: "destructive",
             });
         } finally {
@@ -202,14 +212,17 @@ export function WorksLibraryPage() {
             <div className="flex flex-col gap-4 rounded-[28px] bg-card border border-border/40 p-5 lg:flex-row lg:items-end lg:justify-between">
                 <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        Biblioteca
+                        {t("header.library")}
                     </p>
                     <div>
                         <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                            Os meus trabalhos
+                            {t("header.myWorks")}
                         </h2>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            {workCounts.all} trabalho{workCounts.all !== 1 ? "s" : ""}
+                            {workCounts.all}{" "}
+                            {workCounts.all === 1
+                                ? t("header.workCount")
+                                : t("header.workCountPlural")}
                         </p>
                     </div>
                 </div>
@@ -219,7 +232,7 @@ export function WorksLibraryPage() {
                     className="h-11 rounded-2xl px-5"
                 >
                     <Plus className="mr-2 h-4 w-4" />
-                    Novo trabalho
+                    {t("header.newWork")}
                 </Button>
             </div>
 
@@ -242,11 +255,11 @@ export function WorksLibraryPage() {
             ) : (
                 <EmptyState
                     icon={FileText}
-                    title="Nenhum trabalho encontrado"
+                    title={t("empty.title")}
                     description={
                         hasFilteredResults
-                            ? "Não encontrámos nenhum trabalho com estes filtros. Ajusta a pesquisa ou volta a ver todos."
-                            : "Ainda não criaste nenhum trabalho. Começa agora!"
+                            ? t("empty.description")
+                            : t("empty.descriptionFirst")
                     }
                     className="py-16"
                     action={
@@ -259,14 +272,14 @@ export function WorksLibraryPage() {
                                 variant="outline"
                                 className="rounded-full"
                             >
-                                Limpar filtros
+                                {t("empty.clearFilters")}
                             </Button>
                         ) : (
                             <Button
                                 onClick={() => router.push("/app")}
                                 className="rounded-full"
                             >
-                                Criar trabalho
+                                {t("empty.createWork")}
                             </Button>
                         )
                     }
@@ -283,18 +296,19 @@ export function WorksLibraryPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
                             <Trash2 className="h-5 w-5 text-destructive" />
-                            Eliminar trabalho?
+                            {t("delete.title")}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                             {deleteTarget ? (
-                                <>
-                                    Vais eliminar &ldquo;
-                                    {works.find((w) => w.id === deleteTarget)
-                                        ?.title || "este trabalho"}
-                                    &rdquo;. Esta acção não pode ser desfeita.
-                                </>
+                                t("delete.description", {
+                                    title:
+                                        works.find((w) => w.id === deleteTarget)
+                                            ?.title || t("delete.fallbackTitle"),
+                                })
                             ) : (
-                                "Esta acção não pode ser desfeita. Todos os dados do trabalho serão removidos permanentemente."
+                                t("delete.description", {
+                                    title: t("delete.fallbackTitle"),
+                                })
                             )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -302,13 +316,13 @@ export function WorksLibraryPage() {
                         <AlertDialogCancel
                             onClick={() => setDeleteTarget(null)}
                         >
-                            Cancelar
+                            {t("delete.cancel")}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmDelete}
                             className="bg-destructive text-white hover:bg-destructive/90"
                         >
-                            Eliminar
+                            {t("delete.delete")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

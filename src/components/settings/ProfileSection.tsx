@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslations } from "next-intl";
 
 type UploadIntentResponse = {
   file: {
@@ -23,6 +24,7 @@ type UploadIntentResponse = {
 };
 
 export function ProfileSection() {
+  const t = useTranslations("settings.profileSection");
   const { data: session, update } = useSession();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -52,8 +54,8 @@ export function ProfileSection() {
 
     if (file.size > 2 * 1024 * 1024) {
       toast({
-        title: "Ficheiro muito grande",
-        description: "O tamanho máximo é 2MB",
+        title: t("avatar.fileTooLarge.title"),
+        description: t("avatar.fileTooLarge.description"),
         variant: "destructive",
       });
       return;
@@ -74,7 +76,7 @@ export function ProfileSection() {
       });
 
       if (!intentResponse.ok) {
-        throw new Error("Erro ao iniciar upload");
+        throw new Error(t("avatar.errorStartUpload"));
       }
 
       const intentData = (await intentResponse.json()) as UploadIntentResponse;
@@ -85,7 +87,7 @@ export function ProfileSection() {
       });
 
       if (!uploadResponse.ok) {
-        throw new Error("Erro ao enviar ficheiro");
+        throw new Error(t("avatar.errorUploadFile"));
       }
 
       const completeResponse = await fetch("/api/files/complete", {
@@ -95,7 +97,7 @@ export function ProfileSection() {
       });
 
       if (!completeResponse.ok) {
-        throw new Error("Erro ao concluir upload");
+        throw new Error(t("avatar.errorCompleteUpload"));
       }
 
       const completeData = await completeResponse.json();
@@ -106,18 +108,18 @@ export function ProfileSection() {
       });
 
       if (!updateResponse.ok) {
-        throw new Error("Erro ao actualizar a foto");
+        throw new Error(t("avatar.errorUpdatePhoto"));
       }
 
       await update();
       toast({
-        title: "Foto actualizada",
-        description: "A tua foto de perfil foi atualizada com sucesso",
+        title: t("avatar.toast.success.title"),
+        description: t("avatar.toast.success.description"),
       });
     } catch {
       toast({
-        title: "Erro",
-        description: "Não foi possível actualizar a foto",
+        title: t("avatar.toast.error.title"),
+        description: t("avatar.toast.error.description"),
         variant: "destructive",
       });
     } finally {
@@ -136,18 +138,18 @@ export function ProfileSection() {
       });
 
       if (!response.ok) {
-        throw new Error("Erro ao guardar");
+        throw new Error(t("errorSave"));
       }
 
       await update();
       toast({
-        title: "Perfil actualizado",
-        description: "As tuas informações foram guardadas com sucesso",
+        title: t("toast.success.title"),
+        description: t("toast.success.description"),
       });
     } catch {
       toast({
-        title: "Erro",
-        description: "Não foi possível guardar as alterações",
+        title: t("toast.error.title"),
+        description: t("toast.error.description"),
         variant: "destructive",
       });
     } finally {
@@ -170,7 +172,7 @@ export function ProfileSection() {
       <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
         <div className="group relative">
           <Avatar className="h-24 w-24 border-2 border-border">
-            <AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
+            <AvatarImage src={user?.image || undefined} alt={user?.name || t("avatar.altFallback")} />
             <AvatarFallback className="bg-primary/10 text-2xl text-primary">
               {initials}
             </AvatarFallback>
@@ -196,9 +198,9 @@ export function ProfileSection() {
         </div>
 
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold">Foto de Perfil</h3>
+          <h3 className="text-lg font-semibold">{t("avatar.title")}</h3>
           <p className="text-sm text-muted-foreground">
-            JPG, GIF ou PNG. Máximo de 2MB.
+            {t("avatar.description")}
           </p>
           <div className="flex gap-2">
             <label htmlFor="avatar-upload-btn">
@@ -209,7 +211,7 @@ export function ProfileSection() {
                   ) : (
                     <Upload className="mr-2 h-4 w-4" />
                   )}
-                  {avatarUploading ? "Enviando..." : "Carregar foto"}
+                  {avatarUploading ? t("avatar.uploading") : t("avatar.uploadButton")}
                 </span>
               </Button>
               <input
@@ -231,13 +233,13 @@ export function ProfileSection() {
         <div className="space-y-2">
           <Label htmlFor="name" className="flex items-center gap-2">
             <User className="h-4 w-4 text-muted-foreground" />
-            Nome completo
+            {t("name.label")}
           </Label>
           <Input
             id="name"
             value={formData.name}
             onChange={(event) => handleInputChange("name", event.target.value)}
-            placeholder="O teu nome completo"
+            placeholder={t("name.placeholder")}
             className="max-w-md"
           />
         </div>
@@ -245,11 +247,11 @@ export function ProfileSection() {
         <div className="space-y-2">
           <Label htmlFor="email" className="flex items-center gap-2">
             <Mail className="h-4 w-4 text-muted-foreground" />
-            Email
+            {t("email.label")}
             {isEmailVerified ? (
               <span className="flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs text-success">
                 <CheckCircle className="h-3 w-3" />
-                Verificado
+                {t("email.verified")}
               </span>
             ) : null}
           </Label>
@@ -263,7 +265,7 @@ export function ProfileSection() {
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            O email não pode ser alterado. Contacte o suporte se precisar de ajuda.
+            {t("email.cannotChange")}
           </p>
         </div>
       </div>
@@ -271,16 +273,16 @@ export function ProfileSection() {
       <Separator />
 
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Informações da Conta</h3>
+        <h3 className="text-lg font-semibold">{t("accountInfo.title")}</h3>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
-            <p className="text-sm text-muted-foreground">Tipo de Conta</p>
-            <p className="font-medium capitalize">{user?.role || "Estudante"}</p>
+            <p className="text-sm text-muted-foreground">{t("accountInfo.accountType")}</p>
+            <p className="font-medium capitalize">{user?.role || t("accountInfo.student")}</p>
           </div>
           <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
-            <p className="text-sm text-muted-foreground">Modelo Comercial</p>
+            <p className="text-sm text-muted-foreground">{t("accountInfo.billingModel")}</p>
             <p className="font-medium">
-              Pacotes mensais e trabalhos extras
+              {t("accountInfo.billingModelValue")}
             </p>
           </div>
         </div>
@@ -293,10 +295,10 @@ export function ProfileSection() {
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              A guardar...
+              {t("saving")}
             </>
           ) : (
-            "Guardar alterações"
+            t("saveButton")
           )}
         </Button>
       </div>

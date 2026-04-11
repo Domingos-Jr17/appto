@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id || session.user.role !== "ADMIN") {
-      return apiError("Não autorizado", 401);
+      return apiError("Unauthorized", 401);
     }
 
     const body = await parseBody(request, ingestFileSchema);
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const content = await extractTextFromFile(fileBuffer, body.mimeType);
 
     if (content.length < 50) {
-      return apiError("O ficheiro não contém texto suficiente para indexação.", 400);
+      return apiError("The file does not contain enough text for indexing.", 400);
     }
 
     const ragService = new RagService();

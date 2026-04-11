@@ -23,17 +23,17 @@
   },
   "auth": {
     "login": {
-      "title": "Sign in to your account",
+      "title": "Log in to your account",
       "subtitle": "Enter your details to continue",
       "email": "Email",
-      "emailPlaceholder": "you@email.com",
+      "emailPlaceholder": "your@email.com",
       "password": "Password",
       "passwordPlaceholder": "••••••••",
       "showPassword": "Show password",
       "hidePassword": "Hide password",
       "forgotPassword": "Forgot your password?",
-      "loginButton": "Sign in",
-      "loginWithGoogle": "Sign in with Google",
+      "loginButton": "Log in",
+      "loginWithGoogle": "Log in with Google",
       "noAccount": "Don't have an account?",
       "register": "Sign up",
       "twoFactorCode": "Verification code",
@@ -42,7 +42,7 @@
     },
     "register": {
       "title": "Create account",
-      "subtitle": "Fill in your details to get started",
+      "subtitle": "Fill in the details below to get started",
       "fullName": "Full name",
       "namePlaceholder": "Your name",
       "email": "Email",
@@ -62,7 +62,7 @@
       "passwordMinLength": "Password must be at least 8 characters",
       "createAccount": "Create account",
       "hasAccount": "Already have an account?",
-      "login": "Sign in",
+      "login": "Log in",
       "errorCreating": "Error creating account",
       "errorGeneric": "An error occurred. Please try again."
     },
@@ -70,7 +70,7 @@
       "title": "Recover password",
       "subtitle": "Enter your email and we'll send instructions to reset your password.",
       "email": "Email",
-      "emailPlaceholder": "you@email.com",
+      "emailPlaceholder": "your@email.com",
       "sendInstructions": "Send instructions",
       "successTitle": "Check your email",
       "successMessage": "If an account with that email exists, we've sent password reset instructions.",
@@ -92,9 +92,9 @@
       "badge": "Made for university students",
       "title1": "Your academic",
       "title2": "copilot",
-      "subtitle": "Structure, write and improve your academic papers with intelligent assistance. Designed for Mozambican students.",
-      "cta": "Start Free",
-      "demo": "View Demo",
+      "subtitle": "Structure, write and improve your academic work with intelligent assistance. Designed for Mozambican students.",
+      "cta": "Get Started Free",
+      "demo": "Watch Demo",
       "trustPrefix": "Trusted by students from",
       "trustSuffix": "Mozambican universities"
     },
@@ -112,22 +112,22 @@
       "step3Title": "Work with AI",
       "step3Desc": "Structure, write and improve text with personalized intelligent assistance.",
       "step4Title": "Export and submit",
-      "step4Desc": "Normalize references, export in DOCX and proceed to review or submission."
+      "step4Desc": "Normalize references, export as DOCX and proceed to review or submission."
     },
     "pricing": {
       "title": "Pricing",
-      "subtitle": "Plans that fit your budget",
+      "subtitle": "Packages that fit your budget",
       "billingToggle": "Monthly billing",
       "popular": "Most Popular",
       "perMonth": "per month",
       "forever": "forever",
-      "startFree": "Start Free",
+      "startFree": "Get Started Free",
       "choose": "Choose {name}",
       "disclaimer": "Billing still under operational validation"
     },
     "testimonials": {
       "title": "Testimonials",
-      "subtitle": "What students using aptto have to say"
+      "subtitle": "What students using aptto are saying"
     },
     "socialProof": {
       "worksCreated": "works created",
@@ -145,9 +145,9 @@
       "subtitle": "What sets us apart from generic AI"
     },
     "finalCTA": {
-      "title": "Ready to start?",
-      "subtitle": "Join thousands of Mozambican students already using aptto to create better academic papers.",
-      "cta": "Start Free"
+      "title": "Ready to get started?",
+      "subtitle": "Join thousands of Mozambican students already using aptto to create better academic work.",
+      "cta": "Get Started Free"
     },
     "footer": {
       "product": "Product",
@@ -164,7 +164,7 @@
       "terms": "Terms of use",
       "privacy": "Privacy",
       "cookies": "Cookies",
-      "description": "Structure, write and improve your academic papers with intelligent assistance.",
+      "description": "Structure, write and improve your academic work with intelligent assistance.",
       "rights": "All rights reserved.",
       "location": "Maputo, Mozambique"
     }
@@ -176,7 +176,7 @@
     "resumeChat": "Resume in chat",
     "resumeDocument": "Open document",
     "resumeStructure": "Resume structure",
-    "noProjects": "You don't have any projects yet",
+    "noProjects": "You don't have projects yet",
     "createFirst": "Create your first work",
     "allProjects": "All projects",
     "recentProjects": "Recent projects",
@@ -195,8 +195,8 @@
     "deleteProject": "Delete project",
     "deleteConfirm": "Are you sure you want to delete this project?",
     "titleLabel": "Work Title",
-    "titlePlaceholder": "E.g.: Impact of social media on education",
-    "type": "Work type",
+    "titlePlaceholder": "Ex: Impact of social media on education",
+    "type": "Type of work",
     "description": "Description (optional)",
     "descriptionPlaceholder": "Briefly describe your work...",
     "aiAssistance": "AI Assistance",
@@ -235,9 +235,9 @@
     "words": "words",
     "preview": "Preview",
     "tableOfContents": "Table of Contents",
-    "coverPage": "Cover",
+    "coverPage": "Cover Page",
     "noContent": "Section has no content yet.",
-    "noDocument": "The document doesn't have any written content yet.",
+    "noDocument": "The document has no written content yet.",
     "writeInSections": "Write in the editor sections to see the preview here.",
     "today": "today",
     "sectionNumber": "Section {number}",
@@ -298,9 +298,9 @@
       "twoFactorDisable": "Disable 2FA",
       "twoFactorSetup": "Set up 2FA",
       "twoFactorVerify": "Verify code",
-      "twoFactorDescription": "Adds an extra layer of security to your account.",
+      "twoFactorDescription": "Add an extra layer of security to your account.",
       "recoveryCodes": "Recovery codes",
-      "recoveryCodesDescription": "Store these codes in a safe place. Each code can only be used once.",
+      "recoveryCodesDescription": "Save these codes in a secure location. Each code can only be used once.",
       "sessions": "Active sessions",
       "revokeSession": "End session",
       "revokeAllSessions": "End all other sessions",
@@ -341,7 +341,7 @@
       "placeholder": "Describe what you need...",
       "send": "Send",
       "generating": "Generating...",
-      "regenerate": "Generate again"
+      "regenerate": "Regenerate"
     },
     "structure": {
       "title": "Structure",
@@ -353,14 +353,14 @@
     "document": {
       "title": "Document",
       "generateSection": "Generate section",
-      "generateComplete": "Generate full document"
+      "generateComplete": "Generate complete document"
     },
     "status": {
       "empty": "Empty",
       "started": "Started",
       "drafting": "Drafting",
       "review": "In review",
-      "stale": "Stalled"
+      "stale": "Stopped"
     }
   },
   "emailVerification": {
@@ -370,7 +370,995 @@
     "verifyCheckInbox": "Check your inbox and click the verification link.",
     "resendEmail": "Resend email",
     "verified": "Email verified successfully!",
-    "invalidToken": "Invalid or expired verification link.",
+    "invalidToken": "Verification link invalid or expired.",
     "alreadyVerified": "Your email is already verified."
+  },
+  "share": {
+    "title": "Share via link",
+    "description": "Anyone with the link can view the document.",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied!",
+    "revokeLink": "Revoke link",
+    "noActiveLinks": "No active links",
+    "createLink": "Create share link",
+    "documentNotFound": "Document not found or link expired",
+    "views": "views",
+    "sharedAt": "Shared on",
+    "createAccount": "Create account on aptto",
+    "createAccountCTA": "Create your own academic work with aptto"
+  },
+  "layout": {
+    "title": "aptto - AI Academic Copilot",
+    "description": "Intelligent platform supporting academic writing for Mozambican students.",
+    "keywords": ["aptto", "academic writing", "AI", "Mozambique", "ABNT"],
+    "ogTitle": "aptto - AI Academic Copilot",
+    "ogDescription": "Your intelligent assistant for academic work"
+  },
+  "appShell": {
+    "header": {
+      "title": "APPTO: Academic Work Generator",
+      "menuOpen": "Open menu",
+      "menuClose": "Close menu"
+    },
+    "sidebar": {
+      "newWork": "New work",
+      "recentWorks": "Recent works",
+      "rename": "Rename",
+      "archive": "Archive",
+      "restore": "Restore",
+      "delete": "Delete"
+    },
+    "nav": {
+      "home": "Home",
+      "works": "Works",
+      "packages": "Packages"
+    },
+    "mobileNav": {
+      "home": "Home",
+      "works": "Works"
+    },
+    "userMenu": {
+      "openMenu": "Open account menu",
+      "user": "User",
+      "noEmail": "No email",
+      "profile": "Profile",
+      "settings": "Settings",
+      "packages": "Packages",
+      "adminRag": "Admin RAG",
+      "adminMetrics": "Admin Metrics",
+      "signOut": "Sign out"
+    },
+    "localeSelector": {
+      "selectLanguage": "Select language"
+    },
+    "skipContent": "Skip to content",
+    "emailNotVerified": "Your email has not been verified yet.",
+    "sending": "Sending...",
+    "verifyNow": "Verify now",
+    "close": "Close",
+    "menu": "Menu",
+    "settingsAndAccount": "Settings and account",
+    "newWorkLabel": "New work",
+    "deleteWorkTitle": "Delete work?",
+    "deleteWorkDesc": "You are about to delete \"{title}\". This action cannot be undone.",
+    "renameWorkTitle": "Rename work",
+    "renameWorkDesc": "Enter the new title for the work.",
+    "renamePlaceholder": "New title...",
+    "errorSending": "Error sending",
+    "verificationEmailSent": "Verification email sent",
+    "verificationEmailDesc": "Check your inbox.",
+    "errorSendingEmail": "Could not send verification email.",
+    "errorDeleting": "Error deleting",
+    "workDeleted": "Work deleted",
+    "errorUpdating": "Error updating",
+    "workArchived": "Work archived",
+    "workRestored": "Work restored",
+    "errorRenaming": "Error renaming",
+    "titleUpdated": "Title updated"
+  },
+  "errors": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred while loading the application. Try again or reload the page.",
+    "retry": "Try again",
+    "backHome": "Back to home"
+  },
+  "verifyEmail": {
+    "title": "Verifying email...",
+    "description": "We are verifying your email. Please wait a moment.",
+    "success": "Email verified!",
+    "error": "Verification error",
+    "invalidLink": "Invalid verification link",
+    "backToLogin": "Back to login"
+  },
+  "offline": {
+    "title": "You are offline",
+    "description": "The app shell remains available, but generating content, paying or syncing data requires an active connection."
+  },
+  "settings": {
+    "notifications": {
+      "title": "Notifications",
+      "emailNotifications": {
+        "label": "Email Notifications",
+        "description": "Receive important notifications by email"
+      },
+      "marketingEmails": {
+        "label": "News and Tips",
+        "description": "Receive tutorials and news about the platform"
+      },
+      "securityNotice": {
+        "title": "Security notifications",
+        "description": "Important account security notifications will always be sent by email"
+      },
+      "saveButton": "Save preferences",
+      "saving": "Saving...",
+      "toast": {
+        "success": {
+          "title": "Preferences saved",
+          "description": "Your notification preferences have been updated"
+        },
+        "error": {
+          "title": "Error",
+          "description": "Could not save preferences"
+        }
+      },
+      "errorSave": "Error saving"
+    },
+    "preferencesSection": {
+      "language": {
+        "label": "Language",
+        "description": "Choose the interface language"
+      },
+      "theme": {
+        "label": "Theme",
+        "description": "Choose between light, dark mode or follow system settings"
+      },
+      "fontSize": {
+        "label": "Font Size",
+        "description": "Adjust the editor font size"
+      },
+      "autoSave": {
+        "label": "Auto-Save",
+        "description": "Automatically save your changes every 30 seconds"
+      },
+      "aiSuggestions": {
+        "label": "AI Suggestions",
+        "description": "Show AI suggestions while you write"
+      },
+      "citationStyle": {
+        "label": "Default Citation Style",
+        "description": "Citation style used by default in your work"
+      },
+      "saveButton": "Save preferences",
+      "saving": "Saving...",
+      "toast": {
+        "success": {
+          "title": "Preferences saved",
+          "description": "Your preferences have been updated successfully"
+        },
+        "error": {
+          "title": "Error",
+          "description": "Could not save preferences"
+        }
+      },
+      "errorSave": "Error saving",
+      "languages": {
+        "ptMZ": "Portuguese (Mozambique)",
+        "ptBR": "Portuguese (Brazil)",
+        "en": "English",
+        "es": "Spanish"
+      },
+      "themes": {
+        "dark": "Dark",
+        "light": "Light",
+        "system": "System"
+      }
+    },
+    "profileSection": {
+      "avatar": {
+        "title": "Profile Photo",
+        "description": "JPG, GIF or PNG. Maximum 2MB.",
+        "uploadButton": "Upload photo",
+        "uploading": "Uploading...",
+        "fileTooLarge": {
+          "title": "File too large",
+          "description": "Maximum size is 2MB"
+        },
+        "toast": {
+          "success": {
+            "title": "Photo updated",
+            "description": "Your profile photo has been updated successfully"
+          },
+          "error": {
+            "title": "Error",
+            "description": "Could not update photo"
+          }
+        },
+        "errorStartUpload": "Error starting upload",
+        "errorUploadFile": "Error uploading file",
+        "errorCompleteUpload": "Error completing upload",
+        "errorUpdatePhoto": "Error updating photo"
+      },
+      "name": {
+        "label": "Full name",
+        "placeholder": "Your full name"
+      },
+      "email": {
+        "label": "Email",
+        "verified": "Verified",
+        "cannotChange": "Email cannot be changed. Contact support if you need help."
+      },
+      "accountInfo": {
+        "title": "Account Information",
+        "accountType": "Account Type",
+        "billingModel": "Business Model",
+        "billingModelValue": "Monthly packages and extra works",
+        "student": "Student"
+      },
+      "saveButton": "Save changes",
+      "saving": "Saving...",
+      "toast": {
+        "success": {
+          "title": "Profile updated",
+          "description": "Your information has been saved successfully"
+        },
+        "error": {
+          "title": "Error",
+          "description": "Could not save changes"
+        }
+      },
+      "errorSave": "Error saving"
+    },
+    "securitySection": {
+      "changePassword": {
+        "title": "Change password",
+        "description": "Update your password to keep your account secure.",
+        "currentPassword": {
+          "label": "Current password",
+          "placeholder": "Enter your current password",
+          "errorRequired": "Current password is required"
+        },
+        "newPassword": {
+          "label": "New password",
+          "placeholder": "Enter new password",
+          "errorRequired": "New password is required",
+          "errorMinLength": "Password must be at least 8 characters"
+        },
+        "confirmPassword": {
+          "label": "Confirm new password",
+          "placeholder": "Confirm new password",
+          "errorMismatch": "Passwords don't match"
+        },
+        "submitButton": "Change password",
+        "changing": "Changing...",
+        "toast": {
+          "success": {
+            "title": "Password changed",
+            "description": "Your password has been changed successfully"
+          },
+          "error": {
+            "title": "Error",
+            "description": "Could not change password"
+          }
+        },
+        "errorChange": "Error changing password"
+      },
+      "twoFactor": {
+        "title": "Two-Factor Authentication",
+        "description": "Protect login with a TOTP authenticator and recovery codes.",
+        "notActive": "2FA is not active yet",
+        "setupDesc": "Generate a QR code, link in authenticator and validate a 6-digit code.",
+        "active": "2FA active",
+        "activeDesc": "Login requires a code from the authenticator.",
+        "setupButton": "Start setup",
+        "preparing": "Preparing...",
+        "verifyButton": "Verify and enable 2FA",
+        "disableButton": "Disable 2FA",
+        "disabling": "Processing...",
+        "qrCodeAlt": "QR code to set up 2FA",
+        "codeLabel": "Authenticator code",
+        "currentPasswordLabel": "Current password",
+        "currentPasswordOptional": "Optional if using 2FA code",
+        "code2FA": "2FA code",
+        "code2FAOptional": "Optional if using password",
+        "recoveryCodes": "Recovery codes",
+        "toast": {
+          "enabled": {
+            "title": "2FA enabled",
+            "description": "Save recovery codes in a secure location."
+          },
+          "disabled": {
+            "title": "2FA disabled",
+            "description": "Two-factor authentication has been removed."
+          }
+        },
+        "errorSetup": "Could not start setup.",
+        "errorVerify": "Could not validate code.",
+        "errorDisable": "Could not disable 2FA."
+      },
+      "sessions": {
+        "title": "Active Sessions",
+        "description": "Revoke old or suspicious sessions. Current session is marked.",
+        "loading": "Loading sessions...",
+        "current": "Current",
+        "ipNA": "IP not available",
+        "revoke": "Revoke",
+        "revokeConfirm": "Revoke session?",
+        "revokeDesc": "This action ends access from the selected device.",
+        "cancel": "Cancel",
+        "revokeButton": "Revoke session",
+        "toast": {
+          "success": {
+            "title": "Session revoked",
+            "description": "Session has been ended successfully."
+          },
+          "error": {
+            "title": "Error",
+            "description": "Could not revoke session."
+          }
+        },
+        "errorRevoke": "Could not revoke session."
+      },
+      "securityTips": {
+        "title": "Security Tips",
+        "tips": [
+          "Use a strong and unique password",
+          "Enable two-factor authentication",
+          "Don't share your recovery codes",
+          "End sessions on public devices"
+        ]
+      },
+      "errorLoadAccount": "Could not load account.",
+      "errorLoadSessions": "Could not load sessions.",
+      "errorLoadSecurity": "Could not load security data."
+    },
+    "accountSection": {
+      "status": {
+        "title": "Account Status",
+        "description": "Information about your account, current package and business management."
+      },
+      "statusCard": {
+        "label": "Status",
+        "value": "Active"
+      },
+      "packageCard": {
+        "label": "Package",
+        "valueFree": "Free"
+      },
+      "memberSince": "Member since",
+      "billingCard": {
+        "label": "Billing",
+        "value": "Packages + extra works"
+      },
+      "export": {
+        "title": "Export Data",
+        "description": "Download a copy of all your data.",
+        "details": "A JSON file will be downloaded with sessions, sections, transactions, packages, extra works and settings associated with the account.",
+        "button": "Export data",
+        "exporting": "Exporting...",
+        "toast": {
+          "success": {
+            "title": "Data exported",
+            "description": "File downloaded successfully"
+          },
+          "error": {
+            "title": "Error",
+            "description": "Could not export data"
+          }
+        },
+        "errorExport": "Error exporting data"
+      },
+      "dangerZone": {
+        "title": "Danger Zone",
+        "description": "Irreversible actions related to your account.",
+        "deleteAccount": {
+          "heading": "Delete account",
+          "description": "All your data will be permanently removed. This action cannot be undone.",
+          "button": "Delete account",
+          "dialogTitle": "Delete account permanently?",
+          "dialogDesc": "This action is irreversible. All your data, including sessions, sections and credits, will be permanently removed.",
+          "confirmText": "DELETE",
+          "currentPassword": "Current password",
+          "passwordRequired": "(required)",
+          "passwordOptional": "(or use 2FA code)",
+          "passwordPlaceholder": "Enter your password",
+          "code2FA": "2FA code",
+          "cancel": "Cancel",
+          "deleteButton": "Delete permanently",
+          "deleting": "Deleting...",
+          "toast": {
+            "success": {
+              "title": "Account deleted",
+              "description": "Your account has been deleted successfully"
+            },
+            "error": {
+              "title": "Error",
+              "description": "Could not delete account"
+            }
+          },
+          "errorDelete": "Error deleting account"
+        }
+      },
+      "help": {
+        "title": "Need help?",
+        "support": "support"
+      }
+    }
+  },
+  "worksLibrary": {
+    "type": {
+      "monograph": "monograph"
+    },
+    "toast": {
+      "updateFailed": "Error updating work",
+      "archived": "Work archived",
+      "restored": "Work restored",
+      "updateFailedDesc": "Could not update work.",
+      "deleted": "Work deleted",
+      "deletedDesc": "Work deleted successfully.",
+      "deleteFailed": "Error deleting work",
+      "deleteFailedDesc": "Could not delete work."
+    },
+    "header": {
+      "library": "Library",
+      "myWorks": "My works",
+      "workCount": "work",
+      "workCountPlural": "works",
+      "newWork": "New work"
+    },
+    "empty": {
+      "title": "No work found",
+      "description": "We didn't find any work with these filters. Adjust the search or view all again.",
+      "descriptionFirst": "You haven't created any work yet. Get started now!",
+      "clearFilters": "Clear filters",
+      "createWork": "Create work"
+    },
+    "delete": {
+      "title": "Delete work?",
+      "description": "You are about to delete \"{title}\". This action cannot be undone.",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    }
+  },
+  "projects": {
+    "grid": {
+      "status": {
+        "draft": "Draft",
+        "inProgress": "In progress",
+        "review": "In review",
+        "completed": "Completed",
+        "archived": "Archived"
+      },
+      "generating": "Generating {percent}%",
+      "moreOptions": "More options",
+      "openWork": "Open work",
+      "edit": "Edit",
+      "restore": "Restore",
+      "archive": "Archive",
+      "delete": "Delete",
+      "updated": "Updated {time}",
+      "progress": "Progress",
+      "generation": "Generation",
+      "empty": {
+        "title": "No work found",
+        "description": "You have no work in this category. Create a new work to get started."
+      }
+    },
+    "filters": {
+      "all": "All",
+      "inProgress": "In progress",
+      "completed": "Completed",
+      "review": "Review",
+      "draft": "Draft",
+      "archived": "Archived",
+      "status": "Status",
+      "filterByStatus": "Filter by status",
+      "search": "Search work..."
+    }
+  },
+  "workspace": {
+    "cover": {
+      "modal": {
+        "title": "Edit cover",
+        "description": "Change the style and data that appear on the work cover.",
+        "templateLabel": "Cover style",
+        "institutionPlaceholder": "Institution name",
+        "coursePlaceholder": "Course",
+        "studentPlaceholder": "Student name",
+        "advisorPlaceholder": "Advisor",
+        "cityPlaceholder": "City",
+        "yearPlaceholder": "Year",
+        "institutionLabel": "Institution",
+        "institutionLabelTechnical": "Institute",
+        "institutionPlaceholderSecondary": "Ex.: Josina Machel Secondary School",
+        "institutionPlaceholderTechnical": "Ex.: ISTEG",
+        "institutionPlaceholderHigher": "Ex.: Eduardo Mondlane University",
+        "courseLabel": "Course",
+        "coursePlaceholder": "Ex.: Banking Management",
+        "studentLabel": "Student",
+        "studentLabelSecondary": "Student",
+        "studentPlaceholder": "Ex.: Maria João",
+        "advisorLabel": "Advisor",
+        "advisorLabelSecondary": "Professor",
+        "advisorLabelTechnical": "Trainer",
+        "advisorPlaceholder": "Ex.: Prof. Dr. João Santos",
+        "cityLabel": "City",
+        "cityPlaceholder": "Ex.: Maputo",
+        "yearLabel": "Year",
+        "hideDetails": "Hide additional details",
+        "showDetails": "+ Additional details (optional)",
+        "facultyLabel": "Faculty",
+        "facultyPlaceholder": "Ex.: Faculty of Economics",
+        "departmentLabel": "Department",
+        "departmentPlaceholder": "Ex.: Department of Management",
+        "classLabel": "Class",
+        "classSelect": "Select",
+        "class10": "10th Grade",
+        "class11": "11th Grade",
+        "class12": "12th Grade",
+        "turmaLabel": "Class",
+        "turmaPlaceholder": "Ex.: A",
+        "studentNumberLabel": "Student No.",
+        "studentNumberPlaceholder": "Ex.: 15",
+        "semesterLabel": "Semester",
+        "semester1": "1st Semester",
+        "semester2": "2nd Semester",
+        "saveButton": "Save"
+      },
+      "preview": {
+        "workTypeSecondary": "School Work",
+        "workTypeTechnical": "Technical Work",
+        "workTypeHigher": "Academic Work"
+      }
+    }
+  },
+  "editor": {
+    "documentTree": {
+      "status": {
+        "empty": "Empty",
+        "started": "Started",
+        "drafting": "In development",
+        "review": "Ready for review",
+        "stale": "Stopped"
+      },
+      "addSubtitle": "Add subtitle",
+      "delete": "Delete",
+      "deleteConfirm": "Delete section?",
+      "deleteDesc": "This action will permanently delete this section and all its content.",
+      "cancel": "Cancel",
+      "deleteButton": "Delete",
+      "newChapter": "New chapter",
+      "rename": "Rename",
+      "title": "Title",
+      "chapters": "chapters",
+      "chapter": "chapter"
+    },
+    "preview": {
+      "cover": "Cover",
+      "tableOfContents": "Table of Contents",
+      "sections": "sections",
+      "noContent": "Section has no content yet.",
+      "noDocument": "The document has no written content yet."
+    }
+  },
+  "landing": {
+    "demo": {
+      "badge": "Try free, no account needed",
+      "title": "Try aptto before you create an account",
+      "subtitle": "Write your work topic and see the summary appear instantly",
+      "topicLabel": "Work topic",
+      "topicPlaceholder": "Ex: Water supply challenges in the city of Maputo...",
+      "hint": "Between 8 and 160 characters. This demo doesn't create an account or project.",
+      "generating": "Generating...",
+      "testNow": "Try now",
+      "resultTitle": "Generated summary",
+      "aiGenerated": "AI Generated",
+      "fallbackDemo": "Fallback demo",
+      "pages": "pages",
+      "ctaDescription": "Liked it? Create your free account to continue in the full editor.",
+      "ctaButton": "Create free account",
+      "placeholder": "Summary will appear here after generation",
+      "error": "Could not generate summary at this time."
+    }
+  },
+  "workCreation": {
+    "inlineCreator": {
+      "educationLevel": {
+        "secondary": "Secondary",
+        "technical": "Technical",
+        "higher": "Higher Education"
+      },
+      "studentFallback": "Student",
+      "backgroundMessage": "You can close this page. Work continues generating in the background.",
+      "openWork": "Open work →",
+      "greeting": "Hello, {firstName}",
+      "question": "What topic do you want to work on today?",
+      "worksAvailable": "work available",
+      "worksAvailablePlural": "works available",
+      "limitReached": "Work limit reached",
+      "placeholder": "What is your work topic?",
+      "educationLevelLabel": "Education level",
+      "noWorks": "No works available",
+      "limitMessage": "Your work limit has been reached. Upgrade your package or buy extra works.",
+      "creating": "Creating...",
+      "generateButton": "Generate work",
+      "limitReachedTitle": "Work limit reached this month.",
+      "upgradeLink": "upgrade package",
+      "buyLink": "buy extra works",
+      "hideCover": "Hide cover details",
+      "showCover": "Fill in cover details (optional)",
+      "coverLabel": "Cover:",
+      "hideAdvanced": "Hide advanced details",
+      "showAdvanced": "+ Advanced details (optional)",
+      "contentLabel": "Work content",
+      "objectiveLabel": "Objective",
+      "objectivePlaceholder": "Ex.: analyze the impact of AI on higher education",
+      "methodologyLabel": "Methodology",
+      "methodologyPlaceholder": "Ex.: literature review",
+      "researchQuestionLabel": "Research question",
+      "researchQuestionPlaceholder": "Ex.: how does AI affect teaching?",
+      "subtitleLabel": "Subtitle",
+      "subtitlePlaceholder": "Ex.: A case study in the Mozambican banking sector",
+      "referencesLabel": "References",
+      "keywordsLabel": "Keywords",
+      "keywordsPlaceholder": "Ex.: digitization, banking sector, Mozambique",
+      "referencesSeedLabel": "Initial references",
+      "citationStyleLabel": "Citation standard",
+      "notesLabel": "Notes",
+      "notesPlaceholder": "Ex.: include examples from Mozambique.",
+      "recentWorks": "Recent works",
+      "open": "Open →",
+      "viewAll": "View all works ({projects.length})",
+      "noWorksYet": "You don't have works yet."
+    },
+    "progress": {
+      "title": "aptto is preparing your work",
+      "description": "Generating cover, structure and initial content based on your academic briefing."
+    },
+    "coverFields": {
+      "secondary": {
+        "school": "School",
+        "schoolPlaceholder": "Ex.: Josina Machel Secondary School",
+        "student": "Student",
+        "studentPlaceholder": "Full name",
+        "teacher": "Teacher",
+        "teacherPlaceholder": "Teacher name",
+        "class": "Class",
+        "classOptional": "(optional)",
+        "classSelect": "Select",
+        "class10": "10th Grade",
+        "class11": "11th Grade",
+        "class12": "12th Grade",
+        "turma": "Class",
+        "turmaOptional": "(optional)",
+        "turmaPlaceholder": "Ex.: A",
+        "number": "No.",
+        "numberOptional": "(optional)",
+        "numberPlaceholder": "Ex.: 15",
+        "city": "City",
+        "cityOptional": "(optional)",
+        "cityPlaceholder": "Ex.: Maputo"
+      },
+      "technical": {
+        "institute": "Institute",
+        "institutePlaceholder": "Ex.: ISTEG",
+        "course": "Course",
+        "coursePlaceholder": "Ex.: Informatics",
+        "student": "Student",
+        "studentPlaceholder": "Full name",
+        "trainer": "Trainer",
+        "trainerPlaceholder": "Trainer name",
+        "city": "City",
+        "cityOptional": "(optional)",
+        "cityPlaceholder": "Ex.: Maputo"
+      },
+      "higher": {
+        "institution": "Institution",
+        "institutionPlaceholder": "Institution name",
+        "course": "Course",
+        "coursePlaceholder": "Course name",
+        "student": "Student",
+        "studentPlaceholder": "Full name",
+        "advisor": "Professor",
+        "advisorPlaceholder": "Advisor name",
+        "faculty": "Faculty",
+        "facultyOptional": "(optional)",
+        "facultyPlaceholder": "Ex.: Faculty of Economics",
+        "department": "Department",
+        "departmentOptional": "(optional)",
+        "departmentPlaceholder": "Ex.: Department of Management",
+        "semester": "Semester",
+        "semesterOptional": "(optional)",
+        "semesterSelect": "Select",
+        "semester1": "1st Semester",
+        "semester2": "2nd Semester",
+        "city": "City",
+        "cityOptional": "(optional)",
+        "cityPlaceholder": "Ex.: Maputo"
+      },
+      "common": {
+        "institution": "Institution",
+        "course": "Course",
+        "student": "Student",
+        "advisor": "Advisor"
+      }
+    }
+  },
+  "hooks": {
+    "workspace": {
+      "preparingGeneration": "Preparing generation",
+      "workReadyForReview": "Work ready for review",
+      "generationFailed": "Generation failed",
+      "briefUpdated": "Briefing updated - requires review",
+      "briefCreated": "Briefing created",
+      "downloadFailed": "Download failed",
+      "couldNotDownload": "Could not download",
+      "downloadFailedPdf": "PDF download failed",
+      "couldNotDownloadPdf": "Could not download PDF",
+      "saveFailed": "Failed to save {format} export",
+      "saved": "{format} saved",
+      "exportCreated": "Export created successfully.",
+      "couldNotSave": "Could not save export",
+      "saveError": "Error saving export",
+      "shareFailed": "Failed to create share link",
+      "linkCopied": "Link copied!",
+      "linkCopiedDesc": "Share link copied to clipboard.",
+      "shareError": "Could not create share link",
+      "shareErrorTitle": "Error sharing",
+      "templateFailed": "Failed to change template",
+      "couldNotChangeTemplate": "Could not change template",
+      "saveBriefFailed": "Failed to save cover data",
+      "couldNotSave": "Could not save",
+      "updateTitleFailed": "Failed to update title",
+      "titleUpdated": "Title updated",
+      "updateError": "Error updating",
+      "updateTitleError": "Error updating title"
+    },
+    "workCreation": {
+      "steps": {
+        "validating": "Validating briefing",
+        "structuring": "Structuring document",
+        "generating": "Generating content",
+        "formatting": "Formatting and finalizing",
+        "saving": "Saving sections"
+      },
+      "inQueue": "In worker queue",
+      "generatingWork": "Generating work",
+      "couldNotTrackGeneration": "Could not track work generation.",
+      "workReady": "Your work is ready!",
+      "workReadyDesc": "Explore the generated sections and use AI to make adjustments. Happy writing!",
+      "workReadyForReview": "Work ready for review",
+      "generationInterrupted": "Generation interrupted",
+      "generationInterruptedDesc": "Work structure has been created, but automatic generation failed.",
+      "generationFailed": "Generation failed",
+      "trackingWithDelay": "Tracking generation with delay",
+      "trackingWithDelayDesc": "Could not track generation in real time. We'll open the work so you can continue tracking there.",
+      "topicRequired": "Topic required",
+      "topicRequiredDescription": "Please provide the topic or title of the work to continue.",
+      "sessionExpired": "Session expired. Log in again to continue.",
+      "generationLimitReached": "Generation limit reached. Upgrade your package.",
+      "createError": "Error creating work",
+      "workCreated": "Work created",
+      "workCreatedDescription": "Work created successfully.",
+      "error": "Error",
+      "createFailed": "Could not create work.",
+      "sectionGenerateFailed": "Failed to generate {section}."
+    },
+    "accountData": {
+      "loadError": "Could not load account data.",
+      "genericError": "Error loading account data."
+    }
+  },
+  "api": {
+    "share": {
+      "unauthorized": "Unauthorized",
+      "projectNotFound": "Project not found",
+      "shareIdRequired": "Share ID is required",
+      "linkRevoked": "Share link revoked",
+      "errorRevoke": "Error revoking share link",
+      "errorList": "Error listing share links",
+      "documentNotFound": "Document not found or link expired",
+      "linkExpired": "This share link has expired",
+      "serverError": "Internal server error"
+    },
+    "generate": {
+      "unauthorized": "Unauthorized",
+      "workNotFound": "Work not found",
+      "generationNotStarted": "Generation not started for this work",
+      "sectionNotFound": "Section not found",
+      "executionNotFound": "Generation execution not found",
+      "planNotFound": "Section plan not found",
+      "sectionFailed": "Failed to generate section",
+      "error": "Error generating section",
+      "noContent": "AI did not return content for the section.",
+      "noValidContent": "AI did not return valid content for the section."
+    },
+    "export": {
+      "unauthorized": "Unauthorized",
+      "projectIdRequired": "Project ID is required",
+      "projectNotFound": "Project not found",
+      "exportFailed": "Error exporting document",
+      "pdfProOnly": "PDF export available only in PRO"
+    }
+  },
+  "lib": {
+    "billing": {
+      "free": {
+        "description": "For trying aptto with no commitment",
+        "work": "1 work per month",
+        "structure": "Automatic structure",
+        "export": "Export DOCX"
+      },
+      "basic": {
+        "description": "For those with regular work during the semester",
+        "works": "4 works per month",
+        "improve": "Improve text with AI",
+        "suggestions": "Argumentation suggestions",
+        "export": "Export DOCX"
+      },
+      "pro": {
+        "description": "For those who need more capacity — multiple works in the same month",
+        "works": "10 works per month",
+        "fullAI": "Full AI (writing + review)",
+        "pdf": "Export formatted PDF",
+        "support": "Priority support"
+      }
+    },
+    "documentExport": {
+      "checklistMargin": "Margins: 3 cm top/left and 2 cm bottom/right.",
+      "checklistFont": "Main font Arial 12 with justified alignment.",
+      "checklistSpacing": "1.5 spacing and 1.25 cm indent on first line.",
+      "checklistQuotes": "Long quotes with enlarged indent and smaller font.",
+      "checklistTOC": "Visible table of contents with coherent hierarchical titles.",
+      "checklistReferences": "References ordered alphabetically by author.",
+      "checklistUEM1": "Cover with Eduardo Mondlane University at top and author centered.",
+      "checklistUEM2": "Advisor and course line explicit on cover.",
+      "checklistUP1": "Cover with Universidade Pedagógica and course highlighted institutionally.",
+      "checklistUP2": "Centered visual structure for monographs and pedagogical reports.",
+      "checklistUDM1": "Cover with Universidade de Moçambique and faculty/department metadata.",
+      "checklistUDM2": "Authorship and advisory block aligned to institutional standard.",
+      "checklistSchool1": "Header with Republic of Mozambique and secondary school.",
+      "checklistSchool2": "Class and grade visible when provided.",
+      "checklistTechnical1": "Technical course and subject highlighted on cover.",
+      "checklistTechnical2": "Practical technical education metadata highlighted at top.",
+      "checklistGeneric": "Generic academic cover compatible with basic ABNT requirements.",
+      "fallbackInstitution": "Institution",
+      "fallbackAuthor": "Author",
+      "fallbackAuthorNotProvided": "Author not provided",
+      "fallbackTitleNotProvided": "Title not provided",
+      "fallbackTechnicalSubject": "Technical subject",
+      "fallbackAuthorName": "Author Name",
+      "refAvailableAt": "Available at:",
+      "refAccessedAt": "Accessed at:",
+      "refThesisDissertation": "Thesis/Dissertation.",
+      "labelSupervisor": "Supervisor:",
+      "labelAdvisor": "Advisor:"
+    },
+    "documentProfile": {
+      "typeSecondary": "School Work",
+      "typeTechnical": "Technical Work",
+      "typeAcademic": "Academic Work",
+      "fallbackSecondarySchool": "Secondary School",
+      "fallbackSubject": "Subject",
+      "fallbackTeacherAdvisor": "Teacher/Advisor",
+      "fallbackTechnicalInstitute": "Technical Institute",
+      "fallbackTechnicalCourse": "Technical course",
+      "fallbackAdvisor": "Advisor",
+      "fallbackAcademicInstitution": "Academic Institution",
+      "fallbackCourse": "Course"
+    }
+  },
+  "admin": {
+    "rag": {
+      "title": "Admin RAG",
+      "description": "Manage sources, index documents and quickly validate context retrieved by AI.",
+      "refresh": "Refresh",
+      "sourcesCard": {
+        "title": "Registered sources",
+        "description": "Catalog of public, institutional or private sources available for RAG.",
+        "loading": "Loading sources...",
+        "source": "Source",
+        "type": "Type",
+        "documents": "Documents",
+        "status": "Status",
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "createSource": {
+        "title": "Create new source",
+        "description": "Quickly register a new knowledge source for ingestion.",
+        "nameLabel": "Source name",
+        "typeLabel": "Type",
+        "createButton": "Create source",
+        "toast": {
+          "success": {
+            "title": "Source created",
+            "description": "Source {name} added to catalog."
+          },
+          "error": {
+            "title": "Error",
+            "description": "Could not create source."
+          }
+        },
+        "errorCreate": "Could not create source."
+      },
+      "ingest": {
+        "title": "Ingest document",
+        "description": "Index textual content for RAG. Use curated and specific sources per project or domain.",
+        "sourceLabel": "Source",
+        "sourcePlaceholder": "Select a source",
+        "titleLabel": "Document title",
+        "textButton": "Text",
+        "fileButton": "File",
+        "contentLabel": "Content",
+        "contentPlaceholder": "Paste clean document text, law, report or thesis here...",
+        "fileLabel": "File",
+        "fileDesc": "PDF, DOCX or TXT up to 25 MB",
+        "ingestButton": "Index document",
+        "ingestFileButton": "Index file",
+        "invalidFormat": {
+          "title": "Invalid format",
+          "description": "Only PDF, DOCX and TXT are accepted."
+        },
+        "toast": {
+          "docSuccess": {
+            "title": "Document indexed",
+            "description": "Document {title} has been chunked and indexed."
+          },
+          "fileSuccess": {
+            "title": "File indexed",
+            "description": "Document {title} has been extracted and indexed."
+          },
+          "error": {
+            "title": "Error",
+            "description": "Could not index the {type}."
+          }
+        },
+        "errorIngestDoc": "Could not ingest document.",
+        "errorIngestFile": "Could not ingest file."
+      },
+      "search": {
+        "title": "Test search",
+        "description": "Run a manual search to validate if RAG is retrieving relevant excerpts.",
+        "queryLabel": "Query",
+        "queryPlaceholder": "Ex.: public policies for higher education in Mozambique",
+        "searchButton": "Run search",
+        "noResults": "No results yet.",
+        "resultMeta": "{sourceName} • excerpt {index}",
+        "toast": {
+          "error": {
+            "title": "Error",
+            "description": "Could not run search."
+          }
+        },
+        "errorSearch": "Could not run search."
+      },
+      "errors": {
+        "loadSources": "Could not load sources.",
+        "error": "Error"
+      }
+    },
+    "metrics": {
+      "title": "Admin Metrics",
+      "description": "Operational summary of main funnel and recent product events.",
+      "refresh": "Refresh",
+      "funnel": {
+        "leadMagnet": "Lead magnet",
+        "registrations": "Registrations",
+        "checkouts": "Checkouts",
+        "payments": "Payments",
+        "exports": "Exports"
+      },
+      "eventsCard": {
+        "title": "Tracked events",
+        "description": "Aggregated counts per event registered in the backend.",
+        "loading": "Loading metrics...",
+        "event": "Event",
+        "total": "Total"
+      },
+      "errors": {
+        "loadMetrics": "Could not load metrics.",
+        "error": "Error"
+      }
+    }
   }
 }
